@@ -1,14 +1,70 @@
-# Trip Weather Project
+# Smart Journey Planner
 
-## Description
-A software project to track daily weather for trips in Sri Lanka.
+> **A comprehensive travel management system for Sri Lanka that integrates trip planning, budgeting, and real-time weather tracking.**
 
-## Features
-- Display daily weather
-- Suggest trips based on weather
-- Track expenses
+![Project Status](https://img.shields.io/badge/Status-Development-green)
+![Tech Stack](https://img.shields.io/badge/Stack-Angular_%7C_.NET_%7C_MongoDB-blue)
 
-## Technologies
-- Frontend: Angular
-- Backend: .NET
-- Database: MongoDB
+## 📖 About The Project
+
+**Smart Journey Planner** is a software solution designed to streamline the travel experience. It allows users to manage trip details, calculate budgets, plan routes using Google Maps, and receive weather-based advice for their journeys. The system is built to handle complex group travel logistics including role assignments and collaborative timelines.
+
+## 🚀 Key Features by Module
+
+* [cite_start]**Trip Management & Security:** Secure JWT authentication with role-based access to create trips, invite members, and select transport modes.
+* [cite_start]**Smart Budgeting:** A dedicated finance engine that uses formulas to estimate budgets, track daily expenses, and visualize spending via charts[cite: 1].
+* [cite_start]**Interactive Route Planning:** Integration with Google Maps and Places API to generate routes, calculate travel times, and locate nearby hotels/restaurants.
+* [cite_start]**Timeline & Gamification:** A drag-and-drop itinerary builder that includes real-time notifications for reminders and an achievement badge system.
+* [cite_start]**Trip Weather Intelligence:** A specialized module that provides outfit and activity suggestions based on weather rules, alongside a digital "Trip Memories" map.
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend** | ![Angular](https://img.shields.io/badge/Angular-DD0031?style=flat&logo=angular&logoColor=white) | [cite_start]Handles all UI components including Maps and Dashboards[cite: 2]. |
+| **Backend** | ![.NET](https://img.shields.io/badge/.NET-512BD4?style=flat&logo=dotnet&logoColor=white) | [cite_start]Manages API endpoints, business logic, and calculations[cite: 2]. |
+| **Database** | ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white) | [cite_start]Stores Collections for Trips, Routes, Budgets, and Weather Logs[cite: 2]. |
+| **APIs** | **Google Maps, WeatherAPI** | [cite_start]Used for location services and forecast data[cite: 2]. |
+
+## 👥 Team 43 - Workload Distribution
+
+The project is divided into 5 core modules, assigned as follows:
+
+| Member | Main Modules | Key Responsibilities |
+| :--- | :--- | :--- |
+| **Member 01 - Dinuri Thathsarani** | **Trip Management & User Access** | [cite_start]Trip creation, transport selection, JWT authentication, member invites, and role assignment[cite: 1]. |
+| **Member 02 - Sasini Hansani** | **Budget Estimation & Tracking** | [cite_start]Implementing budget calculation formulas, expense CRUD operations, and generating budget charts/warnings[cite: 1]. |
+| **Member 03 - Sandali Kodippili** | **Route Planner & Finder** | [cite_start]Google Maps integration, route display, travel time calculation, and fetching Hotel/Restaurant data via Places API[cite: 1]. |
+| **Member 04 - Nirasha Wijesinghe** | **Timeline & Notifications** | [cite_start]Building the drag-and-drop timeline, notification scheduler, budget accuracy alerts, and the badge system[cite: 1]. |
+| **Member 05 - Malpawani Poornima** | **Trip Weather & Memories** | [cite_start]Implementing WeatherAPI rules, outfit suggestions, memories upload CRUD, and the interactive memories map[cite: 1]. |
+
+## 💻 Getting Started
+
+### Prerequisites
+* [Node.js](https://nodejs.org/) (Latest LTS)
+* [.NET SDK](https://dotnet.microsoft.com/download)
+* [MongoDB](https://www.mongodb.com/try/download/community)
+
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone [https://github.com/mashi33/Software-Project---Level-2.git](https://github.com/mashi33/Software-Project---Level-2.git)
+    ```
+
+2.  **Setup Backend (.NET)**
+    ```bash
+    cd Backend
+    dotnet restore
+    dotnet run
+    ```
+
+3.  **Setup Frontend (Angular)**
+    ```bash
+    cd Frontend
+    npm install
+    ng serve --open
+    ```
+
+## 📜 License
+This project is created for the Level 2 Software Project assessment.
