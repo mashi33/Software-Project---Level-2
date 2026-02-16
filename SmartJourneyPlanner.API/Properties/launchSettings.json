@@ -21,6 +21,13 @@
     }
   },
 
+
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5098",
+
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
@@ -58,3 +65,4 @@
       }
     }
   }
+}
