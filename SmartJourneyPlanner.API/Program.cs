@@ -1,5 +1,6 @@
 ﻿using SmartJourneyPlanner.API.Models;   // ✅ 1. Add this (Needed for MongoDBSettings)
-using SmartJourneyPlanner.API.Services;
+using SmartJourneyPlanner.API.Services;/
+
 
 var builder = WebApplication.CreateBuilder(args);
 
