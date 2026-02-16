@@ -34,7 +34,9 @@
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "@types/leaflet": "^1.9.21",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "sweetalert2": "^11.26.18"
+
   },
   "devDependencies": {
     "@angular/build": "^21.0.3",
