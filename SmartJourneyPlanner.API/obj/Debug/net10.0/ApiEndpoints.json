@@ -1,0 +1,76 @@
+[
+  {
+    "ContainingType": "SmartJourneyPlanner.API.Controllers.BudgetController",
+    "Method": "CreateBudget",
+    "RelativePath": "api/Budget",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "newBudget",
+        "Type": "SmartJourneyPlanner.API.Models.TripBudget",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SmartJourneyPlanner.API.Controllers.BudgetController",
+    "Method": "GetBudget",
+    "RelativePath": "api/Budget/{tripId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tripId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SmartJourneyPlanner.API.Controllers.BudgetController",
+    "Method": "AddExpense",
+    "RelativePath": "api/Budget/add-expense/{tripId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tripId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "expense",
+        "Type": "SmartJourneyPlanner.API.Models.Expense",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SmartJourneyPlanner.API.Controllers.BudgetController",
+    "Method": "DeleteExpense",
+    "RelativePath": "api/Budget/delete-expense/{tripId}/{expenseName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tripId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "expenseName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
