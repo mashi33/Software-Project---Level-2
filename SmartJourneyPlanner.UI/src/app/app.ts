@@ -9,8 +9,8 @@ import { FooterComponent } from './footer/footer';
   standalone: true,
   // 2. Add them to the imports list
   imports: [RouterOutlet, NavbarComponent, FooterComponent],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  templateUrl: './app.html',
+  styleUrl: './app.css'
 })
 export class AppComponent {
   title = 'SmartJourneyPlanner';
