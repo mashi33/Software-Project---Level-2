@@ -1,0 +1,124 @@
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.Development.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.staticwebassets.endpoints.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.exe
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.deps.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.runtimeconfig.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\DnsClient.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\Microsoft.OpenApi.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Bson.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Driver.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\SharpCompress.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\Snappier.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\bin\Debug\net8.0\ZstdSharp.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.AssemblyReference.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfoInputs.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfo.cs
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.CoreCompileInputs.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\scopedcss\bundle\SmartJourneyPlanner.styles.css
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJou.4A20D296.Up2Date
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\refint\SmartJourneyPlanner.dll
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.genruntimeconfig.cache
+C:\Users\MSII\source\repos\SmartJourneyPlanner\obj\Debug\net8.0\ref\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.Development.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.staticwebassets.endpoints.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.exe
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.deps.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.runtimeconfig.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\DnsClient.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\Microsoft.OpenApi.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Bson.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Driver.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\SharpCompress.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\Snappier.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\bin\Debug\net8.0\ZstdSharp.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.AssemblyReference.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfoInputs.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfo.cs
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.CoreCompileInputs.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.sourcelink.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\scopedcss\bundle\SmartJourneyPlanner.styles.css
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJou.4A20D296.Up2Date
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\refint\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.genruntimeconfig.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\Software-Project---Level-2\SmartJourneyPlanner\obj\Debug\net8.0\ref\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.Development.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\appsettings.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.staticwebassets.endpoints.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.exe
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.deps.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.runtimeconfig.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\DnsClient.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\Microsoft.OpenApi.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Bson.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\MongoDB.Driver.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\SharpCompress.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\Snappier.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\bin\Debug\net8.0\ZstdSharp.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.AssemblyReference.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfoInputs.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.AssemblyInfo.cs
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.csproj.CoreCompileInputs.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\scopedcss\bundle\SmartJourneyPlanner.styles.css
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJou.4A20D296.Up2Date
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\refint\SmartJourneyPlanner.dll
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.pdb
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\SmartJourneyPlanner.genruntimeconfig.cache
+C:\Users\MSII\OneDrive\Desktop\Smart Journey Planner Angular\SmartJourneyPlanner\obj\Debug\net8.0\ref\SmartJourneyPlanner.dll
