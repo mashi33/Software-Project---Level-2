@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartJourneyPlanner.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b4863e6d1c218987af9fa3f8ad8b16b1fe844f95")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+51728901fb22482b3a58aed3fab16c262a0d25cd")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartJourneyPlanner.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartJourneyPlanner.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
