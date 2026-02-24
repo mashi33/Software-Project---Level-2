@@ -83,3 +83,5 @@ C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourn
 C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourneyPlanner.API\obj\Debug\net10.0\SmartJourneyPlanner.API.pdb
 C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourneyPlanner.API\obj\Debug\net10.0\SmartJourneyPlanner.API.genruntimeconfig.cache
 C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourneyPlanner.API\obj\Debug\net10.0\ref\SmartJourneyPlanner.API.dll
+C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourneyPlanner.API\bin\Debug\net10.0\SmartJourneyPlanner.API.staticwebassets.runtime.json
+C:\Users\ASUS Vivobook\OneDrive\Desktop\SP\Software-Project---Level-2\SmartJourneyPlanner.API\obj\Debug\net10.0\compressed\cl72x4vtl2-{0}-dg4711whjq-dg4711whjq.gz
