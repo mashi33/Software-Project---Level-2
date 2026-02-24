@@ -1,0 +1,108 @@
+/* Navbar Background */
+.custom-nav {
+  background-color: #0D47A1 !important;
+  padding: 10px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Brand/Logo Section */
+.brand-container {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.brand-logo {
+  width: 35px;
+  height: 35px;
+  margin-right: 12px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-top {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #FFFFFF;
+}
+
+.brand-bottom {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: #BBDEFB; /* Light blue */
+}
+
+/* Navigation Links Spacing */
+.nav-links-group {
+  margin-left: 40px;
+  gap: 25px; /* Method 3: Gap */
+}
+
+.nav-link {
+  color: #E3F2FD !important;
+  transition: color 0.3s ease;
+}
+
+  .nav-link:hover {
+    color: #8D7B7B !important; /* Gold on hover */
+  }
+
+  .nav-link.active {
+    color: #8D7B7B !important;
+    font-weight: bold;
+  }
+
+/* Right Side Actions */
+.user-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 20px;
+}
+
+/* Notification Bell */
+.bi-bell {
+  font-size: 1.3rem;
+  color: white;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #FF5252;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+/* Profile Section */
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #64B5F6;
+  object-fit: cover;
+}
+
+.profile-name {
+  margin-left: 10px;
+  color: white;
+}
+
+/* Dropdown Caret Removal */
+.hide-caret::after {
+  display: none !important;
+}

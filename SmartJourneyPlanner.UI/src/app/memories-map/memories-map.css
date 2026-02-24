@@ -1,0 +1,362 @@
+/* Layout Base */
+.main-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100vh; /* Full screen height */
+    overflow: hidden;
+    flex-direction: row-reverse;
+}
+
+.sidebar {
+    width: 570px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 1.5rem;
+    overflow-y: auto;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    font-size: 15px;
+}
+
+.map-container {
+    flex-grow: 1;
+    height: 100%;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Card & Form Styles */
+.upload-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    color: #0d6efd;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.sidebar-title .icon { 
+  margin-right: 0.5rem; 
+}
+
+.search-group {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.search-input, .form-input, .form-textarea {
+    width: 100%;
+    height: 35px;
+    padding: 0.5rem;
+    border: 0.1px solid #ced4da;
+    border-radius: 5px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
+}
+
+.form-textarea {
+    width: 100%;
+    height: auto;
+    padding: 0.5rem;
+    border: 0.1px solid #ced4da;
+    border-radius: 5px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
+}
+
+.search-input:focus, .form-input:focus, .form-textarea:focus {
+  outline: none;
+    border-color: #443333; 
+}
+
+.form-input[type="date"] {
+    color: #8D7B7B; /* Changes the text color */
+    font-weight: 500;
+}
+
+.form-input.has-value {
+    color: black;
+    font-weight: 500;
+}
+
+
+.date-row {
+    display: flex;         /* Horizontal alignment */
+    gap: 10px;            /* Space between the two boxes */
+    width: 30%;
+}
+
+.date-field {
+    flex: 1;              /* Makes both boxes equal width */
+    display: flex;
+    flex-direction:row; /* Keeps label on top of input */
+    
+}
+
+.date-field label {
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap; /* FORCES text to stay on one line */
+    align-content: center;
+}
+
+
+.form-input::-webkit-calendar-picker-indicator {
+    background-color: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    filter: opacity(0.5); 
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #443333; 
+}
+
+.btn-find {
+    background: #0d6efd;
+    color:white;
+    border: none;
+    padding: 0 1rem;
+    border-radius: 0 5px 5px 0;
+    margin-left: -5px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
+    
+}
+
+.btn-save {
+    width: 100%;
+    background: #198754;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 5px;
+    cursor: pointer;
+     box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
+}
+
+.btn-save:disabled {
+   opacity: 0.6; 
+   cursor: not-allowed;
+   }
+
+/* Gallery Styles */
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: #0d6efd;
+}
+
+.gallery-count {
+    background: #6c757d;
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.gallery-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;             /* Fills the parent width */
+    padding: 0;              /* Remove internal gaps at the edges */
+    margin: 0;
+    box-sizing: border-box;  /* Ensures padding doesn't cause overflow */
+}
+
+.gallery-item {
+   width: calc(33.33% - 8px);
+ }
+
+ .delete-overlay-btn{
+   border: none;
+  display: flex;
+  align-items: left;
+  justify-content: right;
+  }
+
+  
+.thumb-card {
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap:10px;
+    width: 315%;
+    border: 1px solid #eff0f1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.thumb-card:hover {
+   transform: scale(1.05); 
+  }
+
+.img-container { 
+  height: 100px;
+  width: 40%;
+  flex-shrink: 0;
+   background: #f0f0f0; }
+
+.thumb-img { 
+  width: 100%;
+   height: 100%;
+    object-fit: cover; }
+
+.thumb-info { 
+  background: rgb(255, 255, 255);
+   padding: 4px; 
+   text-align: left;
+   width: 60%;
+   
+ }
+
+.thumb-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+}
+
+/* Lightbox */
+.lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.lightbox-img { 
+  max-width: 90%;
+   max-height: 80vh;
+    border-radius: 8px; }
+
+.btn-close {
+    margin-top: 15px;
+    background: transparent;
+    color: white;
+    border: 1px solid white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+}
+
+
+.upload-box-wrapper {
+    width: 100%;
+    padding: 0.5rem;
+    border: 0.1px solid #ced4da;
+    border-radius: 5px;
+    margin-bottom: 0.75rem;
+     box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
+}
+
+
+
+.file-input {
+    width: 100%;
+    margin-top: 3px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #8D7B7B;
+
+}
+
+.upload-preview {
+    position: relative;
+    width: 100%;
+    height: 150px; /* Fixed height for the preview box */
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    background: #f8f9fa;
+}
+
+.upload-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the photo fills the box without stretching */
+}
+
+.btn-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(220, 38, 38, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* NEWLY ADDED CODE PART START */
+.see-more-container {
+    width: 100%;
+    display: flex;
+    justify-content: right;
+    padding: 10px 0;
+}
+
+.btn-see-more {
+    background: none;
+    border: 1px solid #495fd0; /* Matching your pink theme */
+    color: #495fd0;
+    padding: 6px 15px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-see-more:hover {
+    background: #4641c6;
+    color: white;
+}
+/* NEWLY ADDED CODE PART END */
+
+.thumb-dates {
+    display: flex;
+    align-items: center;
+    font-size: 11px;       /* Smaller than the title */
+    color: #888;           /* Gray color for subtle look */
+}
+
+.date-range {
+    font-style: italic;
+}
