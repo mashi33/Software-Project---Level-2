@@ -18,7 +18,7 @@ export const routes: Routes = [
   // 3. (Optional) Explicit Dashboard Route
   // If you add this line, then navigate(['/dashboard']) WILL work.
   { path: 'dashboard', component: BudgetDashboard },
-  { path: '**', redirectTo: '' } 
+  { path: '**', redirectTo: '' },
 
    { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent }, // path to signup

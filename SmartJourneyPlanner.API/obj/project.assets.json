@@ -692,23 +692,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {},
+    "C:\\Users\\ASUS Vivobook\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\Documents\\campus folder\\2nd year\\3rd sem\\software project\\Git Level-2 Project\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.API.csproj",
+      "projectUniqueName": "C:\\Users\\ASUS Vivobook\\OneDrive\\Desktop\\SP\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.API.csproj",
       "projectName": "SmartJourneyPlanner.API",
-      "projectPath": "C:\\Users\\User\\Documents\\campus folder\\2nd year\\3rd sem\\software project\\Git Level-2 Project\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.API.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\Documents\\campus folder\\2nd year\\3rd sem\\software project\\Git Level-2 Project\\Software-Project---Level-2\\SmartJourneyPlanner.API\\obj\\",
+      "projectPath": "C:\\Users\\ASUS Vivobook\\OneDrive\\Desktop\\SP\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.API.csproj",
+      "packagesPath": "C:\\Users\\ASUS Vivobook\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ASUS Vivobook\\OneDrive\\Desktop\\SP\\Software-Project---Level-2\\SmartJourneyPlanner.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ASUS Vivobook\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -773,7 +773,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

@@ -1,12 +1,10 @@
 ﻿using SmartJourneyPlanner.API.Models;   // ✅ 1. Add this (Needed for MongoDBSettings)
-using SmartJourneyPlanner.API.Services;/
+using SmartJourneyPlanner.API.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ==========================================================
 // 1. ADD SERVICES (BEFORE BUILD)
-// ==========================================================
 
 // ✅ 2. Configure MongoDB Settings (CRITICAL FIX)
 // This reads the "MongoDBSettings" section from appsettings.json
@@ -30,7 +28,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // JWT Authentication 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
