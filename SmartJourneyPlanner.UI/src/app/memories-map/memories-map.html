@@ -1,0 +1,146 @@
+<div class="main-wrapper">
+  <aside class="sidebar">
+    
+    <div class="upload-card">
+      <h4 class="sidebar-title">
+        <span class="icon">📸</span> Upload New Memories
+      </h4>
+      
+      <label>Location:</label>
+      <div class="search-group">
+        <input 
+          [(ngModel)]="searchQuery" 
+          (keyup.enter)="searchLocation()"
+          class="search-input" 
+          placeholder="Search City (e.g. Galle)...">
+        <button (click)="searchLocation()" class="btn-find">
+          Find
+        </button>
+      </div>
+
+      <div class="memory-form">
+        <label>Memory Title:</label>
+        <input [(ngModel)]="newMemory.title" class="form-input" placeholder="Memory Title">
+        <label>Description:</label>
+        <textarea [(ngModel)]="newMemory.description" class="form-textarea" placeholder="Description"></textarea>
+        
+        
+        <div class="duration-container">
+  <label class="section-label">Trip Duration:</label>
+  
+  <div class="date-row">
+    <div class="date-field">
+      <label class="date-lable">Start Date:</label> 
+      <input type="date" [(ngModel)]="newMemory.startDate" class="form-input" [class.has-value]="newMemory.startDate">
+    </div>
+
+    <div class="date-field">
+      <label class="date-lable">End Date:</label>
+      <input type="date" [(ngModel)]="newMemory.endDate" class="form-input" [class.has-value]="newMemory.endDate">
+    </div>
+  </div>
+</div>
+       
+        <div class="file-upload-group">
+    <label class="input-label">Choose a Photo</label>
+    
+    <div class="upload-box-wrapper">
+    <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" class="file-input">
+    
+    <div class="upload-preview" *ngIf="newMemory.imageUrl">
+      <img [src]="newMemory.imageUrl" alt="Preview">
+      <button type="button" class="btn-remove" (click)="removeImage(fileInput)">✕</button>
+    </div>
+  </div>
+        </div>
+
+
+
+        <div *ngIf="newMemory.latitude !== 0" class="status-msg success">
+          <i class="bi bi-geo-alt-fill"></i> Location ready to pin!
+        </div>
+
+        <button 
+          (click)="saveMemory()" 
+          class="btn-save"
+          [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
+          Save & Pin to Map
+        </button>
+      </div>
+    </div>
+
+    <div class="gallery-section">
+      <header class="gallery-header">
+        <h5 class="gallery-title">📂 My Recent Uploads</h5>
+        <span class="gallery-count">{{myRecentUploads.length}}</span>
+      </header>
+
+      <div class="gallery-grid">
+        <div class="gallery-item" *ngFor="let m of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
+          <div class="thumb-card" (click)="selectedMemory = m?.imageUrl">
+            <div class="img-container">
+              <img *ngIf="m?.imageUrl" 
+                   [src]="m?.imageUrl" 
+                   class="thumb-img" 
+                   [alt]="m?.title">
+
+            </div>
+            <div class="thumb-info">
+              <p class="thumb-text">{{ m?.title || 'Untitled' }}</p>
+
+              <div class="thumb-dates" *ngIf="m?.startDate || m?.endDate">
+    <span class="date-range">
+      {{ m?.startDate | date:'mediumDate' }} — {{ m?.endDate | date:'mediumDate' }}
+    </span>
+  </div>
+
+  <button class="delete-overlay-btn" (click)="deleteMemory(m.id, $event)">
+      <span class="trash-icon">🗑️</span>
+    </button>
+
+            </div>
+          </div>
+        </div>
+        
+        <div class="empty-state" *ngIf="myRecentUploads.length === 0">
+          <p>Your session uploads will appear here instantly.</p>
+        </div>
+      </div> 
+
+      <div class="see-more-container" *ngIf="myRecentUploads.length > 3">
+  <button class="btn-see-more" (click)="toggleSeeMore()">
+    {{ showMax === 3 ? 'See More (' + (myRecentUploads.length - 3) + ')' : 'Show Less' }}
+  </button>
+</div>
+
+    </div> 
+  </aside> 
+
+  <section class="map-container">
+    <div id="map"></div>
+  </section>
+</div>
+
+<div class="lightbox-overlay" *ngIf="selectedMemory" (click)="selectedMemory = null">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <img [src]="selectedMemory" class="lightbox-img">
+
+     <div class="lightbox-details" style="padding: 20px; color: white;">
+      <h2 style="margin-top: 0;">{{ selectedMemory.title }}</h2>
+      
+      <p class="date-text" style="font-size: 0.9rem; color: #666;">
+        {{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}
+      </p>
+
+      <hr>
+
+      <p class="description-text">
+        {{ selectedMemory.description || 'No description available.' }}
+      </p>
+    </div>
+
+    <div class="lightbox-actions">
+      <button class="btn-close" (click)="selectedMemory = null">Close View</button>
+    </div>
+  </div>
+</div>

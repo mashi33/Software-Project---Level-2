@@ -17,7 +17,7 @@ import { FooterComponent } from './footer/footer';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class AppComponent implements OnInit {
+export class App implements OnInit {
   discussions: DiscussionItem[] = [];
   allComments: any[] = [];
   globalCommentText: string = '';
