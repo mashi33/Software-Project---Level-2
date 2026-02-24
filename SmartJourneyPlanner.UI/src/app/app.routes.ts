@@ -4,6 +4,8 @@ import { ExpenseForm } from './expense-form/expense-form'; // check path
 import { MemoriesMapComponent } from './memories-map/memories-map';
 
 
+import { LoginComponent } from './login/login';
+import { SignupComponent } from './signup/signup'; 
 export const routes: Routes = [
   // 1. The Default Home Route (Dashboard)
   { path: '', component: BudgetDashboard },
@@ -17,4 +19,8 @@ export const routes: Routes = [
   // If you add this line, then navigate(['/dashboard']) WILL work.
   { path: 'dashboard', component: BudgetDashboard },
   { path: '**', redirectTo: '' } 
+
+   { path: 'login', component: LoginComponent },
+  { path: 'signup', component: SignupComponent }, // path to signup
+  { path: '', redirectTo: '/login', pathMatch: 'full' } // firsly show login
 ];
