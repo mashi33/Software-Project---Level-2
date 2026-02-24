@@ -4,9 +4,7 @@ using SmartJourneyPlanner.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ==========================================================
 // 1. ADD SERVICES (BEFORE BUILD)
-// ==========================================================
 
 // ✅ 2. Configure MongoDB Settings (CRITICAL FIX)
 // This reads the "MongoDBSettings" section from appsettings.json
@@ -28,7 +26,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+/*
 // JWT Authentication 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -44,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
-
+*/
 // Register the BudgetService
 builder.Services.AddSingleton<BudgetService>();
 

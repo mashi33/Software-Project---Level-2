@@ -15,9 +15,9 @@ import { FooterComponent } from './footer/footer';
   // 2. Add them to the imports list
   imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent, DatePipe, DecimalPipe],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css']
 })
-export class App implements OnInit {
+export class AppComponent implements OnInit {
   discussions: DiscussionItem[] = [];
   allComments: any[] = [];
   globalCommentText: string = '';
