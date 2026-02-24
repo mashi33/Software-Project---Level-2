@@ -1,16 +1,15 @@
-﻿/*
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using SmartJourneyPlanner.API.DTOs;
-using SmartJourneyPlanner.API.Models;
+using smart_journey.backend.DTOs;
+using smart_journey.backend.Models;
 using System.Security.Claims;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 
-namespace SmartJourneyPlanner.API.Controllers
+namespace smart_journey.backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -103,4 +102,4 @@ namespace SmartJourneyPlanner.API.Controllers
         }
     }
 }
-*/
+
