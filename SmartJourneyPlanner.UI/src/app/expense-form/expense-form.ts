@@ -63,7 +63,7 @@ export class ExpenseForm implements OnInit {
     this.expense.category = catName;
   }
 
-  onSubmit() {
+ onSubmit() {
     if (!this.expense.amount || !this.expense.name) {
       alert('Please fill in all fields!');
       return;
@@ -74,7 +74,8 @@ export class ExpenseForm implements OnInit {
       this.budgetService.updateExpense(this.tripId, this.oldName, this.expense).subscribe({
         next: () => {
           alert('Expense Updated!');
-          this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+          // CHANGED HERE 👇
+          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
         },
         error: (err: any) => console.error(err)
       });
@@ -84,7 +85,8 @@ export class ExpenseForm implements OnInit {
       this.budgetService.addExpense(this.tripId, this.expense).subscribe({
         next: () => {
           alert('Expense Added!');
-          this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+          // CHANGED HERE 👇
+          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
         },
         error: (err: any) => console.error(err)
       });
@@ -92,6 +94,7 @@ export class ExpenseForm implements OnInit {
   }
 
   cancel() {
-    this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+    // CHANGED HERE 👇
+    this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
   }
 }

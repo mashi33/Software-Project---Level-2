@@ -24,47 +24,47 @@
   line-height: 1.1;
 }
 
-.brand-top {
-  font-weight: 800;
-  font-size: 1.2rem;
+.secular.one {
+  font-family: 'Secular One', sans-serif; /* Ensures your font works if imported */
   color: #FFFFFF;
-}
-
-.brand-bottom {
-  font-weight: 400;
-  font-size: 0.85rem;
-  color: #BBDEFB; /* Light blue */
 }
 
 /* Navigation Links Spacing */
 .nav-links-group {
-  margin-left: 40px;
-  gap: 25px; /* Method 3: Gap */
+  /* margin-left removed so we can perfectly center the group */
+  gap: 15px; /* Slightly reduced to fit all 7 links comfortably */
 }
 
 .nav-link {
   color: #E3F2FD !important;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 8px 12px !important;
 }
 
-  .nav-link:hover {
-    color: #8D7B7B !important; /* Gold on hover */
-  }
+.nav-link:hover {
+  color: #8D7B7B !important; /* Your custom gold/gray hover */
+  transform: translateY(-1px);
+}
 
-  .nav-link.active {
-    color: #8D7B7B !important;
-    font-weight: bold;
-  }
+.nav-link.active {
+  color: #8D7B7B !important;
+  font-weight: bold;
+}
 
 /* Right Side Actions */
 .user-actions {
   display: flex;
   align-items: center;
-  margin-left: auto;
+  margin-left: auto; /* Pushes this group to the far right */
   gap: 20px;
 }
 
 /* Notification Bell */
+.notification-dropdown {
+  position: relative;
+}
+
 .bi-bell {
   font-size: 1.3rem;
   color: white;
@@ -72,8 +72,8 @@
 
 .notification-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: 5px;
+  right: 5px;
   background-color: #FF5252;
   width: 8px;
   height: 8px;
@@ -90,8 +90,8 @@
 }
 
 .profile-img {
-  width: 32px;
-  height: 32px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   border: 2px solid #64B5F6;
   object-fit: cover;
@@ -100,6 +100,7 @@
 .profile-name {
   margin-left: 10px;
   color: white;
+  font-weight: 500;
 }
 
 /* Dropdown Caret Removal */
