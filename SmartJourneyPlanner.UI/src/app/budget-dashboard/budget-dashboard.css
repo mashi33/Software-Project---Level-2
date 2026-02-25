@@ -320,3 +320,11 @@
     transform: translateY(0px);
   }
 }
+
+.background-container {
+  background-image: url('/Budget_bg.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
