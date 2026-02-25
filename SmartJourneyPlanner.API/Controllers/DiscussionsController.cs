@@ -15,12 +15,13 @@ namespace SmartJourneyPlanner.Controllers
     public class DiscussionsController : ControllerBase
     {
         private readonly DiscussionsService _discussionsService;
+        private readonly CommentsService _commentsService;
         private readonly IHubContext<ChatHub> _hubContext;
-        private const int TotalTeamMembers = 8;
 
-        public DiscussionsController(DiscussionsService discussionsService, IHubContext<ChatHub> hubContext)
+        public DiscussionsController(DiscussionsService discussionsService, CommentsService commentsService, IHubContext<ChatHub> hubContext)
         {
             _discussionsService = discussionsService;
+            _commentsService = commentsService;
             _hubContext = hubContext;
         }
 
@@ -35,7 +36,7 @@ namespace SmartJourneyPlanner.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] GET Discussions failed: {ex.Message}");
-                return StatusCode(500, "දත්ත ලබා ගැනීමට නොහැකි විය.");
+                return StatusCode(500, "Can not fetch data.");
             }
         }
 
@@ -46,8 +47,17 @@ namespace SmartJourneyPlanner.Controllers
             {
                 newDiscussion.CreatedAt = DateTime.UtcNow;
                 newDiscussion.IsConfirmed = false;
+                newDiscussion.IsRejected = false; // Initialize IsRejected
                 newDiscussion.VotedUsers = new List<string>();
+                newDiscussion.UserVotes = new List<UserVoteRecord>();
+
                 newDiscussion.Comments = new List<CommentItem>();
+
+                // යහළුවාගේ කොටසින් අගයක් නොලැබුණහොත් Default 5 ක් ලබා දීම
+                if (newDiscussion.MemberLimit <= 0)
+                {
+                    newDiscussion.MemberLimit = 5;
+                }
 
                 if (newDiscussion.Type == "Trip")
                 {
@@ -70,17 +80,15 @@ namespace SmartJourneyPlanner.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] POST Discussion failed: {ex.Message}");
-                return StatusCode(500, "සාකච්ඡාව නිර්මාණය කිරීමට නොහැකි විය.");
+                return StatusCode(500, "Discussion creation unsuccessful.");
             }
         }
 
-        // --- යාවත්කාලීන කළ Vote Action එක ---
         [HttpPost("{id}/vote")]
         public async Task<IActionResult> Vote(string id, [FromBody] VoteRequest request)
         {
             try
             {
-                // 1. Request එක පරීක්ෂා කිරීම
                 if (request == null || string.IsNullOrWhiteSpace(request.OptionText) || string.IsNullOrWhiteSpace(request.UserName))
                 {
                     return BadRequest(new { message = "Invalid vote request. User or Option missing." });
@@ -89,18 +97,42 @@ namespace SmartJourneyPlanner.Controllers
                 var discussion = await _discussionsService.GetAsync(id);
                 if (discussion == null) return NotFound();
 
-                // 2. Null checks
-                discussion.VotedUsers ??= new List<string>();
-                discussion.Options ??= new List<VoteOption>();
-
-                // 3. දැනටමත් ඡන්දය දී ඇත්නම් (400 Error එකට හේතුව මෙය විය හැක)
-                // පරීක්ෂා කිරීම සඳහා මෙය තාවකාලිකව ඉවත් කර බැලිය හැකිය
-                if (discussion.VotedUsers.Any(u => u.Trim().Equals(request.UserName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                // ඡන්දය දැනටමත් Confirm වී ඇත්නම් නව ඡන්ද ලබා නොගැනීම
+                if (discussion.IsConfirmed)
                 {
-                    return BadRequest(new { message = "You have already voted!" });
+                    return BadRequest(new { message = "Voting is closed for this item." });
                 }
 
-                // 4. අදාළ Option එක සෙවීම (Case-insensitive)
+                discussion.UserVotes ??= new List<UserVoteRecord>();
+                discussion.Options ??= new List<VoteOption>();
+
+                var existingVote = discussion.UserVotes.FirstOrDefault(v =>
+                    v.UserId.Trim().Equals(request.UserName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                if (existingVote != null)
+                {
+                    if (existingVote.OptionText.Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Ok(discussion);
+                    }
+
+                    var oldOption = discussion.Options.FirstOrDefault(o => o.OptionText == existingVote.OptionText);
+                    if (oldOption != null && oldOption.VoteCount > 0) oldOption.VoteCount--;
+
+                    existingVote.OptionText = request.OptionText.Trim();
+                }
+                else
+                {
+                    discussion.UserVotes.Add(new UserVoteRecord
+                    {
+                        UserId = request.UserName.Trim(),
+                        OptionText = request.OptionText.Trim()
+                    });
+
+                    discussion.VotedUsers ??= new List<string>();
+                    discussion.VotedUsers.Add(request.UserName);
+                }
+
                 var option = discussion.Options.FirstOrDefault(o =>
                     o.OptionText.Trim().Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -109,29 +141,40 @@ namespace SmartJourneyPlanner.Controllers
                     return BadRequest(new { message = $"Option '{request.OptionText}' not found." });
                 }
 
-                // 5. දත්ත යාවත්කාලීන කිරීම
                 option.VoteCount++;
-                discussion.VotedUsers.Add(request.UserName);
 
-                // 6. Trip Confirmation Logic
+                // 3. Trip එකක් නම් තීරණයක් ගත හැකිදැයි පරීක්ෂා කිරීම (MemberLimit logic)
                 if (discussion.Type == "Trip")
                 {
+                    int currentTotalVotes = discussion.UserVotes.Count;
+                    int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 5;
+
                     var agreeCount = discussion.Options.FirstOrDefault(o => o.OptionText == "Agree")?.VoteCount ?? 0;
-                    var disagreeCount = discussion.Options.FirstOrDefault(o => o.OptionText == "Disagree")?.VoteCount ?? 0;
+                    double threshold = limit * 0.5;
 
-                    discussion.IsConfirmed = agreeCount > (TotalTeamMembers * 0.5);
-
-                    if (disagreeCount >= (TotalTeamMembers * 0.5))
+                    // ඔබ කී පරිදි හැමෝම ඡන්දය දී අවසන් නම් පමණක් තීරණය ගැනීම
+                    if (currentTotalVotes >= limit)
                     {
-                        await _discussionsService.RemoveAsync(id);
-                        await _hubContext.Clients.All.SendAsync("DiscussionDeleted", id);
-                        return Ok(new { status = "deleted", title = discussion.Title });
+                        if (agreeCount > threshold)
+                        {
+                            discussion.IsConfirmed = true;
+                            discussion.IsRejected = false;
+                        }
+                        else
+                        {
+                            discussion.IsConfirmed = false;
+                            discussion.IsRejected = true;
+                        }
+                    }
+                    else
+                    {
+                        // තවමත් ඡන්දය දෙන පිරිස සීමාවට වඩා අඩු නම්
+                        discussion.IsConfirmed = false;
+                        discussion.IsRejected = false;
                     }
                 }
 
                 await _discussionsService.UpdateAsync(id, discussion);
-
-                // REAL-TIME: සැමට යාවත්කාලීන දත්ත යැවීම
                 await _hubContext.Clients.All.SendAsync("UpdateVotes", discussion);
 
                 return Ok(discussion);
@@ -139,31 +182,52 @@ namespace SmartJourneyPlanner.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] Voting failed: {ex.Message}");
-                return StatusCode(500, "ඡන්දය සටහන් කිරීමට නොහැකි විය.");
+                return StatusCode(500, "Vote cast failed.");
             }
         }
 
-        [HttpPost("{id}/comments")]
-        public async Task<IActionResult> AddComment(string id, [FromBody] CommentItem comment)
+        [HttpGet("comments/all")]
+        public async Task<ActionResult<List<CommentItem>>> GetAllComments()
+        {
+            var comments = await _commentsService.GetAsync();
+            return Ok(comments);
+        }
+
+        [HttpPost("comments")]
+        public async Task<IActionResult> AddComment([FromBody] CommentItem comment)
         {
             try
             {
-                var discussion = await _discussionsService.GetAsync(id);
-                if (discussion == null) return NotFound();
-
                 comment.CreatedAt = DateTime.UtcNow;
-                discussion.Comments ??= new List<CommentItem>();
-                discussion.Comments.Add(comment);
-
-                await _discussionsService.UpdateAsync(id, discussion);
-                await _hubContext.Clients.All.SendAsync("ReceiveComment", new { discussionId = id, comment = comment });
-
-                return Ok(discussion);
+                await _commentsService.CreateAsync(comment);
+                await _hubContext.Clients.All.SendAsync("ReceiveComment", comment);
+                return Ok(comment);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] AddComment failed: {ex.Message}");
-                return StatusCode(500, "අදහස එක් කිරීමට නොහැකි විය.");
+                return StatusCode(500, "Comment add failed.");
+            }
+        }
+
+        [HttpPut("comments/{id}")]
+        public async Task<IActionResult> UpdateComment(string id, [FromBody] CommentItem updatedComment)
+        {
+            try
+            {
+                var existingComment = await _commentsService.GetCommentByIdAsync(id);
+                if (existingComment == null) return NotFound();
+
+                existingComment.Text = updatedComment.Text;
+                await _commentsService.UpdateAsync(id, existingComment);
+                await _hubContext.Clients.All.SendAsync("CommentUpdated", existingComment);
+
+                return Ok(existingComment);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] UpdateComment failed: {ex.Message}");
+                return StatusCode(500, "Update failed.");
             }
         }
 
@@ -183,8 +247,20 @@ namespace SmartJourneyPlanner.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] Delete failed: {ex.Message}");
-                return StatusCode(500, "මැකීම අසාර්ථකයි.");
+                return StatusCode(500, "Delete failed.");
             }
+        }
+
+        [HttpDelete("comments/{id}")]
+        public async Task<IActionResult> DeleteComment(string id)
+        {
+            var comment = await _commentsService.GetCommentByIdAsync(id);
+            if (comment == null) return NotFound();
+
+            await _commentsService.DeleteCommentAsync(id);
+            await _hubContext.Clients.All.SendAsync("CommentDeleted", id);
+
+            return NoContent();
         }
 
         public class VoteRequest

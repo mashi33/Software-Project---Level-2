@@ -25,44 +25,51 @@ export class SignalrService {
 
     this.hubConnection
       .start()
-      .then(() => console.log('SignalR Connected Successfully! ✅'))
-      .catch((err: any) => console.log('SignalR Connection Error: ' + err));
+      .then(() => {
+        console.log('SignalR Connected Successfully! ✅');
+        
+        // 1. New Comments
+        // Backend: await Clients.All.SendAsync("ReceiveComment", comment)
+        this.hubConnection.off('ReceiveComment');
+        this.hubConnection.on('ReceiveComment', (data: any) => {
+          console.log("SignalR: New Comment Received", data);
+          this.messageReceived.next(data);
+        });
 
-    // --- Backend (Controller) එකේ නම් සමඟ 100% ගැලපිය යුතුයි ---
+        // 2. Vote update
+        this.hubConnection.off('UpdateVotes');
+        this.hubConnection.on('UpdateVotes', (data: any) => {
+          console.log("SignalR: Vote Updated", data);
+          this.voteUpdated.next(data);
+        });
 
-    // 1. Controller එකේ "ReceiveComment" ලෙස ඇති බැවින් එය මෙලෙස වෙනස් කළා
-    this.hubConnection.on('ReceiveComment', (data: any) => {
-      console.log("SignalR: New Comment Received", data);
-      // data තුළ discussionId සහ comment පවතී
-      this.messageReceived.next(data);
-    });
+        // 3. Delete
+        this.hubConnection.off('DiscussionDeleted');
+        this.hubConnection.on('DiscussionDeleted', (id: string) => {
+          console.log("SignalR: Discussion Deleted", id);
+          this.discussionDeleted.next(id);
+        });
 
-    // 2. Vote update වීම (Controller: "UpdateVotes")
-    this.hubConnection.on('UpdateVotes', (data: any) => {
-      console.log("SignalR: Vote Updated", data);
-      this.voteUpdated.next(data);
-    });
-
-    // 3. Delete වීම (Controller: "DiscussionDeleted")
-    this.hubConnection.on('DiscussionDeleted', (id: string) => {
-      console.log("SignalR: Discussion Deleted", id);
-      this.discussionDeleted.next(id);
-    });
-
-    // 4. අලුත් Discussion (Controller: "NewDiscussion")
-    // සටහන: Controller එකේ "NewDiscussion" ලෙස මම කලින් update කළා නම් මෙහිදීද එයම තිබිය යුතුයි
-    this.hubConnection.on('NewDiscussion', (data: any) => {
-      console.log("SignalR: New Discussion Created", data);
-      this.newDiscussion.next(data);
-    });
+        // 4. New Discussion
+        this.hubConnection.off('NewDiscussion');
+        this.hubConnection.on('NewDiscussion', (data: any) => {
+          console.log("SignalR: New Discussion Created", data);
+          this.newDiscussion.next(data);
+        });
+      })
+      .catch(err => console.log('SignalR Connection Error: ' + err));
   }
 
-  // මෙය භාවිතා කරන්නේ කෙලින්ම Hub එකට කතා කිරීමටයි (e.g., chat message)
-  async sendMessage(discussionId: string, comment: any) {
+  // Frontend එකෙන් සෘජුවම Hub එකට පණිවිඩයක් යැවීමට (DiscussionId ඉවත් කරන ලදී)
+  async sendMessage(comment: any) {
     try {
       if (this.hubConnection.state === signalR.HubConnectionState.Connected) {
-        // පින්තූරයේ තිබූ Error එක වැළැක්වීමට arguments ගණන Backend Hub එකට සමාන විය යුතුයි
-        await this.hubConnection.invoke('SendMessage', discussionId, comment);
+        // Backend හි ChatHub තුළ ඇති "SendMessage(object comment)" invoke කරයි
+        await this.hubConnection.invoke('SendMessage', comment);
+      } else {
+        console.warn("SignalR is not connected. Re-attempting...");
+        await this.hubConnection.start();
+        await this.hubConnection.invoke('SendMessage', comment);
       }
     } catch (err) {
       console.error('Error while invoking SendMessage: ', err);

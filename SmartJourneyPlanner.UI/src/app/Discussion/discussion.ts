@@ -259,17 +259,14 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     
     const item = this.discussions.find(d => d.id === discussionId);
     
-    // 1. තීරණය දැනටමත් ගෙන ඇත්නම් නතර කරන්න
     if (item?.isConfirmed || item?.isRejected) {
       Swal.fire('Locked', 'Voting is already closed for this item.', 'info');
       return;
     }
 
-    // 2. දැනටමත් සාමාජික සීමාව ඉක්මවා ඇත්නම් (Frontend validation)
     const currentVotes = item?.userVotes?.length || 0;
     const limit = item?.memberLimit || 5;
     
-    // දැනටමත් සීමාවට පැමිණ ඇති අතර, මෙම පරිශීලකයා කලින් ඡන්දය දී නොමැති නම් පමණක් නතර කරන්න
     const hasAlreadyVoted = item?.userVotes?.some(v => v.userId === this.currentUser);
     
     if (!hasAlreadyVoted && currentVotes >= limit) {
@@ -292,10 +289,36 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     });
   }
 
+  // අර්ථවත් බව පරීක්ෂා කරන නව Logic එක
+  validateTitle(title: string): boolean {
+    if (!title) return false;
+    const t = title.trim();
+
+    // 1. දිග පරීක්ෂාව (අකුරු 3 - 50)
+    if (t.length < 3 || t.length > 50) return false;
+
+    // 2. අකුරු (Letters) අවම වශයෙන් 3ක් තිබිය යුතුයි (Trip 123 වැනි දෑ වැළැක්වීමට)
+    const letterCount = (t.match(/[a-zA-Z]/g) || []).length;
+    if (letterCount < 3) return false;
+
+    // 3. ස්වර (Vowels) අවම වශයෙන් 1ක් තිබිය යුතුයි (Ella වැනි වචන වලට ඉඩ දෙයි)
+    const hasVowel = /[aeiouy]/i;
+    if (!hasVowel.test(t)) return false;
+
+    // 4. ව්‍යංජන (Consonants) එක දිගට 5ක් හෝ ඊට වැඩි නම් Invalid (bcdfgh වැළැක්වීමට)
+    const excessiveConsonants = /[^aeiouy\s\d]{5,}/i; 
+    if (excessiveConsonants.test(t)) return false;
+
+    return true;
+  }
+
   addNewTrip() {
     const title = this.newTrip.title.trim();
-    if (!title) {
-      Swal.fire('Warning', 'Please provide a title!', 'warning');
+
+
+    // Validate using the new logic
+    if (!this.validateTitle(title)) {
+      Swal.fire('Invalid Title', 'Please provide a meaningful title (at least 3 letters and 1 vowel).', 'warning');
       return;
     }
 
@@ -416,4 +439,13 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     if (!prevDate) return true;
     return new Date(prevDate).toDateString() !== new Date(currDate).toDateString();
   }
+
+  showNotReadyAlert() {
+  Swal.fire({
+    title: 'Coming Soon!',
+    text: 'This page is currently under development by our team.',
+    icon: 'info',
+    confirmButtonColor: '#6e8efb'
+  });
+}
 }

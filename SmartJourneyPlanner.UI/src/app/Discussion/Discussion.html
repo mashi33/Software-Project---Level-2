@@ -1,19 +1,21 @@
-<div class="main-content">
-  <router-outlet></router-outlet>
+<div class="main-layout">
+  <div class="header-content">
+  <h1>WELCOME</h1>
+  <p>Smart Journey Group Chat</p> </div>
 
-  <div class="main-layout">
-    <div class="container">
-
-      <div class="header-content">
-        <h1>WELCOME</h1>
-        <h2>Smart Journey Group Chat</h2>
-      </div>
-
+  <div class="split-container">
+    
+    <div class="column-half left-column">
+      
       <div class="card glass-card creation-box">
-        <input type="text" [(ngModel)]="newTrip.title" placeholder="Vote Title (Required)" class="minimal-input">
-        <textarea [(ngModel)]="newTrip.description" placeholder="Description..."
-          class="minimal-input description-area"></textarea>
+        <input type="text" [(ngModel)]="newTrip.title" placeholder="Vote Title (Min 3 chars & 1 Vowel)" class="minimal-input">
+        
+        <div *ngIf="newTrip.title && !validateTitle(newTrip.title)" style="color: #ff6b6b; font-size: 11px; margin-top: -10px; margin-bottom: 10px; padding-left: 5px;">
+          ⚠ Please enter a meaningful title (At least 3 letters and 1 vowel).
+        </div>
 
+        <textarea [(ngModel)]="newTrip.description" placeholder="Description..." class="minimal-input description-area"></textarea>
+        
         <div class="radio-group">
           <label class="radio-label">
             <input type="radio" name="tripType" [(ngModel)]="newTrip.type" value="Trip">
@@ -26,50 +28,65 @@
         </div>
 
         <div *ngIf="newTrip.type === 'Other'" class="poll-options-setup" style="width: 100%;">
-          <div *ngFor="let opt of newTrip.customOptions; let i = index; trackBy: trackByIndex"
-            class="option-input-wrapper">
-            <input type="text" [(ngModel)]="newTrip.customOptions[i]" [placeholder]="'Option ' + (i+1)"
-              class="minimal-input">
-            <button type="button" *ngIf="newTrip.customOptions.length > 2" (click)="removeOptionField(i)"
-              class="btn-remove-option">×</button>
+          <div *ngFor="let opt of newTrip.customOptions; let i = index; trackBy: trackByIndex" class="option-input-wrapper">
+            <input type="text" [(ngModel)]="newTrip.customOptions[i]" [placeholder]="'Option ' + (i+1)" class="minimal-input">
+            <button type="button" *ngIf="newTrip.customOptions.length > 2" (click)="removeOptionField(i)" class="btn-remove-option">×</button>
           </div>
           <button type="button" (click)="addOptionField()" class="btn-add-option">+ Add Option</button>
         </div>
 
-        <button (click)="addNewTrip()" class="btn-post-main">Post Suggestion</button>
+        <button (click)="addNewTrip()" 
+                class="btn-post-main" 
+                [disabled]="!validateTitle(newTrip.title)">
+          Post Suggestion
+        </button>
       </div>
 
       <div class="discussion-list">
         <div *ngFor="let item of discussions">
-          <div class="card glass-card vote-display" *ngIf="item && item.title" style="position: relative;">
-
+          <div class="card glass-card vote-display" 
+               [ngClass]="{'locked-card': item.isConfirmed, 'rejected-card': item.isRejected}"
+               *ngIf="item && item.title">
+            
             <div class="user-info">
-              👤 <strong>{{ item.user === 'Guest User' ? 'You' : (item.user || 'Guest') }}</strong> suggested this
+              👤 <strong>{{ item.user === currentUser ? 'You' : (item.user || 'Guest') }}</strong> suggested this
             </div>
 
             <div class="card-header">
               <span class="trip-title highlighted-text">{{ item.title }}</span>
-              <span *ngIf="item.type === 'Trip'" class="status-pill status-right"
-                [ngClass]="item.isConfirmed ? 'confirmed' : 'pending'">
-                {{ item.isConfirmed ? '✔ Confirmed' : 'Pending' }}
-              </span>
+              
+              <div class="status-container status-right">
+                <span *ngIf="item.type === 'Trip'" class="status-pill" 
+                      [ngClass]="{'confirmed': item.isConfirmed, 'rejected': item.isRejected, 'pending': !item.isConfirmed && !item.isRejected}">
+                  {{ item.isConfirmed ? '✔ Confirmed' : (item.isRejected ? '✖ Rejected' : '🕒 Pending') }}
+                </span>
+                <small class="voted-count-tag" *ngIf="item.type === 'Trip'">
+                  Voted: {{ (item.userVotes?.length ?? 0) }}/{{ (item.memberLimit ?? 5) }}
+                </small>
+              </div>
             </div>
 
             <p *ngIf="item.description" class="item-description">{{ item.description }}</p>
 
-            <div *ngIf="item.type === 'Trip'" class="trip-vote-section">
+            <div *ngIf="item.type === 'Trip'" class="trip-vote-section" [class.disabled-votes]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))">
               <div class="vote-action-container">
-                <button class="vote-btn agree" (click)="castVote(item.id, 'Agree')">
+                <button class="vote-btn agree" 
+                        [disabled]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))"
+                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Agree'}"
+                        (click)="castVote(item.id, 'Agree')">
                   <span class="btn-label">Agree</span>
                   <span class="vote-count-label">{{ item.options[0]?.voteCount || 0 }} votes</span>
                 </button>
-
-                <button class="vote-btn disagree" (click)="castVote(item.id, 'Disagree')">
+                
+                <button class="vote-btn disagree" 
+                        [disabled]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))"
+                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Disagree'}"
+                        (click)="castVote(item.id, 'Disagree')">
                   <span class="btn-label">Disagree</span>
-                  <span class="vote-count-label">item.options[0]?.voteCount votes</span>
+                  <span class="vote-count-label">{{ item.options[1]?.voteCount || 0 }} votes</span>
                 </button>
               </div>
-
+              
               <div class="single-vote-bar">
                 <div class="fill agree" [style.width.%]="getVotePercentage(item, 0)">
                   <span *ngIf="getVotePercentage(item, 0) > 0">{{ getVotePercentage(item, 0) | number:'1.0-0' }}%</span>
@@ -80,12 +97,18 @@
               </div>
             </div>
 
-            <div *ngIf="item.type === 'Other'" class="poll-container">
-              <div *ngFor="let opt of item.options; let i = index" (click)="castVote(item.id, opt.optionText)"
-                class="poll-bar-wrapper" style="cursor: pointer;">
+            <div *ngIf="item.type === 'Other'" class="poll-container" [class.disabled-votes]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))">
+              <div *ngFor="let opt of item.options; let i = index" 
+                   (click)="!(item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))) && castVote(item.id, opt.optionText)" 
+                   class="poll-bar-wrapper" 
+                   [ngClass]="{'active': item.userVotes?.[0]?.optionText === opt.optionText, 'poll-locked': item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))}"
+                   style="cursor: pointer;">
                 <div class="poll-bar-info">
-                  <span class="opt-text highlighted-text">{{ opt.optionText }}</span>
-                  <span class="opt-pct highlighted-text">{{ getVotePercentage(item, i) | number:'1.0-0' }}%</span>
+                  <div class="opt-left-content" style="display: flex; align-items: center; gap: 10px;">
+                    <span class="vote-indicator"></span> 
+                    <span class="opt-text highlighted-text">{{ opt.optionText }}</span>
+                  </div>
+                  <span class="opt-pct-parallel highlighted-text">{{ getVotePercentage(item, i) | number:'1.0-0' }}%</span>
                 </div>
                 <div class="poll-progress-track">
                   <div class="poll-progress-fill" [style.width.%]="getVotePercentage(item, i)"></div>
@@ -94,55 +117,91 @@
             </div>
 
             <div class="vote-footer">
-              <span class="time-with-hourglass">
-                <i class="fas fa-hourglass-half hourglass-anim"></i>
-                {{ item.createdAt | date:'MMM d, h:mm a' }}
-              </span>
-              <div class="footer-tag">
-                <i class="fas fa-lock lock-shimmer"></i> ANONYMOUS SELECTION
+              <div class="footer-left">
+                <span class="time-with-hourglass">
+                  <i class="fas fa-hourglass-half hourglass-anim"></i> 
+                  {{ item.createdAt | date:'MMM d, h:mm a' }}
+                </span>
               </div>
 
-              <button class="btn-delete-box-bottom" (click)="deleteDiscussion(item.id, item.title)"
-                title="Remove Vote Box">
-                <i class="material-icons">delete</i>
-              </button>
+              <div class="footer-center">
+                <span class="anonymous-label">
+                  <i class="fas fa-lock"></i> ANONYMOUS SELECTION
+                </span>
+              </div>
+              
+              <div class="footer-right">
+                <button class="btn-delete-box-bottom" (click)="deleteDiscussion(item)" title="Remove Vote Box">
+                  <i class="material-icons">delete</i>
+                </button>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
+    </div>
 
+    <div class="column-half right-column glass-chat-panel">
       <div class="chat-area-wrapper">
         <ng-container *ngFor="let comment of allComments; let i = index">
           <div class="date-divider" *ngIf="i === 0 || isNewDay(allComments[i-1].createdAt, comment.createdAt)">
             <span>{{ comment.createdAt | date:'MMMM d, y' }}</span>
           </div>
 
-          <div class="chat-bubble-row" [ngClass]="comment.user === 'Guest User' ? 'row-right' : 'row-left'">
+          <div class="chat-bubble-row" [ngClass]="comment.user === currentUser ? 'row-right' : 'row-left'">
             <div class="chat-bubble">
               <span class="chat-user">
-                {{ comment.user === 'Guest User' ? 'You' : comment.user }}
+                {{ comment.user === currentUser ? 'You' : comment.user }}
               </span>
-
+              
               <div class="chat-content">
                 <p>{{ comment.text }}</p>
-                <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
+                <div class="chat-footer-row">
+                  <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
+                
+                  <div class="chat-actions" *ngIf="comment.user === currentUser">
+                    <button (click)="startEditing(comment)" class="btn-chat-action" title="Edit Message">
+                      <i class="material-icons">edit</i>
+                    </button>
+
+                    <button (click)="deleteComment(comment.id)" class="btn-chat-action" title="Delete Message">
+                      <i class="material-icons">delete</i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </ng-container>
       </div>
-    </div>
 
-    <div class="bottom-chat-bar">
-      <div class="chat-input-wrapper">
-        <input type="text" [(ngModel)]="globalCommentText" placeholder="Type a message..."
-          (keyup.enter)="postCommentToLatest()">
-        <button (click)="postCommentToLatest()" class="send-btn-circle">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-          </svg>
-        </button>
+      <div class="chat-input-container" [ngClass]="{'editing-mode': isEditing}">
+        <div class="chat-input-wrapper">
+          <button *ngIf="isEditing" (click)="cancelEditing()" class="cancel-edit-btn" title="Cancel Edit">
+            <i class="material-icons">close</i>
+          </button>
+
+          <input type="text" [(ngModel)]="globalCommentText" [placeholder]="isEditing ? 'Edit your message...' : 'Type a message...'" (keyup.enter)="postCommentToLatest()">
+          
+          <button (click)="postCommentToLatest()" class="send-btn-circle" [title]="isEditing ? 'Save Changes' : 'Send Message'">
+            <i class="material-icons" *ngIf="isEditing">check</i>
+            <svg *ngIf="!isEditing" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
+  </div>
+
+  <div class="navigation-footer">
+    <button class="nav-btn" (click)="showNotReadyAlert()">
+      <i class="material-icons">dashboard</i> Back to Dashboard
+    </button>
+    
+    <button class="nav-btn" (click)="showNotReadyAlert()">
+      <i class="material-icons">summarize</i> View Summary
+    </button>
   </div>
 </div>

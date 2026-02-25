@@ -15,8 +15,8 @@
     display: flex;
     flex-direction: column;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
-                      url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), 
+                      url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -26,29 +26,32 @@
 .header-content {
     text-align: center;
     color: white;
-    padding: 15px 0;
+    padding: 15px 0 10px 0;
     flex-shrink: 0;
 }
 
 .header-content h1 { 
-    font-size: 3rem; 
-    margin-bottom: 2px; 
+    font-size: 22px; 
+    margin: 0;
     font-weight: 800; 
 }
 
 .header-content h2 { 
-    font-size: 2rem; 
+    font-size: 14px; 
     opacity: 0.8; 
-    font-weight: 400; 
+    font-weight: 400;
+    margin-top: 5px;
 }
 
 .split-container {
     display: flex;
     flex: 1;
     overflow: hidden;
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 10px 20px;
     gap: 20px;
     justify-content: center;
+    height: calc(100vh - 120px);
+    align-items: stretch;
 }
 
 .column-half {
@@ -77,9 +80,9 @@
     overflow: hidden;
     position: relative;
     box-shadow: var(--card-shadow);
+    height: 100%;
 }
 
-/* scroll bars */
 .left-column::-webkit-scrollbar,
 .chat-area-wrapper::-webkit-scrollbar {
     width: 6px;
@@ -99,8 +102,8 @@
     backdrop-filter: blur(15px); 
     -webkit-backdrop-filter: blur(15px);
     border-radius: 20px; 
-    padding: 25px; 
-    margin-bottom: 25px; 
+    padding: 20px; 
+    margin-bottom: 20px; 
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: var(--card-shadow);
 }
@@ -118,35 +121,37 @@
 .minimal-input { 
     width: 100%;
     box-sizing: border-box;
-    padding: 12px 18px;
-    margin-bottom: 12px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
     border: none; 
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 15px;
     background-color: rgba(255, 255, 255, 0.9);
-    color: #333; 
+    color: #333;
 }
 
-.description-area { height: 80px; resize: none; }
+.description-area { height: 60px; resize: none; }
 
 .btn-add-option {
     background: rgba(255, 255, 255, 0.1); 
     color: #ffffff;
     border: 1px dashed rgba(255, 255, 255, 0.5);
-    padding: 10px 20px; 
-    border-radius: 12px; 
+    padding: 8px 16px; 
+    border-radius: 10px; 
     cursor: pointer;
     font-weight: 600; 
-    margin-bottom: 20px; 
+    margin-bottom: 15px; 
     transition: 0.3s ease;
+    font-size: 13px;
 }
 
 .radio-group { 
     display: flex; 
     justify-content: space-between; 
-    width: 100%; margin-bottom: 
-    20px; color: white; 
-    font-size: 14px; 
+    width: 100%; 
+    margin-bottom: 15px; 
+    color: white; 
+    font-size: 13px; 
 }
 
 .radio-label { display: flex; 
@@ -157,7 +162,7 @@
 
 .btn-post-main {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    color: white; border: none; padding: 14px; border-radius: 50px;
+    color: white; border: none; padding: 12px; border-radius: 50px;
     font-weight: 700; width: 100%; cursor: pointer;
     text-transform: uppercase; letter-spacing: 1px;
 }
@@ -171,6 +176,15 @@
     align-items: center; 
     width: 100%; 
     margin-bottom: 10px; 
+}
+
+/* "You suggested this" කොටස සහ එහි අයිකනය පමණක් කහ පැහැයට */
+.user-info, 
+.user-info span, 
+.user-info i {
+    color: #007bff !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
 }
 
 .status-pill.confirmed { 
@@ -192,20 +206,20 @@
 }
 
 .trip-title, .opt-text, .opt-pct, .highlighted-text { 
-    font-size: 18px; 
-    color: var(--text-soft-header) !important; 
-    font-weight: 500; 
+    font-size: 16px; 
+    color: #ffffff !important; 
+    font-weight: 400; 
 }
 
 .vote-action-container { 
     display: flex; 
     gap: 12px; 
-    margin: 15px 0; 
+    margin: 10px 0; 
 }
 
 .vote-btn { 
     flex: 1; 
-    padding: 10px; 
+    padding: 8px; 
     border-radius: 12px; 
     border: none; 
     font-weight: 700; 
@@ -228,7 +242,7 @@
 }
 
 .vote-count-label { 
-    font-size: 12px; 
+    font-size: 11px; 
     font-weight: 400; 
     opacity: 0.8; 
     margin-top: 2px;
@@ -242,7 +256,7 @@
 }
 
 .single-vote-bar { 
-    height: 35px; 
+    height: 30px; 
     display: flex; 
     border-radius: 10px; 
     overflow: hidden; 
@@ -257,7 +271,7 @@
     justify-content: center; 
     color: white; 
     font-weight: 800; 
-    font-size: 13px; 
+    font-size: 12px; 
     transition: width 0.5s ease; 
 }
 
@@ -273,19 +287,19 @@
 }
 
 .opt-pct-parallel { 
-    font-size: 16px; 
+    font-size: 14px; 
     font-weight: 700; 
-    color: var(--text-soft-header); 
+    color: #ffffff; 
 }
 
 .poll-progress-track { 
     width: 100%; 
-    height: 12px; 
+    height: 10px; 
     background: rgba(255, 255, 255, 0.2); 
     border-radius: 100px; 
     overflow: hidden; 
     position: relative; 
-    margin: 10px 0; 
+    margin: 8px 0; 
 }
 
 .poll-progress-fill { 
@@ -298,11 +312,11 @@
     4. CHAT AREA 
     ========================================================================== */
 .chat-area-wrapper { 
-    flex: 1;
+    flex: 1; 
     display: flex; 
     flex-direction: column; 
     gap: 12px; 
-    padding: 20px; 
+    padding: 15px; 
     overflow-y: auto;
 }
 
@@ -317,7 +331,7 @@
 
 .chat-bubble { 
     max-width: 85%; 
-    padding: 10px 14px; 
+    padding: 8px 12px; 
     border-radius: 15px; 
     background: rgba(255, 255, 255, 0.15); 
     backdrop-filter: blur(12px); 
@@ -335,7 +349,7 @@
 .chat-user { 
     font-size: 12px; 
     font-weight: 800; 
-    margin-bottom: 2px; 
+    margin-bottom: 4px; 
     color: #ffca28; 
     display: block; 
 }
@@ -347,48 +361,51 @@
 
 .chat-content p { 
     margin: 0; 
-    font-size: 15px; 
-    line-height: 1.4; 
+    font-size: 16px; 
+    line-height: 1.5; 
+    color: #ffffff !important; 
+    opacity: 1; 
 }
 
-/* Custom alignment for time and actions */
 .chat-footer-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    margin-top: 5px;
+    align-items: center; 
+    margin-top: 8px;    
     width: 100%;
+    gap: 15px;          
 }
 
 .chat-time { 
     font-size: 10px; 
-    opacity: 0.6; 
+    color: #e0e0e0;
+    opacity: 0.8; 
 }
 
 .chat-actions {
     display: flex;
     align-items: center;
-    gap: 12px; 
+    gap: 10px; 
+    margin-left: auto;  
 }
 
-/* FINAL FIX: TRANSPARENT ICON BUTTONS (No White Boxes) */
 .btn-chat-action {
     background: transparent !important; 
-    border: none !important;             
-    padding: 0 !important;
+    border: none !important;                                    
+    padding: 2px !important;
     cursor: pointer;
     display: flex !important;
     align-items: center;
     justify-content: center;
     width: auto !important;
     height: auto !important;
-    box-shadow: none !important;         
+    box-shadow: none !important; 
+    margin-left: 4px;          
 }
 
-/* Icon style: Greyish white transparent look */
 .btn-chat-action .material-icons {
-    color: rgba(255, 255, 255, 0.6) !important; 
-    font-size: 15px !important;
+    color: rgba(255, 255, 255, 0.8) !important; 
+    font-size: 14px !important;
     transition: color 0.2s ease;
 }
 
@@ -396,7 +413,6 @@
     color: #ffffff !important; 
 }
 
-/* Cancel editing button style */
 .cancel-edit-btn {
     background: none;
     border: none;
@@ -410,19 +426,19 @@
 .date-divider { 
     display: flex; 
     justify-content: center; 
-    margin: 15px 0; 
+    margin: 10px 0; 
 }
 
 .date-divider span { 
-    background: rgba(0, 0, 0, 0.3); 
+    background: rgba(0, 0, 0, 0.4); 
     color: #ffffff; 
-    padding: 4px 12px; 
+    padding: 3px 12px; 
     border-radius: 20px; 
     font-size: 11px; 
 }
 
 .chat-input-container {
-    padding: 15px;
+    padding: 10px 15px;
     background: rgba(255, 255, 255, 0.05);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -435,7 +451,7 @@
     background: white;
     border-radius: 25px;
     display: flex; 
-    padding: 5px 5px 5px 15px;
+    padding: 2px 2px 2px 12px;
     align-items: center;
 }
 
@@ -443,9 +459,9 @@
     flex: 1; 
     border: none; 
     background: transparent;
-    padding: 10px 5px; 
+    padding: 8px 5px; 
     outline: none; 
-    font-size: 15px; 
+    font-size: 14px; 
     color: #333;
 }
 
@@ -453,8 +469,8 @@
     background: #007bff; 
     color: white; 
     border: none;
-    width: 38px; 
-    height: 38px; 
+    width: 34px; 
+    height: 34px; 
     border-radius: 50%;
     cursor: pointer; 
     display: flex; 
@@ -463,7 +479,7 @@
 }
 
 .send-btn-circle .material-icons {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 /* ==========================================================================
@@ -473,10 +489,10 @@
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    margin-top: 15px; 
-    font-size: 11px; 
-    color: white; 
-    padding-top: 10px;
+    margin-top: 10px; 
+    font-size: 10px; 
+    color: #ffffff; 
+    padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -485,7 +501,8 @@
 .footer-right { display: flex; justify-content: flex-end; }
 
 .anonymous-label {
-    opacity: 0.6;
+    color: #ffffff;
+    opacity: 0.8;
     letter-spacing: 0.5px;
     font-weight: 600;
     display: flex;
@@ -494,13 +511,13 @@
     text-transform: uppercase;
 }
 
-.anonymous-label i { font-size: 10px; }
+.anonymous-label i { font-size: 9px; }
 
 .btn-delete-box-bottom {
     background: transparent;
     border: none;
     color: #ffffff;
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: pointer;
     transition: 0.3s;
     padding: 0;
@@ -563,7 +580,6 @@
     border-radius: 12px;
 }
 
-/* --- Round Ball (Radio Indicator) Style --- */
 .vote-indicator {
     width: 14px;
     height: 14px;
@@ -595,10 +611,8 @@
 }
 
 /* ==========================================================================
-    7. NEW: MAJORITY SYSTEM & STATUS STYLES (REQUIRED FOR UPDATE)
+    7. NEW: MAJORITY SYSTEM & STATUS STYLES
     ========================================================================== */
-
-/* Rejected Status Pill */
 .status-pill.rejected {
     background: rgba(255, 90, 95, 0.2);
     color: #ff5a5f;
@@ -608,26 +622,22 @@
     font-weight: 600;
 }
 
-/* Voted count label next to pill */
 .voted-count-tag {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.8);
     margin-left: 8px;
     font-weight: 400;
 }
 
-/* Locked Card State */
 .locked-card {
-    border: 1px solid rgba(76, 217, 100, 0.5); /* Confirmed highlight */
+    border: 1px solid rgba(76, 217, 100, 0.5); 
     box-shadow: 0 0 20px rgba(76, 217, 100, 0.15);
 }
 
-/* Disable interaction visually for locked polls */
 .disabled-votes {
-    pointer-events: none; /* Clicking blocked */
+    pointer-events: none; 
 }
 
-/* Subtle grayscale for disabled buttons to show "voting is over" */
 .vote-btn[disabled] {
     cursor: default;
     opacity: 0.8;
@@ -638,10 +648,49 @@
     opacity: 0.9;
 }
 
-/* Flex container for status and count */
 .status-container {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
+}
+
+/* ==========================================================================
+    8. NAVIGATION BUTTONS
+    ========================================================================== */
+.navigation-footer {
+  display: flex;
+  justify-content: center;
+  gap: 20px;               
+  padding: 15px 0 25px 0;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 24px;
+  border-radius: 8px;      
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  background-color: #007bff; 
+  color: #ffffff !important;  
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nav-btn:hover {
+  background-color: #0056b3; 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn i {
+  color: #ffffff;
+  font-size: 18px;
 }

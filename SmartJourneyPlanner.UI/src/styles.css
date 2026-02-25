@@ -1,3 +1,5 @@
+/* You can add global styles to this file, and also import other style files */
+
 html, body {
   height: 100%;
   margin: 0;
@@ -14,4 +16,4 @@ app-root {
 .main-content {
   flex: 1; /* Takes up all available empty space */
   background-color: #F0F8FF; /* Matches your light blue theme */
-}/* You can add global styles to this file, and also import other style files */
+}
