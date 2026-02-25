@@ -7,17 +7,17 @@ export interface VoteOption {
 export interface CommentItem {
   user: string;
   text: string;
-  createdAt: Date; // Removed '?' because the chat logic requires a date for sorting/dividers
+  createdAt: Date; 
 }
 
 export interface DiscussionItem {
-  id?: string; // Optional because new items don't have an ID yet
+  id?: string; 
   title: string;
   description: string;
   user: string;
   type: 'Trip' | 'Other';
   createdAt: Date;
   options: VoteOption[]; 
-  comments: CommentItem[]; // CHANGED: Now uses the CommentItem interface instead of 'any'
+  comments: CommentItem[]; 
   isConfirmed: boolean;
 }

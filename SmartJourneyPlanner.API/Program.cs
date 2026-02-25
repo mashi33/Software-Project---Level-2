@@ -1,73 +1,87 @@
-﻿using SmartJourneyPlanner.API.Models;   // ✅ 1. Add this (Needed for MongoDBSettings)
-using SmartJourneyPlanner.API.Services;
-
+﻿using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using SmartJourneyPlanner.Hubs;
+using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.Services;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. ADD SERVICES (BEFORE BUILD)
+// --- DATABASE SETTINGS START ---
+// Read settings from appsettings.json 
+var dbSettingsSection = builder.Configuration.GetSection("DatabaseSettings");
+builder.Services.Configure<DatabaseSettings>(dbSettingsSection);
 
-// ✅ 2. Configure MongoDB Settings (CRITICAL FIX)
-// This reads the "MongoDBSettings" section from appsettings.json
-builder.Services.Configure<MongoDBSettings>(
-    builder.Configuration.GetSection("MongoDBSettings"));
+// When system begin, Connection check and display on console
+var connectionString = dbSettingsSection["ConnectionString"];
+var databaseName = dbSettingsSection["DatabaseName"];
 
-// A. Enable CORS (Allow Angular to talk to .NET)
-builder.Services.AddCors(options =>
+Console.WriteLine("================================================");
+Console.WriteLine($"SERVER STARTING...");
+Console.WriteLine($"TARGET CONNECTION: {connectionString}");
+Console.WriteLine($"TARGET DATABASE: {databaseName}");
+Console.WriteLine("================================================");
+
+// register MongoDB Client as  Singleton
+builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    options.AddPolicy("AllowAngularApp",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:4200") // This matches your Angular port
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
+    
+    return new MongoClient(connectionString);
+});
+// --- DATABASE SETTINGS END ---
+
+// 1. SignalR
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+})
+.AddJsonProtocol(options => {
+    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
-builder.Services.AddControllers();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
+
+// DiscussionsService
+builder.Services.AddSingleton<DiscussionsService>();
+
+// CommentsService
+builder.Services.AddSingleton<CommentsService>();
+
+// 4. CORS Setup
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-/*
-// JWT Authentication 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
-    });
-*/
-// Register the BudgetService
-builder.Services.AddSingleton<BudgetService>();
 
-// ==========================================================
-// 2. BUILD THE APP
-// ==========================================================
 var app = builder.Build();
 
-// ==========================================================
-// 3. CONFIGURE PIPELINE (MIDDLEWARE)
-// ==========================================================
-
-// B. Activate the CORS Policy (MUST be before Authorization)
-app.UseCors("AllowAngularApp");
-
+// 5. Middleware Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
+app.UseRouting();
+app.UseCors("AllowAngular");
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
