@@ -1,0 +1,137 @@
+<div class="main-container">
+  <div class="sidebar">
+    <h2>Optimize Your Route</h2>
+    
+    <div class="search-section">
+      <div class="input-wrapper">
+        <input [(ngModel)]="start" (input)="search('start')" placeholder="Pick-up location">
+        <ul *ngIf="startSuggestions.length" class="suggestions">
+          <li *ngFor="let s of startSuggestions" (click)="selectPlace(s, 'start')">
+            {{s.description}}
+          </li>
+        </ul>
+      </div>
+
+      <div class="input-wrapper">
+        <input [(ngModel)]="end" (input)="search('end')" placeholder="Destination">
+        <ul *ngIf="endSuggestions.length" class="suggestions">
+          <li *ngFor="let s of endSuggestions" (click)="selectPlace(s, 'end')">
+            {{s.description}}
+          </li>
+        </ul>
+      </div>
+
+      <button class="btn-calculate" (click)="calculate()">Find Best Routes</button>
+      
+      <button class="btn-traffic" [class.active]="showTraffic" (click)="toggleTraffic()">
+        🚦 {{ showTraffic ? 'Hide Traffic' : 'Show Traffic' }}
+      </button>
+    </div>
+
+    <div class="results" *ngIf="results">
+      <h3>Select Your Preferred Route:</h3>
+      
+      <div class="card" [class.active]="selectedRouteType === 'fastest'">
+        <label>
+          <div class="card-header">
+            <input 
+              type="radio" 
+              name="route" 
+              (change)="onRouteSelect('fastest', results.fastest.polyline)" 
+              [checked]="selectedRouteType === 'fastest'">
+            <h4>🚀 Fastest Route</h4>
+          </div>
+          <div class="details-section">
+            <p><strong>Distance:</strong> {{ formatDistance(results.fastest.distance) }}</p>
+            <p><strong>Estimated Time:</strong> {{ formatDuration(results.fastest.duration) }}</p>
+          </div>
+        </label>
+      </div>
+
+      <div class="card" [class.active]="selectedRouteType === 'scenic'" *ngIf="results.scenic">
+        <label>
+          <div class="card-header">
+            <input 
+              type="radio" 
+              name="route" 
+              (change)="onRouteSelect('scenic', results.scenic.polyline)" 
+              [checked]="selectedRouteType === 'scenic'">
+            <h4>🌿 Scenic Route</h4>
+          </div>
+          <div class="details-section">
+            <p><strong>Distance:</strong> {{ formatDistance(results.scenic.distance) }}</p>
+            <p><strong>Estimated Time:</strong> {{ formatDuration(results.scenic.duration) }}</p>
+          </div>
+        </label>
+      </div>
+
+      <div class="card" [class.active]="selectedRouteType === 'cheapest'">
+        <label>
+          <div class="card-header">
+            <input 
+              type="radio" 
+              name="route" 
+              (change)="onRouteSelect('cheapest', results.cheapest.polyline)" 
+              [checked]="selectedRouteType === 'cheapest'">
+            <h4>💰 Cheapest Route</h4>
+          </div>
+          <div class="details-section">
+            <p><strong>Distance:</strong> {{ formatDistance(results.cheapest.distance) }}</p>
+            <p><strong>Estimated Time:</strong> {{ formatDuration(results.cheapest.duration) }}</p>
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <google-map 
+      *ngIf="apiLoaded" 
+      height="100%" 
+      width="100%" 
+      [center]="center" 
+      [zoom]="zoom" 
+      mapId="790748e2d63a3f976faa6e7c">
+      
+      <map-traffic-layer *ngIf="showTraffic"></map-traffic-layer>
+
+      <map-marker *ngIf="startCoords" [position]="startCoords" [options]="{label: 'A'}"></map-marker>
+      <map-marker *ngIf="endCoords" [position]="endCoords" [options]="{label: 'B'}"></map-marker>
+
+      <ng-container *ngIf="selectedRouteType === 'scenic' && results?.scenicViewpoints">
+        <map-advanced-marker 
+          *ngFor="let point of results.scenicViewpoints"
+          [position]="{lat: point.lat, lng: point.lng}"
+          (mapClick)="focusOnSpot(point)">
+        </map-advanced-marker>
+      </ng-container>
+
+      <map-polyline 
+        *ngIf="currentPath.length > 0"
+        [path]="currentPath" 
+        [options]="{
+          strokeColor: selectedRouteType === 'fastest' ? '#4285F4' : (selectedRouteType === 'scenic' ? '#FFD100' : '#34A853'), 
+          strokeWeight: 6, 
+          strokeOpacity: 0.8
+        }">
+      </map-polyline>
+    </google-map>
+
+    <div class="scenic-bottom-panel" *ngIf="selectedRouteType === 'scenic' && results?.scenicViewpoints?.length">
+      <div class="scenic-list-container">
+        <div class="scenic-item-card" *ngFor="let point of results.scenicViewpoints" (click)="focusOnSpot(point)">
+          <span class="material-icons">{{ getIconName(point.name) }}</span>
+          <div class="scenic-item-details">
+            <span class="scenic-name">{{ point.name }}</span>
+            <small class="scenic-distance">{{ calculateDistanceFromRoute(point.lat, point.lng) }} away</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-actions-container">
+      <button class="btn-action">Back</button>
+      <button class="btn-action">View Hotels</button>
+    </div>
+  </div>
+</div>

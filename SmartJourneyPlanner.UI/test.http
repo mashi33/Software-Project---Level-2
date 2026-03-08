@@ -4,11 +4,11 @@ Content-Type: application/json
 
 {
     "user": "Tester_01",
-    "text": "Hello, this is a global chat message!"
+    "text": "Hello, my dear friends"
 }
 
 ### Check trip voting - User 1
-POST http://localhost:5233/api/discussions/699c606693695c5636564a56/vote
+POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
 Content-Type: application/json
 
 {
@@ -18,7 +18,7 @@ Content-Type: application/json
 
 
 ### Check trip voting - User 2
-POST http://localhost:5233/api/discussions/699c606693695c5636564a56/vote
+POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
 Content-Type: application/json
 
 {
@@ -27,7 +27,7 @@ Content-Type: application/json
 }
 
 ### Check trip voting - User 3
-POST http://localhost:5233/api/discussions/699c606693695c5636564a56/vote
+POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
 Content-Type: application/json
 
 {
@@ -36,7 +36,7 @@ Content-Type: application/json
 }
 
 ### Check trip voting - User 4
-POST http://localhost:5233/api/discussions/699c606693695c5636564a56/vote
+POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
 Content-Type: application/json
 
 {
@@ -45,7 +45,7 @@ Content-Type: application/json
 }
 
 ### Check trip voting - User 5
-POST http://localhost:5233/api/discussions/699c4ead93695c5636564a53/vote
+POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
 Content-Type: application/json
 
 {
