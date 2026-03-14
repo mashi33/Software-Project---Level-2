@@ -1,54 +1,55 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SmartJourneyBackend.Models;
-using SmartJourneyBackend.Services;
+using SmartJourneyPlanner.API.Models;   
+using SmartJourneyPlanner.API.Services; 
 
-namespace SmartJourneyBackend.Controllers
+namespace SmartJourneyPlanner.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class TripController : ControllerBase
     {
-        private readonly TripService _service;
-        public TripController(TripService service) => _service = service;
+        private readonly TripService _tripService;
+
+        public TripController(TripService tripService)
+        {
+            _tripService = tripService;
+        }
 
         [HttpGet]
-        public async Task<List<TripItem>> Get() => await _service.GetAsync();
+        public async Task<List<TripItem>> Get() =>
+            await _tripService.GetAsync();
+
+        [HttpGet("{id:length(24)}")]
+        public async Task<ActionResult<TripItem>> Get(string id)
+        {
+            var trip = await _tripService.GetAsync(id);
+            if (trip is null) return NotFound();
+            return trip;
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Post(TripItem item)
+        public async Task<IActionResult> Post(TripItem newTrip)
         {
-            await _service.CreateAsync(item);
-            return Ok(item);
+            await _tripService.CreateAsync(newTrip);
+            return CreatedAtAction(nameof(Get), new { id = newTrip.Id }, newTrip);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, TripItem updatedItem)
+        [HttpPut("{id:length(24)}")]
+        public async Task<IActionResult> Update(string id, TripItem updatedTrip)
         {
-            if (id.Length != 24) return BadRequest("Invalid ID format");
-
-            var existing = await _service.GetAsync(id);
-            if (existing == null) return NotFound();
-
-            updatedItem.Id = existing.Id;
-            await _service.UpdateAsync(id, updatedItem);
+            var trip = await _tripService.GetAsync(id);
+            if (trip is null) return NotFound();
+            updatedTrip.Id = trip.Id;
+            await _tripService.UpdateAsync(id, updatedTrip);
             return NoContent();
         }
 
-        [HttpPut("{id}/complete")]
-        public async Task<IActionResult> Toggle(string id)
-        {
-            var item = await _service.GetAsync(id);
-            if (item == null) return NotFound();
-            item.IsCompleted = !item.IsCompleted;
-            await _service.UpdateAsync(id, item);
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
-            if (id.Length != 24) return BadRequest();
-            await _service.RemoveAsync(id);
+            var trip = await _tripService.GetAsync(id);
+            if (trip is null) return NotFound();
+            await _tripService.RemoveAsync(id);
             return NoContent();
         }
     }
