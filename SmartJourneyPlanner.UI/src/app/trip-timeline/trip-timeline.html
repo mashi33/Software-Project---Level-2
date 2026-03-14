@@ -1,0 +1,144 @@
+<div class="timeline-container">
+  <header class="timeline-header">
+    <div class="header-title">
+      <span class="material-symbols-outlined pin-icon">location_on</span>
+      <h1>{{ trip().name }}</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn-export" (click)="exportToCalendar()">
+        <span class="material-symbols-outlined">calendar_today</span> Export to Google Calendar
+      </button>
+    </div>
+  </header>
+  
+  <div class="days-container">
+    @for (day of trip().days; track day.id) {
+      <div class="day-wrapper">
+        <div class="day-circle">
+          <span>{{ getDayIndex(day) }}</span>
+        </div>
+        
+        <div class="day-content">
+          <div class="day-header">
+            <div class="day-title-area">
+              <h2>Day {{ getDayIndex(day) }}</h2>
+              <div class="day-date">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span>{{ day.date }}</span>
+              </div>
+            </div>
+            
+            <div class="day-actions">
+              <span class="completion-text">{{ completedCount(day) }}/{{ day.events.length }} completed ({{ completionPercentage(day) }}%)</span>
+              <button class="btn-add" (click)="openAddEventModal(day.id)">
+                <span class="material-symbols-outlined">add</span> Add Event
+              </button>
+              <button class="btn-delete" (click)="deleteDay(day.id)">
+                <span class="material-symbols-outlined">delete_outline</span> Delete Day
+              </button>
+            </div>
+          </div>
+          
+          <div class="event-list"
+               cdkDropList
+               [id]="day.id"
+               [cdkDropListData]="day.events"
+               [cdkDropListConnectedTo]="connectedTo"
+               (cdkDropListDropped)="drop($event)">
+            
+            @for (event of day.events; track event.id) {
+              <div class="event-card" [class.completed]="event.status === 'Completed'" cdkDrag>
+                
+                <!-- Category Icon Box -->
+                <div class="category-box" [ngClass]="getCategoryClass(event)">
+                  <span class="material-symbols-outlined">{{ getCategoryIcon(event) }}</span>
+                </div>
+
+                <div class="event-content">
+                  <h3 class="event-title" [class.strike]="event.status === 'Completed'">{{ event.title }}</h3>
+                  
+                  <div class="event-meta">
+                    <span class="event-time"><span class="material-symbols-outlined timestamp-icon">schedule</span> {{ event.time }}</span>
+                    <span class="event-location"><span class="material-symbols-outlined location-icon">location_on</span> {{ event.location }}</span>
+                  </div>
+                  
+                  <p class="event-description">{{ event.description }}</p>
+                </div>
+
+                <div class="event-actions">
+                  <!-- Status Toggle -->
+                  <button class="action-btn status-btn" 
+                          (click)="toggleStatus(event)" 
+                          [class.is-done]="event.status === 'Completed'"
+                          [title]="event.status === 'Completed' ? 'Mark Pending' : 'Mark Completed'">
+                    <span class="material-symbols-outlined">{{ event.status === 'Completed' ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                  </button>
+                  <!-- Edit -->
+                  <button class="action-btn edit-btn" (click)="openEditEventModal(day.id, event)" title="Edit Event">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <!-- Delete -->
+                  <button class="action-btn delete-btn" (click)="deleteEvent(event)" title="Delete Event">
+                    <span class="material-symbols-outlined">delete_outline</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="add-day-container">
+    <button class="btn-add-day" (click)="addNewDay()">
+      <span class="material-symbols-outlined">add</span> Add Another Day
+    </button>
+  </div>
+  
+  <!-- Add Event Modal -->
+  <div class="modal-backdrop" *ngIf="isModalOpen">
+    <div class="modal-content">
+      <h2>{{ editingEventId ? 'Edit Event' : 'Add New Event' }}</h2>
+      
+      <form (submit)="onSubmit($event)">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" [(ngModel)]="formData.title" name="title" required placeholder="e.g. Visit Temple">
+        </div>
+        
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" [(ngModel)]="formData.time" name="time" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group half-width">
+            <label>Location</label>
+            <input type="text" [(ngModel)]="formData.location" name="location" required placeholder="Address or Name">
+          </div>
+          <div class="form-group half-width">
+            <label>Category</label>
+            <select [(ngModel)]="formData.category" name="category" required>
+              <option value="Hotel">Hotel</option>
+              <option value="Dining">Dining</option>
+              <option value="Sightseeing">Sightseeing</option>
+              <option value="Transport">Transport</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="formData.description" name="description" rows="3" placeholder="Additional details..."></textarea>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn-save">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>

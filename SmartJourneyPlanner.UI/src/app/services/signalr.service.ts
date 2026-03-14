@@ -26,7 +26,7 @@ export class SignalrService {
     this.hubConnection
       .start()
       .then(() => console.log('SignalR Connected Successfully! ✅'))
-      .catch(err => console.log('SignalR Connection Error: ' + err));
+     .catch((err: any) => console.log('SignalR Connection Error: ' + err));
 
     // --- Backend (Controller) එකේ නම් සමඟ 100% ගැලපිය යුතුයි ---
 
