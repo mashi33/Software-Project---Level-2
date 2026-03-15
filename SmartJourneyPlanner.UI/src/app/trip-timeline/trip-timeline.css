@@ -1046,7 +1046,7 @@ textarea::placeholder {
 }
 
 ::ng-deep .swal2-styled.swal2-confirm {
-  background-color: #ef4444 !important; /* Distinctive red for delete */
+  background-color: #3b82f6 !important; /* Professional blue for OK/Confirm */
 }
 
 ::ng-deep .swal2-styled.swal2-cancel {
