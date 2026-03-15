@@ -88,7 +88,14 @@ export class TripTimelineService {
 
   // We use Angular Signals here. It's the modern way to handle changing data.
   // tripSignal holds the actual modifiable data.
-  private tripSignal = signal<Trip>(this.initialTrip);
+  // We start with an empty trip to show the professional "Empty State" UI first.
+  private tripSignal = signal<Trip>({
+    id: 'trip-new',
+    name: 'My New Trip',
+    startDate: '',
+    endDate: '',
+    days: []
+  });
 
   // We expose "trip" as a computed signal so components can safely read it (but not directly change it).
   trip = computed(() => this.tripSignal());
@@ -105,16 +112,30 @@ export class TripTimelineService {
   addDay() {
     const currentTrip = this.tripSignal();
     const days = currentTrip.days;
-    let nextDateStr = 'Date TBD';
+    let nextDateStr = '';
     
     if (days.length > 0) {
-       // try to parse the last date "Monday, March 16, 2026"
+       // Get the date of the last added day
        const lastDateStr = days[days.length - 1].date;
        const lastDate = new Date(lastDateStr);
+       
        if (!isNaN(lastDate.getTime())) {
-           lastDate.setDate(lastDate.getDate() + 1);
-           nextDateStr = lastDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+           // Increment by 1 day
+           const nextDate = new Date(lastDate);
+           nextDate.setDate(nextDate.getDate() + 1);
+           nextDateStr = nextDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+       } else {
+           nextDateStr = 'Date TBD';
        }
+    } else {
+        // This is the VERY FIRST day being added
+        // Use the trip's start date if it exists, otherwise use today
+        let startDate = new Date();
+        if (currentTrip.startDate) {
+            const [y, m, d] = currentTrip.startDate.split('-').map(Number);
+            if (y && m && d) startDate = new Date(y, m - 1, d);
+        }
+        nextDateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
 
     const newDay: TripDay = {

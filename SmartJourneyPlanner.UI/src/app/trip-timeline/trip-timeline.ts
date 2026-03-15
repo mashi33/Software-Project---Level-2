@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
+
 import { TripTimelineService } from '../services/trip-timeline.service';
 import { TripDay, TripEvent } from '../models/trip-timeline.model';
 import { CalendarSyncUtil } from '../utils/calendar-sync.util';
@@ -12,7 +14,8 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-trip-timeline',
   standalone: true,
-  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
+  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule, RouterLink],
+
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
 })
