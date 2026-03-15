@@ -1045,8 +1045,14 @@ textarea::placeholder {
   margin: 0 !important;
 }
 
-::ng-deep .swal2-styled.swal2-confirm {
-  background-color: #3b82f6 !important; /* Professional blue for OK/Confirm */
+/* Context-aware Confirm Button colors */
+::ng-deep .swal2-confirm {
+  background-color: #3b82f6 !important; /* Default Blue for OK/Success */
+}
+
+/* Red for Warning/Destructive actions (Delete) */
+::ng-deep .swal2-popup:has(.swal2-warning) .swal2-confirm {
+  background-color: #ef4444 !important;
 }
 
 ::ng-deep .swal2-styled.swal2-cancel {
