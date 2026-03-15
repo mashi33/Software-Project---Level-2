@@ -186,6 +186,28 @@ export class TripTimelineService {
     return newDayId;
   }
 
+  updateTripName(newName: string) {
+    const currentTrip = this.tripSignal();
+    this.tripSignal.set({ ...currentTrip, name: newName });
+  }
+
+  updateDayDate(dayId: string, newDateStrYYYYMMDD: string) {
+    const currentTrip = this.tripSignal();
+    
+    const [year, month, day] = newDateStrYYYYMMDD.split('-').map(Number);
+    const targetDate = new Date(year, month - 1, day);
+    const formattedDate = targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    const updatedDays = currentTrip.days.map(d => {
+      if (d.id === dayId) {
+        return { ...d, date: formattedDate };
+      }
+      return d;
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    this.tripSignal.set({ ...currentTrip, days: updatedDays });
+  }
+
   // Deletes an entire day and all its events
   deleteDay(dayId: string) {
     const currentTrip = this.tripSignal();
