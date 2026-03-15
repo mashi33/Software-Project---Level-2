@@ -31,7 +31,8 @@
             </p>
             <div class="hero-actions">
               <button class="btn-create-now" (click)="startItinerary()">
-                <span class="material-symbols-outlined">add_circle</span> Create Your Itinerary
+                <span class="material-symbols-outlined">{{ trip().days.length > 0 ? 'visibility' : 'add_circle' }}</span> 
+                {{ trip().days.length > 0 ? 'View Your Itinerary' : 'Create Your Itinerary' }}
               </button>
             </div>
           </div>
