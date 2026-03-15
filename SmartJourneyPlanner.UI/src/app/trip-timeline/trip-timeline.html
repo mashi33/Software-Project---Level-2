@@ -1,19 +1,40 @@
 <div class="timeline-container">
+  <div class="bg-image-layer"></div>
   
   <div class="content-wrapper">
     @if (trip().days.length > 0) {
       <header class="timeline-header">
-        <div class="header-title">
-          <span class="material-symbols-outlined pin-icon">location_on</span>
-          <h1>{{ trip().name }}</h1>
+        <div class="header-top">
+          <div class="title-container">
+            <span class="material-symbols-outlined pin-icon">location_on</span>
+            <h1>Sri Lanka Journey</h1>
+          </div>
+          <p class="header-subtitle">Your complete itinerary for exploring the pearl of the Indian Ocean</p>
         </div>
-        <div class="header-actions">
-          <button class="btn-export" (click)="exportToCalendar()">
-            <span class="material-symbols-outlined">calendar_today</span> Export
-          </button>
+
+        <div class="stats-card">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Total Days</span>
+              <span class="stat-value">{{ trip().days.length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Activities</span>
+              <span class="stat-value">{{ totalActivities }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Completed</span>
+              <span class="stat-value">{{ completedActivities }}/{{ totalActivities }}</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="btn-export" (click)="exportToCalendar()">
+              <span class="material-symbols-outlined">ios_share</span> Export to Calendar
+            </button>
+          </div>
         </div>
       </header>
-
+      
       <div class="days-container">
         @for (day of trip().days; track day.id) {
           <div class="day-wrapper">
@@ -25,9 +46,10 @@
               <div class="day-header">
                 <div class="day-title-area">
                   <h2>Day {{ getDayIndex(day) }}</h2>
-                  <div class="day-date">
+                  <div class="day-date clickable" (click)="triggerDatePicker(day.id)">
                     <span class="material-symbols-outlined">calendar_today</span>
                     <span>{{ day.date }}</span>
+                    <input type="date" [id]="'date-picker-' + day.id" class="hidden-date-picker" (change)="onDateChange($event, day.id)">
                   </div>
                 </div>
                 
@@ -43,11 +65,11 @@
               </div>
               
               <div class="event-list"
-                  cdkDropList
-                  [id]="day.id"
-                  [cdkDropListData]="day.events"
-                  [cdkDropListConnectedTo]="connectedTo"
-                  (cdkDropListDropped)="drop($event)">
+                   cdkDropList
+                   [id]="day.id"
+                   [cdkDropListData]="day.events"
+                   [cdkDropListConnectedTo]="connectedTo"
+                   (cdkDropListDropped)="drop($event)">
                 
                 @for (event of day.events; track event.id) {
                   <div class="event-card" [class.completed]="event.status === 'Completed'" cdkDrag>
@@ -92,10 +114,10 @@
           </div>
         }
       </div>
-
+    
       <div class="add-day-container">
         <button class="btn-add-day" (click)="addNewDay()">
-          <span class="material-symbols-outlined">add_circle</span> Add New Day
+          <span class="material-symbols-outlined">add</span> Add Another Day
         </button>
       </div>
 

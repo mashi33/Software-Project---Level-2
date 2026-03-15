@@ -41,6 +41,21 @@ export class TripTimelineComponent {
   };
   selectedDayId: string = ''; // The ID of the day where the add/edit button was clicked
 
+  // --- Date Picker Logic ---
+  onDateChange(event: any, dayId: string) {
+    const newDate = event.target.value;
+    if (newDate) {
+      this.timelineService.updateDayDate(dayId, newDate);
+    }
+  }
+
+  triggerDatePicker(dayId: string) {
+    const picker = document.getElementById('date-picker-' + dayId) as HTMLInputElement;
+    if (picker) {
+      picker.showPicker(); // Modern browser API to trigger the picker
+    }
+  }
+
   // Expose connected boundaries helper for drag and drop
   // This tells Angular which lists an event can be dropped into
   get connectedTo(): string[] {
@@ -178,5 +193,14 @@ export class TripTimelineComponent {
   // --- Export logic ---
   exportToCalendar() {
     CalendarSyncUtil.openInGoogleCalendar(this.trip());
+  }
+
+  // --- Statistics Getters ---
+  get totalActivities(): number {
+    return this.trip().days.reduce((acc, day) => acc + day.events.length, 0);
+  }
+
+  get completedActivities(): number {
+    return this.trip().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }
 }
