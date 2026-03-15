@@ -458,10 +458,10 @@ button {
 
 .btn-add-day:hover {
   border-color: #3b82f6;
-  background: white;
+  background: #eff6ff; /* Soft blue tint */
   color: #2563eb;
-  transform: translateY(-2px); /* Cleaner than scale */
-  box-shadow: 0 15px 30px -10px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -10px rgba(59, 130, 246, 0.2);
 }
 
 /* --- Drag and Drop Professional Styles --- */
@@ -920,4 +920,100 @@ textarea::placeholder {
   width: 100%;
   max-width: 460px;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.add-day-container.centered {
+  margin-top: 6rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-add-day-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 6rem;
+  background: white;
+  color: #3b82f6;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  font-size: 1.75rem;
+  font-weight: 850;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+}
+
+.btn-add-day-hero:hover {
+  transform: translateY(-5px);
+  border-color: #3b82f6;
+  box-shadow: 0 25px 45px -12px rgba(59, 130, 246, 0.2);
+}
+
+/* Professional SweetAlert2 Custom Styling */
+.swal-professional-popup {
+  border-radius: 20px !important;
+  padding: 2rem !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal-professional-title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.swal-professional-html {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.1rem !important;
+  color: #64748b !important;
+  line-height: 1.6 !important;
+}
+
+.swal-professional-confirm-btn {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  padding: 0.8rem 2rem !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease !important;
+  margin: 0.5rem !important;
+}
+
+.swal-professional-cancel-btn {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  padding: 0.8rem 2rem !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease !important;
+  margin: 0.5rem !important;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+/* Success Icon Color */
+.swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #10b981 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border: 4px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Warning Icon Color */
+.swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
 }

@@ -26,6 +26,9 @@ export class TripTimelineComponent {
   // This signal holds the current trip data and updates UI automatically
   trip = this.timelineService.trip;
   
+  // Controls whether the hero landing section or the timeline itself is visible
+  showHero = true;
+
   // Controls whether the Add Event popup is visible
   isModalOpen = false;
   
@@ -63,6 +66,11 @@ export class TripTimelineComponent {
   }
 
   // --- Day logic methods ---
+  // --- Navigation/Flow logic ---
+  startItinerary() {
+    this.showHero = false;
+  }
+
   addNewDay() {
     this.timelineService.addDay();
   }
