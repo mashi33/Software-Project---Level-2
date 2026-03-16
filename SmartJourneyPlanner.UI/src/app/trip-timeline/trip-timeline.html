@@ -31,8 +31,8 @@
             </p>
             <div class="hero-actions">
               <button class="btn-create-now" (click)="startItinerary()">
-                <span class="material-symbols-outlined">{{ trip().days.length > 0 ? 'visibility' : 'add_circle' }}</span> 
-                {{ trip().days.length > 0 ? 'View Your Itinerary' : 'Create Your Itinerary' }}
+                <span class="material-symbols-outlined">{{ timeline().days.length > 0 ? 'visibility' : 'add_circle' }}</span> 
+                {{ timeline().days.length > 0 ? 'View Your Itinerary' : 'Create Your Itinerary' }}
               </button>
             </div>
           </div>
@@ -52,7 +52,7 @@
           <div class="stats-grid">
             <div class="stat-item">
               <span class="stat-label">Total Days</span>
-              <span class="stat-value">{{ trip().days.length }}</span>
+              <span class="stat-value">{{ timeline().days.length }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">Activities</span>
@@ -71,9 +71,9 @@
         </div>
       </header>
 
-      @if (trip().days.length > 0) {
+      @if (timeline().days.length > 0) {
         <div class="days-container">
-          @for (day of trip().days; track day.id) {
+          @for (day of timeline().days; track day.id) {
             <div class="day-wrapper">
               <div class="day-circle">
                 <span>{{ getDayIndex(day) }}</span>
@@ -130,7 +130,7 @@
                       <div class="event-actions">
                         <!-- Status Toggle -->
                         <button class="action-btn status-btn" 
-                                (click)="toggleStatus(event)" 
+                                (click)="toggleStatus(day.id, event)" 
                                 [class.is-done]="event.status === 'Completed'"
                                 [title]="event.status === 'Completed' ? 'Mark Pending' : 'Mark Completed'">
                           <span class="material-symbols-outlined">{{ event.status === 'Completed' ? 'check_circle' : 'radio_button_unchecked' }}</span>
@@ -140,7 +140,7 @@
                           <span class="material-symbols-outlined">edit</span>
                         </button>
                         <!-- Delete -->
-                        <button class="action-btn delete-btn" (click)="deleteEvent(event)" title="Delete Event">
+                        <button class="action-btn delete-btn" (click)="deleteEvent(day.id, event)" title="Delete Event">
                           <span class="material-symbols-outlined">delete_outline</span>
                         </button>
                       </div>
@@ -176,18 +176,29 @@
     <form (submit)="onSubmit($event)">
       <div class="form-group">
         <label>Title</label>
-        <input type="text" [(ngModel)]="formData.title" name="title" required placeholder="e.g. Visit Temple">
+        <input type="text" [(ngModel)]="formData.title" name="title" required 
+               [class.invalid]="formTouched.title && formErrors.title"
+               (blur)="handleBlur('title')"
+               placeholder="e.g. Visit Temple">
+        <span class="error-msg" *ngIf="formTouched.title && formErrors.title">{{ formErrors.title }}</span>
       </div>
       
       <div class="form-group">
         <label>Time</label>
-        <input type="time" [(ngModel)]="formData.time" name="time" required>
+        <input type="time" [(ngModel)]="formData.time" name="time" required
+               [class.invalid]="formTouched.time && formErrors.time"
+               (blur)="handleBlur('time')">
+        <span class="error-msg" *ngIf="formTouched.time && formErrors.time">{{ formErrors.time }}</span>
       </div>
       
       <div class="form-row">
         <div class="form-group half-width">
           <label>Location</label>
-          <input type="text" [(ngModel)]="formData.location" name="location" required placeholder="Address or Name">
+          <input type="text" [(ngModel)]="formData.location" name="location" required 
+                 [class.invalid]="formTouched.location && formErrors.location"
+                 (blur)="handleBlur('location')"
+                 placeholder="Address or Name">
+          <span class="error-msg" *ngIf="formTouched.location && formErrors.location">{{ formErrors.location }}</span>
         </div>
         <div class="form-group half-width">
           <label>Category</label>
@@ -207,7 +218,7 @@
       
       <div class="modal-actions">
         <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
-        <button type="submit" class="btn-save">Save Event</button>
+        <button type="submit" class="btn-save" [class.btn-disabled]="isFormInvalid">Save Event</button>
       </div>
     </form>
   </div>

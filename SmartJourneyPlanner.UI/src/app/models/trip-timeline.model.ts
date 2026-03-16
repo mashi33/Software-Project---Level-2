@@ -1,5 +1,5 @@
 // Represents a single activity/event in the trip (e.g., a hotel check-in or a dinner)
-export interface TripEvent {
+export interface TimelineEvent {
   id: string;
   title: string;
   description: string;
@@ -11,17 +11,17 @@ export interface TripEvent {
 }
 
 // Represents a single day in the trip, containing multiple events
-export interface TripDay {
+export interface TimelineDay {
   id: string;
   date: string;
-  events: TripEvent[];
+  events: TimelineEvent[];
 }
 
 // Represents the entire Trip, containing all days and general info
-export interface Trip {
+export interface TimelinePlan {
   id: string;
   name: string;
   startDate: string;
   endDate: string;
-  days: TripDay[];
+  days: TimelineDay[];
 }

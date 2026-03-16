@@ -1,11 +1,11 @@
-import { Trip } from '../models/trip-timeline.model';
+import { TimelinePlan } from '../models/trip-timeline.model';
 
 export class CalendarSyncUtil {
   
-  static generateICS(trip: Trip): string {
+  static generateICS(timeline: TimelinePlan): string {
     let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//SmartJourneyPlanner//TripTimeline//EN\n";
 
-    trip.days.forEach(day => {
+    timeline.days.forEach(day => {
       // Parse the 'YYYY-MM-DD (Day X)' format dummy date to base date
       const datePart = day.date.split(' ')[0]; // E.g., '2024-05-10'
       const baseDate = new Date(datePart);
@@ -43,12 +43,12 @@ export class CalendarSyncUtil {
     return icsContent;
   }
 
-  static downloadICSFile(trip: Trip) {
-    const icsContent = this.generateICS(trip);
+  static downloadICSFile(timeline: TimelinePlan) {
+    const icsContent = this.generateICS(timeline);
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.download = `${trip.name.replace(/\s+/g, '_')}_Itinerary.ics`;
+    link.download = `${timeline.name.replace(/\s+/g, '_')}_Itinerary.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -58,8 +58,8 @@ export class CalendarSyncUtil {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   }
 
-  static openInGoogleCalendar(trip: Trip) {
-    const title = encodeURIComponent(trip.name);
+  static openInGoogleCalendar(timeline: TimelinePlan) {
+    const title = encodeURIComponent(timeline.name);
     
     const parseToFormat = (dateStr: string) => {
       const d = new Date(dateStr);
@@ -72,10 +72,10 @@ export class CalendarSyncUtil {
     let startStr = '';
     let endStr = '';
 
-    if (trip.days && trip.days.length > 0) {
-      startStr = parseToFormat(trip.days[0].date);
+    if (timeline.days && timeline.days.length > 0) {
+      startStr = parseToFormat(timeline.days[0].date);
       // Google Calendar end date for all-day events is exclusive, so we add 1 day
-      const lastDate = new Date(trip.days[trip.days.length - 1].date);
+      const lastDate = new Date(timeline.days[timeline.days.length - 1].date);
       if (!isNaN(lastDate.getTime())) {
         lastDate.setDate(lastDate.getDate() + 1);
         endStr = parseToFormat(lastDate.toISOString());
@@ -83,15 +83,15 @@ export class CalendarSyncUtil {
         endStr = startStr;
       }
     } else {
-      startStr = parseToFormat(trip.startDate);
-      const endD = new Date(trip.endDate);
+      startStr = parseToFormat(timeline.startDate);
+      const endD = new Date(timeline.endDate);
       endD.setDate(endD.getDate() + 1);
       endStr = parseToFormat(endD.toISOString());
     }
 
-    let details = `Detailed Itinerary for ${trip.name}:\n\n`;
-    if (trip.days) {
-      trip.days.forEach((day, index) => {
+    let details = `Detailed Itinerary for ${timeline.name}:\n\n`;
+    if (timeline.days) {
+      timeline.days.forEach((day, index) => {
         details += `Day ${index + 1} (${day.date}):\n`;
         if(day.events && day.events.length > 0) {
            day.events.forEach(e => {

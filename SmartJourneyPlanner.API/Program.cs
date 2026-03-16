@@ -12,7 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // 2. Register Services (ONLY using what you have)
-builder.Services.AddSingleton<TripService>();
+builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<BudgetService>();
 
 // 3. Add CORS (This lets your Frontend talk to this Backend)

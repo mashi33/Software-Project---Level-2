@@ -1060,3 +1060,22 @@ textarea::placeholder {
   color: #64748b !important;
 }
 
+/* Validation Styles */
+.form-group input.invalid {
+    border-color: #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+.error-msg {
+    color: #dc3545;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: block;
+    font-weight: 500;
+}
+
+.btn-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}

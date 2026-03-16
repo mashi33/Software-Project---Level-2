@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
-import { TripTimelineService } from '../services/trip-timeline.service';
-import { TripDay, TripEvent } from '../models/trip-timeline.model';
+import { TimelineService } from '../services/timeline.service';
+import { TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
 import { CalendarSyncUtil } from '../utils/calendar-sync.util';
 import Swal from 'sweetalert2';
 
@@ -21,10 +21,10 @@ import Swal from 'sweetalert2';
 })
 export class TripTimelineComponent {
   // Injecting the service that handles all our data
-  private timelineService = inject(TripTimelineService);
+  private timelineService = inject(TimelineService);
   
-  // This signal holds the current trip data and updates UI automatically
-  trip = this.timelineService.trip;
+  // This signal holds the current timeline data and updates UI automatically
+  timeline = this.timelineService.timeline;
   
   // Controls whether the hero landing section or the timeline itself is visible
   showHero = true;
@@ -44,6 +44,58 @@ export class TripTimelineComponent {
   };
   selectedDayId: string = ''; // The ID of the day where the add/edit button was clicked
 
+  // --- Validation State ---
+  formTouched = {
+    title: false,
+    time: false,
+    location: false
+  };
+
+  formErrors = {
+    title: '',
+    time: '',
+    location: ''
+  };
+
+  validateForm(): boolean {
+    let isValid = true;
+    
+    // Title validation
+    if (!this.formData.title || this.formData.title.trim() === '') {
+      this.formErrors.title = 'Title is required';
+      isValid = false;
+    } else {
+      this.formErrors.title = '';
+    }
+
+    // Time validation
+    if (!this.formData.time) {
+      this.formErrors.time = 'Time is required';
+      isValid = false;
+    } else {
+      this.formErrors.time = '';
+    }
+
+    // Location validation
+    if (!this.formData.location || this.formData.location.trim() === '') {
+      this.formErrors.location = 'Location is required';
+      isValid = false;
+    } else {
+      this.formErrors.location = '';
+    }
+
+    return isValid;
+  }
+
+  handleBlur(field: 'title' | 'time' | 'location') {
+    this.formTouched[field] = true;
+    this.validateForm();
+  }
+
+  get isFormInvalid(): boolean {
+    return !this.formData.title || !this.formData.time || !this.formData.location;
+  }
+
   // --- Date Picker Logic ---
   onDateChange(event: any, dayId: string) {
     const newDate = event.target.value;
@@ -62,7 +114,7 @@ export class TripTimelineComponent {
   // Expose connected boundaries helper for drag and drop
   // This tells Angular which lists an event can be dropped into
   get connectedTo(): string[] {
-    return this.trip().days.map(d => d.id);
+    return this.timeline().days.map(d => d.id);
   }
 
   // --- Day logic methods ---
@@ -92,16 +144,16 @@ export class TripTimelineComponent {
     });
   }
 
-  getDayIndex(day: TripDay): number {
-    const days = this.trip().days;
+  getDayIndex(day: TimelineDay): number {
+    const days = this.timeline().days;
     return days.findIndex(d => d.id === day.id) + 1;
   }
   
-  completedCount(day: TripDay): number {
+  completedCount(day: TimelineDay): number {
     return day.events.filter(e => e.status === 'Completed').length;
   }
 
-  completionPercentage(day: TripDay): number {
+  completionPercentage(day: TimelineDay): number {
     if (day.events.length === 0) return 0;
     return Math.round((this.completedCount(day) / day.events.length) * 100);
   }
@@ -119,7 +171,7 @@ export class TripTimelineComponent {
   }
 
   // --- Event logic methods ---
-  getCategoryIcon(eventItem: TripEvent): string {
+  getCategoryIcon(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'domain'; // Domain icon looks like a building
       case 'Dining': return 'restaurant';
@@ -129,7 +181,7 @@ export class TripTimelineComponent {
     }
   }
 
-  getCategoryClass(eventItem: TripEvent): string {
+  getCategoryClass(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'cat-hotel';
       case 'Dining': return 'cat-dining';
@@ -139,12 +191,12 @@ export class TripTimelineComponent {
     }
   }
 
-  toggleStatus(eventItem: TripEvent) {
-    this.timelineService.toggleEventStatus(eventItem.dayId, eventItem.id);
+  toggleStatus(dayId: string, eventItem: TimelineEvent) {
+    this.timelineService.toggleEventStatus(dayId, eventItem.id);
   }
 
   // Deletes an event
-  deleteEvent(eventItem: TripEvent) {
+  deleteEvent(dayId: string, eventItem: TimelineEvent) {
     Swal.fire({
       title: 'Delete this event?',
       text: `Are you sure you want to delete "${eventItem.title}"?`,
@@ -155,7 +207,7 @@ export class TripTimelineComponent {
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
-        this.timelineService.deleteEvent(eventItem.dayId, eventItem.id);
+        this.timelineService.deleteEvent(dayId, eventItem.id);
       }
     });
   }
@@ -165,13 +217,17 @@ export class TripTimelineComponent {
     this.selectedDayId = dayId;
     this.editingEventId = null;
     this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
+    this.formTouched = { title: false, time: false, location: false };
+    this.formErrors = { title: '', time: '', location: '' };
     this.isModalOpen = true;
   }
 
-  openEditEventModal(dayId: string, eventItem: TripEvent) {
+  openEditEventModal(dayId: string, eventItem: TimelineEvent) {
     this.selectedDayId = dayId;
     this.editingEventId = eventItem.id;
     this.formData = { ...eventItem };
+    this.formTouched = { title: false, time: false, location: false };
+    this.formErrors = { title: '', time: '', location: '' };
     this.isModalOpen = true;
   }
 
@@ -182,10 +238,14 @@ export class TripTimelineComponent {
   // This saves the new or edited event from the form
   onSubmit(e: Event) {
     e.preventDefault();
-    if (this.formData.title && this.formData.time && this.selectedDayId) {
+    
+    // Mark all fields as touched to show errors if user tries to submit empty
+    this.formTouched = { title: true, time: true, location: true };
+    
+    if (this.validateForm() && this.selectedDayId) {
       if (this.editingEventId) {
         // Send updated data to the service. We know the dayId is the same.
-        this.timelineService.updateEvent(this.selectedDayId, { ...this.formData, id: this.editingEventId, dayId: this.selectedDayId } as TripEvent);
+        this.timelineService.updateEvent(this.selectedDayId, { ...this.formData, id: this.editingEventId, dayId: this.selectedDayId } as TimelineEvent);
       } else {
         // Brand new event
         this.timelineService.addEvent(this.selectedDayId, { ...this.formData, dayId: this.selectedDayId });
@@ -200,15 +260,25 @@ export class TripTimelineComponent {
 
   // --- Export logic ---
   exportToCalendar() {
-    CalendarSyncUtil.openInGoogleCalendar(this.trip());
+    if (this.totalActivities === 0) {
+      Swal.fire({
+        title: 'Timeline is Empty',
+        text: 'Please add some events to your timeline before exporting to calendar.',
+        icon: 'warning',
+        iconColor: '#f8bb86',
+        confirmButtonColor: '#f8bb86'
+      });
+      return;
+    }
+    CalendarSyncUtil.openInGoogleCalendar(this.timeline());
   }
 
   // --- Statistics Getters ---
   get totalActivities(): number {
-    return this.trip().days.reduce((acc, day) => acc + day.events.length, 0);
+    return this.timeline().days.reduce((acc, day) => acc + day.events.length, 0);
   }
 
   get completedActivities(): number {
-    return this.trip().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
+    return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }
 }
