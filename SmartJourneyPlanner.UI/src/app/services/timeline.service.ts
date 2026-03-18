@@ -30,18 +30,26 @@ export class TimelineService {
   // Initializes the timeline from the backend or creates a new one if none exists
   private async initTimeline() {
     try {
-      console.log('Fetching timeline from:', this.apiUrl);
+      console.log(`[TimelineService] FETCHING timeline from: ${this.apiUrl}`);
       const plans = await firstValueFrom(this.http.get<TimelinePlan[]>(this.apiUrl));
-      console.log('Plans received from backend:', plans);
+      
       if (plans && plans.length > 0) {
-        this.timelineSignal.set(plans[0]); // Load the first existing plan
+        let plan = plans[0];
+        // SANITIZATION: If backend returns "string" as ID, treat it as empty
+        if (plan.id === 'string') {
+          console.warn('[TimelineService] DATA CORRUPTION: Received literal "string" as ID. Sanitizing...');
+          plan.id = '';
+        }
+        
+        console.log(`[TimelineService] SUCCESS: Loaded plan. ID: ${plan.id || 'NEW'}`, plan);
+        this.timelineSignal.set(plan);
       } else {
-        console.log('No existing plans found on backend.');
+        console.warn('[TimelineService] EMPTY: No plans found on backend. Starting fresh.');
       }
     } catch (error: any) {
-      console.error('Failed to load timeline from backend:', error);
+      console.error('[TimelineService] ERROR loading timeline:', error);
       if (error.status === 0) {
-        console.error('CRITICAL: Backend API is offline or unreachable at', this.apiUrl);
+        console.error(`[TimelineService] CONNECTION FAILURE: Backend at ${this.apiUrl} is unreachable.`);
       }
     }
   }
@@ -49,34 +57,29 @@ export class TimelineService {
   // Saves the current timeline state to the backend
   private async saveToBackend() {
     const currentPlan = this.timelineSignal();
-    console.log('Attempting to save timeline:', currentPlan);
-    
-    // We create a copy to avoid mutating the signal directly
     const planToSave = { ...currentPlan };
     
-    // If ID is empty, we remove it so the backend/MongoDB can generate a proper ObjectId
+    // If ID is empty, remove it to let MongoDB generate one
     if (!planToSave.id || planToSave.id === '') {
       delete (planToSave as any).id;
     }
 
     try {
-      if (currentPlan.id) {
-        // Update existing plan
-        console.log('UPDATING existing plan with ID:', currentPlan.id);
+      // SANITIZATION: Treat "string" as NO ID to force a POST (create) instead of a failing PUT
+      if (currentPlan.id && currentPlan.id !== 'string') {
+        console.log(`[TimelineService] UPDATING plan: ${currentPlan.id}`);
         await firstValueFrom(this.http.put(`${this.apiUrl}/${currentPlan.id}`, planToSave));
-        console.log('Timeline updated successfully');
+        console.log('[TimelineService] UPDATE SUCCESSful');
       } else {
-        // Create new plan
-        console.log('CREATING new plan on backend...');
+        console.log('[TimelineService] CREATING new plan (ID was empty or "string")...');
         const newPlan = await firstValueFrom(this.http.post<TimelinePlan>(this.apiUrl, planToSave));
-        console.log('Response from POST:', newPlan);
         this.timelineSignal.set(newPlan);
-        console.log('New timeline created successfully with ID:', newPlan.id);
+        console.log(`[TimelineService] CREATE SUCCESSful. New ID: ${newPlan.id}`);
       }
     } catch (error: any) {
-      console.error('Failed to save timeline to backend:', error);
+      console.error('[TimelineService] SAVE ERROR:', error);
       if (error.status === 0) {
-        console.error('CRITICAL: Cannot save because Backend API is offline at', this.apiUrl);
+        console.error(`[TimelineService] SAVE FAILED: Backend unreachable at ${this.apiUrl}`);
       }
     }
   }

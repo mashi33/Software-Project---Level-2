@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 
@@ -13,14 +14,50 @@ namespace SmartJourneyPlanner.API.Services
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
             
-            _timelineCollection = database.GetCollection<TimelinePlan>("TimelineHierarchy");
+            _timelineCollection = database.GetCollection<TimelinePlan>(settings.Value.CollectionName);
         }
 
         public async Task<List<TimelinePlan>> GetAsync()
         {
-            var plans = await _timelineCollection.Find(_ => true).ToListAsync();
-            Console.WriteLine($"[TimelineService] Found {plans.Count} plans in MongoDB.");
-            return plans;
+            try 
+            {
+                // We get the collection as BsonDocument to handle potential deserialization errors
+                // caused by corrupted data points (e.g. literal "string" as ID).
+                var rawCollection = _timelineCollection.Database.GetCollection<BsonDocument>(_timelineCollection.CollectionNamespace.CollectionName);
+                var rawDocuments = await rawCollection.Find(new BsonDocument()).ToListAsync();
+                var validPlans = new List<TimelinePlan>();
+
+                foreach (BsonDocument doc in rawDocuments)
+                {
+                    try 
+                    {
+                        // Use the BsonSerializer to manually convert the BsonDocument to our model
+                        var plan = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<TimelinePlan>(doc);
+                        
+                        // Additional safety check for the "string" ID issue
+                        if (plan != null && !string.IsNullOrEmpty(plan.Id) && !plan.Id.Equals("string", StringComparison.OrdinalIgnoreCase))
+                        {
+                            validPlans.Add(plan);
+                        }
+                        else 
+                        {
+                            Console.WriteLine($"[TimelineService] Skipping plan with invalid/placeholder ID: {plan?.Id ?? "null"}");
+                        }
+                    }
+                    catch (Exception deserializeEx)
+                    {
+                        Console.WriteLine($"[TimelineService] ERROR deserializing document: {deserializeEx.Message}. Skipping document.");
+                    }
+                }
+
+                Console.WriteLine($"[TimelineService] Returning {validPlans.Count} valid plans out of {rawDocuments.Count} documents.");
+                return validPlans;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TimelineService] CRITICAL ERROR in GetAsync: {ex.Message}");
+                return new List<TimelinePlan>();
+            }
         }
 
         public async Task<TimelinePlan?> GetAsync(string id) =>
@@ -29,7 +66,7 @@ namespace SmartJourneyPlanner.API.Services
         public async Task CreateAsync(TimelinePlan newPlan)
         {
             Console.WriteLine($"[TimelineService] Creating new plan: {newPlan.Name} with {newPlan.Days.Count} days.");
-            if (string.IsNullOrEmpty(newPlan.Id)) 
+            if (string.IsNullOrEmpty(newPlan.Id) || newPlan.Id.Equals("string", StringComparison.OrdinalIgnoreCase)) 
             {
                 newPlan.Id = null;
             }

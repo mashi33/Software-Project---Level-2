@@ -1079,3 +1079,138 @@ textarea::placeholder {
     cursor: not-allowed !important;
     pointer-events: none !important;
 }
+
+/* --- Responsive Adjustments --- */
+
+/* Tablet and Smaller Desktops (up to 1024px) */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    padding: 2rem 1.5rem;
+  }
+
+  .stats-card {
+    margin-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .stats-grid {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Devices (up to 768px) */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.75rem;
+  }
+
+  .hero-description {
+    font-size: 1.1rem;
+  }
+
+  .btn-add-day-hero {
+    padding: 2rem 3rem;
+    font-size: 1.4rem;
+    width: 90%;
+  }
+
+  .day-wrapper {
+    gap: 1rem;
+  }
+
+  .day-wrapper::before {
+    left: 20px;
+  }
+
+  .day-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .day-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .day-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .event-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .category-box {
+    width: 40px;
+    height: 40px;
+  }
+
+  .event-actions {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .event-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .half-width {
+    width: 100%;
+  }
+}
+
+/* Small Mobile Devices (up to 480px) */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .header-top h1 {
+    font-size: 2.25rem;
+  }
+
+  .btn-export {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .day-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-add, .btn-delete {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .completion-text {
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+}
