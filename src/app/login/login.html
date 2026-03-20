@@ -1,0 +1,49 @@
+
+<body>
+
+<div class="container">
+  
+  <!-- Left Login Panel -->
+  <div class="login-panel">
+    <h2>Login</h2>
+
+    <input 
+       type="email" 
+       name="email" 
+       [(ngModel)]="loginData.email"
+       placeholder="Email">
+
+    <input 
+       type="password" 
+       name="password" 
+       [(ngModel)]="loginData.password"
+       placeholder="Password">
+
+    <div class="options">
+      <label>
+        <input type="checkbox"> Remember
+      </label>
+      <a href="#">Forgot Password?</a>
+    </div>
+
+    <button class="btn-login" (click)="onLogin()">LOGIN</button>
+
+    <p class="signup">
+      Don't have an account? 
+      <a routerLink="/signup">Sign up</a>
+    </p>
+  </div>
+
+  <!-- Right Image Panel -->
+  <div class="image-panel">
+    <div class="overlay-text">
+      <h3>Explore the World,<br>Beyond Boundaries!</h3>
+      <p>Start your adventure today</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+
+

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Journey Planner</title>
+
+
+
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="left">
+    <h1>Smart Journey Planner</h1>
+    <p class="subtitle">Explore more. Experience Life</p>
+
+    <h2>Begin Your Adventure</h2>
+    <p class="small">Sign up with Open account</p>
+
+    <!-- SOCIAL ICON BUTTONS -->
+    <!--<div class="social">
+      <button class="google-btn">
+      <img src="https://up.yimg.com/ib/th/id/OIP.AfKMLf4rKX7EqOSAVpujIQHaEK?pid=Api&rs=1&c=1&qlt=95&w=174&h=98" alt="Google">
+      </button>
+
+
+      <button class="facebook">
+        <i class="fa-brands fa-facebook-f"></i>
+      </button>
+    </div>
+
+    <div class="or">or</div>-->
+
+    <input type="text" name="FullName" [(ngModel)]="signupData.FullName" placeholder="User Name">
+    <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="E mail">
+
+    <input type="password" name="Password" [(ngModel)]="signupData.Password" placeholder="Password">
+    <div class="role-selection">
+        <label for="role">Your Role : </label>
+        <select name="UserType" [(ngModel)]="signupData.UserType">
+  <option value="Traveller">Traveller</option>
+  <option value="TransportProvider">Transport Provider</option>
+ 
+</select>
+    </div>
+
+<div class="options">
+
+  <div class="remember">
+    <input type="checkbox" id="rem">
+    <label for="rem">Remember</label>
+  </div>
+
+  <p class="login-text">
+    Already have an account?
+    <a routerLink="/login">Login</a>
+  </p>
+
+</div>
+
+
+    <button class="start-btn" (click)="onSignup()">Let's start</button>
+  </div>
+
+  <div class="right">
+    <div class="overlay">
+      <h3>Explore the World,<br>Beyond Boundaries!</h3>
+      <p>Start your adventure today</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+
