@@ -1,3 +1,6 @@
+// This service handles all the data operations for the Trip Timeline.
+// It talks to the backend API to save and load trip information.
+
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TimelinePlan, TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
@@ -9,9 +12,11 @@ import { firstValueFrom } from 'rxjs';
 })
 export class TimelineService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:5125/api/Timeline'; // Updated to match currently running backend port
+  // The URL where our backend server is running
+  private apiUrl = 'http://localhost:5125/api/Timeline'; 
 
-  // We use Angular Signals here. It's the modern way to handle changing data.
+  // We use a Signal to hold the trip data. 
+  // Any component using this signal will update automatically when the data changes.
   private timelineSignal = signal<TimelinePlan>({
     id: '',
     name: 'My New Trip',
@@ -20,14 +25,15 @@ export class TimelineService {
     days: []
   });
 
-  // We expose "timeline" as a computed signal so components can safely read it (but not directly change it).
+  // This is a read-only version of the signal for other components to use
   timeline = computed(() => this.timelineSignal());
 
   constructor() {
+    // When the app starts, we immediately try to load the trip from the database
     this.initTimeline();
   }
 
-  // Initializes the timeline from the backend or creates a new one if none exists
+  // Gets the trip data from the backend API
   private async initTimeline() {
     try {
       console.log(`[TimelineService] FETCHING timeline from: ${this.apiUrl}`);
@@ -35,13 +41,14 @@ export class TimelineService {
       
       if (plans && plans.length > 0) {
         let plan = plans[0];
-        // SANITIZATION: If backend returns "string" as ID, treat it as empty
+        // If the ID is just the word "string", it might be corrupted data, so we clear it
         if (plan.id === 'string') {
           console.warn('[TimelineService] DATA CORRUPTION: Received literal "string" as ID. Sanitizing...');
           plan.id = '';
         }
         
         console.log(`[TimelineService] SUCCESS: Loaded plan. ID: ${plan.id || 'NEW'}`, plan);
+        // Save the loaded data into our signal
         this.timelineSignal.set(plan);
       } else {
         console.warn('[TimelineService] EMPTY: No plans found on backend. Starting fresh.');
@@ -54,23 +61,24 @@ export class TimelineService {
     }
   }
 
-  // Saves the current timeline state to the backend
+  // Sends the current trip data to the backend to be saved in the database
   private async saveToBackend() {
     const currentPlan = this.timelineSignal();
     const planToSave = { ...currentPlan };
     
-    // If ID is empty, remove it to let MongoDB generate one
+    // If it's a brand new trip (no ID), we let the database create an ID for us
     if (!planToSave.id || planToSave.id === '') {
       delete (planToSave as any).id;
     }
 
     try {
-      // SANITIZATION: Treat "string" as NO ID to force a POST (create) instead of a failing PUT
       if (currentPlan.id && currentPlan.id !== 'string') {
+        // If trip already exists, we use "PUT" to update it
         console.log(`[TimelineService] UPDATING plan: ${currentPlan.id}`);
         await firstValueFrom(this.http.put(`${this.apiUrl}/${currentPlan.id}`, planToSave));
         console.log('[TimelineService] UPDATE SUCCESSful');
       } else {
+        // If it's new, we use "POST" to create it
         console.log('[TimelineService] CREATING new plan (ID was empty or "string")...');
         const newPlan = await firstValueFrom(this.http.post<TimelinePlan>(this.apiUrl, planToSave));
         this.timelineSignal.set(newPlan);
@@ -78,25 +86,24 @@ export class TimelineService {
       }
     } catch (error: any) {
       console.error('[TimelineService] SAVE ERROR:', error);
-      if (error.status === 0) {
-        console.error(`[TimelineService] SAVE FAILED: Backend unreachable at ${this.apiUrl}`);
-      }
     }
   }
 
+  // Returns the current plan data
   getTimeline(): TimelinePlan {
     return this.timelineSignal();
   }
 
-  // --- Basic Actions (Add, Update, Delete) ---
+  // --- Actions ---
 
-  // Adds a new empty day to the timeline
+  // Adds a new day to the trip and calculates the next date automatically
   async addDay() {
     const currentPlan = this.timelineSignal();
     const days = currentPlan.days;
     let nextDateStr = '';
     
     if (days.length > 0) {
+       // If we already have days, set the new day to be the day after the last one
        const lastDateStr = days[days.length - 1].date;
        const lastDate = new Date(lastDateStr);
        
@@ -108,11 +115,8 @@ export class TimelineService {
            nextDateStr = 'Date TBD';
        }
     } else {
+        // If it's the first day, use today's date
         let startDate = new Date();
-        if (currentPlan.startDate) {
-            const [y, m, d] = currentPlan.startDate.split('-').map(Number);
-            if (y && m && d) startDate = new Date(y, m - 1, d);
-        }
         nextDateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
 
@@ -122,6 +126,7 @@ export class TimelineService {
       events: []
     };
 
+    // Update the signal and then save to database
     this.timelineSignal.set({ 
       ...currentPlan, 
       days: [...days, newDay] 
@@ -130,16 +135,15 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Changes the name of the trip
   async updateTimelineName(newName: string) {
-    if (!newName || newName.trim() === '') {
-      console.warn('Cannot update timeline name to an empty string.');
-      return;
-    }
+    if (!newName || newName.trim() === '') return;
     const currentPlan = this.timelineSignal();
     this.timelineSignal.set({ ...currentPlan, name: newName });
     await this.saveToBackend();
   }
 
+  // Updates the date of a specific day and re-orders the list of days
   async updateDayDate(dayId: string, newDateStrYYYYMMDD: string) {
     const currentPlan = this.timelineSignal();
     
@@ -158,6 +162,7 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Removes a day from the trip
   async deleteDay(dayId: string) {
     const currentPlan = this.timelineSignal();
     const updatedDays = currentPlan.days.filter(d => d.id !== dayId);
@@ -165,11 +170,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Adds a new activity/event to a specific day
   async addEvent(dayId: string, event: Omit<TimelineEvent, 'id'>) {
-    if (!event.title || event.title.trim() === '' || !event.time || !event.location || event.location.trim() === '') {
-      console.error('Validation failed: Title, Time, and Location are required for an event.', event);
-      return;
-    }
+    if (!event.title || !event.time || !event.location) return;
 
     const currentPlan = this.timelineSignal();
     
@@ -191,11 +194,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Updates an existing activity (e.g. changing the time or title)
   async updateEvent(dayId: string, updatedEvent: TimelineEvent) {
-    if (!updatedEvent.title || updatedEvent.title.trim() === '' || !updatedEvent.time || !updatedEvent.location || updatedEvent.location.trim() === '') {
-      console.error('Validation failed: Title, Time, and Location are required for an event update.', updatedEvent);
-      return;
-    }
+    if (!updatedEvent.title || !updatedEvent.time || !updatedEvent.location) return;
     const currentPlan = this.timelineSignal();
 
     const updatedDays = currentPlan.days.map(day => {
@@ -212,6 +213,7 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Removes a single activity from a day
   async deleteEvent(dayId: string, eventId: string) {
     const currentPlan = this.timelineSignal();
 
@@ -229,6 +231,7 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Toggles an activity between "Pending" and "Completed"
   async toggleEventStatus(dayId: string, eventId: string) {
     const currentPlan = this.timelineSignal();
 
@@ -251,6 +254,7 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
+  // Handles moving an activity up/down or into another day (Drag and Drop)
   async reorderEvents(
     previousDayId: string,
     currentDayId: string,
@@ -265,9 +269,11 @@ export class TimelineService {
     if (!prevDay || !currDay) return;
 
     if (previousDayId === currentDayId) {
+      // Reordering in the same day
       moveItemInArray(prevDay.events, previousIndex, currentIndex);
     } 
     else {
+      // Moving to a different day
       transferArrayItem(
         prevDay.events,
         currDay.events,

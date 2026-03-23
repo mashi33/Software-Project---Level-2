@@ -1,8 +1,10 @@
+/* Root styles for the whole component */
 :host {
   display: block;
   width: 100%;
 }
 
+/* Main container that holds everything */
 .timeline-container {
   display: flex;
   flex-direction: column;
@@ -18,6 +20,7 @@
   letter-spacing: -0.015em;
 }
 
+/* Background image of the tea plantation */
 .bg-image-layer {
   position: absolute;
   top: 0;
@@ -35,6 +38,7 @@
 
 
 
+/* Centers the content and limits how wide it can get */
 .content-wrapper {
   width: 100%;
   max-width: 1200px;
@@ -73,6 +77,7 @@
   max-width: 800px; /* Keep text readable while title spreads out */
 }
 
+/* Styles for the top header section */
 .timeline-header {
   margin-bottom: 2rem;
   padding: 0;
@@ -94,6 +99,7 @@
   font-weight: 400;
 }
 
+/* Card showing counts of days and activities */
 .stats-card {
   background: white;
   border: 1px solid #e2e8f0;
@@ -273,6 +279,7 @@
 }
 
 /* Day Sections */
+/* Container for all the trip days */
 .days-container {
   display: flex;
   flex-direction: column;
@@ -289,6 +296,7 @@
 }
 
 /* The vertical timeline line */
+/* Vertical line connecting the day circles */
 .day-wrapper::before {
   content: '';
   position: absolute;
@@ -305,6 +313,7 @@
   display: none;
 }
 
+/* Blue circle showing the day number */
 .day-circle {
   flex-shrink: 0;
   width: 48px;
@@ -508,6 +517,7 @@ button {
 }
 
 /* event layout */
+/* Card for a single activity/event */
 .event-card {
   display: flex;
   background: rgba(255, 255, 255, 0.95);
@@ -642,6 +652,7 @@ button {
 }
 
 /* modal styling */
+/* Full screen background for the popup */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -799,6 +810,7 @@ textarea::placeholder {
   font-size: 64px; /* Reduced from 80px */
 }
 
+/* Floating decoration icons on the welcome screen */
 .floating-icon {
   position: absolute;
   width: 56px; /* Reduced from 70px */
@@ -817,6 +829,7 @@ textarea::placeholder {
   font-size: 28px; /* Reduced */
 }
 
+/* Positions for the floating icons */
 .icon-hotel { top: 0; left: 0; }
 .icon-dining { top: 20px; right: 0; }
 .icon-explore { bottom: 0; right: 40px; }
@@ -913,6 +926,7 @@ textarea::placeholder {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Styling for the box inside the "Add Event" popup */
 .modal-content {
   background: #ffffff;
   padding: 1.75rem 2rem;
@@ -929,6 +943,7 @@ textarea::placeholder {
   width: 100%;
 }
 
+/* Big welcome button used in the hero layout */
 .btn-add-day-hero {
   display: flex;
   flex-direction: column;
@@ -951,7 +966,8 @@ textarea::placeholder {
   box-shadow: 0 25px 45px -12px rgba(59, 130, 246, 0.2);
 }
 
-/* --- Comprehensive SweetAlert2 Refinement --- */
+/* --- SweetAlert2 (Confirmation Popup) Refinement --- */
+/* These styles make the standard browser alerts look more professional */
 ::ng-deep .swal2-popup {
   width: 22rem !important; /* Significantly smaller width */
   padding: 1.25rem !important;
@@ -1061,11 +1077,13 @@ textarea::placeholder {
 }
 
 /* Validation Styles */
+/* Changes the input border to red if the information is missing or wrong */
 .form-group input.invalid {
     border-color: #dc3545 !important;
     background-color: rgba(220, 53, 69, 0.05) !important;
 }
 
+/* Small red text shown below an input when there is an error */
 .error-msg {
     color: #dc3545;
     font-size: 0.75rem;
@@ -1074,13 +1092,15 @@ textarea::placeholder {
     font-weight: 500;
 }
 
+/* Makes the 'Save' button semi-transparent when it cannot be clicked */
 .btn-disabled {
     opacity: 0.5 !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
 }
 
-/* --- Responsive Adjustments --- */
+/* --- Responsive Adjustments (Mobile/Tablet Support) --- */
+/* These styles change the layout when the screen is small (like on a phone) */
 
 /* Tablet and Smaller Desktops (up to 1024px) */
 @media (max-width: 1024px) {
