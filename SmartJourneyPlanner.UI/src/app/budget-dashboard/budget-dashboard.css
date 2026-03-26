@@ -1,0 +1,330 @@
+/* === 1. MAIN CONTAINER & BACKGROUND === */
+.main-container {
+  /* Soft fade from light blue to light gray (Original Theme) */
+  background: linear-gradient(135deg, #E0F7FA 0%, #ECEFF1 100%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === 2. NAVBAR (Deep Blue) === */
+.navbar {
+  background-color: #0A4087;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.nav-item {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: opacity 0.3s;
+}
+
+  .nav-item:hover {
+    opacity: 0.8;
+  }
+
+  .nav-item.highlight {
+    color: #FFD700;
+  }
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.menu-icon {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: white;
+}
+
+.brand-logo {
+  background-color: #002255;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  color: white;
+}
+
+.brand-title {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.brand-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+}
+
+/* User Profile */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+}
+
+.user-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+/* === 3. CONTENT LAYOUT & CARDS === */
+.content-wrapper {
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.header-section {
+  margin-bottom: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.trip-selector {
+  margin-left: 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+}
+
+/* White Cards */
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+  border: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header-blue {
+  background-color: transparent;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  color: #00838F;
+  text-align: center;
+}
+
+.card-header-white {
+  padding: 15px;
+  text-align: center;
+  color: #00838F;
+  border-bottom: 1px solid #eee;
+}
+
+/* === 4. TABLE STYLES === */
+.table-container {
+  padding: 20px;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header-row {
+  background-color: #B2EBF2;
+}
+
+.custom-table th {
+  padding: 12px;
+  text-align: left;
+  color: #006064;
+  font-weight: bold;
+}
+
+.custom-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ✅ FIXED: Uniform Teal Color Pill */
+.category-pill {
+  background-color: #E0F7FA; /* Light Teal Background */
+  color: #006064; /* Dark Teal Text */
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.total-row {
+  background-color: #E0F7FA;
+  font-weight: bold;
+  color: #006064;
+}
+
+/* === 5. BUTTONS === */
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.btn-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-right: 10px;
+}
+
+.add-btn-wrapper {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.btn-add-teal {
+  background-color: #00838F;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+  .btn-add-teal:hover {
+    background-color: #006064;
+  }
+
+/* === 6. CHART & LEGEND === */
+.chart-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 20px;
+  flex-grow: 1;
+}
+
+.chart-container {
+  height: 200px;
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.custom-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 80%;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #555;
+  padding: 6px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-weight: 600;
+  color: #006064;
+}
+
+/* === 7. EMPTY STATE === */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.empty-state h3 {
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  margin: 0 auto;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.background-container {
+  background-image: url('/Budget_bg.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
