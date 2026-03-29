@@ -1,0 +1,256 @@
+<div class="pf-container">
+  <div class="pf-header">
+    <h2>List Your Vehicle</h2>
+    <p>Join our secure provider network</p>
+  </div>
+
+  <form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="pf-form">
+    
+    <!-- Section 0: Profile Section -->
+    <div class="pf-section" formGroupName="providerProfile">
+      <h3>1. Provider Profile</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control pf-input" formControlName="name" placeholder="e.g. John Doe">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" class="form-control pf-input" formControlName="phone" placeholder="e.g. +94 77 123 4567">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Location</label>
+          <input type="text" class="form-control pf-input" formControlName="location" placeholder="e.g. Colombo, LK">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Vehicle Details -->
+    <div class="pf-section">
+      <h3>2. Vehicle Information</h3>
+      
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Vehicle Class</label>
+          <select class="form-select pf-input" formControlName="vehicleClass">
+            <option *ngFor="let cls of vehicleClasses" [value]="cls">{{cls}}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Category</label>
+          <select class="form-select pf-input" formControlName="type">
+            <option *ngFor="let type of vehicleTypes" [value]="type">{{type}}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Year of Manufacture</label>
+          <input type="number" class="form-control pf-input" formControlName="yearOfManufacture">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Seat Count</label>
+          <input type="number" class="form-control pf-input" formControlName="seatCount" min="1">
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-12">
+          <label class="form-label">Description (Make, Model)</label>
+          <input type="text" class="form-control pf-input" formControlName="description" placeholder="e.g. Toyota Prius - Excellent Condition">
+        </div>
+      </div>
+
+      <div class="mt-3 pf-checkbox-group">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="acSwitch" formControlName="isAc">
+          <label class="form-check-label" for="acSwitch">A/C Available</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Rates & Fees -->
+    <div class="pf-section">
+      <h3>3. Rates & Pricing</h3>
+      <div class="pf-alert mb-3">
+        <i class="bi bi-info-circle"></i> Daily rate covers the standard {{vehicleForm.get('freeKMLimit')?.value}}km limit. Pricing requires minimum 100km per day consideration.
+      </div>
+      
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Standard Daily Rate (LKR)</label>
+          <input type="number" class="form-control pf-input" formControlName="standardDailyRate">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Free KM Limit per Day</label>
+          <input type="number" class="form-control pf-input" formControlName="freeKMLimit">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Extra KM Rate (LKR)</label>
+          <input type="number" class="form-control pf-input" formControlName="extraKMRate">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Driver Night Out Fee (LKR)</label>
+          <input type="number" class="form-control pf-input" formControlName="driverNightOutFee">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Features & Languages -->
+    <div class="pf-section">
+      <h3>4. Features & Languages</h3>
+      
+      <div class="row">
+        <div class="col-md-6" formGroupName="features">
+          <label class="form-label fw-bold text-light">Vehicle Features</label>
+          <div class="row mb-2">
+            <div class="col-6 text-light d-flex align-items-center">
+              <label class="form-label mb-0 me-2"><i class="bi bi-briefcase"></i> Luggage Bags</label>
+            </div>
+            <div class="col-6">
+              <input type="number" class="form-control form-control-sm pf-input" formControlName="luggage" min="0">
+            </div>
+          </div>
+          <div class="pf-features-grid">
+            <div class="form-check text-light">
+              <input class="form-check-input" type="checkbox" formControlName="safety" id="f_sf">
+              <label class="form-check-label" for="f_sf"><i class="bi bi-shield-check"></i> High Safety</label>
+            </div>
+            <div class="form-check text-light">
+              <input class="form-check-input" type="checkbox" formControlName="childSeats" id="f_cs">
+              <label class="form-check-label" for="f_cs"><i class="bi bi-person-fill-add"></i> Child Seats</label>
+            </div>
+            <div class="form-check text-light">
+              <input class="form-check-input" type="checkbox" formControlName="entertainment" id="f_ent">
+              <label class="form-check-label" for="f_ent"><i class="bi bi-music-note-beamed"></i> Music/Radio</label>
+            </div>
+            <div class="form-check text-light">
+              <input class="form-check-input" type="checkbox" formControlName="tv" id="f_tv">
+              <label class="form-check-label" for="f_tv"><i class="bi bi-tv"></i> TV Screen</label>
+            </div>
+            <div class="form-check text-light">
+              <input class="form-check-input" type="checkbox" formControlName="wifi" id="f_wf">
+              <label class="form-check-label" for="f_wf"><i class="bi bi-wifi"></i> WiFi</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <label class="form-label fw-bold text-light">Driver Languages</label>
+          <select multiple class="form-select pf-input" (change)="onLanguageChange($event)" style="height: 120px;">
+            <option *ngFor="let lang of languagesList" [value]="lang">{{lang}}</option>
+          </select>
+          <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Photos & Verification -->
+    <div class="pf-section">
+      <h3>5. Photos & Verification</h3>
+      <p class="text-muted small mb-3">Upload clear images to attract more bookings and verify your identity.</p>
+      
+      <div class="row g-4">
+        <!-- Exterior -->
+        <div class="col-md-6">
+          <div class="pf-upload-box" [class.has-image]="exteriorPreview">
+            <input type="file" (change)="onFileSelected($event, 'exterior')" accept="image/*" id="up_ext">
+            <label for="up_ext">
+              <img *ngIf="exteriorPreview" [src]="exteriorPreview" alt="Exterior">
+              <div *ngIf="!exteriorPreview" class="upload-content">
+                <i class="bi bi-camera"></i>
+                <span>Vehicle Exterior Photo</span>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Interior -->
+        <div class="col-md-6">
+          <div class="pf-upload-box" [class.has-image]="interiorPreview">
+            <input type="file" (change)="onFileSelected($event, 'interior')" accept="image/*" id="up_int">
+            <label for="up_int">
+              <img *ngIf="interiorPreview" [src]="interiorPreview" alt="Interior">
+              <div *ngIf="!interiorPreview" class="upload-content">
+                <i class="bi bi-car-front"></i>
+                <span>Vehicle Interior Photo</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- NIC -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="nicPreview">
+            <input type="file" (change)="onFileSelected($event, 'nic')" accept="image/*" id="up_nic">
+            <label for="up_nic">
+              <img *ngIf="nicPreview" [src]="nicPreview" alt="NIC">
+              <div *ngIf="!nicPreview" class="upload-content">
+                <i class="bi bi-person-badge"></i>
+                <span>Driver NIC (Front)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- License -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="licensePreview">
+            <input type="file" (change)="onFileSelected($event, 'license')" accept="image/*" id="up_lic">
+            <label for="up_lic">
+              <img *ngIf="licensePreview" [src]="licensePreview" alt="License">
+              <div *ngIf="!licensePreview" class="upload-content">
+                <i class="bi bi-card-heading"></i>
+                <span>Driver License</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Insurance -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="insurancePreview">
+            <input type="file" (change)="onFileSelected($event, 'insurance')" accept="image/*" id="up_ins">
+            <label for="up_ins">
+              <img *ngIf="insurancePreview" [src]="insurancePreview" alt="Insurance">
+              <div *ngIf="!insurancePreview" class="upload-content">
+                <i class="bi bi-file-earmark-medical"></i>
+                <span>Insurance Document</span>
+              </div>
+            </label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label text-light small mb-1">Insurance Expiry Date</label>
+            <input type="date" class="form-control pf-input form-control-sm" formControlName="insuranceExpiry">
+          </div>
+        </div>
+
+        <!-- Revenue License -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="revenuePreview">
+            <input type="file" (change)="onFileSelected($event, 'revenue')" accept="image/*" id="up_rev">
+            <label for="up_rev">
+              <img *ngIf="revenuePreview" [src]="revenuePreview" alt="Revenue License">
+              <div *ngIf="!revenuePreview" class="upload-content">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Revenue License</span>
+              </div>
+            </label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label text-light small mb-1">Revenue License Expiry</label>
+            <input type="date" class="form-control pf-input form-control-sm" formControlName="revenueLicenseExpiry">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5 mb-3">
+      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid">
+        <i class="bi bi-check2-circle me-2"></i> Submit Listing
+      </button>
+      <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
+        Please complete all required fields correctly.
+      </div>
+    </div>
+
+  </form>
+</div>
