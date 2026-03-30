@@ -28,7 +28,7 @@ export class SignalrService {
       .then(() => {
         console.log('SignalR Connected Successfully! ✅');
         
-        // 1. New Comments
+        // 1. New message
         // Backend: await Clients.All.SendAsync("ReceiveComment", comment)
         this.hubConnection.off('ReceiveComment');
         this.hubConnection.on('ReceiveComment', (data: any) => {
@@ -60,11 +60,12 @@ export class SignalrService {
       .catch(err => console.log('SignalR Connection Error: ' + err));
   }
 
-  // Frontend එකෙන් සෘජුවම Hub එකට පණිවිඩයක් යැවීමට (DiscussionId ඉවත් කරන ලදී)
+  //  Send message from frontend to hub directly
   async sendMessage(comment: any) {
     try {
       if (this.hubConnection.state === signalR.HubConnectionState.Connected) {
-        // Backend හි ChatHub තුළ ඇති "SendMessage(object comment)" invoke කරයි
+
+        // invoke "SendMessage(object comment)" on chatHub in backend
         await this.hubConnection.invoke('SendMessage', comment);
       } else {
         console.warn("SignalR is not connected. Re-attempting...");

@@ -1,6 +1,6 @@
 /* ==========================================================================
     1. GLOBAL LAYOUT & SPLIT SCREEN
-    ========================================================================== */
+   ========================================================================== */
 :root {
     --glass-bg: rgba(255, 255, 255, 0.2);
     --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
@@ -68,35 +68,18 @@
     padding-right: 10px;
 }
 
-.right-column {
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.12); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-    position: relative;
-    box-shadow: var(--card-shadow);
-    height: 100%;
-}
-
-.left-column::-webkit-scrollbar,
-.chat-area-wrapper::-webkit-scrollbar {
+.left-column::-webkit-scrollbar {
     width: 6px;
 }
 
-.left-column::-webkit-scrollbar-thumb,
-.chat-area-wrapper::-webkit-scrollbar-thumb {
+.left-column::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
 }
 
 /* ==========================================================================
     2. GLASS CARDS & CREATION UI
-    ========================================================================== */
+   ========================================================================== */
 .glass-card { 
     background: rgba(255, 255, 255, 0.15); 
     backdrop-filter: blur(15px); 
@@ -169,7 +152,7 @@
 
 /* ==========================================================================
     3. VOTING UI (VOTE BOXES)
-    ========================================================================== */
+   ========================================================================== */
 .card-header { 
     display: flex; 
     justify-content: space-between; 
@@ -178,7 +161,6 @@
     margin-bottom: 10px; 
 }
 
-/* "You suggested this" කොටස සහ එහි අයිකනය පමණක් කහ පැහැයට */
 .user-info, 
 .user-info span, 
 .user-info i {
@@ -309,182 +291,8 @@
 }
 
 /* ==========================================================================
-    4. CHAT AREA 
-    ========================================================================== */
-.chat-area-wrapper { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    padding: 15px; 
-    overflow-y: auto;
-}
-
-.chat-bubble-row { 
-    display: flex; 
-    width: 100%; 
-    margin-bottom: 4px; 
-}
-
-.chat-bubble-row.row-left { justify-content: flex-start; }
-.chat-bubble-row.row-right { justify-content: flex-end; }
-
-.chat-bubble { 
-    max-width: 85%; 
-    padding: 8px 12px; 
-    border-radius: 15px; 
-    background: rgba(255, 255, 255, 0.15); 
-    backdrop-filter: blur(12px); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    color: #ffffff;
-    position: relative;
-}
-
-.chat-bubble-row.row-right .chat-bubble {
-    background: rgba(0, 123, 255, 0.3); 
-    border-color: rgba(0, 150, 255, 0.3);
-    border-bottom-right-radius: 4px; 
-}
-
-.chat-user { 
-    font-size: 12px; 
-    font-weight: 800; 
-    margin-bottom: 4px; 
-    color: #ffca28; 
-    display: block; 
-}
-
-.chat-bubble-row.row-right .chat-user { 
-    color: #00f2fe; 
-    text-align: right; 
-}
-
-.chat-content p { 
-    margin: 0; 
-    font-size: 16px; 
-    line-height: 1.5; 
-    color: #ffffff !important; 
-    opacity: 1; 
-}
-
-.chat-footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center; 
-    margin-top: 8px;    
-    width: 100%;
-    gap: 15px;          
-}
-
-.chat-time { 
-    font-size: 10px; 
-    color: #e0e0e0;
-    opacity: 0.8; 
-}
-
-.chat-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px; 
-    margin-left: auto;  
-}
-
-.btn-chat-action {
-    background: transparent !important; 
-    border: none !important;                                    
-    padding: 2px !important;
-    cursor: pointer;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: auto !important;
-    height: auto !important;
-    box-shadow: none !important; 
-    margin-left: 4px;          
-}
-
-.btn-chat-action .material-icons {
-    color: rgba(255, 255, 255, 0.8) !important; 
-    font-size: 14px !important;
-    transition: color 0.2s ease;
-}
-
-.btn-chat-action:hover .material-icons {
-    color: #ffffff !important; 
-}
-
-.cancel-edit-btn {
-    background: none;
-    border: none;
-    color: #ff5a5f;
-    cursor: pointer;
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-}
-
-.date-divider { 
-    display: flex; 
-    justify-content: center; 
-    margin: 10px 0; 
-}
-
-.date-divider span { 
-    background: rgba(0, 0, 0, 0.4); 
-    color: #ffffff; 
-    padding: 3px 12px; 
-    border-radius: 20px; 
-    font-size: 11px; 
-}
-
-.chat-input-container {
-    padding: 10px 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chat-input-container.editing-mode {
-    background: rgba(255, 193, 7, 0.05); 
-}
-
-.chat-input-wrapper { 
-    background: white;
-    border-radius: 25px;
-    display: flex; 
-    padding: 2px 2px 2px 12px;
-    align-items: center;
-}
-
-.chat-input-wrapper input {
-    flex: 1; 
-    border: none; 
-    background: transparent;
-    padding: 8px 5px; 
-    outline: none; 
-    font-size: 14px; 
-    color: #333;
-}
-
-.send-btn-circle { 
-    background: #007bff; 
-    color: white; 
-    border: none;
-    width: 34px; 
-    height: 34px; 
-    border-radius: 50%;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-}
-
-.send-btn-circle .material-icons {
-    font-size: 18px;
-}
-
-/* ==========================================================================
-    5. VOTE BOX FOOTER, ANONYMOUS LABEL & ANIMATIONS
-    ========================================================================== */
+    5. VOTE BOX FOOTER & ANIMATIONS
+   ========================================================================== */
 .vote-footer { 
     display: flex; 
     justify-content: space-between; 
@@ -523,10 +331,7 @@
     padding: 0;
 }
 
-.btn-delete-box-bottom:hover { 
-    color: #ff5a5f; 
-    opacity: 1; 
-}
+.btn-delete-box-bottom:hover { color: #ff5a5f; opacity: 1; }
 
 .hourglass-anim { 
     animation: hourglass-flip 2.5s infinite; 
@@ -540,17 +345,9 @@
     100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 992px) {
-    .split-container { flex-direction: column; overflow-y: auto; }
-    .column-half { max-width: 100%; flex: none; }
-    .main-layout { overflow-y: auto; height: auto; }
-    .left-column, .right-column { overflow: visible; height: auto; }
-    .right-column { min-height: 500px; }
-}
-
 /* ==========================================================================
     6. VOTE SELECTION HIGHLIGHTING & INDICATORS
-    ========================================================================== */
+   ========================================================================== */
 .vote-btn.active {
     border-width: 2px !important;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
@@ -611,8 +408,8 @@
 }
 
 /* ==========================================================================
-    7. NEW: MAJORITY SYSTEM & STATUS STYLES
-    ========================================================================== */
+    7. MAJORITY SYSTEM & STATUS STYLES
+   ========================================================================== */
 .status-pill.rejected {
     background: rgba(255, 90, 95, 0.2);
     color: #ff5a5f;
@@ -634,19 +431,9 @@
     box-shadow: 0 0 20px rgba(76, 217, 100, 0.15);
 }
 
-.disabled-votes {
-    pointer-events: none; 
-}
-
-.vote-btn[disabled] {
-    cursor: default;
-    opacity: 0.8;
-}
-
-.poll-locked {
-    cursor: default !important;
-    opacity: 0.9;
-}
+.disabled-votes { pointer-events: none; }
+.vote-btn[disabled] { cursor: default; opacity: 0.8; }
+.poll-locked { cursor: default !important; opacity: 0.9; }
 
 .status-container {
     display: flex;
@@ -657,7 +444,7 @@
 
 /* ==========================================================================
     8. NAVIGATION BUTTONS
-    ========================================================================== */
+   ========================================================================== */
 .navigation-footer {
   display: flex;
   justify-content: center;
@@ -693,4 +480,11 @@
 .nav-btn i {
   color: #ffffff;
   font-size: 18px;
+}
+
+@media (max-width: 992px) {
+    .split-container { flex-direction: column; overflow-y: auto; }
+    .column-half { max-width: 100%; flex: none; }
+    .main-layout { overflow-y: auto; height: auto; }
+    .left-column { overflow: visible; height: auto; }
 }

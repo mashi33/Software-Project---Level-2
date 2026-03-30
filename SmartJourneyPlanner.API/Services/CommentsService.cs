@@ -19,27 +19,26 @@ namespace SmartJourneyPlanner.Services
             _commentsCollection = mongoDatabase.GetCollection<CommentItem>("Comments");
         }
 
-        // සියලුම පණිවිඩ ලබා ගැනීමට
+        // Receive all messages
         public async Task<List<CommentItem>> GetAsync() =>
             await _commentsCollection.Find(_ => true).ToListAsync();
 
-        // පණිවිඩයේ ID එකෙන් පණිවිඩය සෙවීමට (මෙය Controller එකේ Error එක නැති කිරීමට අත්‍යවශ්‍යයි)
+        // Search messages using message ID (comment id)
         public async Task<CommentItem?> GetCommentByIdAsync(string id) =>
             await _commentsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        // අලුත් පණිවිඩයක් Save කිරීමට
+        // Save new messages
         public async Task CreateAsync(CommentItem newComment) =>
             await _commentsCollection.InsertOneAsync(newComment);
 
-        // පණිවිඩයක් යාවත්කාලීන (Update) කිරීමට අලුතින් එක් කළ කොටස
+        // Update messages
         public async Task UpdateAsync(string id, CommentItem updatedComment) =>
             await _commentsCollection.ReplaceOneAsync(x => x.Id == id, updatedComment);
 
-        // පණිවිඩයක් මැකීමට
+        // Delete messages
         public async Task DeleteCommentAsync(string id) =>
             await _commentsCollection.DeleteOneAsync(x => x.Id == id);
 
-        // පරණ RemoveAsync එක වෙනුවට DeleteCommentAsync භාවිතා කළ හැක
         public async Task RemoveAsync(string id) => await DeleteCommentAsync(id);
     }
 }

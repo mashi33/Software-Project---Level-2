@@ -37,7 +37,7 @@ namespace SmartJourneyPlanner.Models
         [JsonPropertyName("isConfirmed")]
         public bool IsConfirmed { get; set; } = false;
 
-        // --- නව එකතු කිරීම: Rejected තත්ත්වය සහ සාමාජික සීමාව සඳහා ---
+        // --- Check reject status and member limit ---
         [BsonElement("isRejected")]
         [JsonPropertyName("isRejected")]
         public bool IsRejected { get; set; } = false;
