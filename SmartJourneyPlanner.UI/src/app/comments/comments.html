@@ -1,0 +1,51 @@
+<div class="right-column glass-chat-panel full-width-component">
+  <div class="chat-area-wrapper">
+    <ng-container *ngFor="let comment of allComments; let i = index">
+      <div class="date-divider" *ngIf="i === 0 || isNewDay(allComments[i-1].createdAt, comment.createdAt)">
+        <span>{{ comment.createdAt | date:'MMMM d, y' }}</span>
+      </div>
+
+      <div class="chat-bubble-row" [ngClass]="comment.user === currentUser ? 'row-right' : 'row-left'">
+        <div class="chat-bubble">
+          <span class="chat-user">
+            {{ comment.user === currentUser ? 'You' : comment.user }}
+          </span>
+          
+          <div class="chat-content">
+            <p>{{ comment.text }}</p>
+            <div class="chat-footer-row">
+              <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
+            
+              <div class="chat-actions" *ngIf="comment.user === currentUser">
+                <button (click)="startEditing(comment)" class="btn-chat-action" title="Edit Message">
+                  <i class="material-icons">edit</i>
+                </button>
+
+                <button (click)="deleteComment(comment.id)" class="btn-chat-action" title="Delete Message">
+                  <i class="material-icons">delete</i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="chat-input-container" [ngClass]="{'editing-mode': isEditing}">
+    <div class="chat-input-wrapper">
+      <button *ngIf="isEditing" (click)="cancelEditing()" class="cancel-edit-btn" title="Cancel Edit">
+        <i class="material-icons">close</i>
+      </button>
+
+      <input type="text" [(ngModel)]="globalCommentText" [placeholder]="isEditing ? 'Edit your message...' : 'Type a message...'" (keyup.enter)="postCommentToLatest()">
+      
+      <button (click)="postCommentToLatest()" class="send-btn-circle" [title]="isEditing ? 'Save Changes' : 'Send Message'">
+        <i class="material-icons" *ngIf="isEditing">check</i>
+        <svg *ngIf="!isEditing" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

@@ -8,7 +8,7 @@ namespace SmartJourneyPlanner.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; } // MongoDB මගින් ලබාදෙන අද්විතීය හැඳුනුම් අංකය
+        public string? Id { get; set; } //ID from  MongoDB 
 
         public string User { get; set; } = "Guest User";
 

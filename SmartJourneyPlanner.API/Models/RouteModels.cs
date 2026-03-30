@@ -37,14 +37,12 @@ namespace SmartJourneyPlanner.Models
         public string Polyline { get; set; } = string.Empty;
     }
 
-    // අලුතින් එක් කළ Viewpoint Class එක
+    //  Viewpoint Class 
     public class ViewpointDetail
     {
         public string Name { get; set; } = string.Empty;
         public double Lat { get; set; }
         public double Lng { get; set; }
 
-        // අමතර සටහන: ස්ථාන වර්ගීකරණය පසුව අවශ්‍ය වුවහොත් මෙහි String එකක් ලෙස Category එකතු කළ හැක.
-        // දැනට පවතින Controller logic එකට අනුව Name, Lat, Lng පමණක් ප්‍රමාණවත් වේ.
     }
 }

@@ -49,12 +49,12 @@ namespace SmartJourneyPlanner.Services
             var discussion = await GetAsync(id);
             if (discussion == null) return false;
 
-            // ඡන්ද පෙට්ටිය දැනටමත් වසා ඇත්නම් ඡන්දය ප්‍රතික්ෂේප කරන්න
+            // If vote box confirmed or rejected, stop count votes
             if (discussion.IsConfirmed || discussion.IsRejected) return false;
 
             discussion.VotedUsers ??= new List<string>();
 
-            // දැනටමත් ඡන්දය දී ඇත්නම් හෝ සීමාව ඉක්මවා ඇත්නම් නතර කරන්න
+            // If already provide vote or member limit <= vote count,  stop count votes
             if (discussion.VotedUsers.Contains(userId)) return false;
 
             int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 5;
@@ -71,7 +71,7 @@ namespace SmartJourneyPlanner.Services
             return false;
         }
 
-        // 7. commenting
+        // 7. commenting (messaging)
         public async Task AddCommentAsync(string id, CommentItem comment)
         {
             comment.CreatedAt = DateTime.UtcNow;
