@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { VehicleType, VehicleClass } from '../../models/transport.model';
@@ -15,7 +15,21 @@ export class ProviderForm implements OnInit {
   vehicleForm!: FormGroup;
   vehicleTypes = Object.values(VehicleType);
   vehicleClasses: VehicleClass[] = ['Car', 'Van', 'Bus'];
-  languagesList = ['Sinhala', 'English', 'Tamil', 'German', 'Russian', 'French'];
+  languagesList = [
+    { name: 'Sinhala', code: 'LK' },
+    { name: 'English', code: 'GB' },
+    { name: 'Tamil', code: 'IN' },
+    { name: 'French', code: 'FR' },
+    { name: 'German', code: 'DE' },
+    { name: 'Russian', code: 'RU' },
+    { name: 'Chinese', code: 'CN' },
+    { name: 'Japanese', code: 'JP' },
+    { name: 'Italian', code: 'IT' },
+    { name: 'Spanish', code: 'ES' },
+    { name: 'Arabic', code: 'AE' },
+    { name: 'Korean', code: 'KR' }
+  ];
+  isLanguageDropdownOpen = false;
 
   // Image previews
   interiorPreview: string | ArrayBuffer | null = null;
@@ -25,7 +39,7 @@ export class ProviderForm implements OnInit {
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private eRef: ElementRef) {}
 
   ngOnInit() {
     this.initForm();
@@ -63,6 +77,10 @@ export class ProviderForm implements OnInit {
       
       languages: [[], Validators.required],
       
+      transmission: ['Automatic', Validators.required],
+      fuelType: ['Petrol', Validators.required],
+      termsAccepted: [false, Validators.requiredTrue],
+      
       insuranceExpiry: ['', Validators.required],
       revenueLicenseExpiry: ['', Validators.required]
     });
@@ -87,10 +105,37 @@ export class ProviderForm implements OnInit {
     }
   }
 
-  onLanguageChange(event: any) {
-    const selectedOptions = Array.from((event.target as HTMLSelectElement).selectedOptions);
-    const selectedValues = selectedOptions.map(option => option.value);
-    this.vehicleForm.patchValue({ languages: selectedValues });
+  onLanguageChange(lang: string, event: any) {
+    const checked = event.target.checked;
+    const currentLanguages = this.vehicleForm.get('languages')?.value as string[] || [];
+    
+    if (checked) {
+      this.vehicleForm.patchValue({ languages: [...currentLanguages, lang] });
+    } else {
+      this.vehicleForm.patchValue({ languages: currentLanguages.filter(l => l !== lang) });
+    }
+  }
+
+  isLanguageSelected(lang: string): boolean {
+    return (this.vehicleForm.get('languages')?.value as string[] || []).includes(lang);
+  }
+
+  toggleLanguageDropdown() {
+    this.isLanguageDropdownOpen = !this.isLanguageDropdownOpen;
+  }
+
+  getSelectedLanguagesDisplay(): string {
+    const selected = this.vehicleForm.get('languages')?.value as string[] || [];
+    if (selected.length === 0) return 'Select all languages you can speak';
+    if (selected.length <= 2) return selected.join(', ');
+    return `${selected.slice(0, 2).join(', ')} +${selected.length - 2} more`;
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickout(event: any) {
+    if (!this.eRef.nativeElement.contains(event.target)) {
+      this.isLanguageDropdownOpen = false;
+    }
   }
 
   submitForm() {
@@ -131,7 +176,10 @@ export class ProviderForm implements OnInit {
       extraKMRate: 0,
       driverNightOutFee: 0,
       features: { luggage: 2, safety: false, childSeats: false, entertainment: false, tv: false, wifi: false, bluetooth: false, airbags: true, usbCharging: false },
-      languages: []
+      languages: [],
+      transmission: 'Automatic',
+      fuelType: 'Petrol',
+      termsAccepted: false
     });
     this.interiorPreview = null;
     this.exteriorPreview = null;

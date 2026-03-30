@@ -288,17 +288,20 @@
 }
 
 .feature-item i {
-  color: #38a169;
+  color: #718096; /* Matching spec icon color */
+  font-size: 1.1rem;
 }
 
 .lang-tag {
   display: inline-block;
-  background: #edf2f7;
-  padding: 0.4rem 1rem;
-  border-radius: 2rem;
+  background: #f1f5f9;
+  padding: 0.5rem 1.75rem; /* Increased horizontal padding for pill look */
+  border-radius: 99px;
   margin-right: 0.75rem;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .provider-info {

@@ -86,7 +86,20 @@ export interface Booking {
   days: number;
   totalAmount: number;
   contactNumber?: string;
-  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Active';
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Active' | 'Rejected';
   createdAt: Date | string;
   hasBeenRated?: boolean;
+  
+  // New UI Fields
+  passengers?: number;
+  location?: string;
+  pricingSummary?: {
+    dailyRate: number;
+    dailyRental: number;
+    nightlyRate: number;
+    driverNightOut: number;
+  };
+  vehicleImage?: string;
+  providerName?: string;
+  userName?: string;
 }

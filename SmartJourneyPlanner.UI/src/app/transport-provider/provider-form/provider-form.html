@@ -53,9 +53,25 @@
       </div>
 
       <div class="row g-3 mt-1">
-        <div class="col-md-12">
+        <div class="col-md-6">
           <label class="form-label">Description (Make, Model)</label>
           <input type="text" class="form-control pf-input" formControlName="description" placeholder="e.g. Toyota Prius - Excellent Condition">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fuel Type</label>
+          <select class="form-select pf-input" formControlName="fuelType">
+            <option value="Petrol">Petrol</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Electric">Electric</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Transmission</label>
+          <select class="form-select pf-input" formControlName="transmission">
+            <option value="Automatic">Automatic (Auto)</option>
+            <option value="Manual">Manual</option>
+          </select>
         </div>
       </div>
 
@@ -98,47 +114,66 @@
     <div class="pf-section">
       <h3>4. Features & Languages</h3>
       
-      <div class="row">
+      <div class="row g-4">
         <div class="col-md-6" formGroupName="features">
-          <label class="form-label fw-bold text-light">Vehicle Features</label>
-          <div class="row mb-2">
-            <div class="col-6 text-light d-flex align-items-center">
-              <label class="form-label mb-0 me-2"><i class="bi bi-briefcase"></i> Luggage Bags</label>
+          <label class="form-label fw-bold">Vehicle Features</label>
+          <div class="row mb-3 align-items-center">
+            <div class="col-6 d-flex align-items-center">
+              <label class="form-label mb-0 me-2"><i class="bi bi-briefcase text-primary"></i> Luggage Bags</label>
             </div>
-            <div class="col-6">
+            <div class="col-4">
               <input type="number" class="form-control form-control-sm pf-input" formControlName="luggage" min="0">
             </div>
           </div>
           <div class="pf-features-grid">
-            <div class="form-check text-light">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="safety" id="f_sf">
-              <label class="form-check-label" for="f_sf"><i class="bi bi-shield-check"></i> High Safety</label>
+              <label class="form-check-label" for="f_sf"><i class="bi bi-shield-check text-success"></i> High Safety</label>
             </div>
-            <div class="form-check text-light">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="childSeats" id="f_cs">
-              <label class="form-check-label" for="f_cs"><i class="bi bi-person-fill-add"></i> Child Seats</label>
+              <label class="form-check-label" for="f_cs"><i class="bi bi-person-fill-add text-info"></i> Child Seats</label>
             </div>
-            <div class="form-check text-light">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="entertainment" id="f_ent">
-              <label class="form-check-label" for="f_ent"><i class="bi bi-music-note-beamed"></i> Music/Radio</label>
+              <label class="form-check-label" for="f_ent"><i class="bi bi-music-note-beamed text-danger"></i> Music/Radio</label>
             </div>
-            <div class="form-check text-light">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="tv" id="f_tv">
-              <label class="form-check-label" for="f_tv"><i class="bi bi-tv"></i> TV Screen</label>
+              <label class="form-check-label" for="f_tv"><i class="bi bi-tv text-secondary"></i> TV Screen</label>
             </div>
-            <div class="form-check text-light">
+            <div class="form-check">
               <input class="form-check-input" type="checkbox" formControlName="wifi" id="f_wf">
-              <label class="form-check-label" for="f_wf"><i class="bi bi-wifi"></i> WiFi</label>
+              <label class="form-check-label" for="f_wf"><i class="bi bi-wifi text-primary"></i> WiFi</label>
             </div>
           </div>
         </div>
         
         <div class="col-md-6">
-          <label class="form-label fw-bold text-light">Driver Languages</label>
-          <select multiple class="form-select pf-input" (change)="onLanguageChange($event)" style="height: 120px;">
-            <option *ngFor="let lang of languagesList" [value]="lang">{{lang}}</option>
-          </select>
-          <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
+          <label class="form-label fw-bold mb-2">Driver Languages</label>
+          <div class="pf-dropdown" [class.is-open]="isLanguageDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleLanguageDropdown()">
+              <span class="small">{{getSelectedLanguagesDisplay()}}</span>
+              <i class="bi" [ngClass]="isLanguageDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            
+            <div class="pf-dropdown-menu" *ngIf="isLanguageDropdownOpen">
+              <div class="pf-languages-grid d-flex flex-column gap-2 p-2">
+                <div *ngFor="let lang of languagesList" class="form-check d-flex align-items-center px-2 py-1 rounded-2 hover-bg-dark">
+                  <input class="form-check-input mt-0 me-3" type="checkbox" 
+                         [id]="'lang_' + lang.name" 
+                         [checked]="isLanguageSelected(lang.name)"
+                         (change)="onLanguageChange(lang.name, $event)"
+                         style="width: 16px; height: 16px;">
+                  <span class="pf-lang-code me-3">{{lang.code}}</span>
+                  <label class="form-check-label small fw-semibold" [for]="'lang_' + lang.name">{{lang.name}}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="vehicleForm.get('languages')?.invalid && vehicleForm.get('languages')?.touched" class="text-danger extra-small mt-2">
+            Please select at least one language.
+          </div>
         </div>
       </div>
     </div>
@@ -218,7 +253,7 @@
             </label>
           </div>
           <div class="mt-2">
-            <label class="form-label text-light small mb-1">Insurance Expiry Date</label>
+            <label class="form-label small mb-1">Insurance Expiry Date</label>
             <input type="date" class="form-control pf-input form-control-sm" formControlName="insuranceExpiry">
           </div>
         </div>
@@ -236,19 +271,31 @@
             </label>
           </div>
           <div class="mt-2">
-            <label class="form-label text-light small mb-1">Revenue License Expiry</label>
+            <label class="form-label small mb-1">Revenue License Expiry</label>
             <input type="date" class="form-control pf-input form-control-sm" formControlName="revenueLicenseExpiry">
           </div>
         </div>
       </div>
     </div>
 
-    <div class="text-center mt-5 mb-3">
+    <div class="pf-section agreement-section mt-4 py-4 border-top">
+      <div class="form-check d-flex align-items-center justify-content-center gap-3">
+        <input class="form-check-input mt-0" type="checkbox" id="termsCheck" formControlName="termsAccepted" style="width: 22px; height: 22px;">
+        <label class="form-check-label fw-semibold" for="termsCheck">
+          I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none">Terms and Conditions</a> and system rules.
+        </label>
+      </div>
+      <div *ngIf="vehicleForm.get('termsAccepted')?.invalid && vehicleForm.get('termsAccepted')?.touched" class="text-danger extra-small mt-2">
+        <i class="bi bi-exclamation-triangle-fill"></i> You must agree to the terms to proceed.
+      </div>
+    </div>
+
+    <div class="text-center mt-4 mb-3">
       <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid">
         <i class="bi bi-check2-circle me-2"></i> Submit Listing
       </button>
       <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
-        Please complete all required fields correctly.
+        Please complete all required fields and agree to the terms.
       </div>
     </div>
 
