@@ -15,5 +15,5 @@ export const routes: Routes = [
   { path: 'provider', component: ProviderDashboard },
 
   
-  //{ path: '', redirectTo: '/route-optimization', pathMatch: 'full' }
+  { path: '', redirectTo: '/explore', pathMatch: 'full' }
 ];
