@@ -161,6 +161,33 @@ select.pf-input-soft {
   font-weight: 400;
 }
 
+.pf-input-soft.is-invalid {
+  border-color: #ef4444 !important;
+  background-color: #fffafb !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Hide Bootstrap validation icon for date inputs to avoid overlap with native calendar icon */
+input[type="date"].is-invalid {
+  background-image: none !important;
+}
+
+.pf-error-text {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  animation: pfFadeIn 0.3s ease-out;
+}
+
+@keyframes pfFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .pf-input:focus {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;

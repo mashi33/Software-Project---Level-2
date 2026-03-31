@@ -16,16 +16,25 @@
       <h3 class="mb-4">Provider Information</h3>
       <div class="row g-4">
         <div class="col-md-6 text-start">
-          <label class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
-          <input type="text" class="form-control pf-input-soft" formControlName="name" placeholder="Kamal Perera">
+          <label class="form-label fw-bold">Full Name</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera">
+          <div *ngIf="isFieldInvalid('providerProfile.name')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Full name is required
+          </div>
         </div>
         <div class="col-md-6 text-start">
-          <label class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
-          <input type="tel" class="form-control pf-input-soft" formControlName="phone" placeholder="+94 77 123 4567">
+          <label class="form-label fw-bold">Phone Number</label>
+          <input type="tel" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.phone')" formControlName="phone" placeholder="+94 77 123 4567">
+          <div *ngIf="isFieldInvalid('providerProfile.phone')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Phone number is required
+          </div>
         </div>
         <div class="col-md-12 text-start mt-3">
-          <label class="form-label fw-bold">Residential Area <span class="text-danger">*</span></label>
-          <input type="text" class="form-control pf-input-soft" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle">
+          <label class="form-label fw-bold">Residential Area</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.location')" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle">
+          <div *ngIf="isFieldInvalid('providerProfile.location')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Residential area is required
+          </div>
         </div>
       </div>
     </div>
@@ -55,8 +64,11 @@
 
       <div class="row g-4 mt-2">
         <div class="col-md-6">
-          <label class="form-label fw-bold">Vehicle Model <span class="text-danger">*</span></label>
-          <input type="text" class="form-control pf-input-soft" formControlName="description" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
+          <label class="form-label fw-bold">Vehicle Model</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('description')" formControlName="description" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
+          <div *ngIf="isFieldInvalid('description')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Vehicle model is required
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Fuel Type</label>
@@ -139,6 +151,9 @@
                   <span class="small">{{getSelectedLanguagesDisplay()}}</span>
                   <i class="bi" [ngClass]="isLanguageDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                 </div>
+                <div *ngIf="isFieldInvalid('languages')" class="pf-error-text">
+                  <i class="bi bi-exclamation-circle"></i> Please select at least one language
+                </div>
                 
                 <div class="pf-dropdown-menu" *ngIf="isLanguageDropdownOpen">
                   <div class="pf-languages-grid d-flex flex-column gap-1 p-2">
@@ -156,9 +171,6 @@
                   </div>
                 </div>
               </div>
-              <div *ngIf="vehicleForm.get('languages')?.invalid && vehicleForm.get('languages')?.touched" class="text-danger extra-small mt-2">
-                Please select at least one language.
-              </div>
             </div>
           </div>
         </div>
@@ -175,11 +187,17 @@
       <div class="row g-4">
         <div class="col-md-6">
           <label class="form-label fw-bold">Standard Daily Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="standardDailyRate">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate">
+          <div *ngIf="isFieldInvalid('standardDailyRate')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Valid daily rate is required
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Free KM Limit per Day</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="freeKMLimit">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('freeKMLimit')" formControlName="freeKMLimit">
+          <div *ngIf="isFieldInvalid('freeKMLimit')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Daily KM limit is required
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Extra KM Rate (LKR)</label>
@@ -270,7 +288,10 @@
           </div>
           <div class="mt-2">
             <label class="form-label small mb-1">Insurance Expiry Date</label>
-            <input type="date" class="form-control pf-input form-control-sm" formControlName="insuranceExpiry">
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry">
+            <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text">
+              <i class="bi bi-exclamation-circle"></i> Expiry date required
+            </div>
           </div>
         </div>
 
@@ -288,7 +309,10 @@
           </div>
           <div class="mt-2">
             <label class="form-label small mb-1">Revenue License Expiry</label>
-            <input type="date" class="form-control pf-input form-control-sm" formControlName="revenueLicenseExpiry">
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry">
+            <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text">
+              <i class="bi bi-exclamation-circle"></i> Expiry date required
+            </div>
           </div>
         </div>
       </div>
@@ -301,8 +325,8 @@
           I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none">Terms and Conditions</a> and system rules.
         </label>
       </div>
-      <div *ngIf="vehicleForm.get('termsAccepted')?.invalid && vehicleForm.get('termsAccepted')?.touched" class="text-danger extra-small mt-2">
-        <i class="bi bi-exclamation-triangle-fill"></i> You must agree to the terms to proceed.
+      <div *ngIf="isFieldInvalid('termsAccepted')" class="pf-error-text justify-content-center">
+        <i class="bi bi-exclamation-triangle-fill"></i> You must agree to the terms to proceed
       </div>
     </div>
 

@@ -86,6 +86,12 @@ export class ProviderForm implements OnInit {
     });
   }
 
+  isFieldInvalid(path: string): boolean {
+    const control = this.vehicleForm.get(path);
+    if (!control) return false;
+    return !!(control.invalid && (control.touched || control.dirty));
+  }
+
   onFileSelected(event: any, type: 'interior' | 'exterior' | 'nic' | 'license' | 'insurance' | 'revenue') {
     const file = event.target.files[0];
     if (file) {
