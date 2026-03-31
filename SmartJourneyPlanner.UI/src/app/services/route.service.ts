@@ -9,8 +9,8 @@ export class RouteService {
   constructor(private http: HttpClient) {}
 
   /**
-   * අලුත් සෙවුමක් ආරම්භයේදී හෝ පෙර සෙවුම අවසානයේදී ටෝකන් එක අලුත් කිරීම.
-   * මෙයින් Places API එකට යන වියදම අවම කරගත හැක.
+   *  refresh token in Starting new search or end of previous search
+   *  Because the reduce cost of Places API
    */
   refreshSessionToken() {
     this.sessionToken = new google.maps.places.AutocompleteSessionToken();
@@ -18,7 +18,7 @@ export class RouteService {
   }
 
   getPredictions(input: string): Promise<google.maps.places.AutocompletePrediction[]> {
-    // සෙවුම් වාරයක් ආරම්භයේදී ටෝකන් එකක් නොමැති නම් පමණක් අලුතින් සාදයි
+    // Create new session token if and only no session token in start of search
     if (!this.sessionToken) {
       this.refreshSessionToken();
     }
@@ -28,13 +28,13 @@ export class RouteService {
       service.getPlacePredictions({
         input,
         sessionToken: this.sessionToken,
-        componentRestrictions: { country: 'lk' } // ලංකාවට සීමා කර ඇත
+        componentRestrictions: { country: 'lk' } // Limited to Sri Lanka
       }, (res) => resolve(res || []));
     });
   }
 
   getOptimizedRoutes(start: string, end: string) {
-    const apiUrl = 'http://localhost:5233/api/routes/optimize'; // ඔබේ backend port එක
+    const apiUrl = 'http://localhost:5233/api/routes/optimize'; // My backend port
     console.log("Calling API at:", apiUrl);
     return this.http.post<any>(apiUrl, { start, end });
   }

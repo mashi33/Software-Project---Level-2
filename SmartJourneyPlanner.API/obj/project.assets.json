@@ -1041,11 +1041,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\MSII\\OneDrive\\Desktop\\Smart Journey Planner Angular\\SmartJourneyPlanner\\SmartJourneyPlanner.csproj",
+      "projectUniqueName": "C:\\Users\\MSII\\OneDrive\\Documents\\GitHub\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.csproj",
       "projectName": "SmartJourneyPlanner",
-      "projectPath": "C:\\Users\\MSII\\OneDrive\\Desktop\\Smart Journey Planner Angular\\SmartJourneyPlanner\\SmartJourneyPlanner.csproj",
+      "projectPath": "C:\\Users\\MSII\\OneDrive\\Documents\\GitHub\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.csproj",
       "packagesPath": "C:\\Users\\MSII\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\MSII\\OneDrive\\Desktop\\Smart Journey Planner Angular\\SmartJourneyPlanner\\obj\\",
+      "outputPath": "C:\\Users\\MSII\\OneDrive\\Documents\\GitHub\\Software-Project---Level-2\\SmartJourneyPlanner.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

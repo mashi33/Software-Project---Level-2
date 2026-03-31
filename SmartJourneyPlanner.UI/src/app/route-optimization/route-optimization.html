@@ -37,7 +37,7 @@
             <input 
               type="radio" 
               name="route" 
-              (change)="onRouteSelect('fastest', results.fastest.polyline)" 
+              (change)="onRouteSelect('fastest', results.fastest)" 
               [checked]="selectedRouteType === 'fastest'">
             <h4>🚀 Fastest Route</h4>
           </div>
@@ -54,7 +54,7 @@
             <input 
               type="radio" 
               name="route" 
-              (change)="onRouteSelect('scenic', results.scenic.polyline)" 
+              (change)="onRouteSelect('scenic', results.scenic)" 
               [checked]="selectedRouteType === 'scenic'">
             <h4>🌿 Scenic Route</h4>
           </div>
@@ -71,7 +71,7 @@
             <input 
               type="radio" 
               name="route" 
-              (change)="onRouteSelect('cheapest', results.cheapest.polyline)" 
+              (change)="onRouteSelect('cheapest', results.cheapest)" 
               [checked]="selectedRouteType === 'cheapest'">
             <h4>💰 Cheapest Route</h4>
           </div>
@@ -80,6 +80,10 @@
             <p><strong>Estimated Time:</strong> {{ formatDuration(results.cheapest.duration) }}</p>
           </div>
         </label>
+      </div>
+
+      <div class="generation-wrapper" *ngIf="selectedRouteDetails">
+        <app-generation [routeData]="selectedRouteDetails"></app-generation>
       </div>
     </div>
   </div>
@@ -90,8 +94,9 @@
       height="100%" 
       width="100%" 
       [center]="center" 
-      [zoom]="zoom" 
-      mapId="790748e2d63a3f976faa6e7c">
+      [zoom]="zoom"
+      renderingType="VECTOR" 
+      mapId="790748e2d63a3f97e5d023e9">
       
       <map-traffic-layer *ngIf="showTraffic"></map-traffic-layer>
 

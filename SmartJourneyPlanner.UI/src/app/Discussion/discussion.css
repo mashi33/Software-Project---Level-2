@@ -1,13 +1,23 @@
 /* ==========================================================================
-    1. GLOBAL LAYOUT & SPLIT SCREEN
-    ========================================================================== */
+   1. GLOBAL LAYOUT & SPLIT SCREEN
+   ========================================================================== */
 :root {
     --glass-bg: rgba(255, 255, 255, 0.2);
     --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     --primary-blue: #007bff;
     --agree-green: #4cd964;
     --disagree-red: #ff5a5f;
-    --text-soft-header: #e0e0e0; 
+    --text-soft-header: #e0e0e0;
+
+    /* ── NEW: glass tokens ── */
+    --glass-panel-bg:   rgba(10, 18, 40, 0.62);
+    --glass-panel-blur: blur(22px) saturate(1.5);
+    --glass-border:     rgba(255, 255, 255, 0.20);
+    --glass-border-top: rgba(255, 255, 255, 0.38);
+    --glass-border-left:rgba(255, 255, 255, 0.28);
+    --text-primary:     rgba(255, 255, 255, 0.95);
+    --text-secondary:   rgba(255, 255, 255, 0.72);
+    --text-hint:        rgba(255, 255, 255, 0.50);
 }
 
 .main-layout {
@@ -15,8 +25,9 @@
     display: flex;
     flex-direction: column;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), 
-                      url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920');
+    /* ── CHANGED: overlay darkened from 0.5/0.6 → 0.55/0.68 ── */
+    background-image: linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.72)),
+                    url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -30,15 +41,16 @@
     flex-shrink: 0;
 }
 
-.header-content h1 { 
-    font-size: 22px; 
+.header-content h1 {
+    font-size: 22px;
     margin: 0;
-    font-weight: 800; 
+    font-weight: 800;
+    color: var(--text-primary);
 }
 
-.header-content h2 { 
-    font-size: 14px; 
-    opacity: 0.8; 
+.header-content h2 {
+    font-size: 14px;
+    opacity: 0.8;
     font-weight: 400;
     margin-top: 5px;
 }
@@ -55,7 +67,7 @@
 }
 
 .column-half {
-    flex: 1; 
+    flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -63,437 +75,263 @@
 }
 
 .left-column {
-    flex: 1; 
+    flex: 1;
     overflow-y: auto;
     padding-right: 10px;
 }
 
-.right-column {
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.12); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-    position: relative;
-    box-shadow: var(--card-shadow);
-    height: 100%;
-}
-
-.left-column::-webkit-scrollbar,
-.chat-area-wrapper::-webkit-scrollbar {
-    width: 6px;
-}
-
-.left-column::-webkit-scrollbar-thumb,
-.chat-area-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+.left-column::-webkit-scrollbar { width: 6px; }
+.left-column::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
     border-radius: 10px;
 }
 
 /* ==========================================================================
-    2. GLASS CARDS & CREATION UI
-    ========================================================================== */
-.glass-card { 
-    background: rgba(255, 255, 255, 0.15); 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px);
-    border-radius: 20px; 
-    padding: 20px; 
-    margin-bottom: 20px; 
-    border: 1px solid rgba(255, 255, 255, 0.2);
+   2. GLASS CARDS & CREATION UI
+   ========================================================================== */
+.glass-card {
+    /* ── CHANGED: was rgba(255,255,255,0.15) blur(15px) — too transparent ── */
+    background: var(--glass-panel-bg);
+    backdrop-filter: var(--glass-panel-blur);
+    -webkit-backdrop-filter: var(--glass-panel-blur);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    /* ── CHANGED: light-catching asymmetric border ── */
+    border: 1px solid var(--glass-border);
+    border-top-color: var(--glass-border-top);
+    border-left-color: var(--glass-border-left);
     box-shadow: var(--card-shadow);
 }
 
-.creation-box { 
-    display: flex; 
-    flex-direction: column; 
+.creation-box {
+    display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    max-width: 550px;  
-    margin-left: auto; 
+    max-width: 550px;
+    margin-left: auto;
     margin-right: auto;
     width: 100%;
 }
 
-.minimal-input { 
+.minimal-input {
     width: 100%;
     box-sizing: border-box;
     padding: 10px 15px;
     margin-bottom: 10px;
-    border: none; 
+    border: none;
     border-radius: 10px;
     font-size: 15px;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.92);
     color: #333;
 }
+
+.minimal-input::placeholder { color: #888; }
 
 .description-area { height: 60px; resize: none; }
 
 .btn-add-option {
-    background: rgba(255, 255, 255, 0.1); 
-    color: #ffffff;
-    border: 1px dashed rgba(255, 255, 255, 0.5);
-    padding: 8px 16px; 
-    border-radius: 10px; 
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    border: 1px dashed rgba(255, 255, 255, 0.45);
+    padding: 8px 16px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 600; 
-    margin-bottom: 15px; 
+    font-weight: 600;
+    margin-bottom: 15px;
     transition: 0.3s ease;
     font-size: 13px;
 }
 
-.radio-group { 
-    display: flex; 
-    justify-content: space-between; 
-    width: 100%; 
-    margin-bottom: 15px; 
-    color: white; 
-    font-size: 13px; 
+.btn-add-option:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.radio-label { display: flex; 
-    align-items: center; 
-    gap: 5px; 
-    cursor: pointer; 
+.radio-group {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 15px;
+    /* ── CHANGED: was `color: white` — now uses token ── */
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
 }
 
 .btn-post-main {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    color: white; border: none; padding: 12px; border-radius: 50px;
-    font-weight: 700; width: 100%; cursor: pointer;
-    text-transform: uppercase; letter-spacing: 1px;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 50px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* ==========================================================================
-    3. VOTING UI (VOTE BOXES)
-    ========================================================================== */
-.card-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    width: 100%; 
-    margin-bottom: 10px; 
+   3. VOTING UI (VOTE BOXES)
+   ========================================================================== */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
 }
 
-/* "You suggested this" කොටස සහ එහි අයිකනය පමණක් කහ පැහැයට */
-.user-info, 
-.user-info span, 
+.user-info,
+.user-info span,
 .user-info i {
-    color: #007bff !important;
+    color: #4facfe !important;
     font-weight: 700 !important;
     opacity: 1 !important;
 }
 
-.status-pill.confirmed { 
-    background: rgba(76, 217, 100, 0.2); 
-    color: #4cd964; 
-    font-size: 12px; 
-    padding: 4px 10px; 
-    border-radius: 8px; 
-    font-weight: 600; 
+.status-pill.confirmed {
+    background: rgba(76, 217, 100, 0.25);
+    color: #7debb3;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 600;
 }
 
-.status-pill.pending { 
-    background: rgba(255, 255, 255, 0.15); 
-    color: #ffffff; 
-    font-size: 12px; 
-    padding: 4px 10px; 
-    border-radius: 8px; 
-    font-weight: 600; 
+.status-pill.pending {
+    background: rgba(255, 255, 255, 0.15);
+    /* ── CHANGED: was #ffffff — now uses token for softer look ── */
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 600;
 }
 
-.trip-title, .opt-text, .opt-pct, .highlighted-text { 
-    font-size: 16px; 
-    color: #ffffff !important; 
-    font-weight: 400; 
+.trip-title, .opt-text, .opt-pct, .highlighted-text {
+    font-size: 16px;
+    /* ── CHANGED: was rgba(255,255,255,0.9) — now full token ── */
+    color: var(--text-primary) !important;
+    font-weight: 400;
 }
 
-.vote-action-container { 
-    display: flex; 
-    gap: 12px; 
-    margin: 10px 0; 
+.vote-action-container {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0;
 }
 
-.vote-btn { 
-    flex: 1; 
-    padding: 8px; 
-    border-radius: 12px; 
-    border: none; 
-    font-weight: 700; 
-    cursor: pointer; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
+.vote-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.vote-btn.agree { 
-    background: #e8fcf0; 
-    color: #28a745; 
-    border: 1px solid #c3f2d7; 
+.vote-btn.agree {
+    background: #e8fcf0;
+    color: #28a745;
+    border: 1px solid #c3f2d7;
 }
 
-.vote-btn.disagree { 
-    background: #fff5f5; 
-    color: #dc3545; 
-    border: 1px solid #ffdada; 
+.vote-btn.disagree {
+    background: #fff5f5;
+    color: #dc3545;
+    border: 1px solid #ffdada;
 }
 
-.vote-count-label { 
-    font-size: 11px; 
-    font-weight: 400; 
-    opacity: 0.8; 
+.vote-count-label {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.8;
     margin-top: 2px;
 }
 
 .vote-display {
-    max-width: 550px; 
+    max-width: 550px;
     margin-left: auto;
     margin-right: auto;
-    width: 100%; 
+    width: 100%;
 }
 
-.single-vote-bar { 
-    height: 30px; 
-    display: flex; 
-    border-radius: 10px; 
-    overflow: hidden; 
-    width: 100%; 
-    margin: 10px 0; 
-    background: rgba(255,255,255,0.1); 
+.single-vote-bar {
+    height: 30px;
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    margin: 10px 0;
+    background: rgba(255,255,255,0.12);
 }
 
-.fill { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    color: white; 
-    font-weight: 800; 
-    font-size: 12px; 
-    transition: width 0.5s ease; 
+.fill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 12px;
+    transition: width 0.5s ease;
 }
 
-.fill.agree { background-color: #4cd964; }
+.fill.agree    { background-color: #4cd964; }
 .fill.disagree { background-color: #ff5a5f; }
 
-.poll-bar-info { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    width: 100%; 
+.poll-bar-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
     margin-bottom: 5px;
 }
 
-.opt-pct-parallel { 
-    font-size: 14px; 
-    font-weight: 700; 
-    color: #ffffff; 
+.opt-pct-parallel {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
-.poll-progress-track { 
-    width: 100%; 
-    height: 10px; 
-    background: rgba(255, 255, 255, 0.2); 
-    border-radius: 100px; 
-    overflow: hidden; 
-    position: relative; 
-    margin: 8px 0; 
+.poll-progress-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+    margin: 8px 0;
 }
 
-.poll-progress-fill { 
-    height: 100%; 
-    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); 
-    transition: width 0.6s ease; 
+.poll-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    transition: width 0.6s ease;
 }
 
 /* ==========================================================================
-    4. CHAT AREA 
-    ========================================================================== */
-.chat-area-wrapper { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    padding: 15px; 
-    overflow-y: auto;
-}
-
-.chat-bubble-row { 
-    display: flex; 
-    width: 100%; 
-    margin-bottom: 4px; 
-}
-
-.chat-bubble-row.row-left { justify-content: flex-start; }
-.chat-bubble-row.row-right { justify-content: flex-end; }
-
-.chat-bubble { 
-    max-width: 85%; 
-    padding: 8px 12px; 
-    border-radius: 15px; 
-    background: rgba(255, 255, 255, 0.15); 
-    backdrop-filter: blur(12px); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    color: #ffffff;
-    position: relative;
-}
-
-.chat-bubble-row.row-right .chat-bubble {
-    background: rgba(0, 123, 255, 0.3); 
-    border-color: rgba(0, 150, 255, 0.3);
-    border-bottom-right-radius: 4px; 
-}
-
-.chat-user { 
-    font-size: 12px; 
-    font-weight: 800; 
-    margin-bottom: 4px; 
-    color: #ffca28; 
-    display: block; 
-}
-
-.chat-bubble-row.row-right .chat-user { 
-    color: #00f2fe; 
-    text-align: right; 
-}
-
-.chat-content p { 
-    margin: 0; 
-    font-size: 16px; 
-    line-height: 1.5; 
-    color: #ffffff !important; 
-    opacity: 1; 
-}
-
-.chat-footer-row {
+   5. VOTE BOX FOOTER & ANIMATIONS
+   ========================================================================== */
+.vote-footer {
     display: flex;
     justify-content: space-between;
-    align-items: center; 
-    margin-top: 8px;    
-    width: 100%;
-    gap: 15px;          
-}
-
-.chat-time { 
-    font-size: 10px; 
-    color: #e0e0e0;
-    opacity: 0.8; 
-}
-
-.chat-actions {
-    display: flex;
     align-items: center;
-    gap: 10px; 
-    margin-left: auto;  
-}
-
-.btn-chat-action {
-    background: transparent !important; 
-    border: none !important;                                    
-    padding: 2px !important;
-    cursor: pointer;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: auto !important;
-    height: auto !important;
-    box-shadow: none !important; 
-    margin-left: 4px;          
-}
-
-.btn-chat-action .material-icons {
-    color: rgba(255, 255, 255, 0.8) !important; 
-    font-size: 14px !important;
-    transition: color 0.2s ease;
-}
-
-.btn-chat-action:hover .material-icons {
-    color: #ffffff !important; 
-}
-
-.cancel-edit-btn {
-    background: none;
-    border: none;
-    color: #ff5a5f;
-    cursor: pointer;
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-}
-
-.date-divider { 
-    display: flex; 
-    justify-content: center; 
-    margin: 10px 0; 
-}
-
-.date-divider span { 
-    background: rgba(0, 0, 0, 0.4); 
-    color: #ffffff; 
-    padding: 3px 12px; 
-    border-radius: 20px; 
-    font-size: 11px; 
-}
-
-.chat-input-container {
-    padding: 10px 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chat-input-container.editing-mode {
-    background: rgba(255, 193, 7, 0.05); 
-}
-
-.chat-input-wrapper { 
-    background: white;
-    border-radius: 25px;
-    display: flex; 
-    padding: 2px 2px 2px 12px;
-    align-items: center;
-}
-
-.chat-input-wrapper input {
-    flex: 1; 
-    border: none; 
-    background: transparent;
-    padding: 8px 5px; 
-    outline: none; 
-    font-size: 14px; 
-    color: #333;
-}
-
-.send-btn-circle { 
-    background: #007bff; 
-    color: white; 
-    border: none;
-    width: 34px; 
-    height: 34px; 
-    border-radius: 50%;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-}
-
-.send-btn-circle .material-icons {
-    font-size: 18px;
-}
-
-/* ==========================================================================
-    5. VOTE BOX FOOTER, ANONYMOUS LABEL & ANIMATIONS
-    ========================================================================== */
-.vote-footer { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    margin-top: 10px; 
-    font-size: 10px; 
-    color: #ffffff; 
+    margin-top: 10px;
+    font-size: 10px;
+    /* ── CHANGED: was #ffffff — now uses token ── */
+    color: var(--text-secondary);
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .footer-left, .footer-right { flex: 1; }
@@ -501,8 +339,7 @@
 .footer-right { display: flex; justify-content: flex-end; }
 
 .anonymous-label {
-    color: #ffffff;
-    opacity: 0.8;
+    color: var(--text-secondary);
     letter-spacing: 0.5px;
     font-weight: 600;
     display: flex;
@@ -516,41 +353,29 @@
 .btn-delete-box-bottom {
     background: transparent;
     border: none;
-    color: #ffffff;
-    opacity: 0.7;
+    color: var(--text-hint);
     cursor: pointer;
     transition: 0.3s;
     padding: 0;
 }
 
-.btn-delete-box-bottom:hover { 
-    color: #ff5a5f; 
-    opacity: 1; 
-}
+.btn-delete-box-bottom:hover { color: #ff5a5f; opacity: 1; }
 
-.hourglass-anim { 
-    animation: hourglass-flip 2.5s infinite; 
-    display: inline-block; 
+.hourglass-anim {
+    animation: hourglass-flip 2.5s infinite;
+    display: inline-block;
 }
 
 @keyframes hourglass-flip {
-    0% { transform: rotate(0deg); }
-    45% { transform: rotate(180deg); }
-    95% { transform: rotate(180deg); }
+    0%   { transform: rotate(0deg); }
+    45%  { transform: rotate(180deg); }
+    95%  { transform: rotate(180deg); }
     100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 992px) {
-    .split-container { flex-direction: column; overflow-y: auto; }
-    .column-half { max-width: 100%; flex: none; }
-    .main-layout { overflow-y: auto; height: auto; }
-    .left-column, .right-column { overflow: visible; height: auto; }
-    .right-column { min-height: 500px; }
-}
-
 /* ==========================================================================
-    6. VOTE SELECTION HIGHLIGHTING & INDICATORS
-    ========================================================================== */
+   6. VOTE SELECTION HIGHLIGHTING & INDICATORS
+   ========================================================================== */
 .vote-btn.active {
     border-width: 2px !important;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
@@ -576,14 +401,14 @@
 }
 
 .poll-bar-wrapper:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 12px;
 }
 
 .vote-indicator {
     width: 14px;
     height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.45);
     border-radius: 50%;
     display: inline-block;
     transition: all 0.3s ease;
@@ -611,11 +436,11 @@
 }
 
 /* ==========================================================================
-    7. NEW: MAJORITY SYSTEM & STATUS STYLES
-    ========================================================================== */
+   7. MAJORITY SYSTEM & STATUS STYLES
+   ========================================================================== */
 .status-pill.rejected {
-    background: rgba(255, 90, 95, 0.2);
-    color: #ff5a5f;
+    background: rgba(255, 90, 95, 0.25);
+    color: #ff8a8e;
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 8px;
@@ -624,29 +449,19 @@
 
 .voted-count-tag {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-hint);
     margin-left: 8px;
     font-weight: 400;
 }
 
 .locked-card {
-    border: 1px solid rgba(76, 217, 100, 0.5); 
+    border: 1px solid rgba(76, 217, 100, 0.5);
     box-shadow: 0 0 20px rgba(76, 217, 100, 0.15);
 }
 
-.disabled-votes {
-    pointer-events: none; 
-}
-
-.vote-btn[disabled] {
-    cursor: default;
-    opacity: 0.8;
-}
-
-.poll-locked {
-    cursor: default !important;
-    opacity: 0.9;
-}
+.disabled-votes { pointer-events: none; }
+.vote-btn[disabled] { cursor: default; opacity: 0.8; }
+.poll-locked { cursor: default !important; opacity: 0.9; }
 
 .status-container {
     display: flex;
@@ -656,41 +471,48 @@
 }
 
 /* ==========================================================================
-    8. NAVIGATION BUTTONS
-    ========================================================================== */
+   8. NAVIGATION BUTTONS
+   ========================================================================== */
 .navigation-footer {
-  display: flex;
-  justify-content: center;
-  gap: 20px;               
-  padding: 15px 0 25px 0;
-  width: 100%;
-  flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 15px 0 25px 0;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 24px;
-  border-radius: 8px;      
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
-  background-color: #007bff; 
-  color: #ffffff !important;  
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    background-color: #007bff;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .nav-btn:hover {
-  background-color: #0056b3; 
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .nav-btn i {
-  color: #ffffff;
-  font-size: 18px;
+    color: #ffffff;
+    font-size: 18px;
+}
+
+@media (max-width: 992px) {
+    .split-container    { flex-direction: column; overflow-y: auto; }
+    .column-half        { max-width: 100%; flex: none; }
+    .main-layout        { overflow-y: auto; height: auto; }
+    .left-column        { overflow: visible; height: auto; }
 }

@@ -16,13 +16,12 @@ namespace SmartJourneyPlanner.Hubs
             _discussionsService = discussionsService;
         }
 
-        // පණිවිඩයක් ලැබුණු විට එය සියලුම සාමාජිකයින්ට දැනුම් දීම (Broadcast)
-        // දැන් පණිවිඩ සහ ඡන්ද පෙට්ටි වෙන් කර ඇති නිසා discussionId අවශ්‍ය නොවේ
+        //  (Broadcast)
         public async Task SendMessage(object comment)
         {
             try
             {
-                // පණිවිඩය පමණක් සියලුම clients ලා වෙත යවයි
+                //only send messages to clients
                 await Clients.All.SendAsync("ReceiveComment", comment);
 
                 Console.WriteLine("[SignalR Hub] Global message broadcasted.");
@@ -34,7 +33,7 @@ namespace SmartJourneyPlanner.Hubs
             }
         }
 
-        // ඡන්ද දත්ත පමණක් (Votes only) broadcast කිරීමට මෙම method එක භාවිතා කළ හැක
+        //  (Votes only) broadcast 
         public async Task BroadcastVoteUpdate(object updatedDiscussion)
         {
             try
