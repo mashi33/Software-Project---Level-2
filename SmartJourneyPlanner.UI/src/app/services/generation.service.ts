@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class GenerationService {
-  private apiUrl = environment.apiUrl; //   API URL in environment
+  private apiUrl = environment.apiUrl; // environment එකේ ඇති API URL එක
 
   constructor(private http: HttpClient) { }
 
@@ -15,7 +15,7 @@ export class GenerationService {
   getStaticMap(path: string, markers: string, apiKey: string) {
   const url = `${this.apiUrl}/Map/get-static-map`;
   
-  
+  // දත්ත Body එක ලෙස යැවිය යුතුය
   const body = {
     path: path,
     markers: markers,

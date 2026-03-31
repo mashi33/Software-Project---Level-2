@@ -1,116 +1,125 @@
 /* ==========================================================================
-    4. CHAT AREA 
+   4. CHAT AREA
    ========================================================================== */
-   :host {
+:host {
     display: block;
     width: 100%;
     height: 100%;
 }
-   .right-column {
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    background: rgba(255, 255, 255, 0.12); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+
+.right-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* ── CHANGED: was rgba(255,255,255,0.12) — now dark glass at 62% opacity ── */
+    background: rgba(10, 18, 40, 0.62);
+    backdrop-filter: blur(22px) saturate(1.5);
+    -webkit-backdrop-filter: blur(22px) saturate(1.5);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* ── CHANGED: asymmetric light-catching border ── */
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-top-color: rgba(255, 255, 255, 0.38);
+    border-left-color: rgba(255, 255, 255, 0.28);
     overflow: hidden;
     position: relative;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
     height: 100%;
 }
 
-.chat-area-wrapper { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    padding: 15px; 
+.chat-area-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
     overflow-y: auto;
 }
 
-.chat-area-wrapper::-webkit-scrollbar {
-    width: 6px;
-}
-
+.chat-area-wrapper::-webkit-scrollbar { width: 6px; }
 .chat-area-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     border-radius: 10px;
 }
 
-.chat-bubble-row { 
-    display: flex; 
-    width: 100%; 
-    margin-bottom: 4px; 
+.chat-bubble-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 4px;
 }
 
-.chat-bubble-row.row-left { justify-content: flex-start; }
+.chat-bubble-row.row-left  { justify-content: flex-start; }
 .chat-bubble-row.row-right { justify-content: flex-end; }
 
-.chat-bubble { 
-    max-width: 85%; 
-    padding: 8px 12px; 
-    border-radius: 15px; 
-    background: rgba(255, 255, 255, 0.15); 
-    backdrop-filter: blur(12px); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    color: #ffffff;
+.chat-bubble {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    /* ── CHANGED: was rgba(255,255,255,0.15) blur(12px) — too transparent ── */
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.95);
     position: relative;
 }
 
 .chat-bubble-row.row-right .chat-bubble {
-    background: rgba(0, 123, 255, 0.3); 
-    border-color: rgba(0, 150, 255, 0.3);
-    border-bottom-right-radius: 4px; 
+    /* ── CHANGED: was rgba(0,123,255,0.3) — bumped to 0.45 for clarity ── */
+    background: rgba(0, 123, 255, 0.45);
+    border-color: rgba(0, 150, 255, 0.35);
+    border-top-color: rgba(100, 190, 255, 0.55);
+    border-bottom-right-radius: 4px;
 }
 
-.chat-user { 
-    font-size: 12px; 
-    font-weight: 800; 
-    margin-bottom: 4px; 
-    color: #ffca28; 
-    display: block; 
+.chat-user {
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    /* ── CHANGED: was #ffca28 — slightly brighter for contrast ── */
+    color: #ffd54f;
+    display: block;
 }
 
-.chat-bubble-row.row-right .chat-user { 
-    color: #00f2fe; 
-    text-align: right; 
+.chat-bubble-row.row-right .chat-user {
+    color: #63d4f5;
+    text-align: right;
 }
 
-.chat-content p { 
-    margin: 0; 
-    font-size: 16px; 
-    line-height: 1.5; 
-    color: #ffffff !important; 
-    opacity: 1; 
+.chat-content p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    /* ── CHANGED: now uses token instead of hardcoded #ffffff ── */
+    color: rgba(255, 255, 255, 0.95) !important;
+    opacity: 1;
 }
 
 .chat-footer-row {
     display: flex;
     justify-content: space-between;
-    align-items: center; 
-    margin-top: 8px;    
+    align-items: center;
+    margin-top: 8px;
     width: 100%;
-    gap: 15px;          
+    gap: 15px;
 }
 
-.chat-time { 
-    font-size: 10px; 
-    color: #e0e0e0;
-    opacity: 0.8; 
+.chat-time {
+    font-size: 10px;
+    /* ── CHANGED: was #e0e0e0 opacity 0.8 → explicit rgba for reliability ── */
+    color: rgba(255, 255, 255, 0.65);
 }
 
 .chat-actions {
     display: flex;
     align-items: center;
-    gap: 10px; 
-    margin-left: auto;  
+    gap: 10px;
+    margin-left: auto;
 }
 
 .btn-chat-action {
-    background: transparent !important; 
-    border: none !important;                                     
+    background: transparent !important;
+    border: none !important;
     padding: 2px !important;
     cursor: pointer;
     display: flex !important;
@@ -118,18 +127,18 @@
     justify-content: center;
     width: auto !important;
     height: auto !important;
-    box-shadow: none !important; 
-    margin-left: 4px;          
+    box-shadow: none !important;
+    margin-left: 4px;
 }
 
 .btn-chat-action .material-icons {
-    color: rgba(255, 255, 255, 0.8) !important; 
+    color: rgba(255, 255, 255, 0.75) !important;
     font-size: 14px !important;
     transition: color 0.2s ease;
 }
 
 .btn-chat-action:hover .material-icons {
-    color: #ffffff !important; 
+    color: #ffffff !important;
 }
 
 .cancel-edit-btn {
@@ -142,65 +151,297 @@
     align-items: center;
 }
 
-.date-divider { 
-    display: flex; 
-    justify-content: center; 
-    margin: 10px 0; 
+.date-divider {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
 }
 
-.date-divider span { 
-    background: rgba(0, 0, 0, 0.4); 
-    color: #ffffff; 
-    padding: 3px 12px; 
-    border-radius: 20px; 
-    font-size: 11px; 
+.date-divider span {
+    /* ── CHANGED: was rgba(0,0,0,0.4) — bumped to 0.58 for legibility ── */
+    background: rgba(0, 0, 0, 0.58);
+    color: rgba(255, 255, 255, 0.90);
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
 }
 
 .chat-input-container {
     padding: 10px 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    /* ── CHANGED: was rgba(255,255,255,0.05) — slightly more visible ── */
+    background: rgba(0, 0, 0, 0.28);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .chat-input-container.editing-mode {
-    background: rgba(255, 193, 7, 0.05); 
+    background: rgba(255, 193, 7, 0.08);
 }
 
-.chat-input-wrapper { 
-    background: white;
+.chat-input-wrapper {
+    background: rgba(255, 255, 255, 0.96);
     border-radius: 25px;
-    display: flex; 
+    display: flex;
     padding: 2px 2px 2px 12px;
     align-items: center;
 }
 
 .chat-input-wrapper input {
-    flex: 1; 
-    border: none; 
+    flex: 1;
+    border: none;
     background: transparent;
-    padding: 8px 5px; 
-    outline: none; 
-    font-size: 14px; 
+    padding: 8px 5px;
+    outline: none;
+    font-size: 14px;
     color: #333;
 }
 
-.send-btn-circle { 
-    background: #007bff; 
-    color: white; 
+.send-btn-circle {
+    background: #007bff;
+    color: white;
     border: none;
-    width: 34px; 
-    height: 34px; 
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
+    cursor: pointer;
+    display: flex;
+    align-items: center;
     justify-content: center;
 }
 
-.send-btn-circle .material-icons {
-    font-size: 18px;
-}
+.send-btn-circle .material-icons { font-size: 18px; }
 
 @media (max-width: 992px) {
     .right-column { min-height: 500px; height: auto; overflow: visible; }
+}
+
+/* ==========================================================================
+   PDF ATTACHMENT — NEW STYLES
+   ========================================================================== */
+.pdf-attach-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0 6px 0 0;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.pdf-attach-btn:hover { color: #007bff; }
+.pdf-attach-btn .material-icons { font-size: 20px; }
+
+.upload-progress-bar-wrapper {
+    position: relative;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+}
+
+.upload-progress-bar {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    background: rgba(0, 123, 255, 0.40);
+    transition: width 0.2s ease;
+}
+
+.upload-progress-label {
+    position: relative;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.90);
+    z-index: 1;
+}
+
+.pdf-bubble {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* ── CHANGED: was 0.08 — slightly more opaque for legibility ── */
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    padding: 8px 10px;
+    min-width: 200px;
+    max-width: 320px;
+}
+
+.pdf-bubble-icon .material-icons {
+    font-size: 28px;
+    color: #ff6b6b;
+}
+
+.pdf-bubble-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pdf-bubble-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdf-bubble-size {
+    font-size: 11px;
+    /* ── CHANGED: was 0.6 — bumped to 0.72 ── */
+    color: rgba(255, 255, 255, 0.72);
+    margin-top: 2px;
+}
+
+.pdf-bubble-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pdf-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.80);
+    text-decoration: none;
+    transition: color 0.2s;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.pdf-action-btn:hover { color: #ffffff; }
+.pdf-action-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.pdf-action-btn .material-icons { font-size: 18px; }
+
+.mini-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   SEARCH — NEW STYLES
+   ========================================================================== */
+.search-bar-wrapper {
+    /* ── CHANGED: was 0.25 — bumped for clear separation ── */
+    background: rgba(0, 0, 0, 0.40);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 8px 12px;
+    animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.search-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.search-icon {
+    color: rgba(255, 255, 255, 0.60);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.search-input {
+    flex: 1;
+    /* ── CHANGED: bumped from 0.1 → 0.15 ── */
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 20px;
+    padding: 5px 12px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+.search-input:focus { border-color: rgba(0, 150, 255, 0.70); }
+
+.search-count {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.70);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
+}
+
+.search-nav-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.search-nav-btn:hover:not(:disabled) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.search-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.search-nav-btn .material-icons { font-size: 20px; }
+
+.search-close-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    transition: color 0.2s;
+}
+
+.search-close-btn:hover { color: #ff5a5f; }
+.search-close-btn .material-icons { font-size: 18px; }
+
+.search-toggle-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    transition: color 0.2s;
+}
+
+.search-toggle-btn:hover  { color: #007bff; }
+.search-toggle-btn.active { color: #007bff; }
+.search-toggle-btn .material-icons { font-size: 20px; }
+
+/* Match highlight */
+.chat-bubble-row.match-highlight .chat-bubble {
+    border-color: rgba(255, 200, 0, 0.55);
+    box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.35);
+}
+
+/* Active match */
+.chat-bubble-row.match-active .chat-bubble {
+    border-color: rgba(255, 200, 0, 0.95);
+    box-shadow: 0 0 0 2px rgba(255, 200, 0, 0.55);
+    background: rgba(255, 200, 0, 0.14);
 }

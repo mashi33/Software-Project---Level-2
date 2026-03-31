@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component,ViewEncapsulation, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DiscussionService, DiscussionItem } from '../services/discussion.service';
 import { SignalrService } from '../services/signalr.service';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +14,9 @@ import { CommentsComponent } from '../comments/comments';
   standalone: true,
   imports: [FormsModule, CommonModule, CommentsComponent], // මෙහි CommentsComponent ඇතුළත් කළා
   templateUrl: './discussion.html',
-  styleUrls: ['./discussion.css']
+  styleUrls: ['./discussion.css'],
+  encapsulation: ViewEncapsulation.None
+  
 })
 export class DiscussionComponent implements OnInit, OnDestroy { 
   discussions: DiscussionItem[] = [];

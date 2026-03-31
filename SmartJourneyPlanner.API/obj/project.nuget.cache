@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "vd19dFu3mkY=",
+  "dgSpecHash": "kr1PSt9+mlA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\MSII\\OneDrive\\Desktop\\Smart Journey Planner Angular\\SmartJourneyPlanner\\SmartJourneyPlanner.csproj",
+  "projectFilePath": "C:\\Users\\MSII\\OneDrive\\Documents\\GitHub\\Software-Project---Level-2\\SmartJourneyPlanner.API\\SmartJourneyPlanner.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\MSII\\.nuget\\packages\\dnsclient\\1.6.1\\dnsclient.1.6.1.nupkg.sha512",
     "C:\\Users\\MSII\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",

@@ -9,7 +9,7 @@ namespace SmartJourneyPlanner.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
+    // Program.cs හි ඔබ "AllowAngular" ලෙස policy එක නම් කර ඇති බැවින් එය මෙහි සඳහන් කරන්න
     [EnableCors("AllowAngular")]
     public class MapController : ControllerBase
     {
@@ -52,7 +52,7 @@ namespace SmartJourneyPlanner.Controllers
 
                 var client = _httpClientFactory.CreateClient();
 
-                // 2.  Recieve the image from Google
+                // 2. Google වෙතින් පින්තූරය ලබා ගැනීම
                 var response = await client.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)

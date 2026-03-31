@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using SmartJourneyPlanner.API.Models;       // ✅ Needed for MongoDBSettings
+using SmartJourneyPlanner.API.Models;        // ✅ Needed for MongoDBSettings
 using SmartJourneyPlanner.API.Services;     // ✅ Needed for BudgetService
 using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Interfaces;
@@ -35,6 +35,13 @@ Console.WriteLine("================================================");
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     return new MongoClient(connectionString);
+});
+
+// ✅ Register IMongoDatabase (This is REQUIRED for FileStorageService)
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase(databaseName);
 });
 
 // ==========================================================
@@ -72,7 +79,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:4200") // Angular App URL
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials()                   // ✅ SignalR සඳහා අත්‍යවශ්‍ය
+              .AllowCredentials()                    // ✅ SignalR සඳහා අත්‍යවශ්‍ය
               .WithExposedHeaders("Content-Disposition", "Access-Control-Allow-Origin"); // ✅ PDF download සඳහා
     });
 });
@@ -90,6 +97,9 @@ builder.Services.AddSingleton<CommentsService>();
 
 // ✅ Route Service
 builder.Services.AddScoped<IRouteService, RouteService>();
+
+// ✅ File Storage Service (Now has access to IMongoDatabase)
+builder.Services.AddSingleton<FileStorageService>();
 
 // ==========================================================
 // 6. SWAGGER & HTTP CLIENT
