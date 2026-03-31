@@ -24,7 +24,7 @@ export const routes: Routes = [
   // { path: '**', redirectTo: '/login' } 
   { path: 'groupChat', component: DiscussionComponent },
   
-  // මේ පේළිය පරීක්ෂා කරන්න. මෙතන RouteOptimization තිබිය යුතුයි.
+  
   { path: 'explore', component: RouteOptimization }, 
   
   //{ path: '', redirectTo: '/route-optimization', pathMatch: 'full' }

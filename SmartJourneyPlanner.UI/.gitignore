@@ -49,3 +49,8 @@ obj/
 .vs/
 SmartJourneyPlanner/bin/
 SmartJourneyPlanner/obj/
+
+appsettings.json
+appsettings.*.json
+.env
+environments/
