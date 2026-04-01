@@ -92,20 +92,31 @@
 
 /* Booking Footer Actions */
 .btn-rate-trip {
-  background-color: #007bff; /* Primary Blue */
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
   border: none;
-  color: #ffffff;
-  font-weight: 700;
-  padding: 0.7rem 1.8rem;
-  border-radius: 8px; /* Consistent 8px */
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 123, 255, 0.2);
+  color: #ffffff !important;
+  font-weight: 800;
+  padding: 0.7rem 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn-rate-trip:hover {
-  background-color: #0069d9;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 12px -3px rgba(0, 123, 255, 0.3);
+.btn-rate-trip:hover:not(:disabled) {
+  background: linear-gradient(to right, #1d4ed8, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
+  color: #ffffff !important;
+}
+
+.btn-rate-trip:disabled {
+  background: #e2e8f0;
+  color: #94a3b8 !important;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .btn-outline-danger {
