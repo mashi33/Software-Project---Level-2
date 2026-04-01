@@ -14,6 +14,11 @@ import Swal from 'sweetalert2';
 export class ProviderForm implements OnInit {
   vehicleForm!: FormGroup;
   vehicleTypes = Object.values(VehicleType);
+  categoryList = [
+    { type: VehicleType.Budget, label: 'Budget (Alto, Axio)' },
+    { type: VehicleType.Luxury, label: 'Luxury (Mercedes, BMW)' },
+    { type: VehicleType.Group, label: 'Group (Van, Bus)' }
+  ];
   vehicleClasses: VehicleClass[] = ['Car', 'Van', 'Bus'];
   languagesList = [
     { name: 'Sinhala', code: 'LK' },
@@ -30,6 +35,10 @@ export class ProviderForm implements OnInit {
     { name: 'Korean', code: 'KR' }
   ];
   isLanguageDropdownOpen = false;
+  isCategoryDropdownOpen = false;
+  isVehicleClassDropdownOpen = false;
+  isFuelTypeDropdownOpen = false;
+  isTransmissionDropdownOpen = false;
 
   // Image previews
   interiorPreview: string | ArrayBuffer | null = null;
@@ -137,10 +146,67 @@ export class ProviderForm implements OnInit {
     return `${selected.slice(0, 2).join(', ')} +${selected.length - 2} more`;
   }
 
+  toggleCategoryDropdown() {
+    this.isCategoryDropdownOpen = !this.isCategoryDropdownOpen;
+    if (this.isCategoryDropdownOpen) this.isLanguageDropdownOpen = false;
+  }
+
+  selectCategory(type: VehicleType) {
+    this.vehicleForm.patchValue({ type });
+    this.isCategoryDropdownOpen = false;
+  }
+
+  getCategoryDisplay(): string {
+    const type = this.vehicleForm.get('type')?.value;
+    return this.categoryList.find(c => c.type === type)?.label || 'Select Category';
+  }
+
+  toggleVehicleClassDropdown() {
+    this.isVehicleClassDropdownOpen = !this.isVehicleClassDropdownOpen;
+    if (this.isVehicleClassDropdownOpen) this.closeAllDropdownsExcept('vehicleClass');
+  }
+
+  selectVehicleClass(cls: VehicleClass) {
+    this.vehicleForm.patchValue({ vehicleClass: cls });
+    this.isVehicleClassDropdownOpen = false;
+  }
+
+  toggleFuelTypeDropdown() {
+    this.isFuelTypeDropdownOpen = !this.isFuelTypeDropdownOpen;
+    if (this.isFuelTypeDropdownOpen) this.closeAllDropdownsExcept('fuelType');
+  }
+
+  selectFuelType(type: string) {
+    this.vehicleForm.patchValue({ fuelType: type });
+    this.isFuelTypeDropdownOpen = false;
+  }
+
+  toggleTransmissionDropdown() {
+    this.isTransmissionDropdownOpen = !this.isTransmissionDropdownOpen;
+    if (this.isTransmissionDropdownOpen) this.closeAllDropdownsExcept('transmission');
+  }
+
+  selectTransmission(trans: string) {
+    this.vehicleForm.patchValue({ transmission: trans });
+    this.isTransmissionDropdownOpen = false;
+  }
+
+  private closeAllDropdownsExcept(except: string) {
+    this.isLanguageDropdownOpen = except === 'language';
+    this.isCategoryDropdownOpen = except === 'category';
+    this.isVehicleClassDropdownOpen = except === 'vehicleClass';
+    this.isFuelTypeDropdownOpen = except === 'fuelType';
+    this.isTransmissionDropdownOpen = except === 'transmission';
+  }
+
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.isLanguageDropdownOpen = false;
+      this.isCategoryDropdownOpen = false;
+      this.isVehicleClassDropdownOpen = false;
+      this.isFuelTypeDropdownOpen = false;
+      this.isTransmissionDropdownOpen = false;
     }
   }
 

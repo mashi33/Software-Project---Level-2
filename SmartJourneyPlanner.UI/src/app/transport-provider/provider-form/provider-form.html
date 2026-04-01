@@ -46,15 +46,43 @@
       <div class="row g-4">
         <div class="col-md-3">
           <label class="form-label fw-bold">Vehicle Type</label>
-          <select class="form-select pf-input-soft" formControlName="vehicleClass">
-            <option *ngFor="let cls of vehicleClasses" [value]="cls">{{cls}}</option>
-          </select>
+          <div class="pf-dropdown" [class.is-open]="isVehicleClassDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleVehicleClassDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('vehicleClass')?.value || 'Select Type'}}</span>
+              <i class="bi" [ngClass]="isVehicleClassDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isVehicleClassDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let cls of vehicleClasses" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('vehicleClass')?.value === cls"
+                     (click)="selectVehicleClass(cls)">
+                  <span class="small fw-semibold">{{cls}}</span>
+                  <i *ngIf="vehicleForm.get('vehicleClass')?.value === cls" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Category</label>
-          <select class="form-select pf-input-soft" formControlName="type">
-            <option *ngFor="let type of vehicleTypes" [value]="type">{{type}}</option>
-          </select>
+          <div class="pf-dropdown" [class.is-open]="isCategoryDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleCategoryDropdown()">
+              <span class="small pf-text-truncate">{{getCategoryDisplay()}}</span>
+              <i class="bi" [ngClass]="isCategoryDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isCategoryDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let cat of categoryList" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('type')?.value === cat.type"
+                     (click)="selectCategory(cat.type)">
+                  <span class="small fw-semibold">{{cat.label}}</span>
+                  <i *ngIf="vehicleForm.get('type')?.value === cat.type" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Year of Manufacture</label>
@@ -72,19 +100,43 @@
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Fuel Type</label>
-          <select class="form-select pf-input-soft" formControlName="fuelType">
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Electric">Electric</option>
-          </select>
+          <div class="pf-dropdown" [class.is-open]="isFuelTypeDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleFuelTypeDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('fuelType')?.value || 'Select Fuel'}}</span>
+              <i class="bi" [ngClass]="isFuelTypeDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isFuelTypeDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let f of ['Petrol', 'Diesel', 'Hybrid', 'Electric']" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('fuelType')?.value === f"
+                     (click)="selectFuelType(f)">
+                  <span class="small fw-semibold">{{f}}</span>
+                  <i *ngIf="vehicleForm.get('fuelType')?.value === f" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Transmission</label>
-          <select class="form-select pf-input-soft" formControlName="transmission">
-            <option value="Automatic">Automatic (Auto)</option>
-            <option value="Manual">Manual</option>
-          </select>
+          <div class="pf-dropdown" [class.is-open]="isTransmissionDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleTransmissionDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('transmission')?.value || 'Select Transmission'}}</span>
+              <i class="bi" [ngClass]="isTransmissionDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isTransmissionDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let t of ['Automatic', 'Manual']" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('transmission')?.value === t"
+                     (click)="selectTransmission(t)">
+                  <span class="small fw-semibold">{{t === 'Automatic' ? 'Automatic (Auto)' : t}}</span>
+                  <i *ngIf="vehicleForm.get('transmission')?.value === t" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -148,7 +200,7 @@
             <div class="col-md-6 px-0">
               <div class="pf-dropdown" [class.is-open]="isLanguageDropdownOpen">
                 <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleLanguageDropdown()">
-                  <span class="small">{{getSelectedLanguagesDisplay()}}</span>
+                  <span class="small pf-text-truncate">{{getSelectedLanguagesDisplay()}}</span>
                   <i class="bi" [ngClass]="isLanguageDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                 </div>
                 <div *ngIf="isFieldInvalid('languages')" class="pf-error-text">
@@ -269,6 +321,7 @@
               <div *ngIf="!licensePreview" class="upload-content">
                 <i class="bi bi-card-heading"></i>
                 <span>Driver License</span>
+                <span class="pf-upload-subtext">Please upload a single image showing both sides or a 2-page PDF.</span>
               </div>
             </label>
           </div>

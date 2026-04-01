@@ -330,7 +330,7 @@ select.us-input {
 .price-val {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0c92f4;
+  color: #1e293b;
   line-height: 1;
 }
 
@@ -340,6 +340,21 @@ select.us-input {
   margin-top: 4px;
 }
 
+.btn-us-outline-blue {
+  border: 2px solid #2563eb;
+  color: #2563eb;
+  background: transparent;
+  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  transition: all 0.3s;
+}
+
+.btn-us-outline-blue:hover {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
 .km-info, .extra-info {
   font-size: 0.75rem;
   color: #64748b;
@@ -347,40 +362,41 @@ select.us-input {
 }
 
 .btn-view-details {
-  background: #1e293b;
+  background: #2563eb;
   color: #ffffff;
   border: none;
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
   font-weight: 700;
   width: 100%;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: auto;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
 }
 
 .btn-view-details:hover {
-  background: #0f172a;
+  background: #1d4ed8;
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
   color: #ffffff;
 }
 
 .btn-find {
-  background: #0c92f4;
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
   color: #ffffff;
   border: none;
   border-radius: 12px;
   padding: 0.75rem 1.5rem;
   font-weight: 700;
   font-size: 1rem;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(12, 146, 244, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btn-find:hover {
-  background: #0b82d9;
+  background: linear-gradient(to right, #1d4ed8, #1e40af);
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(12, 146, 244, 0.3);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
   color: #ffffff;
 }
 

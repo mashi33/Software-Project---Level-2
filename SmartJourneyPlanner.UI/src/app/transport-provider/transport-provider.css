@@ -47,10 +47,10 @@
     position: absolute;
     width: calc(50% - 6px);
     height: calc(100% - 12px);
-    background: #001F3F; /* Navy Blue as requested */
+    background: #2563eb; /* Vibrant Blue */
     border-radius: 999px;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px -1px rgba(0, 31, 63, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
     z-index: 1;
 }
 
