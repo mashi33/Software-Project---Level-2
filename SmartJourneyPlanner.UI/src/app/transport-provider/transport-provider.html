@@ -22,6 +22,6 @@
 
     <div class="tp-content-area">
         <app-user-search *ngIf="activeTab === 'search'"></app-user-search>
-        <app-my-bookings *ngIf="activeTab === 'bookings'" [role]="'user'"></app-my-bookings>
+        <app-my-bookings *ngIf="activeTab === 'bookings'" [role]="'user'" (switchTab)="activeTab = $event"></app-my-bookings>
     </div>
 </div>

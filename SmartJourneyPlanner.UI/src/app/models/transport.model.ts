@@ -90,8 +90,15 @@ export interface Booking {
   createdAt: Date | string;
   hasBeenRated?: boolean;
   
+  // New Trip Details for Providers
+  pickupAddress?: string;
+  destinationAddress?: string;
+  destinations?: string[]; // Array of stops/destinations
+  passengerCount?: number;
+  luggageCount?: number;
+  
   // New UI Fields
-  passengers?: number;
+  passengers?: number; // Keeping for backward compatibility if used elsewhere
   location?: string;
   pricingSummary?: {
     dailyRate: number;

@@ -6,7 +6,7 @@
 
 .tp-header {
     background: #ffffff;
-    padding: 3rem 1rem 2rem;
+    padding: 1.5rem 1rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -28,8 +28,8 @@
 .tp-switcher-container {
     display: flex;
     justify-content: center;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .tp-switcher {

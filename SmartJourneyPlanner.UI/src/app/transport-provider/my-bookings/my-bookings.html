@@ -4,10 +4,17 @@
     <!-- USER VIEW -->
     <ng-container *ngIf="role === 'user'">
       <!-- Empty State -->
-      <div *ngIf="userBookings.length === 0" class="text-center py-5">
-        <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
-        <h4 class="text-dark mt-3">No trips found</h4>
-        <p class="text-secondary">You haven't requested any transport yet.</p>
+      <div *ngIf="userBookings.length === 0" class="empty-state-wrapper">
+        <div class="empty-state-card shadow-sm">
+          <div class="icon-circle mb-4">
+            <i class="bi bi-calendar2-x"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-2">No bookings yet</h4>
+          <p class="text-secondary mb-4 mx-auto" style="max-width: 320px;">Your journey is waiting! Start by finding the perfect transport for your next trip.</p>
+          <button class="btn btn-premium-cta btn-lg rounded-pill" (click)="goToSearch()">
+            <i class="bi bi-search me-2"></i> Find Transport
+          </button>
+        </div>
       </div>
 
       <!-- Booking Card -->
@@ -47,10 +54,34 @@
 
             <!-- Vehicle & Trip Info -->
             <div class="col-md-5 mb-4 mb-md-0">
-              <h5 class="text-dark fw-bold mb-3">{{b.vehicleId}}</h5>
-              <div class="booking-specs d-flex flex-wrap gap-4 mb-3">
-                <div class="spec-item"><i class="bi bi-people me-2"></i>{{b.passengers}} Passengers</div>
-                <div class="spec-item"><i class="bi bi-geo-alt me-2"></i>{{b.location}}</div>
+              <h5 class="text-dark fw-bold mb-2">{{b.vehicleId}}</h5>
+              
+              <!-- Trip Route Details -->
+              <div class="trip-route-card mb-3 p-2 rounded-2 bg-light border-start border-3 border-primary">
+                <div class="small d-flex align-items-center mb-1">
+                  <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                  <span class="text-navy fw-bold me-2">From:</span>
+                  <span class="text-secondary">{{b.pickupAddress || b.location}}</span>
+                </div>
+                <div class="small d-flex align-items-start">
+                  <i class="bi bi-flag-fill text-success me-2 mt-1"></i>
+                  <span class="text-navy fw-bold me-2">To:</span>
+                  <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <ng-container *ngIf="b.destinations && b.destinations.length > 0; else singleDest">
+                      <span *ngFor="let dest of b.destinations; let last = last" class="text-secondary">
+                        {{dest}}<span *ngIf="!last" class="mx-1 ms-2 text-primary">→</span>
+                      </span>
+                    </ng-container>
+                    <ng-template #singleDest>
+                      <span class="text-secondary">{{b.destinationAddress || 'As specified'}}</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="booking-specs d-flex flex-wrap gap-3 mb-3">
+                <div class="spec-item"><i class="bi bi-people-fill me-2"></i>{{b.passengerCount || b.passengers}} Guests</div>
+                <div class="spec-item"><i class="bi bi-luggage-fill me-2"></i>{{b.luggageCount || 0}} Bags</div>
               </div>
               <div class="text-secondary small">
                 <div class="mb-2"><i class="bi bi-calendar-event me-2"></i> {{b.startDate | date:'mediumDate'}} to {{b.endDate | date:'mediumDate'}}</div>
@@ -178,10 +209,17 @@
     <!-- PROVIDER VIEW -->
     <ng-container *ngIf="role === 'provider'">
       <!-- Empty State -->
-      <div *ngIf="providerBookings.length === 0" class="text-center py-5">
-        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
-        <h4 class="text-dark mt-3">No requests</h4>
-        <p class="text-secondary">You have no incoming transport requests.</p>
+      <div *ngIf="providerBookings.length === 0" class="empty-state-wrapper">
+        <div class="empty-state-card shadow-sm">
+          <div class="icon-circle icon-circle-provider mb-4">
+            <i class="bi bi-inbox-fill"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-2">No active requests</h4>
+          <p class="text-secondary mb-4 mx-auto" style="max-width: 320px;">You don't have any incoming transport requests at the moment. Check back later!</p>
+          <button class="btn btn-premium-cta btn-premium-cta-provider btn-lg rounded-pill" (click)="refreshBookings()">
+            <i class="bi bi-arrow-clockwise me-2"></i> Refresh Requests
+          </button>
+        </div>
       </div>
 
       <!-- Booking Card -->
@@ -221,10 +259,25 @@
 
             <!-- Vehicle & Trip Info -->
             <div class="col-md-5 mb-4 mb-md-0">
-              <h5 class="text-dark fw-bold mb-3">{{b.vehicleId}}</h5>
-              <div class="booking-specs d-flex flex-wrap gap-4 mb-3">
-                <div class="spec-item"><i class="bi bi-people me-2"></i>{{b.passengers}} Passengers</div>
-                <div class="spec-item"><i class="bi bi-geo-alt me-2"></i>{{b.location}}</div>
+              <h5 class="text-dark fw-bold mb-2">{{b.vehicleId}}</h5>
+              
+              <!-- Trip Route Details -->
+              <div class="trip-route-card mb-3 p-2 rounded-2 bg-light border-start border-3 border-primary">
+                <div class="small d-flex align-items-center mb-1">
+                  <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                  <span class="text-navy fw-bold me-2">From:</span>
+                  <span class="text-secondary">{{b.pickupAddress || b.location}}</span>
+                </div>
+                <div class="small d-flex align-items-center">
+                  <i class="bi bi-flag-fill text-success me-2"></i>
+                  <span class="text-navy fw-bold me-2">To:</span>
+                  <span class="text-secondary">{{b.destinationAddress || 'As specified'}}</span>
+                </div>
+              </div>
+
+              <div class="booking-specs d-flex flex-wrap gap-3 mb-3">
+                <div class="spec-item"><i class="bi bi-people-fill me-2"></i>{{b.passengerCount || b.passengers}} Guests</div>
+                <div class="spec-item"><i class="bi bi-luggage-fill me-2"></i>{{b.luggageCount || 0}} Bags</div>
               </div>
               <div class="text-secondary small">
                 <div class="mb-2"><i class="bi bi-calendar-event me-2"></i> {{b.startDate | date:'mediumDate'}} to {{b.endDate | date:'mediumDate'}}</div>

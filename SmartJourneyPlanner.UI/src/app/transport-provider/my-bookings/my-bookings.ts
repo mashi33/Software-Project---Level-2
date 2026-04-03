@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Booking } from '../../models/transport.model';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,8 @@ export class MyBookings implements OnInit {
   tempRating: number = 0;
   tempComment: string = '';
   showSuccessMessage: boolean = false;
+  
+  @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
 
   ngOnInit() {
     this.loadMockBookings();
@@ -30,72 +32,28 @@ export class MyBookings implements OnInit {
 
   loadMockBookings() {
     // Mock User Bookings
-    this.userBookings = [
-      {
-        id: 'b1', vehicleId: 'Toyota Prius (Budget)', userId: 'u1',
-        startDate: '2026-03-30', endDate: '2026-04-01', days: 3, nights: 2,
-        totalAmount: 28000, contactNumber: '+94 77 123 4567',
-        status: 'Pending', createdAt: new Date().toISOString(),
-        passengers: 3, location: 'Colombo',
-        pricingSummary: { dailyRate: 8000, dailyRental: 24000, nightlyRate: 2000, driverNightOut: 4000 },
-        vehicleImage: 'images/vehicles/prius.png',
-        providerName: 'Sam Perera', userName: 'John Doe'
-      },
-      {
-        id: 'b2', vehicleId: 'Mercedes Benz E-Class (Luxury)', userId: 'u1',
-        startDate: '2026-04-10', endDate: '2026-04-12', days: 3, nights: 2,
-        totalAmount: 85000, contactNumber: '+94 71 987 6543',
-        status: 'Confirmed', createdAt: new Date(Date.now() - 86400000).toISOString(),
-        passengers: 2, location: 'Negombo',
-        pricingSummary: { dailyRate: 25000, dailyRental: 75000, nightlyRate: 5000, driverNightOut: 10000 },
-        vehicleImage: 'images/vehicles/mercedes.png',
-        providerName: 'Luxury Tours Sri Lanka', userName: 'John Doe'
-      },
-      {
-        id: 'b3', vehicleId: 'Toyota Commuter Van (Group)', userId: 'u1',
-        startDate: '2026-03-20', endDate: '2026-03-22', days: 3, nights: 2,
-        totalAmount: 45000, contactNumber: '+94 77 555 6666',
-        status: 'Completed', createdAt: new Date(Date.now() - 604800000).toISOString(),
-        hasBeenRated: false,
-        passengers: 8, location: 'Kandy',
-        pricingSummary: { dailyRate: 12000, dailyRental: 36000, nightlyRate: 4500, driverNightOut: 9000 },
-        vehicleImage: 'images/vehicles/van.png',
-        providerName: 'Swift Express Transport', userName: 'John Doe'
-      },
-      {
-        id: 'b4', vehicleId: 'Toyota Prius (Budget)', userId: 'u1',
-        startDate: new Date(Date.now() - 172800000).toISOString(),
-        endDate: new Date(Date.now() - 86400000).toISOString(),
-        days: 2, nights: 1, totalAmount: 18000,
-        status: 'Rejected', createdAt: new Date(Date.now() - 259200000).toISOString(),
-        passengers: 2, location: 'Galle',
-        pricingSummary: { dailyRate: 8000, dailyRental: 16000, nightlyRate: 2000, driverNightOut: 2000 },
-        vehicleImage: 'images/vehicles/prius.png',
-        providerName: 'Sam Perera', userName: 'John Doe'
-      }
-    ];
+    this.userBookings = [];
 
     // Mock Provider Received Bookings
     this.providerBookings = [
       {
-        id: 'p1', vehicleId: 'Toyota Prius (Budget) - Assigned to you', userId: 'usr_99',
-        startDate: '2026-05-01', endDate: '2026-05-05', days: 5, nights: 4,
-        totalAmount: 48000, contactNumber: '+94 76 555 1234',
-        status: 'Pending', createdAt: new Date().toISOString(),
-        passengers: 4, location: 'Matara',
-        pricingSummary: { dailyRate: 8000, dailyRental: 40000, nightlyRate: 2000, driverNightOut: 8000 },
+        id: 'P001',
+        vehicleId: 'Toyota Prius (Budget)',
+        userId: 'u1',
+        startDate: '2023-12-05',
+        endDate: '2023-12-07',
+        days: 3,
+        nights: 2,
+        totalAmount: 30000,
+        createdAt: new Date().toISOString(),
+        destinationAddress: 'Mirissa Beach Resort',
+        destinations: ['Galle Fort', 'Mirissa Beach Resort', 'Hikkaduwa'],
+        passengerCount: 4,
+        luggageCount: 3,
+        status: 'Pending',
+        location: 'Colombo',
         vehicleImage: 'images/vehicles/prius.png',
-        providerName: 'Sam Perera', userName: 'Kamal Silva'
-      },
-      {
-        id: 'p2', vehicleId: 'Toyota Prius (Budget) - Assigned to you', userId: 'usr_102',
-        startDate: '2026-04-15', endDate: '2026-04-16', days: 2, nights: 1,
-        totalAmount: 18000, contactNumber: '+94 70 888 9999',
-        status: 'Confirmed', createdAt: new Date(Date.now() - 86400000).toISOString(),
-        passengers: 2, location: 'Colombo',
-        pricingSummary: { dailyRate: 8000, dailyRental: 16000, nightlyRate: 2000, driverNightOut: 2000 },
-        vehicleImage: 'images/vehicles/prius.png',
-        providerName: 'Sam Perera', userName: 'Tharindu Fernando'
+        userName: 'Kamal Perera'
       }
     ];
   }
@@ -189,6 +147,25 @@ export class MyBookings implements OnInit {
         booking.status = 'Cancelled';
         Swal.fire('Rejected', 'The booking request was rejected.', 'success');
       }
+    });
+  }
+
+  // Navigation & Mock Loading
+  goToSearch() {
+    this.switchTab.emit('search');
+  }
+
+  refreshBookings() {
+    // Simulating a refresh
+    Swal.fire({
+      title: 'Refreshing...',
+      timer: 1000,
+      timerProgressBar: true,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    }).then(() => {
+      this.loadMockBookings();
     });
   }
 }

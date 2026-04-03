@@ -422,14 +422,32 @@
 }
 
 .form-control {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+input.form-control, select.form-control {
+  height: 36px;
+}
+
+.form-control::placeholder {
+  color: #9ca3af;
 }
 
 .form-control:focus {
-  border-color: #6b46c1;
-  box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+  border-color: #1e2939;
+  box-shadow: 0 0 0 2px rgba(30, 41, 57, 0.1);
+  outline: none;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.4rem;
 }
 
 .vd-divider {
@@ -502,15 +520,18 @@
 }
 
 .avg-val {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: #1a202c;
   line-height: 1;
 }
 
 .avg-stars {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: #FFD700; /* Warm Gold for stars */
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px;
 }
 
 .star-bar-item {
@@ -585,4 +606,81 @@
     padding-bottom: 2rem;
     border-bottom: 1px solid #edf2f7;
   }
+}
+/* ========================================================================== */
+/* ULTRA-COMPACT MULTI-DESTINATION & AUTO-SUGGESTIONS */
+/* ========================================================================== */
+
+.col-md-12.mt-3 h6.fw-bold.text-dark.mb-3 {
+  font-size: 0.9rem !important;
+  letter-spacing: -0.01em;
+  margin-top: 1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.destination-input {
+  border-radius: 8px !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 0.85rem !important;
+  padding: 0.5rem 0.75rem !important;
+  color: #1f2937;
+  height: 36px !important; /* Ultra-compact height */
+}
+
+.destination-input::placeholder {
+  color: #9ca3af !important;
+}
+
+.btn-add-dest {
+  background-color: #1e2939 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  min-width: 60px !important;
+  height: 36px !important; /* Matches ultra-compact input height */
+  font-size: 0.85rem !important;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.destinations-list-v2 {
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 8px;
+  margin-top: 0.5rem !important;
+}
+
+.destination-item-v2 {
+  background-color: #f1f5f9;
+  border-radius: 8px !important;
+  border: none !important;
+  padding: 0.4rem 0.75rem !important; /* Ultra-tight padding */
+  margin-bottom: 4px !important; /* Minimal gap */
+}
+
+.destination-item-v2 .bi-geo-alt-fill {
+  font-size: 0.85rem !important;
+  color: #1a1a1a !important;
+  margin-right: 0.5rem !important;
+}
+
+.destination-item-v2 .text-dark.fw-bold {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+}
+
+.destination-item-v2 .bi-x {
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  color: #1a1a1a !important;
+}
+
+.suggestions-dropdown {
+  border-radius: 8px !important;
+  margin-top: 4px !important;
+}
+
+.suggestion-item {
+  font-size: 0.8rem !important;
+  padding: 0.5rem 0.75rem !important;
 }
