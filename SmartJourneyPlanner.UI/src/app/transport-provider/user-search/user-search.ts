@@ -35,6 +35,7 @@ export class UserSearch implements OnInit {
   pickupArea: string = '';
   showLanguageDropdown: boolean = false;
   showCityDropdown: boolean = false;
+  sortBy: string = 'Default'; // Default, Price: Low to High, Price: High to Low, Best Rated
 
   sriLankanCities: string[] = [
     'Colombo', 'Kandy', 'Galle', 'Matara', 'Negombo', 'Jaffna', 'Kurunegala', 'Anuradhapura',
@@ -205,6 +206,21 @@ export class UserSearch implements OnInit {
 
       return matchCategory && matchCapacity && matchSearch && matchPickup && matchFeatures && matchLangs && !dateConflict;
     });
+
+    // Handle Sorting
+    if (this.sortBy === 'Price: Low to High') {
+      this.filteredVehicles.sort((a, b) => a.standardDailyRate - b.standardDailyRate);
+    } else if (this.sortBy === 'Price: High to Low') {
+      this.filteredVehicles.sort((a, b) => b.standardDailyRate - a.standardDailyRate);
+    } else if (this.sortBy === 'Best Rated') {
+      this.filteredVehicles.sort((a, b) => this.getAverageRating(b) - this.getAverageRating(a));
+    }
+  }
+
+  getAverageRating(vehicle: Vehicle): number {
+    if (!vehicle.reviews || vehicle.reviews.length === 0) return 0;
+    const sum = vehicle.reviews.reduce((acc, rev) => acc + rev.rating, 0);
+    return sum / vehicle.reviews.length;
   }
 
   getFlag(langName: string): string {

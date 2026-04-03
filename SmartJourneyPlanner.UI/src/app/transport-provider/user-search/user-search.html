@@ -15,10 +15,11 @@
           <label class="us-label">End Date</label>
           <div class="input-with-icon">
             <i class="bi bi-calendar3"></i>
-            <input type="date" class="form-control us-input" [(ngModel)]="endDate" (change)="onDateChange()" [min]="startDate">
+            <input type="date" class="form-control us-input" [(ngModel)]="endDate" (change)="onDateChange()"
+              [min]="startDate">
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="calc-display d-flex align-items-center h-100 ps-3">
             <div class="calc-group" *ngIf="startDate && endDate && bookingDays > 0">
               <div class="calc-box">
@@ -31,8 +32,17 @@
             <!-- Error State -->
             <div class="calc-error" *ngIf="startDate && endDate && bookingDays === 0">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <span>Invalid Range: End Date must be after Start Date</span>
+              <span>Invalid Range</span>
             </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="us-label">Passengers</label>
+          <div class="input-with-icon">
+            <i class="bi bi-people"></i>
+            <input type="number" class="form-control us-input" [(ngModel)]="passengerCount" (change)="applyFilters()"
+              min="1">
           </div>
         </div>
       </div>
@@ -44,13 +54,7 @@
             <option *ngFor="let cat of vehicleCategories" [value]="cat">{{cat}}</option>
           </select>
         </div>
-        <div class="col-md-2">
-          <label class="us-label">Passengers</label>
-          <div class="input-with-icon">
-            <i class="bi bi-people"></i>
-            <input type="number" class="form-control us-input" [(ngModel)]="passengerCount" (change)="applyFilters()" min="1">
-          </div>
-        </div>
+        
         <div class="col-md-3">
           <label class="us-label">Driver Languages</label>
           <div class="custom-dropdown" (clickOutside)="showLanguageDropdown = false">
@@ -58,11 +62,13 @@
               <span class="text-truncate">
                 {{ getSelectedLangs().length > 0 ? getSelectedLangs().join(', ') : 'Select Languages' }}
               </span>
-              <i class="bi" [class.bi-chevron-down]="!showLanguageDropdown" [class.bi-chevron-up]="showLanguageDropdown"></i>
+              <i class="bi" [class.bi-chevron-down]="!showLanguageDropdown"
+                [class.bi-chevron-up]="showLanguageDropdown"></i>
             </div>
-            
+
             <div class="dropdown-menu-custom shadow" *ngIf="showLanguageDropdown">
-              <div class="dropdown-item-custom" *ngFor="let lang of languagesList" (click)="toggleLanguage(lang.name); $event.stopPropagation()">
+              <div class="dropdown-item-custom" *ngFor="let lang of languagesList"
+                (click)="toggleLanguage(lang.name); $event.stopPropagation()">
                 <div class="form-check m-0">
                   <input class="form-check-input" type="checkbox" [checked]="selectedLanguages[lang.name]">
                   <label class="form-check-label ms-2">{{lang.flag}} {{lang.name}}</label>
@@ -73,13 +79,13 @@
         </div>
         <div class="col-md-3">
           <label class="us-label">Pickup Area</label>
-          <div class="custom-dropdown">
+          <div class="custom-dropdown" (clickOutside)="showCityDropdown = false">
             <div class="input-with-icon">
               <i class="bi bi-geo-alt"></i>
-              <input type="text" class="form-control us-input" placeholder="e.g., Colombo" 
-                [(ngModel)]="pickupArea" (input)="filterCities()" (focus)="filterCities()">
+              <input type="text" class="form-control us-input" placeholder="e.g., Colombo" [(ngModel)]="pickupArea"
+                (input)="filterCities()" (focus)="filterCities()" (click)="$event.stopPropagation()">
             </div>
-            
+
             <div class="dropdown-menu-custom shadow" *ngIf="showCityDropdown && filteredCities.length > 0">
               <div class="dropdown-item-custom" *ngFor="let city of filteredCities" (click)="selectCity(city)">
                 <i class="bi bi-geo-alt me-2 text-muted"></i> {{city}}
@@ -87,8 +93,20 @@
             </div>
           </div>
         </div>
+
         <div class="col-md-2">
-          <button class="btn btn-find w-100" (click)="onSearch()">
+          <label class="us-label">Sort By</label>
+          <select class="form-select us-input" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+            <option value="Default">Default</option>
+            <option value="Price: Low to High">Price: Low to High</option>
+            <option value="Price: High to Low">Price: High to Low</option>
+            <option value="Best Rated">Best Rated</option>
+          </select>
+        </div>
+
+        <div class="col-md-2 text-end">
+          <label class="us-label">&nbsp;</label>
+          <button class="btn btn-find w-100" (click)="onSearch()" (click)="$event.stopPropagation()">
             <i class="bi bi-search me-2"></i> Find
           </button>
         </div>
@@ -116,10 +134,11 @@
       <div class="vh-card shadow-sm" *ngFor="let v of filteredVehicles">
         <div class="vh-img-container">
           <img [src]="v.exteriorPhoto" class="vh-img">
-          
+
           <!-- Overlaid Badges -->
           <div class="top-badges">
-            <span class="badge-tag type-badge" [class.luxury-bg]="v.type === 'Luxury'" [class.budget-bg]="v.type === 'Budget'">
+            <span class="badge-tag type-badge" [class.luxury-bg]="v.type === 'Luxury'"
+              [class.budget-bg]="v.type === 'Budget'">
               {{v.type}}
             </span>
             <span class="badge-tag verified-bg" *ngIf="v.status === 'Approved'">
@@ -133,7 +152,8 @@
             <div>
               <h4 class="vh-title mb-1">{{v.description.split(' - ')[0]}}</h4>
               <div class="vh-meta">
-                <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> 4.9 (18)</span>
+                <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> {{getAverageRating(v)
+                  | number:'1.1-1'}} ({{v.reviews?.length || 0}})</span>
               </div>
             </div>
           </div>
@@ -159,7 +179,8 @@
           </div>
 
           <div class="d-grid mt-4">
-            <button class="btn btn-view-details" [routerLink]="['/vehicle', v.id]" [queryParams]="{ start: startDate, end: endDate }">View Details</button>
+            <button class="btn btn-view-details" [routerLink]="['/vehicle', v.id]"
+              [queryParams]="{ start: startDate, end: endDate }">View Details</button>
           </div>
         </div>
       </div>
