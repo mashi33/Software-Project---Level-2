@@ -1,0 +1,58 @@
+<div class="page-container">
+
+  <div class="trip-card">
+    <h1>Create your Trip</h1>
+
+    <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+      
+      <div class="form-container">
+
+        <div class="left-form">
+          <input type="text" formControlName="tripName" placeholder="Trip name" />
+
+          <div class="row">
+            <input type="text" formControlName="departFrom" placeholder="Depart from" />
+            <input type="text" formControlName="destination" placeholder="Destination" />
+          </div>
+
+          <div class="row">
+            <input type="date" formControlName="startDate" />
+            <input type="date" formControlName="endDate" />
+          </div>
+
+          <button type="button" class="action-btn" routerLink="/transport">
+            Select Transport
+          </button>
+
+          <button type="button" class="action-btn" routerLink="/budget">
+            Add Budget
+          </button>
+
+          <textarea formControlName="description" placeholder="Trip description..."></textarea>
+        </div>
+
+        <div class="right-form">
+          <div class="upload-box">
+            Upload cover photo
+          </div>
+
+          <div class="members-box">
+            <h3>Add Members</h3>
+           <input type="email" formControlName="memberEmail" placeholder="Enter email" />
+            <select>
+              <option>Editor</option>
+              <option>Viewer</option>
+            </select>
+            <button type="button" class="invite-btn" (click)="onInvite()">Invite</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-buttons">
+        <button type="button" class="cancel-btn">Cancel</button>
+        <button type="submit" class="submit-btn">Submit</button>
+      </div>
+
+    </form> </div>
+</div>

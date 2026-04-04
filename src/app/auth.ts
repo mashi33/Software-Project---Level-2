@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 export class AuthService {
   
   //.NET backend url
-  private apiUrl = 'https://localhost:7023/api/Auth/login'; 
+  private apiUrl = 'http://localhost:5098/api/Auth/login'; 
 
   constructor(private http: HttpClient) { }
 
@@ -19,6 +19,6 @@ export class AuthService {
 
   signup(userData: any) {
   // Backend API url
-  return this.http.post('https://localhost:7023/api/Auth/register', userData);
+  return this.http.post('http://localhost:5098/api/Auth/register', userData);
 }
 }
