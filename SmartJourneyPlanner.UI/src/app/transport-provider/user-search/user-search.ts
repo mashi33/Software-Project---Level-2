@@ -390,7 +390,7 @@ export class UserSearch implements OnInit {
           </table>
 
           <div class="alert alert-warning mt-3 small">
-            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Disclaimer:</strong> This subtotal covers a minimum of ${vehicle.freeKMLimit}km per day. Extra mileage will be charged at <code>Rs. ${vehicle.extraKMRate}/km</code>. Highway tolls and parking fees are not included and must be paid directly to the driver.
+            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Disclaimer:</strong> This subtotal covers a minimum of ${vehicle.freeKMLimit}km per day. Extra mileage will be charged at Rs. ${vehicle.extraKMRate}/km. Highway tolls and parking fees are not included and must be paid directly to the driver.
           </div>
         </div>
       `,

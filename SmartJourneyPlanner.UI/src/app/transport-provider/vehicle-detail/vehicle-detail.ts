@@ -222,7 +222,7 @@ export class VehicleDetailComponent implements OnInit {
           </div>
 
           <div class="alert alert-warning mb-0 p-2" style="font-size: 0.85rem;">
-            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Disclaimer:</strong> This subtotal covers a minimum of ${this.vehicle.freeKMLimit || 150}km per day. Extra mileage will be charged based on the final route at <code>Rs. ${this.vehicle.extraKMRate}/km</code>.
+            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Disclaimer:</strong> This subtotal covers a minimum of ${this.vehicle.freeKMLimit || 150}km per day. Extra mileage will be charged based on the final route at Rs. ${this.vehicle.extraKMRate}/km.
           </div>
         </div>
       `,
