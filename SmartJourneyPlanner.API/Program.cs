@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Models;
@@ -52,6 +52,10 @@ builder.Services.AddSingleton<DiscussionsService>();
 
 // CommentsService
 builder.Services.AddSingleton<CommentsService>();
+
+// Transport Services
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // 4. CORS Setup
 builder.Services.AddCors(options =>

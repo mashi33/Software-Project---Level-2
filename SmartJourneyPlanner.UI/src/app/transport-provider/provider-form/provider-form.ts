@@ -1,8 +1,9 @@
 import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { VehicleType, VehicleClass } from '../../models/transport.model';
+import { VehicleType, VehicleClass, Vehicle } from '../../models/transport.model';
 import Swal from 'sweetalert2';
+import { TransportVehicleService } from '../../services/transport-vehicle.service';
 
 @Component({
   selector: 'app-provider-form',
@@ -48,7 +49,11 @@ export class ProviderForm implements OnInit {
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
 
-  constructor(private fb: FormBuilder, private eRef: ElementRef) {}
+  constructor(
+    private fb: FormBuilder, 
+    private eRef: ElementRef,
+    private transportVehicleService: TransportVehicleService
+  ) {}
 
   ngOnInit() {
     this.initForm();
@@ -222,17 +227,37 @@ export class ProviderForm implements OnInit {
       return;
     }
 
-    const formData = this.vehicleForm.value;
-    console.log('Submitting Vehicle Data:', formData);
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'Listing Submitted!',
-      text: 'Your vehicle listing is under review. It will be published once verified.',
-      confirmButtonColor: '#38bdf8'
-    });
+    const formData: Vehicle = {
+      ...this.vehicleForm.value,
+      providerId: 'p1', // mock provider ID
+      interiorPhoto: this.interiorPreview as string,
+      exteriorPhoto: this.exteriorPreview as string,
+      driverNicUrl: this.nicPreview as string,
+      driverLicenseUrl: this.licensePreview as string,
+      insuranceDocUrl: this.insurancePreview as string,
+      revenueLicenseUrl: this.revenuePreview as string,
+      isVerified: false,
+      status: 'Pending',
+      reviews: [],
+      availableDates: [],
+      bookedDates: []
+    };
 
-    this.resetForm();
+    this.transportVehicleService.createVehicle(formData).subscribe({
+      next: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Listing Submitted!',
+          text: 'Your vehicle listing is under review. It will be published once verified.',
+          confirmButtonColor: '#38bdf8'
+        });
+        this.resetForm();
+      },
+      error: (err) => {
+        console.error(err);
+        Swal.fire('Error', 'Failed to submit listing.', 'error');
+      }
+    });
   }
 
   resetForm() {

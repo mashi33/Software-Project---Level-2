@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { VehicleType, Vehicle, VehicleClass } from '../../models/transport.model';
 import { TransportCalculationService } from '../../services/transport-calculation.service';
-import { VehicleService } from '../../services/vehicle.service';
+import { TransportVehicleService } from '../../services/transport-vehicle.service';
 import Swal from 'sweetalert2';
 
 interface CalendarDay {
@@ -118,7 +118,7 @@ export class UserSearch implements OnInit {
 
   constructor(
     public calcService: TransportCalculationService,
-    private vehicleService: VehicleService
+    private transportVehicleService: TransportVehicleService
   ) {
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
     const today = new Date();
@@ -163,7 +163,7 @@ export class UserSearch implements OnInit {
   }
 
   loadMockVehicles() {
-    this.vehicleService.getVehicles().subscribe(vehicles => {
+    this.transportVehicleService.getVehicles().subscribe(vehicles => {
       this.allVehicles = vehicles;
       this.applyFilters();
     });

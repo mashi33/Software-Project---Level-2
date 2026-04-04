@@ -2,7 +2,8 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { VehicleService } from '../../services/vehicle.service';
+import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { TransportBookingService } from '../../services/transport-booking.service';
 import { Vehicle } from '../../models/transport.model';
 import { TransportCalculationService } from '../../services/transport-calculation.service';
 import Swal from 'sweetalert2';
@@ -53,7 +54,8 @@ export class VehicleDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private vehicleService: VehicleService,
+    private transportVehicleService: TransportVehicleService,
+    private transportBookingService: TransportBookingService,
     public calcService: TransportCalculationService
   ) {}
 
@@ -61,7 +63,7 @@ export class VehicleDetailComponent implements OnInit {
     this.route.params.subscribe(params => {
       const id = params['id'];
       if (id) {
-        this.vehicleService.getVehicleById(id).subscribe(v => {
+        this.transportVehicleService.getVehicleById(id).subscribe(v => {
           this.vehicle = v;
           if (v) {
             this.mainImage = v.exteriorPhoto || '';
@@ -232,11 +234,36 @@ export class VehicleDetailComponent implements OnInit {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Your booking request has been sent to the provider. They will contact you shortly.',
-          icon: 'success',
-          confirmButtonColor: '#000000'
+        const newBooking: any = {
+          vehicleId: this.vehicle?.id,
+          userId: 'u1', // mock user ID
+          providerId: this.vehicle?.providerId,
+          startDate: this.startDate,
+          endDate: this.endDate,
+          nights: this.bookingNights,
+          days: this.bookingDays,
+          totalAmount: subtotal,
+          status: 'Pending',
+          pickupAddress: this.pickupAddress,
+          destinations: this.destinations,
+          vehicleImage: this.vehicle?.exteriorPhoto,
+          providerName: this.vehicle?.providerProfile.name,
+          userName: this.customerName
+        };
+
+        this.transportBookingService.createBooking(newBooking).subscribe({
+          next: () => {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Your booking request has been sent to the provider. They will contact you shortly.',
+              icon: 'success',
+              confirmButtonColor: '#000000'
+            });
+          },
+          error: (err) => {
+            console.error(err);
+            Swal.fire('Error', 'Failed to send booking request.', 'error');
+          }
         });
       }
     });

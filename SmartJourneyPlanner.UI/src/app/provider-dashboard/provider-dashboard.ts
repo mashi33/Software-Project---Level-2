@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProviderForm } from '../transport-provider/provider-form/provider-form';
-import { VehicleService } from '../services/vehicle.service';
+import { TransportVehicleService } from '../services/transport-vehicle.service';
 import { Vehicle } from '../models/transport.model';
 
 @Component({
@@ -15,7 +15,7 @@ import { Vehicle } from '../models/transport.model';
 export class ProviderDashboard implements OnInit {
   providerVehicles: Vehicle[] = [];
 
-  constructor(private vehicleService: VehicleService) {}
+  constructor(private transportVehicleService: TransportVehicleService) {}
 
   ngOnInit() {
     this.loadProviderVehicles();

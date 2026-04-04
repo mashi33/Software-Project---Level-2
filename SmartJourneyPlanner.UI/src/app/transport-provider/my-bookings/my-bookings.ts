@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Booking } from '../../models/transport.model';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { TransportBookingService } from '../../services/transport-booking.service';
 
 @Component({
   selector: 'app-my-bookings',
@@ -26,36 +27,24 @@ export class MyBookings implements OnInit {
   
   @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
 
+  constructor(private transportBookingService: TransportBookingService) {}
+
   ngOnInit() {
-    this.loadMockBookings();
+    this.loadBookings();
   }
 
-  loadMockBookings() {
-    // Mock User Bookings
-    this.userBookings = [];
-
-    // Mock Provider Received Bookings
-    this.providerBookings = [
-      {
-        id: 'P001',
-        vehicleId: 'Toyota Prius (Budget)',
-        userId: 'u1',
-        startDate: '2023-12-05',
-        endDate: '2023-12-07',
-        days: 3,
-        nights: 2,
-        totalAmount: 30000,
-        createdAt: new Date().toISOString(),
-        destinationAddress: 'Mirissa Beach Resort',
-        destinations: ['Galle Fort', 'Mirissa Beach Resort', 'Hikkaduwa'],
-        passengerCount: 4,
-        luggageCount: 3,
-        status: 'Pending',
-        location: 'Colombo',
-        vehicleImage: 'images/vehicles/prius.png',
-        userName: 'Kamal Perera'
-      }
-    ];
+  loadBookings() {
+    if (this.role === 'user') {
+      // Mock user ID for now
+      this.transportBookingService.getUserBookings('u1').subscribe(res => {
+        this.userBookings = res;
+      });
+    } else {
+      // Mock provider ID for now
+      this.transportBookingService.getProviderBookings('p1').subscribe(res => {
+        this.providerBookings = res;
+      });
+    }
   }
 
   // User Actions
@@ -70,8 +59,11 @@ export class MyBookings implements OnInit {
       confirmButtonText: 'Yes, Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        booking.status = 'Cancelled';
-        Swal.fire('Cancelled', 'Your booking has been cancelled.', 'success');
+        if (!booking.id) return;
+        this.transportBookingService.updateBookingStatus(booking.id, 'Cancelled').subscribe(() => {
+          booking.status = 'Cancelled';
+          Swal.fire('Cancelled', 'Your booking has been cancelled.', 'success');
+        });
       }
     });
   }
@@ -97,7 +89,6 @@ export class MyBookings implements OnInit {
   submitReview() {
     if (!this.selectedBooking) return;
     
-    // Simulate API call
     console.log('Submitting Review:', {
       bookingId: this.selectedBooking.id,
       rating: this.tempRating,
@@ -106,10 +97,10 @@ export class MyBookings implements OnInit {
 
     this.showSuccessMessage = true;
     
-    // After 2 seconds, close modal and update booking state
     setTimeout(() => {
-      if (this.selectedBooking) {
+      if (this.selectedBooking && this.selectedBooking.id) {
         this.selectedBooking.hasBeenRated = true;
+        // In real app, make an API call to update the review
       }
       this.closeModal();
     }, 2000);
@@ -127,8 +118,11 @@ export class MyBookings implements OnInit {
       confirmButtonText: 'Yes, Accept'
     }).then((result) => {
       if (result.isConfirmed) {
-        booking.status = 'Confirmed';
-        Swal.fire('Accepted', 'The booking is now confirmed. You can view the traveler\'s contact details.', 'success');
+        if (!booking.id) return;
+        this.transportBookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
+          booking.status = 'Confirmed';
+          Swal.fire('Accepted', 'The booking is now confirmed. You can view the traveler\'s contact details.', 'success');
+        });
       }
     });
   }
@@ -144,19 +138,21 @@ export class MyBookings implements OnInit {
       confirmButtonText: 'Yes, Reject'
     }).then((result) => {
       if (result.isConfirmed) {
-        booking.status = 'Cancelled';
-        Swal.fire('Rejected', 'The booking request was rejected.', 'success');
+        if (!booking.id) return;
+        this.transportBookingService.updateBookingStatus(booking.id, 'Rejected').subscribe(() => {
+          booking.status = 'Rejected';
+          Swal.fire('Rejected', 'The booking request was rejected.', 'success');
+        });
       }
     });
   }
 
-  // Navigation & Mock Loading
+  // Navigation & Refresh
   goToSearch() {
     this.switchTab.emit('search');
   }
 
   refreshBookings() {
-    // Simulating a refresh
     Swal.fire({
       title: 'Refreshing...',
       timer: 1000,
@@ -165,7 +161,7 @@ export class MyBookings implements OnInit {
         Swal.showLoading();
       }
     }).then(() => {
-      this.loadMockBookings();
+      this.loadBookings();
     });
   }
 }
