@@ -1,15 +1,25 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { SignalrService } from './signalr.service';
-import * as signalR from '@microsoft/signalr'; // SignalR තත්ත්වය පරීක්ෂා කිරීමට
 
 export interface VoteOption { optionText: string; voteCount: number; }
-export interface CommentItem { user: string; text: string; createdAt: Date; }
+export interface UserVoteRecord { userId: string; optionText: string; }
+
 export interface DiscussionItem {
-  id?: string; title: string; description: string; user: string;
-  type: 'Trip' | 'Other'; createdAt: Date; options: VoteOption[];
-  comments: CommentItem[]; isConfirmed: boolean; votes?: number[];
+  id?: string; 
+  title: string; 
+  description: string; 
+  user: string;
+  type: 'Trip' | 'Other'; 
+  createdAt: Date; 
+  options: VoteOption[];
+  isConfirmed: boolean; 
+  isRejected: boolean;
+  memberLimit: number;
+  votes?: number[];
+  userVotes?: UserVoteRecord[];
+  votedUsers?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,40 +31,6 @@ export class DiscussionService {
     private signalrService: SignalrService
   ) {}
 
-  // --- Real-time Comment Logic ---
-  addComment(id: string, comment: CommentItem): Observable<DiscussionItem> {
-    // 1. මුලින්ම HTTP හරහා Database එකට සේව් කරන්න
-    return this.http.post<DiscussionItem>(`${this.apiUrl}/${id}/comments`, comment).pipe(
-      tap(() => {
-        this.sendSignalRMessage(id, comment);
-      })
-    );
-  }
-
-  private async sendSignalRMessage(id: string, comment: CommentItem) {
-    try {
-      // Hub Connection එක 'Connected' තත්වයේ තිබේදැයි බලන්න
-      if (this.signalrService.hubConnection.state === signalR.HubConnectionState.Connected) {
-        
-        console.log("🚀 Invoking SignalR for ID:", id);
-        
-        // Hub එකේ method නම 'SendMessage' බවත්, parameters 2ක් (id, object) යන බවත් සහතික කරගන්න
-        await this.signalrService.hubConnection.invoke('SendMessage', id, comment);
-        
-        console.log("✅ SignalR broadcast successful!");
-      } else {
-        console.warn("⚠️ SignalR not connected. Current state:", this.signalrService.hubConnection.state);
-        
-        // පණිවිඩය යැවීමට පෙර නැවත සම්බන්ධ වීමට උත්සාහ කරන්න
-        await this.signalrService.hubConnection.start();
-        await this.signalrService.hubConnection.invoke('SendMessage', id, comment);
-      }
-    } catch (err) {
-      console.error('❌ SignalR Invoke Error:', err);
-    }
-  }
-
-  // --- අනෙකුත් Methods (වෙනසක් නැත) ---
   getDiscussions(): Observable<DiscussionItem[]> {
     return this.http.get<DiscussionItem[]>(this.apiUrl);
   }

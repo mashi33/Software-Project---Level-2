@@ -1,0 +1,10 @@
+<div class="generation-wrapper">
+  <button 
+    (click)="downloadPDF()" 
+    class="btn-download" 
+    [disabled]="isLoadingMap">
+    <span *ngIf="isLoadingMap">🚀 Making map for ready... (Loading Map)</span>
+    <span *ngIf="!isLoadingMap">📥 Download PDF Report</span>
+  </button>
+
+  </div>
