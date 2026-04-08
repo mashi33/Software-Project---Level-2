@@ -31,6 +31,9 @@ namespace SmartJourneyPlanner.Services
 
         public async Task RemoveAsync(string id) =>
             await _vehiclesCollection.DeleteOneAsync(v => v.Id == id);
+
+        public async Task DeleteAllAsync() =>
+            await _vehiclesCollection.DeleteManyAsync(_ => true);
             
         public async Task InsertManyAsync(List<TransportVehicle> vehicles) =>
             await _vehiclesCollection.InsertManyAsync(vehicles);

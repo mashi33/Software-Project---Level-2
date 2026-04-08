@@ -130,9 +130,11 @@ export class ProviderForm implements OnInit {
     const currentLanguages = this.vehicleForm.get('languages')?.value as string[] || [];
     
     if (checked) {
-      this.vehicleForm.patchValue({ languages: [...currentLanguages, lang] });
+      if (!currentLanguages.includes(lang)) {
+        this.vehicleForm.patchValue({ languages: [...currentLanguages, lang] });
+      }
     } else {
-      this.vehicleForm.patchValue({ languages: currentLanguages.filter(l => l !== lang) });
+      this.vehicleForm.patchValue({ languages: currentLanguages.filter((l: string) => l !== lang) });
     }
   }
 

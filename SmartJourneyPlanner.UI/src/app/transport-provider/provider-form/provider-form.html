@@ -210,8 +210,7 @@
                 <div class="pf-dropdown-menu" *ngIf="isLanguageDropdownOpen">
                   <div class="pf-languages-grid d-flex flex-column gap-1 p-2">
                     <div *ngFor="let lang of languagesList" 
-                         class="pf-lang-item d-flex align-items-center px-2 py-2 rounded-2 hover-bg-dark"
-                         (click)="onLanguageChange(lang.name, $event)">
+                         class="pf-lang-item d-flex align-items-center px-2 py-2 rounded-2 hover-bg-dark">
                       <input class="form-check-input mt-0 me-3" type="checkbox" 
                              [id]="'lang_' + lang.name" 
                              [checked]="isLanguageSelected(lang.name)"

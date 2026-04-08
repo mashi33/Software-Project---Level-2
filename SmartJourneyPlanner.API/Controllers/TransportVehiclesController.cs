@@ -34,6 +34,8 @@ namespace SmartJourneyPlanner.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(TransportVehicle newVehicle)
         {
+            // Auto-approve for development phase to avoid dependency on Admin component
+            newVehicle.Status = "Approved";
             await _vehicleService.CreateAsync(newVehicle);
             return CreatedAtAction(nameof(Get), new { id = newVehicle.Id }, newVehicle);
         }
@@ -63,6 +65,10 @@ namespace SmartJourneyPlanner.Controllers
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
             if (vehicles == null || !vehicles.Any()) return BadRequest();
+            
+            // clear existing data before seeding to avoid duplicates
+            await _vehicleService.DeleteAllAsync();
+            
             // remove id to let mongo auto generate ObjectId
             var vehiclesToInsert = vehicles.Select(v => { v.Id = null; return v; }).ToList();
             await _vehicleService.InsertManyAsync(vehiclesToInsert);

@@ -64,6 +64,9 @@ export class VehicleDetailComponent implements OnInit {
       const id = params['id'];
       if (id) {
         this.transportVehicleService.getVehicleById(id).subscribe(v => {
+          if (v && v.languages) {
+            v.languages = Array.from(new Set(v.languages));
+          }
           this.vehicle = v;
           if (v) {
             this.mainImage = v.exteriorPhoto || '';
@@ -75,8 +78,18 @@ export class VehicleDetailComponent implements OnInit {
 
     // Capture query parameters for automatic calculation
     this.route.queryParams.subscribe(params => {
-      const start = params['start'];
-      const end = params['end'];
+      let start = params['start'];
+      let end = params['end'];
+      
+      // Auto fill from Find Transport, or default to today/tomorrow
+      if (!start || !end) {
+        const today = new Date();
+        start = today.toISOString().split('T')[0];
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        end = tomorrow.toISOString().split('T')[0];
+      }
+
       if (start && end) {
         this.startDate = start;
         this.endDate = end;
