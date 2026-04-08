@@ -5,7 +5,7 @@ import { SignalrService } from './services/signalr.service';
 import Swal from 'sweetalert2';
 import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 // 1. Import the new components
 import { NavbarComponent } from './navbar/navbar';
 import { FooterComponent } from './footer/footer';
@@ -13,7 +13,7 @@ import { FooterComponent } from './footer/footer';
   selector: 'app-root',
   standalone: true,
   // 2. Add them to the imports list
-  imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent, DatePipe, DecimalPipe],
+  imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
