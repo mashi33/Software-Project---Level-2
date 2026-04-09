@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { TimelinePlan, TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
 import { moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ import { firstValueFrom } from 'rxjs';
 export class TimelineService {
   private http = inject(HttpClient);
   // The URL where our backend server is running
-  private apiUrl = 'http://localhost:5125/api/Timeline'; 
+  private apiUrl = `${environment.apiUrl}/Timeline`; 
 
   // We use a Signal to hold the trip data. 
   // Any component using this signal will update automatically when the data changes.

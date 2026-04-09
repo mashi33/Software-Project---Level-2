@@ -18,7 +18,12 @@ namespace SmartJourneyPlanner.API.Services
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
             
-            _timelineCollection = database.GetCollection<TimelinePlan>(settings.Value.CollectionName);
+            // Use TimelineCollectionName to prevent mixing data, or default to a fresh "TripTimelinePlans" collection
+            string collectionToUse = string.IsNullOrEmpty(settings.Value.TimelineCollectionName) 
+                ? "TripTimelinePlans" 
+                : settings.Value.TimelineCollectionName;
+                
+            _timelineCollection = database.GetCollection<TimelinePlan>(collectionToUse);
         }
 
         // Retrieves all timeline plans from the database
@@ -73,16 +78,25 @@ namespace SmartJourneyPlanner.API.Services
         // Saves a new timeline plan to the database
         public async Task CreateAsync(TimelinePlan newPlan)
         {
-            Console.WriteLine($"[TimelineService] Creating new plan: {newPlan.Name} with {newPlan.Days.Count} days.");
-            
-            // If the ID is empty or just says "string" (from Swagger), we let MongoDB generate a real ID
-            if (string.IsNullOrEmpty(newPlan.Id) || newPlan.Id.Equals("string", StringComparison.OrdinalIgnoreCase)) 
+            try 
             {
-                newPlan.Id = null;
+                Console.WriteLine($"[TimelineService] Creating new plan: {newPlan.Name} with {newPlan.Days.Count} days.");
+                
+                // If the ID is empty or just says "string" (from Swagger), we generate a unique GUID string
+                if (string.IsNullOrEmpty(newPlan.Id) || newPlan.Id.Equals("string", StringComparison.OrdinalIgnoreCase)) 
+                {
+                    newPlan.Id = Guid.NewGuid().ToString();
+                }
+                
+                await _timelineCollection.InsertOneAsync(newPlan);
+                Console.WriteLine($"[TimelineService] Plan created with ID: {newPlan.Id}");
             }
-            
-            await _timelineCollection.InsertOneAsync(newPlan);
-            Console.WriteLine($"[TimelineService] Plan created with ID: {newPlan.Id}");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TimelineService] CRITICAL ERROR during CreateAsync: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                throw; // Rethrow so the controller catches it
+            }
         }
 
         // Updates an existing timeline plan in the database

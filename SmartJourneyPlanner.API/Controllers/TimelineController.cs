@@ -39,20 +39,27 @@ namespace SmartJourneyPlanner.API.Controllers
             return plan;
         }
 
-        // POST: api/Timeline
         // Creates a new trip plan
         [HttpPost]
-        public async Task<IActionResult> Post(TimelinePlan newPlan)
+        public async Task<IActionResult> Post([FromBody] TimelinePlan newPlan)
         {
-            Console.WriteLine($"[TimelineController] POST new plan: {newPlan.Name}");
-            await _timelineService.CreateAsync(newPlan);
-            return CreatedAtAction(nameof(Get), new { id = newPlan.Id }, newPlan);
+            try 
+            {
+                Console.WriteLine($"[TimelineController] POST new plan: {newPlan.Name}");
+                await _timelineService.CreateAsync(newPlan);
+                return CreatedAtAction(nameof(Get), new { id = newPlan.Id }, newPlan);
+            }
+            catch (Exception ex)
+            {
+                System.IO.File.WriteAllText("TimelineError.txt", ex.ToString());
+                throw;
+            }
         }
 
         // PUT: api/Timeline/{id}
         // Updates an existing trip plan
-        [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> Update(string id, TimelinePlan updatedPlan)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] TimelinePlan updatedPlan)
         {
             Console.WriteLine($"[TimelineController] PUT update plan: {id}");
             var plan = await _timelineService.GetAsync(id);

@@ -104,8 +104,6 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 // ✅ File Storage Service (Now has access to IMongoDatabase)
 builder.Services.AddSingleton<FileStorageService>();
 
-builder.Services.AddScoped<TransportVehicleService>();
-
 // ==========================================================
 // 6. SWAGGER & HTTP CLIENT
 // ==========================================================

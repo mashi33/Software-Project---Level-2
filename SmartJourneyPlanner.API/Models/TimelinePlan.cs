@@ -12,8 +12,8 @@ namespace SmartJourneyPlanner.API.Models
     public class TimelinePlan
     {
         // Unique ID for the plan, stored as an ObjectId in MongoDB
+        // Unique ID for the plan
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
         [JsonPropertyName("id")]
         public string? Id { get; set; }
 
