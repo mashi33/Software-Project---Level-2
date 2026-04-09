@@ -57,7 +57,7 @@ export class SignalrService {
           this.newDiscussion.next(data);
         });
       })
-      .catch(err => console.log('SignalR Connection Error: ' + err));
+      .catch((err: any) => console.log('SignalR Connection Error: ' + err));
   }
 
   //  Send message from frontend to hub directly
