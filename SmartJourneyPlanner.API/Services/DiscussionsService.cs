@@ -12,46 +12,53 @@ namespace SmartJourneyPlanner.Services
         public DiscussionsService(IOptions<DatabaseSettings> databaseSettings)
         {
             // MongoDB Connection Setup
-            var connectionString = "mongodb+srv://tripAdmin:root@tripcluster0.rdp8sze.mongodb.net/TripPlannerDB?retryWrites=true&w=majority";
+            var connectionString = "mongodb://localhost:27017";
             var mongoClient = new MongoClient(connectionString);
-            var mongoDatabase = mongoClient.GetDatabase("TripPlannerDB");
+            var mongoDatabase = mongoClient.GetDatabase("SmartJourneyDB");
             _discussionsCollection = mongoDatabase.GetCollection<DiscussionItem>("Discussions");
         }
 
-        // 1. සියලුම සාකච්ඡා ලබා ගැනීම
+        // 1. Fetch all discussion
         public async Task<List<DiscussionItem>> GetAsync() =>
             await _discussionsCollection.Find(_ => true).ToListAsync();
 
-        // 2. ID එක අනුව සාකච්ඡාවක් ලබා ගැනීම
+        // 2.Get new discussion according to ID
         public async Task<DiscussionItem?> GetAsync(string id) =>
             await _discussionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        // 3. නව සාකච්ඡාවක් ඇරඹීම (CreatedAt දිනය සමඟ)
+        // 3. Begin new discussion (CreatedAt with date)
         public async Task CreateAsync(DiscussionItem newDiscussion)
         {
             newDiscussion.CreatedAt = DateTime.UtcNow;
             await _discussionsCollection.InsertOneAsync(newDiscussion);
         }
 
-        // 4. දත්ත යාවත්කාලීන කිරීම (ඔබේ Controller එකේ Error එක නිවැරදි කිරීමට මෙය අත්‍යවශ්‍යයි)
+        // 4. update data
         public async Task UpdateAsync(string id, DiscussionItem updatedDiscussion)
         {
             await _discussionsCollection.ReplaceOneAsync(x => x.Id == id, updatedDiscussion);
         }
 
-        // 5. සාකච්ඡාවක් මැකීම
+        // 5. manual deletion of vote box
         public async Task RemoveAsync(string id) =>
             await _discussionsCollection.DeleteOneAsync(x => x.Id == id);
 
-        // 6. ඡන්දය ප්‍රකාශ කිරීමේ Logic එක (Vote Bars සඳහා)
+        // 6. vote casting Logic for trip (Updated with Limit & Status Check)
         public async Task<bool> VoteAsync(string id, int optionIndex, string userId)
         {
             var discussion = await GetAsync(id);
             if (discussion == null) return false;
 
-            // දැනටමත් ඡන්දය දී ඇත්නම් නතර කරන්න
+            // If vote box confirmed or rejected, stop count votes
+            if (discussion.IsConfirmed || discussion.IsRejected) return false;
+
             discussion.VotedUsers ??= new List<string>();
+
+            // If already provide vote or member limit <= vote count,  stop count votes
             if (discussion.VotedUsers.Contains(userId)) return false;
+
+            int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 5;
+            if (discussion.VotedUsers.Count >= limit) return false;
 
             if (optionIndex >= 0 && optionIndex < discussion.Options.Count)
             {
@@ -64,7 +71,7 @@ namespace SmartJourneyPlanner.Services
             return false;
         }
 
-        // 7. අදහස් දැක්වීම (Commenting)
+        // 7. commenting (messaging)
         public async Task AddCommentAsync(string id, CommentItem comment)
         {
             comment.CreatedAt = DateTime.UtcNow;

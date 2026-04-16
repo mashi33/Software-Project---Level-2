@@ -39,8 +39,21 @@ obj/
 /libpeerconnection.log
 testem.log
 /typings
-__screenshots__/
 
 # System files
 .DS_Store
 Thumbs.db
+
+# Backend specific
+bin/
+obj/
+*.user
+*.suo
+.vs/
+SmartJourneyPlanner/bin/
+SmartJourneyPlanner/obj/
+
+appsettings.json
+appsettings.*.json
+.env
+environments/

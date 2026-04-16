@@ -14,3 +14,4 @@ export class FooterComponent {
   // This variable will always get the current year automatically
   currentYear: number = new Date().getFullYear();
 }
+

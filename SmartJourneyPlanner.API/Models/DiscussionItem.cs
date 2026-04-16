@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using System.Text.Json.Serialization; 
+using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.Models
 {
@@ -37,6 +37,16 @@ namespace SmartJourneyPlanner.Models
         [JsonPropertyName("isConfirmed")]
         public bool IsConfirmed { get; set; } = false;
 
+        // --- Check reject status and member limit ---
+        [BsonElement("isRejected")]
+        [JsonPropertyName("isRejected")]
+        public bool IsRejected { get; set; } = false;
+
+        [BsonElement("memberLimit")]
+        [JsonPropertyName("memberLimit")]
+        public int MemberLimit { get; set; } = 5;
+        // --------------------------------------------------
+
         [BsonElement("createdAt")]
         [JsonPropertyName("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -45,9 +55,13 @@ namespace SmartJourneyPlanner.Models
         [JsonPropertyName("votedUsers")]
         public List<string> VotedUsers { get; set; } = new List<string>();
 
+        [BsonElement("userVotes")]
+        [JsonPropertyName("userVotes")]
+        public List<UserVoteRecord> UserVotes { get; set; } = new List<UserVoteRecord>();
+
         [BsonElement("comments")]
         [JsonPropertyName("comments")]
-        public List<CommentItem> Comments { get; set; } = new List<CommentItem>();
+        public List<CommentItem>? Comments { get; set; } = new List<CommentItem>();
     }
 
     public class VoteOption
@@ -59,15 +73,12 @@ namespace SmartJourneyPlanner.Models
         public int VoteCount { get; set; } = 0;
     }
 
-    public class CommentItem
+    public class UserVoteRecord
     {
-        [JsonPropertyName("user")]
-        public string User { get; set; } = string.Empty;
+        [JsonPropertyName("userId")]
+        public string UserId { get; set; } = string.Empty;
 
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
-
-        [JsonPropertyName("createdAt")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [JsonPropertyName("optionText")]
+        public string OptionText { get; set; } = string.Empty;
     }
 }

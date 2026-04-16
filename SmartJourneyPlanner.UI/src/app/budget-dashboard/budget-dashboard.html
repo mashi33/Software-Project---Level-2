@@ -1,4 +1,4 @@
-<div class="main-container">
+<div class="main-container background-container">
   <div class="content-wrapper">
     <div class="header-section">
       <label>Select trip:</label>
@@ -11,7 +11,7 @@
     <div class="content-grid">
       <div class="card table-card">
         <div class="card-header-blue">
-          <h3>Expenses for <span style="color: #00ACC1;">{{ tripId }}</span></h3>
+          <h3>Current Trip Expenses</h3>
         </div>
 
         <div class="table-container">
@@ -66,6 +66,20 @@
       <div class="card chart-card">
         <div class="card-header-white"><h3>Summary</h3></div>
         <div class="chart-content-wrapper">
+          
+          <div *ngIf="expenses.length > 0" style="text-align: center; margin-bottom: 25px; padding-top: 10px;">
+            <h2 style="color: #006064; margin: 0; font-size: 1.8rem;">
+              <span style="font-size: 1rem; color: #7f8c8d; display: block; margin-bottom: 2px;">Total Spent</span> 
+              Rs. {{ budget?.totalSpent | number:'1.2-2' }}
+            </h2>
+            <p style="color: #00838F; font-weight: bold; margin: 8px 0 0 0; font-size: 1.2rem; background: #E0F7FA; display: inline-block; padding: 5px 15px; border-radius: 20px;">
+              Per Person: Rs. {{ costPerPerson | number:'1.2-2' }}
+            </p>
+            <p style="color: #888; font-size: 0.8rem; margin: 5px 0 0 0;">
+              Split between {{ budget?.membersCount || budget?.totalMembers || 1 }} members
+            </p>
+          </div>
+
           <div class="chart-container" *ngIf="expenses.length > 0">
             <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
           </div>
@@ -78,6 +92,7 @@
           </div>
         </div>
       </div>
+      
     </div>
   </div>
 </div>

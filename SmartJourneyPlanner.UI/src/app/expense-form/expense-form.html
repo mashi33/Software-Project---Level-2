@@ -1,9 +1,9 @@
-<div class="page-overlay">
+<div class="page-overlay form-background">
   <div class="form-card fade-in">
 
     <div class="form-header">
-      <h2>✨ Add Expense</h2>
-      <p>Tracking for trip: <strong>{{ tripId }}</strong></p>
+      <h2> {{ isEditMode ? 'Edit Expense' : 'Add New Expense' }}</h2>
+      <p class="text-muted">Adding to your currently selected trip</p>
     </div>
 
     <form (ngSubmit)="onSubmit()">
@@ -31,7 +31,10 @@
 
       <div class="buttons">
         <button type="button" class="btn-cancel" (click)="cancel()">Cancel</button>
-        <button type="submit" class="btn-save">✅ Save Expense</button>
+        
+        <button type="submit" class="btn-save">
+          {{ isEditMode ? '💾 Update Expense' : '✅ Save Expense' }}
+        </button>
       </div>
 
     </form>

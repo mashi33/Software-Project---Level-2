@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
-  <div class="container">
+  <div class="container-fluid px-4"> 
 
-    <a class="navbar-brand brand-container" routerLink="/">
+    <a class="navbar-brand brand-container" routerLink="/dashboard">
       <img src="assets/logo.png" alt="Logo" class="brand-logo">
       <div class="brand-text">
         <span class="secular one"><b>Smart</b></span>
@@ -15,13 +15,15 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
 
-      <div class="navbar-nav nav-links-group">
+      <div class="navbar-nav mx-auto nav-links-group">
         <a class="nav-link" routerLink="/home" routerLinkActive="active">Home</a>
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-        <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
         <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
+        <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
+        <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
         <a class="nav-link" routerLink="/memories" routerLinkActive="active">My Memories</a>
         <a class="nav-link" routerLink="/timeline" routerLinkActive="active">Timeline</a>
+        <a class="nav-link" routerLink="/groupChat" routerLinkActive="active">Group Chat</a>
       </div>
 
       <div class="user-actions">
@@ -33,10 +35,10 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown">
             <li class="dropdown-header">Notifications</li>
-            <li><a class="dropdown-item" href="#">New weather alert for Kandy</a></li>
-            <li><a class="dropdown-item" href="#">Memory saved successfully</a></li>
+            <li><a class="dropdown-item" routerLink="#">New weather alert for Kandy</a></li>
+            <li><a class="dropdown-item" routerLink="#">Memory saved successfully</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-center text-primary" href="#">View All</a></li>
+            <li><a class="dropdown-item text-center text-primary" routerLink="#">View All</a></li>
           </ul>
         </div>
 
@@ -46,10 +48,10 @@
             <span class="profile-name">{{ userName }}</span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
-            <li><a class="dropdown-item" href="#">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" routerLink="/profile">Profile</a></li>
+            <li><a class="dropdown-item" routerLink="/settings">Settings</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="#">Sign out</a></li>
+            <li><a class="dropdown-item text-danger" routerLink="/login">Sign out</a></li>
           </ul>
         </div>
 

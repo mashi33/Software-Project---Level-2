@@ -20,9 +20,10 @@ export class ExpenseForm implements OnInit {
     date: new Date().toISOString()
   };
 
-  tripId = 'trip_test_01';
+  // ✅ FIX: No more hardcoding! Initialized as empty string.
+  tripId: string = '';
 
-  // ✅ NEW: Variables to track Edit Mode
+  // Variables to track Edit Mode
   isEditMode = false;
   oldName = '';
 
@@ -40,13 +41,25 @@ export class ExpenseForm implements OnInit {
     private route: ActivatedRoute
   ) { }
 
+  /**
+   * Initializes the component. Retrieves the dynamic tripId from the URL parameters.
+   * If no tripId is found, it triggers an error redirect to protect the database.
+   * Also configures form state if the user is in 'edit' mode.
+   */
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
+      
+      // ✅ FIX: Error Handling. Ensure a Trip ID actually exists!
       if (params['tripId']) {
         this.tripId = params['tripId'];
+      } else {
+        console.warn('⚠️ No Trip ID found in URL. Redirecting to prevent orphan records.');
+        alert('Error: Please select a trip from the Dashboard first.');
+        this.router.navigate(['/budget']);
+        return; // Stops the rest of the code from running
       }
 
-      // ✅ CHECK: Are we editing?
+      // Check if we are editing an existing expense
       if (params['mode'] === 'edit') {
         this.isEditMode = true;
         this.oldName = params['name'];
@@ -59,39 +72,57 @@ export class ExpenseForm implements OnInit {
     });
   }
 
+  /**
+   * Updates the selected category for the new expense.
+   * @param catName The name of the category selected by the user.
+   */
   selectCategory(catName: string) {
     this.expense.category = catName;
   }
 
+  /**
+   * Handles form submission. Validates inputs and routes the data
+   * to either the update or add service methods based on the current mode.
+   */
   onSubmit() {
+    // Basic frontend validation
     if (!this.expense.amount || !this.expense.name) {
-      alert('Please fill in all fields!');
+      alert('Validation Error: Please fill in all required fields!');
       return;
     }
 
     if (this.isEditMode) {
-      // ✅ CASE 1: UPDATE EXISTING
+      // CASE 1: UPDATE EXISTING
       this.budgetService.updateExpense(this.tripId, this.oldName, this.expense).subscribe({
         next: () => {
-          alert('Expense Updated!');
-          this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+          alert('Expense successfully updated!');
+          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => {
+          console.error('Database Update Error:', err);
+          alert('Failed to update expense. Please try again later.');
+        }
       });
 
     } else {
-      // ✅ CASE 2: ADD NEW
+      // CASE 2: ADD NEW
       this.budgetService.addExpense(this.tripId, this.expense).subscribe({
         next: () => {
-          alert('Expense Added!');
-          this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+          alert('New expense successfully added!');
+          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => {
+          console.error('Database Insertion Error:', err);
+          alert('Failed to save expense. Please try again later.');
+        }
       });
     }
   }
 
+  /**
+   * Cancels the operation and safely routes the user back to the Budget Dashboard.
+   */
   cancel() {
-    this.router.navigate([''], { queryParams: { tripId: this.tripId } });
+    this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
   }
 }

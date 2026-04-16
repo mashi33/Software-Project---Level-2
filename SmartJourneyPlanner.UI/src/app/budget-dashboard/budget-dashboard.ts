@@ -17,18 +17,19 @@ export class BudgetDashboard implements OnInit {
 
   budget: any = null;
   expenses: any[] = [];
-  tripId = 'trip_test_01';
+  tripId: string = '';
+  
+  // ✅ ADDED: Variable to hold the calculated split cost
+  costPerPerson: number = 0;
 
-  // ✅ 1. RESTORED: Your beautiful original Teal/Blue Palette
   public chartColors: string[] = ['#00ACC1', '#26C6DA', '#80DEEA', '#0097A7', '#006064', '#00838F'];
-
   public doughnutChartLabels: string[] = [];
   public doughnutChartType: ChartType = 'pie';
 
   public chartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } } // Hide default legend
+    plugins: { legend: { display: false } } 
   };
 
   public doughnutChartData: ChartData<'pie'> = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
@@ -42,36 +43,35 @@ export class BudgetDashboard implements OnInit {
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      if (params['tripId']) this.tripId = params['tripId'];
+      if (params['tripId']) {
+        this.tripId = params['tripId'];
+      }
       this.loadBudget();
     });
   }
 
   loadBudget() {
+    if (!this.tripId) return;
+
     this.budgetService.getBudget(this.tripId).subscribe({
       next: (data: any) => {
         this.expenses = data.expenses || [];
         this.budget = data;
+        
         this.calculateTotal();
         this.updateChartData();
         this.cd.detectChanges();
       },
-      error: (err: any) => console.error('Error loading budget:', err)
+      error: (err: any) => console.error('Error loading budget data:', err)
     });
   }
 
-  // ✅ NEW SMART FUNCTION: Matches Table Colors to Chart Colors
   getColorForCategory(categoryName: string): string {
-    // 1. Find where this category is in the chart list
     const index = this.doughnutChartLabels.indexOf(categoryName);
-
-    // 2. If found, give it the same color the Chart uses
     if (index !== -1) {
       return this.chartColors[index % this.chartColors.length];
     }
-
-    // 3. Fallback color if not found
-    return '#ccc';
+    return '#ccc'; 
   }
 
   editExpense(item: any) {
@@ -90,33 +90,40 @@ export class BudgetDashboard implements OnInit {
   deleteExpense(item: any) {
     const expenseName = item.name || item.Name;
 
-    if (confirm(`Delete "${expenseName}"?`)) {
+    if (confirm(`Are you sure you want to delete "${expenseName}"?`)) {
       this.budgetService.deleteExpense(this.tripId, expenseName).subscribe({
         next: () => {
-          // ✅ FIX: Find the INDEX of the item we want to remove
           const index = this.expenses.indexOf(item);
-
           if (index !== -1) {
-            // Remove ONLY that specific item using splice
             this.expenses.splice(index, 1);
           }
 
-          // Recalculate totals and charts
           this.calculateTotal();
           this.updateChartData();
           this.cd.detectChanges();
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => console.error('Error deleting expense:', err)
       });
     }
   }
+
+  /**
+   * ✅ UPDATED: Calculates the total spent AND the cost per person.
+   */
   calculateTotal() {
     let sum = 0;
     this.expenses.forEach(e => {
       let val = Number(e.amount || e.Amount);
       if (!isNaN(val)) sum += val;
     });
-    if (this.budget) this.budget.totalSpent = sum;
+    
+    if (this.budget) {
+      this.budget.totalSpent = sum;
+      
+      // Look for members count in DB, default to 1 if not found to prevent NaN errors
+      const members = this.budget.membersCount || this.budget.totalMembers || 1;
+      this.costPerPerson = sum / members;
+    }
   }
 
   updateChartData() {
@@ -134,7 +141,6 @@ export class BudgetDashboard implements OnInit {
       labels: this.doughnutChartLabels,
       datasets: [{
         data: Object.values(totals),
-        // Use your original colors, assigned in order
         backgroundColor: this.chartColors,
         hoverOffset: 4
       }]
