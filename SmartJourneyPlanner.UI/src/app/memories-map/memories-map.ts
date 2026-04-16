@@ -150,7 +150,7 @@ toggleSeeMore() {
           alert("Location not found. Try another city.");
         }
       },
-      error: () => alert("Search service is currently unavailable.")
+      error: () => alert("Search for your location.")
     });
   }
 
