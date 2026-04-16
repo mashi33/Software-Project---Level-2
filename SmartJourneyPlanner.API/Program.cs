@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. ADD SERVICES (BEFORE BUILD)
 
+
+
 // ✅ 2. Configure MongoDB Settings (CRITICAL FIX)
 // This reads the "MongoDBSettings" section from appsettings.json
 builder.Services.Configure<MongoDBSettings>(
