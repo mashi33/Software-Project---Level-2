@@ -39,14 +39,24 @@
           <div class="members-box">
             <h3>Add Members</h3>
            <input type="email" formControlName="memberEmail" placeholder="Enter email" />
-            <select>
-              <option>Editor</option>
-              <option>Viewer</option>
-            </select>
+            <select formControlName="memberRole">
+  <option value="Editor">Editor</option>
+  <option value="Viewer">Viewer</option>
+</select>
             <button type="button" class="invite-btn" (click)="onInvite()">Invite</button>
           </div>
         </div>
 
+      </div>
+
+      <div *ngIf="invitedMembers.length > 0" class="invited-list">
+          <h4>Invited Members</h4>
+          <ul>
+          <li *ngFor="let m of invitedMembers; let i = index">
+           {{ m.email }} ({{ m.role }}) 
+          <button type="button" (click)="removeMember(i)">Remove</button>
+           </li>
+          </ul>
       </div>
 
       <div class="bottom-buttons">
