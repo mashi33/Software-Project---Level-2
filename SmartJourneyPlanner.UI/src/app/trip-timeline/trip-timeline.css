@@ -1,0 +1,1236 @@
+/* Root styles for the whole component */
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Main container that holds everything */
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: white; /* Clean white base */
+  min-height: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+  position: relative;
+  overflow-x: hidden;
+  letter-spacing: -0.015em;
+}
+
+/* Background image of the tea plantation */
+.bg-image-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("/sri-lanka-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  opacity: 0.35; /* Increased further for more prominence as requested */
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+
+/* Centers the content and limits how wide it can get */
+.content-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%; /* No max-width constraint */
+}
+
+.hero-title {
+  font-size: 5.5rem; /* Massive title to fill space */
+  font-weight: 850;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.hero-description {
+  font-size: 1.6rem; /* Slightly larger */
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 800px; /* Keep text readable while title spreads out */
+}
+
+/* Styles for the top header section */
+.timeline-header {
+  margin-bottom: 2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+/* Card showing counts of days and activities */
+.stats-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem; /* Matched to event-card */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  margin-left: calc(48px + 1.5rem); /* Aligned with event cards */
+}
+
+.stats-grid {
+  display: flex;
+  gap: 2.5rem; /* Slightly tighter */
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b; /* Darkened for better visibility */
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.stat-value {
+  font-size: 1.15rem; /* Slightly smaller */
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Pseudo-element removed for naked header */
+
+.header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.pin-icon {
+  font-size: 2.25rem;
+  color: #f43f5e; /* Premium Soft Crimson */
+  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.3)); /* Soft Glow */
+  animation: breathing-wiggle 4s ease-in-out infinite;
+}
+
+@keyframes breathing-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(8deg) scale(1.05); }
+  50% { transform: rotate(-5deg) scale(1); }
+  75% { transform: rotate(5deg) scale(1.05); }
+}
+
+.title-container h1 {
+  font-size: 2.75rem; /* Slightly larger */
+  font-weight: 850;
+  background: linear-gradient(135deg, #2563eb 0%, #1e1b4b 50%, #020617 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  letter-spacing: -0.04em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.title-container h1:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.btn-edit-name {
+  background: transparent;
+  color: #94a3b8;
+  padding: 0.25rem;
+  border-radius: 6px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.title-container:hover .btn-edit-name {
+  opacity: 1;
+}
+
+.btn-edit-name:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+.edit-name-input {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  border: 2px solid #3b82f6;
+  background: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  font-family: inherit;
+  margin: -0.25rem -0.5rem;
+  outline: none;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.btn-save-name, .btn-cancel-name {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.btn-save-name { background: #10b981; color: white; }
+.btn-cancel-name { background: #f1f5f9; color: #64748b; }
+
+.trip-dates-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.trip-dates-summary .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: #94a3b8;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.btn-export:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+}
+
+.btn-export .material-symbols-outlined {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Day Sections */
+/* Container for all the trip days */
+.days-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* day layout */
+.day-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 2rem; /* Reduced from 2.5rem */
+  position: relative;
+}
+
+/* The vertical timeline line */
+/* Vertical line connecting the day circles */
+.day-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 48px;
+  bottom: -2.5rem;
+  left: 24px;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+/* Hide the line on the very last item */
+.day-wrapper:last-child::before {
+  display: none;
+}
+
+/* Blue circle showing the day number */
+.day-circle {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 5px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+}
+
+.day-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.day-title-area {
+  flex: 1;
+}
+
+.day-title-area h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #1e293b;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.day-date.clickable {
+  cursor: pointer;
+  padding: 0.35rem 0.65rem;
+  margin-left: -0.65rem;
+  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.5);
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+}
+
+.day-date.clickable:hover {
+  background: white;
+  border-color: #e2e8f0;
+  color: #2563eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+}
+
+.hidden-date-picker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  pointer-events: none; /* Let the parent div handle the click */
+}
+
+.day-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.completion-text {
+  color: #1e293b; /* Darkened for better visibility */
+  font-size: 0.95rem; /* Slightly larger */
+  font-weight: 600; /* Bolder */
+}
+
+button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.btn-add {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.btn-add:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-delete {
+  background: white;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.btn-delete:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+/* Add Day Button at Bottom */
+.add-day-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn-add-day {
+  background: rgba(255, 255, 255, 0.6);
+  color: #64748b;
+  border: 2px dashed #e2e8f0;
+  padding: 1.25rem 3rem;
+  font-size: 1.1rem;
+  border-radius: 18px;
+  min-width: 300px;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.btn-add-day:hover {
+  border-color: #3b82f6;
+  background: #eff6ff; /* Soft blue tint */
+  color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -10px rgba(59, 130, 246, 0.2);
+}
+
+/* --- Drag and Drop Professional Styles --- */
+
+/* The floating preview that follows the cursor */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 1000 !important;
+  transform: scale(1.02) rotate(1deg);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The placeholder in the list (where the item will drop) */
+.cdk-drag-placeholder {
+  opacity: 0.15; /* Make the original item nearly invisible */
+  border: 2px dashed #cbd5e1;
+  background: #f8fafc;
+  min-height: 80px;
+  border-radius: 12px;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Animation when dropping an item */
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Animate items as they shift to make room */
+.event-list.cdk-drop-list-dragging .event-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Events List */
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 50px;
+  /* target for drag drop */
+  padding-bottom: 0.5rem;
+}
+
+/* event layout */
+/* Card for a single activity/event */
+.event-card {
+  display: flex;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: center;
+  gap: 1.25rem;
+  cursor: grab;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.event-card:hover {
+  background: white;
+  box-shadow: 
+    0 12px 24px -8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.event-card.completed {
+  opacity: 0.6;
+}
+
+/* Category Boxes */
+.category-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.cat-hotel { background: #f0f7ff; color: #2563eb; }
+.cat-dining { background: #fffbeb; color: #d97706; }
+.cat-sightseeing { background: #f0fdf4; color: #16a34a; }
+.cat-transport { background: #f8fafc; color: #475569; }
+
+.event-card:hover .category-box {
+  transform: scale(1.05);
+}
+
+/* Content */
+.event-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.event-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+  transition: color 0.3s ease;
+}
+
+.event-title.strike {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.event-meta {
+  display: flex;
+  gap: 1.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.event-time,
+.event-location {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.event-description {
+  font-size: 0.95rem;
+  color: #475569;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.6;
+}
+
+/* Actions */
+.event-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.action-btn.delete-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.action-btn.status-btn:hover {
+  color: #22c55e;
+  background: #f0fdf4;
+}
+
+.status-btn.is-done {
+  color: #22c55e;
+}
+
+/* modal styling */
+/* Full screen background for the popup */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 1rem;
+}
+
+
+h2 {
+  margin-top: 0;
+  color: #0f172a;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.half-width {
+  flex: 1;
+}
+
+label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+input,
+select,
+textarea {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.btn-cancel {
+  background: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-save {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.btn-save:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Hero Sections Styles */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+
+.hero-icons-wrapper {
+  position: relative;
+  width: 280px; /* Reduced from 350px */
+  height: 200px; /* Reduced from 250px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-icon-container {
+  width: 120px; /* Reduced from 150px */
+  height: 120px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.4);
+}
+
+.main-route-icon {
+  font-size: 64px; /* Reduced from 80px */
+}
+
+/* Floating decoration icons on the welcome screen */
+.floating-icon {
+  position: absolute;
+  width: 56px; /* Reduced from 70px */
+  height: 56px;
+  background: white;
+  color: #3b82f6;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+}
+
+.floating-icon .material-symbols-outlined {
+  font-size: 28px; /* Reduced */
+}
+
+/* Positions for the floating icons */
+.icon-hotel { top: 0; left: 0; }
+.icon-dining { top: 20px; right: 0; }
+.icon-explore { bottom: 0; right: 40px; }
+
+/* Wiggle Animations */
+.wiggle-1 { animation: wiggle 3s ease-in-out infinite; }
+.wiggle-2 { animation: wiggle 3.5s ease-in-out infinite reverse; }
+.wiggle-3 { animation: wiggle 4s ease-in-out infinite; }
+
+@keyframes wiggle {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(4px, -6px) rotate(4deg); }
+  50% { transform: translate(-3px, 5px) rotate(-3deg); }
+  75% { transform: translate(5px, 3px) rotate(5deg); }
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+
+.hero-title {
+  font-size: 3.5rem; /* Reduced from 5.5rem */
+  font-weight: 850;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.hero-description {
+  font-size: 1.25rem; /* Reduced from 1.6rem */
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 650px;
+}
+
+.hero-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+
+.hero-actions .btn-create-now {
+  background: #3b82f6;
+  color: white;
+  padding: 1.1rem 2.75rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: 50px;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero-actions .btn-create-now:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.4);
+  background: #2563eb;
+}
+
+.btn-back-home {
+  margin-top: 1.5rem;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 50px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-back-home:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Styling for the box inside the "Add Event" popup */
+.modal-content {
+  background: #ffffff;
+  padding: 1.75rem 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.add-day-container.centered {
+  margin-top: 6rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Big welcome button used in the hero layout */
+.btn-add-day-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 6rem;
+  background: white;
+  color: #3b82f6;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  font-size: 1.75rem;
+  font-weight: 850;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+}
+
+.btn-add-day-hero:hover {
+  transform: translateY(-5px);
+  border-color: #3b82f6;
+  box-shadow: 0 25px 45px -12px rgba(59, 130, 246, 0.2);
+}
+
+/* --- SweetAlert2 (Confirmation Popup) Refinement --- */
+/* These styles make the standard browser alerts look more professional */
+::ng-deep .swal2-popup {
+  width: 22rem !important; /* Significantly smaller width */
+  padding: 1.25rem !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2) !important;
+}
+
+::ng-deep .swal2-title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0.5rem 0 !important;
+  padding: 0 !important;
+}
+
+::ng-deep .swal2-html-container {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.95rem !important;
+  color: #475569 !important;
+  line-height: 1.5 !important;
+  margin: 0.5rem 0 1.25rem !important;
+}
+
+::ng-deep .swal2-icon {
+  width: 4rem !important;
+  height: 4rem !important;
+  margin: 0.75rem auto 0.5rem !important;
+  border-width: 3px !important;
+  overflow: visible !important; /* Prevents animated lines from clipping */
+}
+
+/* Scaling internal parts manually to prevent distortion and animation glitches */
+::ng-deep .swal2-icon .swal2-icon-content {
+  font-size: 2.25rem !important;
+  line-height: 4rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Success Icon specific internal scaling */
+::ng-deep .swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+::ng-deep .swal2-icon.swal2-success .swal2-success-ring {
+  width: 100% !important;
+  height: 100% !important;
+  border-width: 3px !important;
+}
+
+::ng-deep .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  height: 3px !important;
+  background-color: #10b981 !important;
+}
+
+::ng-deep .swal2-icon.swal2-success .swal2-success-line-tip {
+  width: 1.1rem !important;
+  left: 0.45rem !important;
+  top: 2.1rem !important;
+}
+
+::ng-deep .swal2-icon.swal2-success .swal2-success-line-long {
+  width: 2.1rem !important;
+  right: 0.45rem !important;
+  top: 1.85rem !important;
+}
+
+/* Warning Icon specific internal scaling */
+::ng-deep .swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  font-size: 2.5rem !important;
+}
+
+/* Confirm and Cancel Buttons styling */
+::ng-deep .swal2-actions {
+  margin-top: 1rem !important;
+  gap: 0.75rem !important;
+}
+
+::ng-deep .swal2-styled {
+  padding: 0.6rem 1.75rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  margin: 0 !important;
+}
+
+/* Context-aware Confirm Button colors */
+::ng-deep .swal2-confirm {
+  background-color: #3b82f6 !important; /* Default Blue for OK/Success */
+}
+
+/* Red for Warning/Destructive actions (Delete) */
+::ng-deep .swal2-popup:has(.swal2-warning) .swal2-confirm {
+  background-color: #ef4444 !important;
+}
+
+::ng-deep .swal2-styled.swal2-cancel {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+/* Validation Styles */
+/* Changes the input border to red if the information is missing or wrong */
+.form-group input.invalid {
+    border-color: #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+/* Small red text shown below an input when there is an error */
+.error-msg {
+    color: #dc3545;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: block;
+    font-weight: 500;
+}
+
+/* Makes the 'Save' button semi-transparent when it cannot be clicked */
+.btn-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* --- Responsive Adjustments (Mobile/Tablet Support) --- */
+/* These styles change the layout when the screen is small (like on a phone) */
+
+/* Tablet and Smaller Desktops (up to 1024px) */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    padding: 2rem 1.5rem;
+  }
+
+  .stats-card {
+    margin-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .stats-grid {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Devices (up to 768px) */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.75rem;
+  }
+
+  .hero-description {
+    font-size: 1.1rem;
+  }
+
+  .btn-add-day-hero {
+    padding: 2rem 3rem;
+    font-size: 1.4rem;
+    width: 90%;
+  }
+
+  .day-wrapper {
+    gap: 1rem;
+  }
+
+  .day-wrapper::before {
+    left: 20px;
+  }
+
+  .day-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .day-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .day-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .event-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .category-box {
+    width: 40px;
+    height: 40px;
+  }
+
+  .event-actions {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .event-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .half-width {
+    width: 100%;
+  }
+}
+
+/* Small Mobile Devices (up to 480px) */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .header-top h1 {
+    font-size: 2.25rem;
+  }
+
+  .btn-export {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .day-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-add, .btn-delete {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .completion-text {
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+}

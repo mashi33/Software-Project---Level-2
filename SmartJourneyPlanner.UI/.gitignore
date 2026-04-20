@@ -10,11 +10,6 @@
 /node_modules
 npm-debug.log
 yarn-error.log
-node_modules/
-/node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # IDEs and editors
 .idea/
@@ -24,12 +19,11 @@ yarn-error.log*
 *.launch
 .settings/
 *.sublime-workspace
-.vs/
-*.user
-*.suo
-*.sln.docstates
 
 # Visual Studio Code
+bin/
+obj/
+.vs/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -39,36 +33,27 @@ yarn-error.log*
 
 # Miscellaneous
 /.angular/cache
-.angular/
 .sass-cache/
 /connect.lock
 /coverage
 /libpeerconnection.log
 testem.log
 /typings
-__screenshots__/
 
 # System files
 .DS_Store
 Thumbs.db
 
-# .NET Backend specific
+# Backend specific
 bin/
 obj/
-*.dll
-*.exe
-*.pdb
+*.user
+*.suo
+.vs/
+SmartJourneyPlanner/bin/
+SmartJourneyPlanner/obj/
 
-# Environment files
+appsettings.json
+appsettings.*.json
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-src/environments/environment.ts
-src/environments/environment.development.ts
-
-# Build artifacts
-SmartJourneyPlanner.API/bin/
-SmartJourneyPlanner.API/obj/
-SmartJourneyPlanner.UI/dist/
+environments/
