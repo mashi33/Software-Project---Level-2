@@ -53,6 +53,9 @@ obj/
 SmartJourneyPlanner/bin/
 SmartJourneyPlanner/obj/
 
- # API key in here 
+# API key in here 
 src/environments/environment.ts
 src/environments/environment.development.ts
+
+# Ignore local development settings
+SmartJourneyPlanner.API/appsettings.Development.json

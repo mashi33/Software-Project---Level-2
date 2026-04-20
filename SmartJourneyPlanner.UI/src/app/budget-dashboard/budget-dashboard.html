@@ -1,47 +1,61 @@
 <div class="main-container background-container">
   <div class="content-wrapper">
-    <div class="header-section">
-      <label>Select trip:</label>
-      <select class="trip-selector" [(ngModel)]="tripId" (change)="loadBudget()">
-        <option value="trip_test_01">Exploring Ella</option>
-        <option value="trip_test_02">Trip to Nuwara Eliya</option>
-      </select>
+    
+    <div class="header-section glass-header">
+      <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <h2 style="margin: 0; color: #0A4087; font-size: 1.5rem; font-weight: bold;">Budget Planner for</h2>
+        
+        <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="loadBudget()">
+          <option value="trip_test_01">Exploring Ella</option>
+          <option value="trip_test_02">Trip to Nuwara Eliya</option>
+        </select>
+        
+      </div>
     </div>
 
     <div class="content-grid">
+      
       <div class="card table-card">
         <div class="card-header-blue">
           <h3>Current Trip Expenses</h3>
         </div>
 
         <div class="table-container">
+          
           <div *ngIf="expenses.length > 0">
             <table class="custom-table">
+              
               <thead>
                 <tr class="table-header-row">
-                  <th>Category</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Note</th>
+                  <th (click)="sortTable('category')" style="cursor: pointer;" title="Sort by Category">
+                    Category <span *ngIf="sortColumn === 'category'">{{ sortAscending ? '▲' : '▼' }}</span>
+                  </th>
+                  <th (click)="sortTable('amount')" style="cursor: pointer;" title="Sort by Amount">
+                    Amount <span *ngIf="sortColumn === 'amount'">{{ sortAscending ? '▲' : '▼' }}</span>
+                  </th>
+                  <th (click)="sortTable('date')" style="cursor: pointer;" title="Sort by Date">
+                    Date <span *ngIf="sortColumn === 'date'">{{ sortAscending ? '▲' : '▼' }}</span>
+                  </th>
+                  <th (click)="sortTable('name')" style="cursor: pointer;" title="Sort alphabetically">
+                    Note <span *ngIf="sortColumn === 'name'">{{ sortAscending ? '▲' : '▼' }}</span>
+                  </th>
                   <th>Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 <tr *ngFor="let item of expenses">
-                  <td>
-                    <span class="category-pill">
-                      {{ item.category }}
-                    </span>
-                  </td>
-
+                  <td><span class="category-pill">{{ item.category }}</span></td>
                   <td style="font-weight: bold;">{{ (item.amount) | number:'1.2-2' }}</td>
                   <td>{{ (item.date) | date:'MMM d, y' }}</td>
                   <td style="color: #555;">{{ item.name }}</td>
+                  
                   <td>
                     <button class="btn-edit" (click)="editExpense(item)">✏️</button>
                     <button class="btn-delete" (click)="deleteExpense(item)">🗑️</button>
                   </td>
                 </tr>
+                
                 <tr class="total-row" *ngIf="budget">
                   <td>Total</td>
                   <td style="font-size: 1.1rem;">{{ budget?.totalSpent | number:'1.2-2' }}</td>
@@ -57,9 +71,13 @@
             <p>No expenses yet.</p>
           </div>
 
-          <div class="add-btn-wrapper">
+          <div class="add-btn-wrapper" style="display: flex; justify-content: flex-end; gap: 15px;">
+            <button class="btn-export-pdf" (click)="exportToPDF()" *ngIf="expenses.length > 0">
+              📄 Export to PDF
+            </button>
             <a [routerLink]="['/add-expense']" [queryParams]="{ tripId: tripId }" class="btn-add-teal">+ Add New Expense</a>
           </div>
+
         </div>
       </div>
 
@@ -67,17 +85,35 @@
         <div class="card-header-white"><h3>Summary</h3></div>
         <div class="chart-content-wrapper">
           
-          <div *ngIf="expenses.length > 0" style="text-align: center; margin-bottom: 25px; padding-top: 10px;">
-            <h2 style="color: #006064; margin: 0; font-size: 1.8rem;">
+          <div *ngIf="expenses.length > 0" style="text-align: center; margin-bottom: 25px; padding-top: 10px; width: 100%;">
+            
+            <div class="budget-tracker">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 5px;">
+                <span>Spent: Rs. {{ budget?.totalSpent | number:'1.0-0' }}</span>
+                <span>Limit: Rs. {{ totalAllowedBudget | number:'1.0-0' }}</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" 
+                     [style.width.%]="budgetPercentage"
+                     [ngClass]="{'danger': budgetPercentage > 90, 'warning': budgetPercentage > 75}">
+                </div>
+              </div>
+            </div>
+
+            <h2 style="color: #006064; margin: 15px 0 10px 0; font-size: 1.8rem;">
               <span style="font-size: 1rem; color: #7f8c8d; display: block; margin-bottom: 2px;">Total Spent</span> 
               Rs. {{ budget?.totalSpent | number:'1.2-2' }}
             </h2>
-            <p style="color: #00838F; font-weight: bold; margin: 8px 0 0 0; font-size: 1.2rem; background: #E0F7FA; display: inline-block; padding: 5px 15px; border-radius: 20px;">
-              Per Person: Rs. {{ costPerPerson | number:'1.2-2' }}
-            </p>
-            <p style="color: #888; font-size: 0.8rem; margin: 5px 0 0 0;">
-              Split between {{ budget?.membersCount || budget?.totalMembers || 1 }} members
-            </p>
+
+            <div class="interactive-split-box">
+              <span style="color: #00838F; font-weight: bold;">Per Person: Rs. {{ costPerPerson | number:'1.2-2' }}</span>
+              <div class="member-input-wrapper">
+                <label style="font-size: 0.8rem; color: #666;">Split between</label>
+                <input type="number" min="1" max="20" class="member-input" [(ngModel)]="membersCount" (change)="calculateTotal()">
+                <label style="font-size: 0.8rem; color: #666;">members</label>
+              </div>
+            </div>
+
           </div>
 
           <div class="chart-container" *ngIf="expenses.length > 0">
@@ -90,6 +126,7 @@
               <span class="legend-label">{{ label }}</span>
             </div>
           </div>
+          
         </div>
       </div>
       

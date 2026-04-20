@@ -12,7 +12,7 @@ import { RouterModule } from '@angular/router'; // Required for routerLink
   styleUrl: './navbar.css',
 })
 export class NavbarComponent {
-  userName: string = 'John Doe';
-  profilePic: string = 'assets/profile-user.png';
+  userName: string = 'Krishan Karunarathna';
+  profilePic: string = '/profilePic.jpg';
   notificationCount: number = 5;
 }

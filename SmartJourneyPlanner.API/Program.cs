@@ -19,11 +19,11 @@ builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
 // ✅ Configure Database Settings (reads from appsettings.json "DatabaseSettings" section)
-var dbSettingsSection = builder.Configuration.GetSection("DatabaseSettings");
-builder.Services.Configure<DatabaseSettings>(dbSettingsSection);
+var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+builder.Services.Configure<MongoDBSettings>(mongoDbSettingsSection);
 
-var connectionString = dbSettingsSection["ConnectionString"];
-var databaseName = dbSettingsSection["DatabaseName"];
+var connectionString = mongoDbSettingsSection["ConnectionString"];
+var databaseName = mongoDbSettingsSection["DatabaseName"];
 
 Console.WriteLine("================================================");
 Console.WriteLine($"SERVER STARTING...");
