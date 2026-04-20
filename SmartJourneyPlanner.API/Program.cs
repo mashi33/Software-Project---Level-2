@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;        // ✅ Needed for MongoDBSettings
 using SmartJourneyPlanner.API.Services;     // ✅ Needed for BudgetService
@@ -91,6 +91,9 @@ builder.Services.AddCors(options =>
 // ✅ Budget Service (from SmartJourneyPlanner.API)
 builder.Services.AddSingleton<BudgetService>();
 
+// ✅ Timeline Service (merged from Trip_Timeline)
+builder.Services.AddSingleton<TimelineService>();
+
 // ✅ Discussion & Comment Services
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
@@ -109,23 +112,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
-/*
-// ✅ JWT Authentication (Uncomment when needed)
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
-    });
-*/
 
 // ==========================================================
 // 7. BUILD THE APP
@@ -148,10 +134,7 @@ app.UseRouting();
 
 app.UseCors("AllowAngularApp"); // ✅ CORS මෙතැන තිබීම අනිවාර්යයි (Authorization ට කලින්)
 
-//app.UseHttpsRedirection(); // (Uncomment in Production)
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 // ✅ SignalR Hub Endpoint

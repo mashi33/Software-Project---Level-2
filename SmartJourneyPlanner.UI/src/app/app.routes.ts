@@ -6,6 +6,7 @@ import { LoginComponent } from './login/login';
 import { SignupComponent } from './signup/signup'; 
 import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
+import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -24,8 +25,6 @@ export const routes: Routes = [
   // { path: '**', redirectTo: '/login' } 
   { path: 'groupChat', component: DiscussionComponent },
   
-  
   { path: 'explore', component: RouteOptimization }, 
-  
-  //{ path: '', redirectTo: '/route-optimization', pathMatch: 'full' }
+  { path: 'timeline', component: TripTimelineComponent }
 ];
