@@ -12,10 +12,14 @@
   text-decoration: none;
 }
 
+/* ✅ UPDATED: Added object-fit and border-radius so your JPG looks perfect */
 .brand-logo {
-  width: 35px;
-  height: 35px;
+  width: 60px;          /* Slightly larger to match the new design */
+  height: 40px;
   margin-right: 12px;
+  border-radius: 8px;   /* Change to 50% if you want a perfect circle */
+  object-fit: cover;    /* Prevents the image from stretching */
+  background-color: white; /* Helpful if the logo is a dark JPG */
 }
 
 .brand-text {
@@ -72,8 +76,8 @@
 
 .notification-badge {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 12px;
+  right: 12px;
   background-color: #FF5252;
   width: 8px;
   height: 8px;

@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class BudgetService {
-  // Check your Swagger port (usually 5125 or 7125)
-  private apiUrl = 'http://localhost:5125/api/Budget';
+  // ✅ FIXED: Now pointing to your actual running .NET server port!
+  private apiUrl = 'http://localhost:5233/api/Budget';
 
   constructor(private http: HttpClient) { }
 
@@ -27,7 +27,7 @@ export class BudgetService {
     return this.http.delete(`${this.apiUrl}/delete-expense/${tripId}/${safeName}`, { responseType: 'text' });
   }
 
-  // ✅ 4. UPDATE Expense (New Feature!)
+  // 4. UPDATE Expense 
   updateExpense(tripId: string, oldName: string, updatedExpense: any): Observable<any> {
     const safeOldName = encodeURIComponent(oldName);
     return this.http.put(

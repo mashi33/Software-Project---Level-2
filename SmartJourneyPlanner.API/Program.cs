@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -20,10 +20,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-var dbSettings = builder.Configuration.GetSection("DatabaseSettings");
+// ✅ Configure Database Settings (reads from appsettings.json "DatabaseSettings" section)
+var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+builder.Services.Configure<MongoDBSettings>(mongoDbSettingsSection);
+
+var connectionString = mongoDbSettingsSection["ConnectionString"];
+var databaseName = mongoDbSettingsSection["DatabaseName"];
+
+/* var dbSettings = builder.Configuration.GetSection("DatabaseSettings");
 
 var connectionString = dbSettings["ConnectionString"];
-var databaseName = dbSettings["DatabaseName"];
+var databaseName = dbSettings["DatabaseName"]; */
 
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(connectionString));
