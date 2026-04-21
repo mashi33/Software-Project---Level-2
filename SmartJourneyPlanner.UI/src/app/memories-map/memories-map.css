@@ -1,0 +1,290 @@
+/* 1. LAYOUT BASE - Map on Left, Sidebar on Right */
+.main-wrapper {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 570px; /* Fixed width for the form/gallery */
+    background-color: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.map-container, #map {
+    flex-grow: 1; /* Takes up the rest of the screen */
+    height: 100%;
+}
+
+/* 2. FORMS & INPUTS */
+.upload-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    color: #0d6efd;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.search-group { 
+    display: flex; 
+    margin-bottom: 1rem; 
+}
+
+.search-input, .form-input, .form-textarea {
+    width: 100%;
+    height: 35px;
+    padding: 0.5rem;
+    border: 0.1px solid #ced4da;
+    border-radius: 5px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+
+.form-textarea { 
+    height: auto;
+ }
+
+/* Date Row Styling */
+.date-row { 
+    display: flex;
+     gap: 10px; 
+     width: 30%; 
+    }
+
+.date-field { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: row; 
+}
+
+.date-field label {
+     font-size: 14px;
+    margin-bottom: 4px;
+     white-space: nowrap; /* FORCES text to stay on one line */
+    align-content: center; 
+}
+
+.form-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+/* 3. BUTTONS */
+.btn-find {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 0 1rem;
+    border-radius: 0 5px 5px 0;
+    margin-left: -5px; /* Joins it to the search input */
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+}
+
+.btn-save {
+    width: 100%;
+    background: #198754;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-save:disabled {
+     opacity: 0.6; 
+     cursor: not-allowed; 
+    }
+
+/* 4. GALLERY & THUMB CARDS */
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: #0d6efd;
+}
+
+.gallery-count {
+    background: #6c757d;
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.gallery-grid { 
+    display: flex; 
+    flex-direction: column;
+     gap: 10px;
+     }
+
+.thumb-card {
+    display: flex;
+    padding: 8px;
+    gap: 12px;
+    border: 1px solid #eff0f1;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.thumb-card:hover {
+     transform: scale(1.02);
+     }
+
+.img-container { 
+    height: 100px;
+    width: 160px;
+    flex-shrink: 0;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.thumb-img {
+     width: 100%;
+      height: 100%; 
+      object-fit: cover;
+     }
+
+
+.thumb-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  
+}
+
+.thumb-dates { 
+    font-size: 11px; 
+    color: #888;
+     margin-top: 4px;
+    font-style: italic;
+    }
+
+.delete-overlay-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* 5. PHOTO UPLOAD & PREVIEW */
+.upload-box-wrapper {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    margin-bottom: 0.75rem;
+}
+
+.upload-preview {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f8f9fa;
+    margin-top: 8px;
+}
+
+.upload-preview img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
+ }
+
+.btn-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(220, 38, 38, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.see-more-container {
+    width: 100%;
+    display: flex;
+    justify-content: right;
+    padding: 10px 0;
+}
+
+.btn-see-more {
+    background: none;
+    border: 1px solid #495fd0; /* Matching your pink theme */
+    color: #495fd0;
+    padding: 6px 15px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-see-more:hover {
+    background: #4641c6;
+    color: white;
+}
+
+/* 6. LIGHTBOX / MODAL */
+.lightbox-overlay {
+    position: fixed;
+    inset: 0; /* Shortcut for top, left, right, bottom: 0 */
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.lightbox-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+}
+
+.lightbox-img { 
+    width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 8px; 
+}
+
+.btn-close {
+    margin-top: 15px;
+    background: #333;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+}

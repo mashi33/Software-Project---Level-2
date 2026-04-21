@@ -1,0 +1,11 @@
+[33m6b013e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLogin_Signup[m[33m, [m[1;31morigin/Login_Signup[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33m6b013e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLogin_Signup[m[33m, [m[1;31morigin/Login_Signup[m[33m)[m HEAD@{1}: checkout: moving from main to Login_Signup
+[33m2f21127[m[33m ([m[1;32mmain[m[33m)[m HEAD@{2}: checkout: moving from Login_Signup to main
+[33m6b013e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLogin_Signup[m[33m, [m[1;31morigin/Login_Signup[m[33m)[m HEAD@{3}: checkout: moving from main to Login_Signup
+[33m2f21127[m[33m ([m[1;32mmain[m[33m)[m HEAD@{4}: checkout: moving from Login_Signup to main
+[33m6b013e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLogin_Signup[m[33m, [m[1;31morigin/Login_Signup[m[33m)[m HEAD@{5}: reset: moving to HEAD
+[33m6b013e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLogin_Signup[m[33m, [m[1;31morigin/Login_Signup[m[33m)[m HEAD@{6}: checkout: moving from main to Login_Signup
+[33m2f21127[m[33m ([m[1;32mmain[m[33m)[m HEAD@{7}: commit: save login and signup base changes before switching
+[33m288efee[m HEAD@{8}: checkout: moving from main to main
+[33m288efee[m HEAD@{9}: checkout: moving from main to main
+[33m288efee[m HEAD@{10}: commit (initial): initial commit
