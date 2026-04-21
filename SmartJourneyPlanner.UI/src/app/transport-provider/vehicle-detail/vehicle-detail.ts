@@ -282,6 +282,16 @@ export class VehicleDetailComponent implements OnInit {
     });
   }
 
+  getAverageRating(): number {
+    if (!this.vehicle || !this.vehicle.reviews || this.vehicle.reviews.length === 0) return 0;
+    const total = this.vehicle.reviews.reduce((acc, r) => acc + r.rating, 0);
+    return parseFloat((total / this.vehicle.reviews.length).toFixed(1));
+  }
+
+  getTotalReviews(): number {
+    return this.vehicle?.reviews?.length || 0;
+  }
+
   getRatingPercentage(starLevel: number): number {
     if (!this.vehicle || !this.vehicle.reviews || this.vehicle.reviews.length === 0) return 0;
     const count = this.vehicle.reviews.filter(r => r.rating === starLevel).length;

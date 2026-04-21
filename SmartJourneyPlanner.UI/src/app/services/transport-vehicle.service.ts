@@ -34,4 +34,8 @@ export class TransportVehicleService {
   deleteVehicle(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  addVehicleReview(vehicleId: string, review: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${vehicleId}/reviews`, review);
+  }
 }

@@ -74,5 +74,20 @@ namespace SmartJourneyPlanner.Controllers
             await _vehicleService.InsertManyAsync(vehiclesToInsert);
             return Ok(new { message = "Seeded successfully" });
         }
+
+        [HttpPost("{id:length(24)}/reviews")]
+        public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
+        {
+            var vehicle = await _vehicleService.GetAsync(id);
+            if (vehicle is null) return NotFound();
+
+            if (string.IsNullOrEmpty(review.Date))
+            {
+                review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            }
+
+            await _vehicleService.AddReviewAsync(id, review);
+            return Ok(new { message = "Review added successfully" });
+        }
     }
 }

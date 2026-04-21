@@ -58,5 +58,16 @@ namespace SmartJourneyPlanner.Controllers
             await _bookingService.UpdateAsync(id, booking);
             return NoContent();
         }
+
+        [HttpPatch("{id:length(24)}/rated")]
+        public async Task<IActionResult> PatchRated(string id)
+        {
+            var booking = await _bookingService.GetAsync(id);
+            if (booking is null) return NotFound();
+
+            booking.HasBeenRated = true;
+            await _bookingService.UpdateAsync(id, booking);
+            return NoContent();
+        }
     }
 }

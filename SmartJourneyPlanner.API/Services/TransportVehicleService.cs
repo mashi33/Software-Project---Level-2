@@ -37,5 +37,12 @@ namespace SmartJourneyPlanner.Services
             
         public async Task InsertManyAsync(List<TransportVehicle> vehicles) =>
             await _vehiclesCollection.InsertManyAsync(vehicles);
+
+        public async Task AddReviewAsync(string id, TransportReview review)
+        {
+            var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
+            var update = Builders<TransportVehicle>.Update.Push(v => v.Reviews, review);
+            await _vehiclesCollection.UpdateOneAsync(filter, update);
+        }
     }
 }

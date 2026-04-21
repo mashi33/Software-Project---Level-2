@@ -4,6 +4,7 @@ import { Booking } from '../../models/transport.model';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { TransportBookingService } from '../../services/transport-booking.service';
+import { TransportVehicleService } from '../../services/transport-vehicle.service';
 
 @Component({
   selector: 'app-my-bookings',
@@ -27,7 +28,10 @@ export class MyBookings implements OnInit {
   
   @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
 
-  constructor(private transportBookingService: TransportBookingService) {}
+  constructor(
+    private transportBookingService: TransportBookingService,
+    private transportVehicleService: TransportVehicleService
+  ) {}
 
   ngOnInit() {
     this.loadBookings();
@@ -87,23 +91,44 @@ export class MyBookings implements OnInit {
   }
 
   submitReview() {
-    if (!this.selectedBooking) return;
+    if (!this.selectedBooking || !this.selectedBooking.id) return;
     
-    console.log('Submitting Review:', {
-      bookingId: this.selectedBooking.id,
+    const reviewData = {
+      userName: this.selectedBooking.userName || 'Anonymous User',
       rating: this.tempRating,
-      comment: this.tempComment
-    });
+      comment: this.tempComment,
+      date: new Date().toISOString().split('T')[0]
+    };
 
-    this.showSuccessMessage = true;
-    
-    setTimeout(() => {
-      if (this.selectedBooking && this.selectedBooking.id) {
-        this.selectedBooking.hasBeenRated = true;
-        // In real app, make an API call to update the review
+    // 1. Add review to the vehicle
+    this.transportVehicleService.addVehicleReview(this.selectedBooking.vehicleId, reviewData).subscribe({
+      next: () => {
+        // 2. Mark booking as rated
+        if (this.selectedBooking?.id) {
+          this.transportBookingService.markBookingAsRated(this.selectedBooking.id).subscribe({
+            next: () => {
+              this.showSuccessMessage = true;
+              if (this.selectedBooking) {
+                this.selectedBooking.hasBeenRated = true;
+              }
+              
+              setTimeout(() => {
+                this.closeModal();
+                this.loadBookings(); // Refresh list
+              }, 1500);
+            },
+            error: (err) => {
+              console.error('Error marking booking as rated:', err);
+              Swal.fire('Error', 'Failed to update booking status.', 'error');
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error adding review:', err);
+        Swal.fire('Error', 'Failed to submit review.', 'error');
       }
-      this.closeModal();
-    }, 2000);
+    });
   }
 
   // Provider Actions

@@ -34,4 +34,8 @@ export class TransportBookingService {
   updateBookingStatus(id: string, status: string): Observable<void> {
     return this.http.patch<void>(`${this.apiUrl}/${id}/status`, { status });
   }
+
+  markBookingAsRated(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/rated`, {});
+  }
 }

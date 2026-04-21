@@ -51,8 +51,8 @@
             <h1 class="vd-title m-0">{{vehicle.description.split(' - ')[0]}}</h1>
             <a href="javascript:void(0)" (click)="scrollToReviews()" class="vd-rating text-decoration-none">
               <i class="bi bi-star-fill text-gold"></i>
-              <span class="fw-bold ms-1 text-navy">4.8</span>
-              <span class="text-muted ms-1">(124 reviews)</span>
+              <span class="fw-bold ms-1 text-navy">{{getAverageRating()}}</span>
+              <span class="text-muted ms-1">({{getTotalReviews()}} reviews)</span>
             </a>
           </div>
           <p class="vd-location text-muted mb-4">
@@ -143,8 +143,8 @@
                  (click)="toggleReviewsAccordion()" role="button">
               <h3 class="vd-section-title m-0">Ratings & Reviews</h3>
               <div class="header-summary d-flex align-items-center">
-                <span class="fw-bold me-2"><span class="text-navy">4.8</span> <span class="text-gold">★</span></span>
-                <span class="text-muted small me-3">(124 verified reviews)</span>
+                <span class="fw-bold me-2"><span class="text-navy">{{getAverageRating()}}</span> <span class="text-gold">★</span></span>
+                <span class="text-muted small me-3">({{getTotalReviews()}} verified reviews)</span>
                 <i class="bi bi-chevron-down ms-2 transition-arrow" [class.rotated]="isReviewsExpanded"></i>
               </div>
             </div>
@@ -155,16 +155,15 @@
                 <div class="col-md-5">
                   <div class="rating-summary-card">
                     <div class="avg-rating-display mb-2">
-                      <span class="avg-val text-navy">4.8</span>
+                      <span class="avg-val text-navy">{{getAverageRating()}}</span>
                       <div class="avg-stars ms-2">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-half"></i>
+                        <i class="bi" *ngFor="let s of [1,2,3,4,5]" 
+                           [class.bi-star-fill]="getAverageRating() >= s"
+                           [class.bi-star-half]="getAverageRating() >= (s - 0.5) && getAverageRating() < s"
+                           [class.bi-star]="getAverageRating() < (s - 0.5)"></i>
                       </div>
                     </div>
-                    <p class="text-navy small mb-4">Based on 124 verified reviews</p>
+                    <p class="text-navy small mb-4">Based on {{getTotalReviews()}} verified reviews</p>
   
                     <!-- Star Progress Bars -->
                     <div class="star-bars">
