@@ -30,7 +30,7 @@ namespace smart_journey.backend.Controllers
                     foreach (var member in newTrip.Members)
                     {
                         // call the mothod of send email
-                        await SendInviteEmail(member.Email, newTrip.TripName, member.Role,newTrip.Id);
+                        await SendInviteEmail(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
                     }
                 }
 
