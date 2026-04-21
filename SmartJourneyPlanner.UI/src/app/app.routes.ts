@@ -7,18 +7,20 @@ import { SignupComponent } from './signup/signup';
 import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
+import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
-
+  
   // Your Budget Routes
   { path: 'budget', component: BudgetDashboard },
   { path: 'add-expense', component: ExpenseForm },
 
-  // Team Member 01 - Map Routes
+  //Map Routes
   { path: 'memories', component: MemoriesMapComponent },
+  { path: 'provider-dashboard', component: ProviderDashboardComponent },
 
   // ⚠️ I HAVE COMMENTED OUT THE SECURITY GUARD FOR NOW ⚠️
   // Now, clicking 'explore' or 'timeline' will just do nothing instead of kicking you to login.

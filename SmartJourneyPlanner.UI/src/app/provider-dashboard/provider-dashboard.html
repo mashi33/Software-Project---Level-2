@@ -1,0 +1,35 @@
+<div class="dashboard-container">
+  <h2>Provider Dashboard</h2>
+  <p>Hi, ! Manage your fleet and bookings here.</p>
+  
+  <div class="stats-row">
+    <div class="card"><h3>Total Vehicles</h3><p>{{stats.totalVehicles}}</p></div>
+    <div class="card"><h3>Total Bookings</h3><p>{{stats.totalBookings}}</p></div>
+    <div class="card"><h3>Average Rating</h3><p>{{stats.rating}} ⭐</p></div>
+  </div>
+
+  <div class="fleet">
+  <section>
+    <div class="header-row">
+      <h4>Fleet Management</h4>
+      <a href="/add-vehicle" class="btn-add">+ Add Vehicle</a>
+    </div>
+    <div *ngFor="let v of vehicles" class="item-card">
+      <span>{{v.name}}</span>
+      <input type="checkbox" [checked]="v.available" (change)="toggleAvailability(v)">
+      <button (click)="deleteVehicle(v.id)">🗑️</button>
+    </div>
+  </section>
+  </div>
+
+  <div class="bookings">
+  <section>
+    <h4>Recent Bookings</h4>
+    <div *ngFor="let b of bookings" class="item-card">
+      <p>{{b.customerName}} - {{b.date}}</p>
+      <button>Accept</button>
+      <button (click)="deleteBooking(b.id)">Delete</button>
+    </div>
+  </section>
+  </div>
+</div>
