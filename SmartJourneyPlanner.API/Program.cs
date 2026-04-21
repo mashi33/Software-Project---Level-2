@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -20,25 +20,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-// ✅ Configure Database Settings (reads from appsettings.json "DatabaseSettings" section)
+// ✅ Configure Database Settings
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("DatabaseSettings"));
+
+
+
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
 builder.Services.Configure<MongoDBSettings>(mongoDbSettingsSection);
 
 var connectionString = mongoDbSettingsSection["ConnectionString"];
 var databaseName = mongoDbSettingsSection["DatabaseName"];
 
-/* var dbSettings = builder.Configuration.GetSection("DatabaseSettings");
-
-var connectionString = dbSettings["ConnectionString"];
-var databaseName = dbSettings["DatabaseName"]; */
-
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(connectionString));
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
-    var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase(databaseName);
+  var client = sp.GetRequiredService<IMongoClient>();
+  return client.GetDatabase(databaseName);
 });
 
 // ==========================================================
@@ -48,17 +48,17 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
-    };
+  options.TokenValidationParameters = new TokenValidationParameters
+  {
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    IssuerSigningKey = new SymmetricSecurityKey(
+          Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+  };
 });
 
 // ==========================================================
@@ -67,11 +67,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true;
+  options.EnableDetailedErrors = true;
 })
 .AddJsonProtocol(options =>
 {
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
 // ==========================================================
@@ -81,8 +81,8 @@ builder.Services.AddSignalR(options =>
 builder.Services.AddControllers()
 .AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // ==========================================================
@@ -91,13 +91,13 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
+  options.AddPolicy("AllowAngularApp", policy =>
+  {
+    policy.WithOrigins("http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+  });
 });
 
 // ==========================================================
@@ -131,8 +131,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseRouting();
