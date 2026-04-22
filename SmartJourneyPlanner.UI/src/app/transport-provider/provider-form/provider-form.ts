@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { VehicleType, VehicleClass, Vehicle } from '../../models/transport.model';
 import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
@@ -8,7 +9,7 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
 @Component({
   selector: 'app-provider-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './provider-form.html',
   styleUrl: './provider-form.css'
 })
