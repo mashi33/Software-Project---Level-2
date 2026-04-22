@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace smart_journey.backend.Models
+namespace SmartJourneyPlanner.API.Models
 {
     public class User
     {

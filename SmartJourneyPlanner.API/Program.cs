@@ -12,6 +12,8 @@ using System.Text;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+// Email Settings Configuration
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // ==========================================================
 // DATABASE CONFIG
@@ -20,10 +22,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-var dbSettings = builder.Configuration.GetSection("DatabaseSettings");
+var dbSettings = builder.Configuration.GetSection("MongoDBSettings");
 
-var connectionString = dbSettings["ConnectionString"];
-var databaseName = dbSettings["DatabaseName"];
+//var connectionString = dbSettings["ConnectionString"];
+//var databaseName = dbSettings["DatabaseName"];
+// Program.cs එකේ පරණ පේළිය වෙනුවට මේක දාන්න (තාවකාලිකව)
+var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
+var databaseName = "SmartJourneyDb"; // මෙතන අකුරු හරියටම 'b' simple ද බලන්න
+
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
+
+
+
 
 builder.Services.AddSingleton<IMongoClient>(_ =>
     new MongoClient(connectionString));
@@ -86,9 +96,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
+        policy.WithOrigins("http://localhost:4200") // Angular URL 
               .AllowAnyMethod()
+              .AllowAnyHeader()
               .AllowCredentials();
     });
 });

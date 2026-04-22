@@ -14,12 +14,12 @@ namespace smart_journey.backend.Controllers
 
         public TripsController(IMongoClient mongoClient)
         {
-            var database = mongoClient.GetDatabase("SmartJourneyDB");
+            var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTrip(Trip newTrip)
+        public async Task<IActionResult> CreateTrip([FromBody]Trip newTrip)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace smart_journey.backend.Controllers
                     await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
                     
            
-                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "APP PASSWORD");
+                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "ejuh wevn elec dkpn");
                     
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);

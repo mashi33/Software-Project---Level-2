@@ -14,7 +14,7 @@ namespace SmartJourneyPlanner.Services
             // MongoDB Connection Setup
             var connectionString = "mongodb://localhost:27017";
             var mongoClient = new MongoClient(connectionString);
-            var mongoDatabase = mongoClient.GetDatabase("SmartJourneyDB");
+            var mongoDatabase = mongoClient.GetDatabase("SmartJourneyDb");
             _discussionsCollection = mongoDatabase.GetCollection<DiscussionItem>("Discussions");
         }
 
