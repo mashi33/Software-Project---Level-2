@@ -10,9 +10,10 @@ import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
 
 // --- Admin Imports ---
-// UPDATED: Added '.component' to the path as per your request
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { adminGuard } from './guards/admin-guard';
+import { TransportProvider } from './transport-provider/transport-provider';
+import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 
 export const routes: Routes = [
   // 1. Default Route
@@ -42,6 +43,7 @@ export const routes: Routes = [
     canActivate: [adminGuard] 
   },
 
-  // Wildcard route (keep at the very bottom if you uncomment it)
-  // { path: '**', redirectTo: '/login' } 
+  { path: 'transport', component: TransportProvider },
+  { path: 'vehicle/:id', loadComponent: () => import('./transport-provider/vehicle-detail/vehicle-detail').then(m => m.VehicleDetailComponent) },
+  { path: 'register-vehicle', component: RegisterVehicleComponent }
 ];

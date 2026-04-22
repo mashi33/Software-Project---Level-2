@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+=======
+using Microsoft.Extensions.Options;
+>>>>>>> Transport-provider
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
@@ -106,6 +110,8 @@ builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE
