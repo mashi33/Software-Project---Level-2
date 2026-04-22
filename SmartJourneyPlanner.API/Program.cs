@@ -6,7 +6,6 @@ using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Interfaces;
-using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
@@ -17,24 +16,16 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE CONFIG
 // ==========================================================
 
+// Register Settings from appsettings.json
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-// ✅ Configure Database Settings (reads from appsettings.json "DatabaseSettings" section)
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
-builder.Services.Configure<MongoDBSettings>(mongoDbSettingsSection);
-
 var connectionString = mongoDbSettingsSection["ConnectionString"];
 var databaseName = mongoDbSettingsSection["DatabaseName"];
 
-/* var dbSettings = builder.Configuration.GetSection("DatabaseSettings");
-
-var connectionString = dbSettings["ConnectionString"];
-var databaseName = dbSettings["DatabaseName"]; */
-
-builder.Services.AddSingleton<IMongoClient>(_ =>
-    new MongoClient(connectionString));
-
+// Register MongoDB Client and Database
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var client = sp.GetRequiredService<IMongoClient>();
@@ -62,37 +53,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 });
 
 // ==========================================================
-// SIGNALR
+// SIGNALR & CONTROLLERS
 // ==========================================================
 
-builder.Services.AddSignalR(options =>
-{
-    options.EnableDetailedErrors = true;
-})
-.AddJsonProtocol(options =>
-{
+builder.Services.AddSignalR().AddJsonProtocol(options => {
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
-// ==========================================================
-// CONTROLLERS
-// ==========================================================
-
-builder.Services.AddControllers()
-.AddJsonOptions(options =>
-{
+builder.Services.AddControllers().AddJsonOptions(options => {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // ==========================================================
 // CORS
 // ==========================================================
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAngularApp", policy => {
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -101,9 +78,11 @@ builder.Services.AddCors(options =>
 });
 
 // ==========================================================
-// SERVICES
+// SERVICES REGISTRATION
 // ==========================================================
 
+// Admin and Feature Services
+builder.Services.AddSingleton<AdminService>(); // 👈 Essential for your work
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<DiscussionsService>();
@@ -112,22 +91,14 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
 
 // ==========================================================
-// SWAGGER
+// BUILD & MIDDLEWARE
 // ==========================================================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
-// ==========================================================
-// BUILD
-// ==========================================================
-
 var app = builder.Build();
-
-// ==========================================================
-// MIDDLEWARE
-// ==========================================================
 
 if (app.Environment.IsDevelopment())
 {
@@ -136,15 +107,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-
 app.UseCors("AllowAngularApp");
-
-app.UseAuthentication();   // 🔥 IMPORTANT (JWT)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// SignalR
 app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

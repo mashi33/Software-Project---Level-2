@@ -62,14 +62,14 @@
                   {{ item.isConfirmed ? '✔ Confirmed' : (item.isRejected ? '✖ Rejected' : '🕒 Pending') }}
                 </span>
                 <small class="voted-count-tag" *ngIf="item.type === 'Trip'">
-                  Voted: {{ (item.userVotes?.length ?? 0) }}/{{ (item.memberLimit ?? 5) }}
+                  Voted: {{ (item.userVotes?.length || 0) }}/{{ (item.memberLimit ) }}
                 </small>
               </div>
             </div>
 
             <p *ngIf="item.description" class="item-description">{{ item.description }}</p>
 
-            <div *ngIf="item.type === 'Trip'" class="trip-vote-section" [class.disabled-votes]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))">
+            <div *ngIf="item.type === 'Trip'" class="trip-vote-section" [class.disabled-votes]="item.isConfirmed || item.isRejected || ((item.userVotes?.length || 0) >= (item.memberLimit || 5))">
               <div class="vote-action-container">
                 <button class="vote-btn agree" 
                         [disabled]="item.isConfirmed || item.isRejected || ((item.userVotes?.length ?? 0) >= (item.memberLimit ?? 5))"
