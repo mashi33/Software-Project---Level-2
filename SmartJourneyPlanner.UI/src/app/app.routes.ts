@@ -9,24 +9,39 @@ import { DiscussionComponent } from './Discussion/discussion';
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
 
+// --- Admin Imports ---
+// UPDATED: Added '.component' to the path as per your request
+import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
+import { adminGuard } from './guards/admin-guard';
+
 export const routes: Routes = [
+  // 1. Default Route
   { path: '', redirectTo: '/login', pathMatch: 'full' },
+  
+  // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   
-  // Your Budget Routes
+  // 3. Your Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
   { path: 'add-expense', component: ExpenseForm },
 
-  //Map Routes
+  // 4. Map & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
 
-  // ⚠️ I HAVE COMMENTED OUT THE SECURITY GUARD FOR NOW ⚠️
-  // Now, clicking 'explore' or 'timeline' will just do nothing instead of kicking you to login.
-  // { path: '**', redirectTo: '/login' } 
+  // 5. Other Team 43 Modules
   { path: 'groupChat', component: DiscussionComponent },
-  
   { path: 'explore', component: RouteOptimization }, 
-  { path: 'timeline', component: TripTimelineComponent }
+  { path: 'timeline', component: TripTimelineComponent },
+
+  // 6. Admin Control Center (The VIP Room)
+  { 
+    path: 'admin', 
+    component: AdminDashboardComponent,
+    canActivate: [adminGuard] 
+  },
+
+  // Wildcard route (keep at the very bottom if you uncomment it)
+  // { path: '**', redirectTo: '/login' } 
 ];
