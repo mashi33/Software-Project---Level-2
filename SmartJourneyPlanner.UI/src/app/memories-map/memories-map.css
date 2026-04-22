@@ -10,7 +10,7 @@
 .sidebar {
     width: 570px; /* Fixed width for the form/gallery */
     background-color: #f8f9fa;
-    border-left: 1px solid #dee2e6;
+    border-left: 1px solid #86073c;
     padding: 1.5rem;
     overflow-y: auto;
 }

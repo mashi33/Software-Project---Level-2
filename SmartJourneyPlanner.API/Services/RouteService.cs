@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Interfaces;

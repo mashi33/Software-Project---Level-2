@@ -13,8 +13,14 @@ namespace SmartJourneyPlanner.API.Models
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
 
-        
+        // UserType tracks if they are a "Traveler", "Provider", or "Admin"
         public string UserType { get; set; } = null!; 
+
+        // Added for Admin Dashboard functionality
+        public string Status { get; set; } = "Pending"; 
+        
+        // Added for Transport Provider specific details
+        public string? RegistrationNumber { get; set; } 
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

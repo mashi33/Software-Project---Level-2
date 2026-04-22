@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+=======
+using Microsoft.Extensions.Options;
+>>>>>>> Transport-provider
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
@@ -19,9 +23,11 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 // DATABASE CONFIG
 // ==========================================================
 
+// 1. Tell the app to use MongoDBSettings
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
+<<<<<<< HEAD
 var dbSettings = builder.Configuration.GetSection("MongoDBSettings");
 
 //var connectionString = dbSettings["ConnectionString"];
@@ -34,9 +40,20 @@ builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionStrin
 
 
 
+=======
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("DatabaseSettings"));
 
-builder.Services.AddSingleton<IMongoClient>(_ =>
-    new MongoClient(connectionString));
+// 2. Get the settings section for connection logic
+var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+>>>>>>> main
+
+// 3. Extract the connection details
+var connectionString = mongoDbSettingsSection["ConnectionString"];
+var databaseName = mongoDbSettingsSection["DatabaseName"];
+
+// 4. Register the Client and Database globally
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
@@ -51,41 +68,37 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
+  options.TokenValidationParameters = new TokenValidationParameters
+  {
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    IssuerSigningKey = new SymmetricSecurityKey(
+          Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+  };
 });
 
 // ==========================================================
-// SIGNALR
+// SIGNALR & CONTROLLERS
 // ==========================================================
 
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true;
+  options.EnableDetailedErrors = true;
 })
 .AddJsonProtocol(options =>
 {
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
-
-// ==========================================================
-// CONTROLLERS
-// ==========================================================
 
 builder.Services.AddControllers()
 .AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // ==========================================================
@@ -94,6 +107,7 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
+<<<<<<< HEAD
     options.AddPolicy("AllowAngularApp", policy =>
     {
         policy.WithOrigins("http://localhost:4200") // Angular URL 
@@ -101,53 +115,53 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
+=======
+  options.AddPolicy("AllowAngularApp", policy =>
+  {
+    policy.WithOrigins("http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+  });
+>>>>>>> main
 });
 
 // ==========================================================
-// SERVICES
+// SERVICES REGISTRATION
 // ==========================================================
 
+builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // ==========================================================
-// SWAGGER
+// BUILD & MIDDLEWARE
 // ==========================================================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
-// ==========================================================
-// BUILD
-// ==========================================================
-
 var app = builder.Build();
-
-// ==========================================================
-// MIDDLEWARE
-// ==========================================================
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseRouting();
-
 app.UseCors("AllowAngularApp");
-
-app.UseAuthentication();   // 🔥 IMPORTANT (JWT)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// SignalR
 app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

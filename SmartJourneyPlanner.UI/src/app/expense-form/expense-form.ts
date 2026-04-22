@@ -41,22 +41,17 @@ export class ExpenseForm implements OnInit {
     private route: ActivatedRoute
   ) { }
 
-  /**
-   * Initializes the component. Retrieves the dynamic tripId from the URL parameters.
-   * If no tripId is found, it triggers an error redirect to protect the database.
-   * Also configures form state if the user is in 'edit' mode.
-   */
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       
-      // ✅ FIX: Error Handling. Ensure a Trip ID actually exists!
+      // Error Handling. Ensure a Trip ID actually exists!
       if (params['tripId']) {
         this.tripId = params['tripId'];
       } else {
         console.warn('⚠️ No Trip ID found in URL. Redirecting to prevent orphan records.');
         alert('Error: Please select a trip from the Dashboard first.');
         this.router.navigate(['/budget']);
-        return; // Stops the rest of the code from running
+        return; 
       }
 
       // Check if we are editing an existing expense
@@ -72,22 +67,32 @@ export class ExpenseForm implements OnInit {
     });
   }
 
-  /**
-   * Updates the selected category for the new expense.
-   * @param catName The name of the category selected by the user.
-   */
   selectCategory(catName: string) {
     this.expense.category = catName;
   }
 
-  /**
-   * Handles form submission. Validates inputs and routes the data
-   * to either the update or add service methods based on the current mode.
-   */
+  // ✅ NEW: Validation function to ensure the note (expense.name) isn't just numbers
+  isNoteValid(note: string): boolean {
+    // If empty, let the HTML 'required' tag handle it
+    if (!note || note.trim() === '') {
+      return true; 
+    }
+    
+    // Checks if there is at least ONE letter in the string.
+    // "1234" -> false | "Taxi 2" -> true
+    return /[a-zA-Z]/.test(note);
+  }
+
   onSubmit() {
     // Basic frontend validation
     if (!this.expense.amount || !this.expense.name) {
       alert('Validation Error: Please fill in all required fields!');
+      return;
+    }
+
+    // ✅ NEW: Double-check our Regex validation before sending to database
+    if (!this.isNoteValid(this.expense.name)) {
+      alert('Validation Error: The description must contain letters, not just numbers.');
       return;
     }
 
@@ -119,9 +124,6 @@ export class ExpenseForm implements OnInit {
     }
   }
 
-  /**
-   * Cancels the operation and safely routes the user back to the Budget Dashboard.
-   */
   cancel() {
     this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
   }
