@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-trip-timeline',
   standalone: true,
-  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule, RouterLink],
+  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
 
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
@@ -308,4 +308,4 @@ export class TripTimelineComponent {
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }
-}
+}

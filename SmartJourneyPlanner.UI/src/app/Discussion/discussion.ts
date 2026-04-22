@@ -63,6 +63,12 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     });
   }
 
+  isVotingDisabled(item: any): boolean {
+    const votes = item.userVotes?.length || 0;
+    const limit = item.memberLimit || 5;
+    return !!(item.isConfirmed || item.isRejected || (votes >= limit));
+  }
+
   setupSignalRListeners() {
     this.voteSub = this.signalrService.voteUpdated.subscribe((updatedItem: any) => {
       this.zone.run(() => {

@@ -53,7 +53,9 @@ obj/
 SmartJourneyPlanner/bin/
 SmartJourneyPlanner/obj/
 
-appsettings.json
-appsettings.*.json
+# Ignore local development settings
+SmartJourneyPlanner.API/appsettings.Development.json
 .env
 environments/
+src/environments/environment.ts
+src/environments/environment.development.ts

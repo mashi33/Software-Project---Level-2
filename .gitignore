@@ -59,6 +59,12 @@ obj/
 *.exe
 *.pdb
 
+# API key in here 
+src/environments/environment.ts
+src/environments/environment.development.ts
+
+# Ignore local development settings
+SmartJourneyPlanner.API/appsettings.Development.json
 # Environment files
 .env
 .env.local
@@ -72,7 +78,3 @@ src/environments/environment.development.ts
 SmartJourneyPlanner.API/bin/
 SmartJourneyPlanner.API/obj/
 SmartJourneyPlanner.UI/dist/
-
-# Local settings
-**/appsettings.Development.json
-

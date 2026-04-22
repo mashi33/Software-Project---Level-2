@@ -1,43 +1,39 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using SmartJourneyPlanner.API.Models;        // ✅ Needed for MongoDBSettings
-using SmartJourneyPlanner.API.Services;     // ✅ Needed for BudgetService
+using SmartJourneyPlanner.API.Models;
+using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Interfaces;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
+using System.Text;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================================
-// 1. DATABASE SETTINGS
+// DATABASE CONFIG
 // ==========================================================
 
-// ✅ Configure MongoDB Settings (reads from appsettings.json "MongoDBSettings" section)
+// 1. Tell the app to use MongoDBSettings
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-// ✅ Configure Database Settings (reads from appsettings.json "DatabaseSettings" section)
-var dbSettingsSection = builder.Configuration.GetSection("DatabaseSettings");
-builder.Services.Configure<DatabaseSettings>(dbSettingsSection);
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("DatabaseSettings"));
 
-var connectionString = dbSettingsSection["ConnectionString"];
-var databaseName = dbSettingsSection["DatabaseName"];
+// 2. Get the settings section for connection logic
+var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
 
-Console.WriteLine("================================================");
-Console.WriteLine($"SERVER STARTING...");
-Console.WriteLine($"TARGET CONNECTION: {connectionString}");
-Console.WriteLine($"TARGET DATABASE: {databaseName}");
-Console.WriteLine("================================================");
+// 3. Extract the connection details
+var connectionString = mongoDbSettingsSection["ConnectionString"];
+var databaseName = mongoDbSettingsSection["DatabaseName"];
 
-// ✅ Register MongoDB Client as Singleton
-builder.Services.AddSingleton<IMongoClient>(sp =>
-{
-    return new MongoClient(connectionString);
-});
+// 4. Register the Client and Database globally
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 
-// ✅ Register IMongoDatabase (This is REQUIRED for FileStorageService)
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var client = sp.GetRequiredService<IMongoClient>();
@@ -45,99 +41,96 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 // ==========================================================
-// 2. SIGNALR CONFIGURATION
+// JWT AUTHENTICATION
+// ==========================================================
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
+{
+  options.TokenValidationParameters = new TokenValidationParameters
+  {
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    IssuerSigningKey = new SymmetricSecurityKey(
+          Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+  };
+});
+
+// ==========================================================
+// SIGNALR & CONTROLLERS
 // ==========================================================
 
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true;
+  options.EnableDetailedErrors = true;
 })
 .AddJsonProtocol(options =>
 {
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+});
+
+builder.Services.AddControllers()
+.AddJsonOptions(options =>
+{
+  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // ==========================================================
-// 3. CONTROLLERS & JSON SETTINGS
-// ==========================================================
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-    });
-
-// ==========================================================
-// 4. CORS SETUP
+// CORS
 // ==========================================================
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200") // Angular App URL
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials()                    // ✅ SignalR සඳහා අත්‍යවශ්‍ය
-              .WithExposedHeaders("Content-Disposition", "Access-Control-Allow-Origin"); // ✅ PDF download සඳහා
-    });
+  options.AddPolicy("AllowAngularApp", policy =>
+  {
+    policy.WithOrigins("http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+  });
 });
 
 // ==========================================================
-// 5. SERVICES REGISTRATION
+// SERVICES REGISTRATION
 // ==========================================================
 
-// ✅ Budget Service (from SmartJourneyPlanner.API)
+builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<BudgetService>();
-
-// ✅ Timeline Service (merged from Trip_Timeline)
 builder.Services.AddSingleton<TimelineService>();
-
-// ✅ Discussion & Comment Services
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
-
-// ✅ Route Service
 builder.Services.AddScoped<IRouteService, RouteService>();
-
-// ✅ File Storage Service (Now has access to IMongoDatabase)
 builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // ==========================================================
-// 6. SWAGGER & HTTP CLIENT
+// BUILD & MIDDLEWARE
 // ==========================================================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
-
-// ==========================================================
-// 7. BUILD THE APP
-// ==========================================================
-
 var app = builder.Build();
-
-// ==========================================================
-// 8. MIDDLEWARE PIPELINE
-// ==========================================================
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
-// ✅ Middleware පිළිවෙල: Routing -> CORS -> Auth -> Controllers
 app.UseRouting();
-
-app.UseCors("AllowAngularApp"); // ✅ CORS මෙතැන තිබීම අනිවාර්යයි (Authorization ට කලින්)
-
+app.UseCors("AllowAngularApp");
+app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
-// ✅ SignalR Hub Endpoint
+app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

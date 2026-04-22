@@ -1,0 +1,395 @@
+<div class="pf-container">
+  <div class="pf-back-link">
+    <a routerLink="/provider-dashboard" class="pf-back-btn">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+  <div class="pf-header">
+    <h2>List Your Vehicle</h2>
+    <p>Join our secure provider network</p>
+  </div>
+
+  <form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="pf-form">
+    
+    <!-- Section 0: Provider Information -->
+    <div class="pf-section no-indicator" formGroupName="providerProfile">
+      <h3 class="mb-4">Provider Information</h3>
+      <div class="row g-4">
+        <div class="col-md-6 text-start">
+          <label class="form-label fw-bold">Full Name</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera">
+          <div *ngIf="isFieldInvalid('providerProfile.name')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Full name is required
+          </div>
+        </div>
+        <div class="col-md-6 text-start">
+          <label class="form-label fw-bold">Phone Number</label>
+          <input type="tel" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.phone')" formControlName="phone" placeholder="+94 77 123 4567">
+          <div *ngIf="isFieldInvalid('providerProfile.phone')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Phone number is required
+          </div>
+        </div>
+        <div class="col-md-12 text-start mt-3">
+          <label class="form-label fw-bold">Residential Area</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.location')" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle">
+          <div *ngIf="isFieldInvalid('providerProfile.location')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Residential area is required
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Vehicle Details -->
+    <div class="pf-section no-indicator">
+      <h3>Vehicle Information</h3>
+      
+      <div class="row g-4">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Vehicle Type</label>
+          <div class="pf-dropdown" [class.is-open]="isVehicleClassDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleVehicleClassDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('vehicleClass')?.value || 'Select Type'}}</span>
+              <i class="bi" [ngClass]="isVehicleClassDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isVehicleClassDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let cls of vehicleClasses" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('vehicleClass')?.value === cls"
+                     (click)="selectVehicleClass(cls)">
+                  <span class="small fw-semibold">{{cls}}</span>
+                  <i *ngIf="vehicleForm.get('vehicleClass')?.value === cls" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Category</label>
+          <div class="pf-dropdown" [class.is-open]="isCategoryDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleCategoryDropdown()">
+              <span class="small pf-text-truncate">{{getCategoryDisplay()}}</span>
+              <i class="bi" [ngClass]="isCategoryDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isCategoryDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let cat of categoryList" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('type')?.value === cat.type"
+                     (click)="selectCategory(cat.type)">
+                  <span class="small fw-semibold">{{cat.label}}</span>
+                  <i *ngIf="vehicleForm.get('type')?.value === cat.type" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Year of Manufacture</label>
+          <input type="number" class="form-control pf-input-soft" formControlName="yearOfManufacture">
+        </div>
+      </div>
+
+      <div class="row g-4 mt-2">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Vehicle Model</label>
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('description')" formControlName="description" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
+          <div *ngIf="isFieldInvalid('description')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Vehicle model is required
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Fuel Type</label>
+          <div class="pf-dropdown" [class.is-open]="isFuelTypeDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleFuelTypeDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('fuelType')?.value || 'Select Fuel'}}</span>
+              <i class="bi" [ngClass]="isFuelTypeDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isFuelTypeDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let f of ['Petrol', 'Diesel', 'Hybrid', 'Electric']" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('fuelType')?.value === f"
+                     (click)="selectFuelType(f)">
+                  <span class="small fw-semibold">{{f}}</span>
+                  <i *ngIf="vehicleForm.get('fuelType')?.value === f" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Transmission</label>
+          <div class="pf-dropdown" [class.is-open]="isTransmissionDropdownOpen">
+            <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleTransmissionDropdown()">
+              <span class="small pf-text-truncate">{{vehicleForm.get('transmission')?.value || 'Select Transmission'}}</span>
+              <i class="bi" [ngClass]="isTransmissionDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="pf-dropdown-menu" *ngIf="isTransmissionDropdownOpen">
+              <div class="pf-category-grid d-flex flex-column gap-1 p-2">
+                <div *ngFor="let t of ['Automatic', 'Manual']" 
+                     class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                     [class.active]="vehicleForm.get('transmission')?.value === t"
+                     (click)="selectTransmission(t)">
+                  <span class="small fw-semibold">{{t === 'Automatic' ? 'Automatic (Auto)' : t}}</span>
+                  <i *ngIf="vehicleForm.get('transmission')?.value === t" class="bi bi-check2 text-primary"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Vehicle Features and Languages -->
+    <div class="pf-section no-indicator">
+      <h3>Vehicle Features and Languages</h3>
+      
+      <div class="row g-4">
+        <div class="col-12">
+          
+          <div class="row mb-4 g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold mb-1"><i class="bi bi-people text-primary"></i> Seats</label>
+              <input type="number" class="form-control form-control-sm pf-input-soft" formControlName="seatCount" min="1">
+            </div>
+            <div class="col-md-4" formGroupName="features">
+              <label class="form-label small fw-bold mb-1"><i class="bi bi-luggage text-primary"></i> Luggage</label>
+              <input type="number" class="form-control form-control-sm pf-input-soft" formControlName="luggage" min="0">
+            </div>
+          </div>
+
+          <!-- All Features Integrated -->
+          <div class="pf-feature-group mb-4">
+            <h6 class="pf-feature-group-title">Additional Features</h6>
+            <div class="pf-features-compact-grid">
+              <!-- Row 1 -->
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" formControlName="isAc" id="f_ac">
+                <label class="form-check-label" for="f_ac">A/C Available</label>
+              </div>
+              <div formGroupName="features" class="contents-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="airbags" id="f_ab">
+                  <label class="form-check-label" for="f_ab">Airbags</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="childSeats" id="f_cs">
+                  <label class="form-check-label" for="f_cs">Child Seats</label>
+                </div>
+                <!-- Row 2 -->
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="wifi" id="f_wf">
+                  <label class="form-check-label" for="f_wf">WiFi</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="bluetooth" id="f_bt">
+                  <label class="form-check-label" for="f_bt">Bluetooth</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="tv" id="f_tv">
+                  <label class="form-check-label" for="f_tv">TV System</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Driver Languages Sequential -->
+          <div class="pf-feature-group">
+            <h6 class="pf-feature-group-title">Driver Languages</h6>
+            <div class="col-md-6 px-0">
+              <div class="pf-dropdown" [class.is-open]="isLanguageDropdownOpen">
+                <div class="pf-dropdown-trigger d-flex justify-content-between align-items-center" (click)="toggleLanguageDropdown()">
+                  <span class="small pf-text-truncate">{{getSelectedLanguagesDisplay()}}</span>
+                  <i class="bi" [ngClass]="isLanguageDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                </div>
+                <div *ngIf="isFieldInvalid('languages')" class="pf-error-text">
+                  <i class="bi bi-exclamation-circle"></i> Please select at least one language
+                </div>
+                
+                <div class="pf-dropdown-menu" *ngIf="isLanguageDropdownOpen">
+                  <div class="pf-languages-grid d-flex flex-column gap-1 p-2">
+                    <div *ngFor="let lang of languagesList" 
+                         class="pf-lang-item d-flex align-items-center px-2 py-2 rounded-2 hover-bg-dark">
+                      <input class="form-check-input mt-0 me-3" type="checkbox" 
+                             [id]="'lang_' + lang.name" 
+                             [checked]="isLanguageSelected(lang.name)"
+                             (change)="$event.stopPropagation(); onLanguageChange(lang.name, $event)"
+                             style="width: 18px; height: 18px; cursor: pointer;">
+                      <span class="pf-lang-code me-3">{{lang.code}}</span>
+                      <label class="form-check-label small fw-semibold mb-0" [for]="'lang_' + lang.name" style="cursor: pointer;">{{lang.name}}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Rates & Fees -->
+    <div class="pf-section no-indicator">
+      <h3>Rates & Pricing</h3>
+      <div class="pf-alert mb-3">
+        <i class="bi bi-info-circle"></i> Daily rate covers the standard {{vehicleForm.get('freeKMLimit')?.value}}km limit. Pricing requires minimum 100km per day consideration.
+      </div>
+      
+      <div class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Standard Daily Rate (LKR)</label>
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate">
+          <div *ngIf="isFieldInvalid('standardDailyRate')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Valid daily rate is required
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Free KM Limit per Day</label>
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('freeKMLimit')" formControlName="freeKMLimit">
+          <div *ngIf="isFieldInvalid('freeKMLimit')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> Daily KM limit is required
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Extra KM Rate (LKR)</label>
+          <input type="number" class="form-control pf-input-soft" formControlName="extraKMRate">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Driver Night Out Fee (LKR)</label>
+          <input type="number" class="form-control pf-input-soft" formControlName="driverNightOutFee">
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Section 4: Photos & Verification -->
+    <div class="pf-section no-indicator">
+      <h3>Photos & Verification</h3>
+      <p class="text-muted small mb-3">Upload clear images to attract more bookings and verify your identity.</p>
+      
+      <div class="row g-4">
+        <!-- Exterior -->
+        <div class="col-md-6">
+          <div class="pf-upload-box" [class.has-image]="exteriorPreview">
+            <input type="file" (change)="onFileSelected($event, 'exterior')" accept="image/*" id="up_ext">
+            <label for="up_ext">
+              <img *ngIf="exteriorPreview" [src]="exteriorPreview" alt="Exterior">
+              <div *ngIf="!exteriorPreview" class="upload-content">
+                <i class="bi bi-camera"></i>
+                <span>Vehicle Exterior Photo</span>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Interior -->
+        <div class="col-md-6">
+          <div class="pf-upload-box" [class.has-image]="interiorPreview">
+            <input type="file" (change)="onFileSelected($event, 'interior')" accept="image/*" id="up_int">
+            <label for="up_int">
+              <img *ngIf="interiorPreview" [src]="interiorPreview" alt="Interior">
+              <div *ngIf="!interiorPreview" class="upload-content">
+                <i class="bi bi-car-front"></i>
+                <span>Vehicle Interior Photo</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- NIC -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="nicPreview">
+            <input type="file" (change)="onFileSelected($event, 'nic')" accept="image/*" id="up_nic">
+            <label for="up_nic">
+              <img *ngIf="nicPreview" [src]="nicPreview" alt="NIC">
+              <div *ngIf="!nicPreview" class="upload-content">
+                <i class="bi bi-person-badge"></i>
+                <span>Driver NIC (Front)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- License -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="licensePreview">
+            <input type="file" (change)="onFileSelected($event, 'license')" accept="image/*" id="up_lic">
+            <label for="up_lic">
+              <img *ngIf="licensePreview" [src]="licensePreview" alt="License">
+              <div *ngIf="!licensePreview" class="upload-content">
+                <i class="bi bi-card-heading"></i>
+                <span>Driver License</span>
+                <span class="pf-upload-subtext">Please upload a single image showing both sides or a 2-page PDF.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Insurance -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="insurancePreview">
+            <input type="file" (change)="onFileSelected($event, 'insurance')" accept="image/*" id="up_ins">
+            <label for="up_ins">
+              <img *ngIf="insurancePreview" [src]="insurancePreview" alt="Insurance">
+              <div *ngIf="!insurancePreview" class="upload-content">
+                <i class="bi bi-file-earmark-medical"></i>
+                <span>Insurance Document</span>
+              </div>
+            </label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label small mb-1">Insurance Expiry Date</label>
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry">
+            <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text">
+              <i class="bi bi-exclamation-circle"></i> Expiry date required
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue License -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" [class.has-image]="revenuePreview">
+            <input type="file" (change)="onFileSelected($event, 'revenue')" accept="image/*" id="up_rev">
+            <label for="up_rev">
+              <img *ngIf="revenuePreview" [src]="revenuePreview" alt="Revenue License">
+              <div *ngIf="!revenuePreview" class="upload-content">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Revenue License</span>
+              </div>
+            </label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label small mb-1">Revenue License Expiry</label>
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry">
+            <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text">
+              <i class="bi bi-exclamation-circle"></i> Expiry date required
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-section agreement-section mt-4 py-4 border-top">
+      <div class="d-flex align-items-center justify-content-center gap-3">
+        <input class="form-check-input mt-0" type="checkbox" id="termsCheck" formControlName="termsAccepted" style="width: 22px; height: 22px; cursor: pointer;">
+        <label class="form-check-label fw-semibold mb-0" for="termsCheck">
+          I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none">Terms and Conditions</a> and system rules.
+        </label>
+      </div>
+      <div *ngIf="isFieldInvalid('termsAccepted')" class="pf-error-text justify-content-center">
+        <i class="bi bi-exclamation-triangle-fill"></i> You must agree to the terms to proceed
+      </div>
+    </div>
+
+    <div class="text-center mt-4 mb-3">
+      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid">
+        <i class="bi bi-check2-circle me-2"></i> Submit Listing
+      </button>
+      <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
+        Please complete all required fields and agree to the terms.
+      </div>
+    </div>
+
+  </form>
+</div>

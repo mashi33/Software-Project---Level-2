@@ -1,0 +1,75 @@
+.filter-wrapper {
+  background: #ffffff;
+  padding: 15px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.category-tabs button {
+  padding: 8px 20px;
+  border: 1px solid #004a99;
+  background: white;
+  color: #004a99;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.category-tabs button.active {
+  background: #004a99;
+  color: white;
+}
+
+.search-box input {
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 300px;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: #004a99;
+}
+
+.budget-filter,
+.rating-filter,
+.distance-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-filter label,
+.rating-filter label,
+.distance-filter label {
+  font-size: 0.9rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.budget-filter select,
+.rating-filter select,
+.distance-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.budget-filter select:focus,
+.rating-filter select:focus,
+.distance-filter select:focus {
+  border-color: #004a99;
+}
