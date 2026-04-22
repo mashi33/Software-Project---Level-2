@@ -16,27 +16,24 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE CONFIG
 // ==========================================================
 
-// Register Settings from appsettings.json
+// 1. Tell the app to use MongoDBSettings
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-// ✅ Configure Database Settings
-builder.Services.Configure<DatabaseSettings>(
-    builder.Configuration.GetSection("DatabaseSettings"));
-
-
-
+// 2. Get the settings section for connection logic
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+
+// 3. Extract the connection details
 var connectionString = mongoDbSettingsSection["ConnectionString"];
 var databaseName = mongoDbSettingsSection["DatabaseName"];
 
-builder.Services.AddSingleton<IMongoClient>(_ =>
-    new MongoClient(connectionString));
+// 4. Register the Client and Database globally
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
-  var client = sp.GetRequiredService<IMongoClient>();
-  return client.GetDatabase(databaseName);
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase(databaseName);
 });
 
 // ==========================================================
@@ -72,10 +69,6 @@ builder.Services.AddSignalR(options =>
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
-// ==========================================================
-// CONTROLLERS
-// ==========================================================
-
 builder.Services.AddControllers()
 .AddJsonOptions(options =>
 {
@@ -102,8 +95,7 @@ builder.Services.AddCors(options =>
 // SERVICES REGISTRATION
 // ==========================================================
 
-// Admin and Feature Services
-builder.Services.AddSingleton<AdminService>(); // 👈 Essential for your work
+builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<DiscussionsService>();
