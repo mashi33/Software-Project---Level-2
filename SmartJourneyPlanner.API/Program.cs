@@ -20,16 +20,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
+// ✅ Configure Database Settings
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("DatabaseSettings"));
+
+
+
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
 var connectionString = mongoDbSettingsSection["ConnectionString"];
 var databaseName = mongoDbSettingsSection["DatabaseName"];
 
-// Register MongoDB Client and Database
-builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
+builder.Services.AddSingleton<IMongoClient>(_ =>
+    new MongoClient(connectionString));
+
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
-    var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase(databaseName);
+  var client = sp.GetRequiredService<IMongoClient>();
+  return client.GetDatabase(databaseName);
 });
 
 // ==========================================================
@@ -39,42 +46,56 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
+  options.TokenValidationParameters = new TokenValidationParameters
+  {
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    IssuerSigningKey = new SymmetricSecurityKey(
+          Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+  };
 });
 
 // ==========================================================
 // SIGNALR & CONTROLLERS
 // ==========================================================
 
-builder.Services.AddSignalR().AddJsonProtocol(options => {
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+builder.Services.AddSignalR(options =>
+{
+  options.EnableDetailedErrors = true;
+})
+.AddJsonProtocol(options =>
+{
+  options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
-builder.Services.AddControllers().AddJsonOptions(options => {
-    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+// ==========================================================
+// CONTROLLERS
+// ==========================================================
+
+builder.Services.AddControllers()
+.AddJsonOptions(options =>
+{
+  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // ==========================================================
 // CORS
 // ==========================================================
 
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAngularApp", policy => {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("AllowAngularApp", policy =>
+  {
+    policy.WithOrigins("http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+  });
 });
 
 // ==========================================================
@@ -102,8 +123,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseRouting();
