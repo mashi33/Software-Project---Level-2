@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-=======
-using Microsoft.Extensions.Options;
->>>>>>> Transport-provider
+
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
@@ -27,30 +24,27 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
-<<<<<<< HEAD
 var dbSettings = builder.Configuration.GetSection("MongoDBSettings");
 
 //var connectionString = dbSettings["ConnectionString"];
 //var databaseName = dbSettings["DatabaseName"];
-// Program.cs එකේ පරණ පේළිය වෙනුවට මේක දාන්න (තාවකාලිකව)
+
 var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
-var databaseName = "SmartJourneyDb"; // මෙතන අකුරු හරියටම 'b' simple ද බලන්න
+var databaseName = "SmartJourneyDb"; 
 
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 
 
 
-=======
 builder.Services.Configure<DatabaseSettings>(
     builder.Configuration.GetSection("DatabaseSettings"));
 
 // 2. Get the settings section for connection logic
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
->>>>>>> main
 
 // 3. Extract the connection details
-var connectionString = mongoDbSettingsSection["ConnectionString"];
-var databaseName = mongoDbSettingsSection["DatabaseName"];
+//var connectionString = mongoDbSettingsSection["ConnectionString"];
+//var databaseName = mongoDbSettingsSection["DatabaseName"];
 
 // 4. Register the Client and Database globally
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
@@ -107,7 +101,6 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
-<<<<<<< HEAD
     options.AddPolicy("AllowAngularApp", policy =>
     {
         policy.WithOrigins("http://localhost:4200") // Angular URL 
@@ -115,15 +108,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
-=======
-  options.AddPolicy("AllowAngularApp", policy =>
-  {
-    policy.WithOrigins("http://localhost:4200")
-          .AllowAnyHeader()
-          .AllowAnyMethod()
-          .AllowCredentials();
-  });
->>>>>>> main
 });
 
 // ==========================================================
