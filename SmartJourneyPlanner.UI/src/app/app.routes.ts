@@ -8,11 +8,13 @@ import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
+import { TripCreateComponent } from './trip-create/trip-create';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
+  { path: 'createTrip', component: TripCreateComponent },
   
   // Your Budget Routes
   { path: 'budget', component: BudgetDashboard },
