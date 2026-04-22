@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Interfaces;
+using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +20,9 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Tell the app to use MongoDBSettings
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
+
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("DatabaseSettings"));
 
 // 2. Get the settings section for connection logic
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
