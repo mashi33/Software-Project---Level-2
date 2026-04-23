@@ -18,6 +18,7 @@ import { ExploreWelcome } from './explore-welcome/explore-welcome';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
+import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
 export const routes: Routes = [
   // 1. Default Route
@@ -36,6 +37,7 @@ export const routes: Routes = [
   // 4. Map & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
+  { path: 'booking-details/:id', component: MyBookings },
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
