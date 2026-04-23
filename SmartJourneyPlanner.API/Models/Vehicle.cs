@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace SmartJourney.Api.Models
+namespace SmartJourneyPlanner.API.Models
 {
     public class Vehicle
     {
