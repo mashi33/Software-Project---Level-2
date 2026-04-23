@@ -8,11 +8,14 @@ import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
+import { TripCreateComponent } from './trip-create/trip-create';
+import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 
 // --- Admin Imports ---
-// UPDATED: Added '.component' to the path as per your request
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { adminGuard } from './guards/admin-guard';
+import { TransportProvider } from './transport-provider/transport-provider';
+import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 
 export const routes: Routes = [
   // 1. Default Route
@@ -21,6 +24,7 @@ export const routes: Routes = [
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
+  { path: 'createTrip', component: TripCreateComponent },
   
   // 3. Your Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
@@ -32,7 +36,13 @@ export const routes: Routes = [
 
   // 5. Other Team 43 Modules
   { path: 'groupChat', component: DiscussionComponent },
-  { path: 'explore', component: RouteOptimization }, 
+   { 
+    path: 'explore', 
+    children: [
+      { path: '', component: RouteOptimization }, 
+      { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
+    ]
+  }, 
   { path: 'timeline', component: TripTimelineComponent },
 
   // 6. Admin Control Center (The VIP Room)
@@ -42,6 +52,7 @@ export const routes: Routes = [
     canActivate: [adminGuard] 
   },
 
-  // Wildcard route (keep at the very bottom if you uncomment it)
-  // { path: '**', redirectTo: '/login' } 
+  { path: 'transport', component: TransportProvider },
+  { path: 'vehicle/:id', loadComponent: () => import('./transport-provider/vehicle-detail/vehicle-detail').then(m => m.VehicleDetailComponent) },
+  { path: 'register-vehicle', component: RegisterVehicleComponent }
 ];

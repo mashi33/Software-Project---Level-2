@@ -12,6 +12,8 @@ using System.Text;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+// Email Settings Configuration
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // ==========================================================
 // DATABASE CONFIG
@@ -21,6 +23,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("MongoDBSettings"));
 
+var dbSettings = builder.Configuration.GetSection("MongoDBSettings");
+
+//var connectionString = dbSettings["ConnectionString"];
+//var databaseName = dbSettings["DatabaseName"];
+
+var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
+var databaseName = "SmartJourneyDb"; 
+
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
+
+
+
 builder.Services.Configure<DatabaseSettings>(
     builder.Configuration.GetSection("DatabaseSettings"));
 
@@ -28,8 +42,8 @@ builder.Services.Configure<DatabaseSettings>(
 var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
 
 // 3. Extract the connection details
-var connectionString = mongoDbSettingsSection["ConnectionString"];
-var databaseName = mongoDbSettingsSection["DatabaseName"];
+//var connectionString = mongoDbSettingsSection["ConnectionString"];
+//var databaseName = mongoDbSettingsSection["DatabaseName"];
 
 // 4. Register the Client and Database globally
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
@@ -86,13 +100,13 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
-  options.AddPolicy("AllowAngularApp", policy =>
-  {
-    policy.WithOrigins("http://localhost:4200")
-          .AllowAnyHeader()
-          .AllowAnyMethod()
-          .AllowCredentials();
-  });
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // Angular URL 
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
 // ==========================================================
@@ -106,6 +120,8 @@ builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE

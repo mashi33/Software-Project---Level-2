@@ -1,0 +1,249 @@
+<div class="us-container">
+  <!-- Top Hero/Filter Section -->
+  <section class="us-hero">
+    <div class="filter-card shadow-sm">
+      <!-- Row 1: Primary Search -->
+      <div class="row g-3 mb-4 align-items-end">
+        <div class="col-md-3">
+          <label class="us-label">Start Date</label>
+          <div class="input-with-icon">
+            <i class="bi bi-calendar3"></i>
+            <input type="date" class="form-control us-input" [(ngModel)]="startDate" (change)="onDateChange()">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="us-label">End Date</label>
+          <div class="input-with-icon">
+            <i class="bi bi-calendar3"></i>
+            <input type="date" class="form-control us-input" [(ngModel)]="endDate" (change)="onDateChange()"
+              [min]="startDate">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="calc-display d-flex align-items-center h-100 ps-3">
+            <div class="calc-group" *ngIf="startDate && endDate && bookingDays > 0">
+              <div class="calc-box">
+                <span class="days-val">{{bookingDays}}</span> <span class="calc-unit">Total Days</span>
+              </div>
+              <div class="calc-box">
+                <span class="nights-val">{{bookingNights}}</span> <span class="calc-unit">Nights</span>
+              </div>
+            </div>
+            <!-- Error State -->
+            <div class="calc-error" *ngIf="startDate && endDate && bookingDays === 0">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span>Invalid Range</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="us-label">Passengers</label>
+          <div class="input-with-icon">
+            <i class="bi bi-people"></i>
+            <input type="number" class="form-control us-input" [(ngModel)]="passengerCount" (change)="applyFilters()"
+              min="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 align-items-end pt-3 border-top">
+        <div class="col-md-2">
+          <label class="us-label">Vehicle Category</label>
+          <select class="form-select us-input" [(ngModel)]="selectedCategory" (ngModelChange)="applyFilters()">
+            <option *ngFor="let cat of vehicleCategories" [value]="cat">{{cat}}</option>
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="us-label">Driver Languages</label>
+          <div class="custom-dropdown" (clickOutside)="showLanguageDropdown = false">
+            <div class="us-input d-flex justify-content-between align-items-center" (click)="toggleLanguageDropdown()">
+              <span class="text-truncate">
+                {{ getSelectedLangs().length > 0 ? getSelectedLangs().join(', ') : 'Select Languages' }}
+              </span>
+              <i class="bi" [class.bi-chevron-down]="!showLanguageDropdown"
+                [class.bi-chevron-up]="showLanguageDropdown"></i>
+            </div>
+
+            <div class="dropdown-menu-custom shadow" *ngIf="showLanguageDropdown">
+              <div class="dropdown-item-custom" *ngFor="let lang of languagesList"
+                (click)="toggleLanguage(lang.name); $event.stopPropagation()">
+                <div class="form-check m-0">
+                  <input class="form-check-input" type="checkbox" [checked]="selectedLanguages[lang.name]">
+                  <label class="form-check-label ms-2">{{lang.flag}} {{lang.name}}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="us-label">Pickup Area</label>
+          <div class="custom-dropdown" (clickOutside)="showCityDropdown = false">
+            <div class="input-with-icon">
+              <i class="bi bi-geo-alt"></i>
+              <input type="text" class="form-control us-input" placeholder="e.g., Colombo" [(ngModel)]="pickupArea"
+                (input)="filterCities()" (focus)="filterCities()" (click)="$event.stopPropagation()">
+            </div>
+
+            <div class="dropdown-menu-custom shadow" *ngIf="showCityDropdown && filteredCities.length > 0">
+              <div class="dropdown-item-custom" *ngFor="let city of filteredCities" (click)="selectCity(city)">
+                <i class="bi bi-geo-alt me-2 text-muted"></i> {{city}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="us-label">Sort By</label>
+          <select class="form-select us-input" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+            <option value="Default">Default</option>
+            <option value="Price: Low to High">Price: Low to High</option>
+            <option value="Price: High to Low">Price: High to Low</option>
+            <option value="Best Rated">Best Rated</option>
+          </select>
+        </div>
+
+        <div class="col-md-2 text-end">
+          <label class="us-label">&nbsp;</label>
+          <button class="btn btn-find w-100" (click)="onSearch()" (click)="$event.stopPropagation()">
+            <i class="bi bi-search me-2"></i> Find
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Area -->
+  <main class="us-main">
+    <div class="results-header mb-4">
+      <h2 class="fw-bold">Available Vehicles <span class="text-muted fs-5">({{filteredVehicles.length}})</span></h2>
+    </div>
+
+    <!-- Results Grid -->
+    <div class="us-grid">
+      <!-- Empty State -->
+      <div *ngIf="filteredVehicles.length === 0" class="text-center w-100 py-5">
+        <i class="bi bi-car-front text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-light mt-3">No vehicles found</h4>
+        <p class="text-muted">Try adjusting your search filters.</p>
+        <button class="btn btn-us-outline-blue rounded-pill px-4 mt-2" (click)="ngOnInit()">Clear Filters</button>
+      </div>
+
+      <!-- Vehicle Card -->
+      <div class="vh-card shadow-sm" *ngFor="let v of filteredVehicles">
+        <div class="vh-img-container">
+          <img [src]="v.exteriorPhoto" class="vh-img">
+
+          <!-- Overlaid Badges -->
+          <div class="top-badges">
+            <span class="badge-tag type-badge" [class.luxury-bg]="v.type === 'Luxury'"
+              [class.budget-bg]="v.type === 'Budget'">
+              {{v.type}}
+            </span>
+            <span class="badge-tag verified-bg" *ngIf="v.status === 'Approved'">
+              <i class="bi bi-patch-check-fill me-1"></i> Verified
+            </span>
+          </div>
+        </div>
+
+        <div class="vh-card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h4 class="vh-title mb-1">{{v.description.split(' - ')[0]}}</h4>
+              <div class="vh-meta">
+                <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> {{getAverageRating(v)
+                  | number:'1.1-1'}} ({{v.reviews?.length || 0}})</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vh-specs mb-3">
+            <span><i class="bi bi-people me-1"></i> {{v.seatCount}} seats</span>
+            <span><i class="bi bi-snow me-1"></i> AC</span>
+            <span><i class="bi bi-luggage me-1"></i> {{v.features.luggage}} Luggage Space</span>
+          </div>
+
+
+          <div class="vh-pricing border-top pt-3">
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <div class="price-val">Rs. {{v.standardDailyRate | number}}</div>
+                <div class="price-unit">for 1 day</div>
+              </div>
+              <div class="text-end">
+                <div class="km-info">Includes {{v.freeKMLimit}} km ({{v.freeKMLimit}} km/day)</div>
+                <div class="extra-info">Extra: Rs. {{v.extraKMRate}}/km</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid mt-4">
+            <button class="btn btn-view-details" [routerLink]="['/vehicle', v.id]"
+              [queryParams]="{ start: startDate, end: endDate }">View Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Availability Calendar Modal -->
+  <div class="modal fade show" tabindex="-1" *ngIf="showCalendarModal"
+    style="display: block; background: rgba(0,0,0,0.8);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: var(--card-bg, #1e293b); border: 1px solid #334155;">
+        <div class="modal-header border-bottom border-secondary">
+          <h5 class="modal-title text-light"><i class="bi bi-calendar-range me-2"></i> Select Travel Dates</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeCalendar()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Vehicle: <strong>{{targetVehicleForCalendar?.description}}</strong></p>
+
+          <!-- Calendar Controls -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-secondary text-light" (click)="prevMonth()"><i
+                class="bi bi-chevron-left"></i></button>
+            <strong class="text-light">{{currentCalendarMonth | date:'MMMM yyyy'}}</strong>
+            <button class="btn btn-sm btn-outline-secondary text-light" (click)="nextMonth()"><i
+                class="bi bi-chevron-right"></i></button>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="calendar-grid">
+            <div class="cal-day-header text-muted">Sun</div>
+            <div class="cal-day-header text-muted">Mon</div>
+            <div class="cal-day-header text-muted">Tue</div>
+            <div class="cal-day-header text-muted">Wed</div>
+            <div class="cal-day-header text-muted">Thu</div>
+            <div class="cal-day-header text-muted">Fri</div>
+            <div class="cal-day-header text-muted">Sat</div>
+
+            <div *ngFor="let d of calendarDays" class="cal-day" [ngClass]="{
+                    'cal-blank': d.isBlank,
+                    'cal-past': d.isPast,
+                    'cal-booked': d.isBooked,
+                    'cal-selected-start': d.isSelectedStart,
+                    'cal-selected-end': d.isSelectedEnd,
+                    'cal-in-range': d.isInRange
+                  }" (mouseenter)="onDayHover(d)" (click)="selectDate(d)">
+              {{ d.isBlank ? '' : d.day }}
+            </div>
+          </div>
+
+          <div class="mt-4 d-flex justify-content-between align-items-center">
+            <div>
+              <span class="badge bg-secondary me-2">Unavailable</span>
+              <span class="badge bg-primary">Selected</span>
+            </div>
+            <div class="text-info small">
+              {{ tempStart ? (tempStart | date:'MMM d') : 'Start' }} - {{ tempEnd ? (tempEnd | date:'MMM d') : 'End' }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top border-secondary">
+          <button type="button" class="btn btn-secondary" (click)="closeCalendar()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="applyCalendarDates()"
+            [disabled]="!tempStart || !tempEnd">Confirm Dates</button>
+        </div>
+      </div>
+    </div>

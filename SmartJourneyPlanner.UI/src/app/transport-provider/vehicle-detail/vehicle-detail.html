@@ -1,0 +1,366 @@
+<div class="vd-container" *ngIf="vehicle">
+
+  <main class="vd-main container py-4">
+    <!-- Back Navigation -->
+    <div class="back-nav mb-4">
+      <a routerLink="/transport" class="back-link">
+        <i class="bi bi-arrow-left me-2"></i>
+        <span>Back</span>
+      </a>
+    </div>
+    <div class="row g-4">
+      <!-- Left Column: Gallery and Info -->
+      <div class="col-lg-7">
+        <div class="vd-gallery mb-4">
+          <div class="gallery-main shadow-sm rounded-4 overflow-hidden position-relative mb-3">
+            <img [src]="mainImage" alt="Vehicle View" class="main-img">
+            
+            <!-- Navigation Arrow (Right Center) -->
+            <div class="nav-arrow" (click)="toggleGalleryView()">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+
+            <div class="img-badges">
+              <span class="badge luxury" *ngIf="vehicle.type === 'Luxury'">Luxury</span>
+              <span class="badge budget" *ngIf="vehicle.type === 'Budget'">Budget</span>
+              <span class="badge group" *ngIf="vehicle.type === 'Group'">Group</span>
+              <span class="badge verified" *ngIf="vehicle.isVerified">Verified Driver</span>
+            </div>
+          </div>
+
+          <!-- Dual Thumbnails -->
+          <div class="thumbnail-container d-flex gap-4">
+            <div class="thumb-box" [class.active]="currentView === 'exterior'" (click)="setMainView('exterior')">
+              <div class="thumb-img-wrapper">
+                <img [src]="vehicle.exteriorPhoto" alt="Exterior Thumb">
+              </div>
+              <span class="thumb-label">Exterior View</span>
+            </div>
+            
+            <div class="thumb-box" [class.active]="currentView === 'interior'" (click)="setMainView('interior')">
+              <div class="thumb-img-wrapper">
+                <img [src]="vehicle.interiorPhoto" alt="Interior Thumb">
+              </div>
+              <span class="thumb-label">Interior View</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-info shadow-sm p-4 bg-white rounded-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h1 class="vd-title m-0">{{vehicle.description.split(' - ')[0]}}</h1>
+            <a href="javascript:void(0)" (click)="scrollToReviews()" class="vd-rating text-decoration-none">
+              <i class="bi bi-star-fill text-gold"></i>
+              <span class="fw-bold ms-1 text-navy">{{getAverageRating()}}</span>
+              <span class="text-muted ms-1">({{getTotalReviews()}} reviews)</span>
+            </a>
+          </div>
+          <p class="vd-location text-muted mb-4">
+            <i class="bi bi-geo-alt me-1"></i> {{vehicle.providerProfile.location}}, Sri Lanka
+          </p>
+
+          <hr class="vd-divider">
+
+          <div class="vd-specs row py-3 g-0">
+            <div class="col text-center border-end">
+              <div class="spec-icon"><i class="bi bi-people"></i></div>
+              <div class="spec-val">{{vehicle.seatCount}}</div>
+              <div class="spec-label">Seats</div>
+            </div>
+            <div class="col text-center border-end">
+              <div class="spec-icon"><i class="bi bi-luggage"></i></div>
+              <div class="spec-val">{{vehicle.features.luggage}}</div>
+              <div class="spec-label">Luggage Space</div>
+            </div>
+            <div class="col text-center border-end">
+              <div class="spec-icon"><i class="bi bi-snow"></i></div>
+              <div class="spec-val">{{vehicle.isAc ? 'Available' : 'Unavailable'}}</div>
+              <div class="spec-label">A/C</div>
+            </div>
+            <div class="col text-center border-end">
+              <div class="spec-icon"><i class="bi bi-gear"></i></div>
+              <div class="spec-val">{{vehicle.transmission}}</div>
+              <div class="spec-label">Transmission</div>
+            </div>
+            <div class="col text-center">
+              <div class="spec-icon"><i class="bi bi-fuel-pump"></i></div>
+              <div class="spec-val">{{vehicle.fuelType}}</div>
+              <div class="spec-label">Fuel Type</div>
+            </div>
+          </div>
+
+          <hr class="vd-divider">
+
+          <section class="vd-section mb-4">
+            <h3 class="vd-section-title">Amenities & Features</h3>
+            <div class="feature-grid mt-3">
+              <div class="feature-item" *ngIf="vehicle.features.safety">
+                <i class="bi bi-shield-check"></i> Standard Safety
+              </div>
+              <div class="feature-item" *ngIf="vehicle.features.airbags">
+                <i class="bi bi-shield"></i> Airbags
+              </div>
+              <div class="feature-item" *ngIf="vehicle.features.wifi">
+                <i class="bi bi-wifi"></i> Free WiFi
+              </div>
+              <div class="feature-item" *ngIf="vehicle.features.childSeats">
+                <i class="bi bi-balloon"></i> Child Seats
+              </div>
+              <div class="feature-item" *ngIf="vehicle.features.bluetooth">
+                <i class="bi bi-bluetooth"></i> Bluetooth
+              </div>
+              <div class="feature-item" *ngIf="vehicle.features.entertainment">
+                <i class="bi bi-music-note"></i> Entertainment
+              </div>
+            </div>
+          </section>
+
+          <section class="vd-section mb-4">
+            <h3 class="vd-section-title">Driver Languages</h3>
+            <div class="lang-row mt-3">
+              <span class="lang-tag" *ngFor="let lang of vehicle.languages">
+                {{lang}}
+              </span>
+            </div>
+          </section>
+
+          <section class="vd-section">
+            <h3 class="vd-section-title">Provider Information</h3>
+            <div class="provider-info d-flex align-items-center mt-3 p-3 rounded-3">
+              <div class="provider-avatar me-3">
+                <i class="bi bi-person-circle fs-1 text-muted"></i>
+              </div>
+              <div>
+                <h5 class="m-0">{{vehicle.providerProfile.name}}</h5>
+                <p class="text-muted small m-0">Verified Professional Driver</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Ratings & Reviews Accordion Section -->
+          <section class="vd-section mt-5" id="reviews-section">
+            <div class="accordion-header d-flex justify-content-between align-items-center mb-0 py-3 border-bottom" 
+                 (click)="toggleReviewsAccordion()" role="button">
+              <h3 class="vd-section-title m-0">Ratings & Reviews</h3>
+              <div class="header-summary d-flex align-items-center">
+                <span class="fw-bold me-2"><span class="text-navy">{{getAverageRating()}}</span> <span class="text-gold">★</span></span>
+                <span class="text-muted small me-3">({{getTotalReviews()}} verified reviews)</span>
+                <i class="bi bi-chevron-down ms-2 transition-arrow" [class.rotated]="isReviewsExpanded"></i>
+              </div>
+            </div>
+            
+            <div class="accordion-body-reviews overflow-hidden" [class.expanded]="isReviewsExpanded">
+              <div class="row g-5 pt-4">
+                <!-- Left Column: Summary -->
+                <div class="col-md-5">
+                  <div class="rating-summary-card">
+                    <div class="avg-rating-display mb-2">
+                      <span class="avg-val text-navy">{{getAverageRating()}}</span>
+                      <div class="avg-stars ms-2">
+                        <i class="bi" *ngFor="let s of [1,2,3,4,5]" 
+                           [class.bi-star-fill]="getAverageRating() >= s"
+                           [class.bi-star-half]="getAverageRating() >= (s - 0.5) && getAverageRating() < s"
+                           [class.bi-star]="getAverageRating() < (s - 0.5)"></i>
+                      </div>
+                    </div>
+                    <p class="text-navy small mb-4">Based on {{getTotalReviews()}} verified reviews</p>
+  
+                    <!-- Star Progress Bars -->
+                    <div class="star-bars">
+                      <div class="star-bar-item d-flex align-items-center mb-2" *ngFor="let star of [5,4,3,2,1]">
+                        <span class="star-label me-2">{{star}} <i class="bi bi-star-fill x-small"></i></span>
+                        <div class="progress flex-grow-1" style="height: 6px;">
+                          <div class="progress-bar" role="progressbar" 
+                               [style.width.%]="getRatingPercentage(star)"></div>
+                        </div>
+                        <span class="ms-2 small text-muted">{{getRatingPercentage(star) | number:'1.0-0'}}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+  
+                <!-- Right Column: Individual Reviews -->
+                <div class="col-md-7 border-start-md">
+                  <div class="reviews-list">
+                    <div class="review-card pb-4 border-bottom" *ngFor="let review of getVisibleReviews()">
+                      <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                          <div class="review-avatar me-3">
+                            <i class="bi bi-person-circle fs-2 text-muted"></i>
+                          </div>
+                          <div>
+                            <h6 class="m-0 fw-bold text-navy">{{review.userName}}</h6>
+                            <span class="text-muted x-small">{{review.date}}</span>
+                          </div>
+                        </div>
+                        <div class="review-stars-small">
+                          <i class="bi bi-star-fill" *ngFor="let s of [1,2,3,4,5]" 
+                             [class.text-gold]="s <= review.rating"
+                             [class.text-muted]="s > review.rating"></i>
+                        </div>
+                      </div>
+                      <p class="review-text m-0">{{review.comment}}</p>
+                    </div>
+                  </div>
+  
+                  <!-- Show More Toggle -->
+                  <div class="text-center mt-4" *ngIf="vehicle.reviews.length > 3">
+                    <button class="btn btn-outline-dark btn-sm rounded-pill px-4" (click)="$event.stopPropagation(); toggleReviews()">
+                      {{showAllReviews ? 'Show Less' : 'Show More Reviews (' + (vehicle.reviews.length - 3) + ')'}}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Right Column: Booking Side Panel -->
+      <div class="col-lg-5">
+        <div class="booking-card shadow-sm p-4 bg-white rounded-3">
+          <div class="booking-form">
+            <!-- New Automatic Pricing Breakdown Table (Premium Dark Look) -->
+            <div class="pricing-breakdown-card mb-4" *ngIf="bookingDays > 0">
+              <div class="breakdown-header">
+                <i class="bi bi-receipt me-2"></i> Pricing Breakdown
+              </div>
+              <table class="table table-borderless breakdown-table m-0">
+                <tbody>
+                  <tr>
+                    <td class="align-middle">
+                      <div style="line-height: 1.2;">Daily Rental</div>
+                      <div style="color: #94a3b8; font-size: 0.85em; font-weight: 500; margin-top: 4px;">(LKR {{vehicle.standardDailyRate | number}} × {{bookingDays}} Days)</div>
+                    </td>
+                    <td class="text-end align-middle">LKR {{vehicle.standardDailyRate * bookingDays | number}}</td>
+                  </tr>
+                  <tr *ngIf="bookingNights > 0">
+                    <td class="align-middle">
+                      <div style="line-height: 1.2;">Driver Night Fee</div>
+                      <div style="color: #94a3b8; font-size: 0.85em; font-weight: 500; margin-top: 4px;">(LKR {{vehicle.driverNightOutFee | number}} × {{bookingNights}} Nights)</div>
+                    </td>
+                    <td class="text-end align-middle">LKR {{vehicle.driverNightOutFee * bookingNights | number}}</td>
+                  </tr>
+                  <tr class="total-row">
+                    <td><strong>Subtotal (Estimated)</strong></td>
+                    <td class="text-end subtotal-val"><strong>LKR {{getEstimatedTotal() | number}}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="mileage-highlight mt-3">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                Minimum {{vehicle.freeKMLimit}}km/day included. Extra: LKR {{vehicle.extraKMRate}}/km.
+              </div>
+            </div>
+
+            <h3 class="form-section-title mb-3">Request Booking</h3>
+            
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" [(ngModel)]="startDate" (change)="onDateChange()">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Drop-off Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" [(ngModel)]="endDate" (change)="onDateChange()" [min]="startDate">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Full Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" placeholder="Enter your name" [(ngModel)]="customerName">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+              <input type="tel" class="form-control" placeholder="+94 77 XXX XXXX" [(ngModel)]="customerPhone">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-control" placeholder="name@example.com" [(ngModel)]="customerEmail">
+            </div>
+            
+            <div class="row g-2 mb-3">
+              <div class="col-md-12">
+                <label class="form-label">Pickup Location <span class="text-danger">*</span></label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" placeholder="Pickup Location" 
+                         [(ngModel)]="pickupAddress" (input)="onLocationInput('pickup')" (click)="$event.stopPropagation()">
+                  
+                  <!-- Suggestions Dropdown -->
+                  <div class="suggestions-dropdown shadow-sm" *ngIf="filteredPickupSuggestions.length > 0">
+                    <div class="suggestion-item p-2 border-bottom" *ngFor="let loc of filteredPickupSuggestions" (click)="selectLocation(loc, 'pickup')">
+                      <i class="bi bi-geo-alt me-2 text-muted"></i>{{loc}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12 mt-3">
+                <label class="form-label d-block mb-1">Add Destinations</label>
+                
+                <div class="d-flex gap-2 mb-3 position-relative">
+                  <div class="flex-grow-1 position-relative">
+                    <input type="text" class="form-control destination-input" 
+                           placeholder="Add Destinations" 
+                           [(ngModel)]="newDestination" 
+                           (input)="onLocationInput('dest')"
+                           (click)="$event.stopPropagation()"
+                           (keyup.enter)="addDestination()">
+                    <i class="bi bi-geo-alt position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                    
+                    <!-- Suggestions Dropdown -->
+                    <div class="suggestions-dropdown shadow-sm" *ngIf="filteredDestSuggestions.length > 0">
+                      <div class="suggestion-item p-2 border-bottom" *ngFor="let loc of filteredDestSuggestions" (click)="selectLocation(loc, 'dest')">
+                        <i class="bi bi-geo-alt me-2 text-muted"></i>{{loc}}
+                      </div>
+                    </div>
+                  </div>
+                  <button class="btn btn-add-dest px-4 fw-bold" type="button" (click)="addDestination()">Add</button>
+                </div>
+                
+                <!-- Destinations List -->
+                <div class="destinations-list-v2 mt-2" *ngIf="destinations.length > 0">
+                  <div class="destination-item-v2 d-flex align-items-center justify-content-between p-3 mb-2" 
+                       *ngFor="let dest of destinations; let i = index">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-geo-alt-fill text-dark me-3 fs-5"></i>
+                      <span class="text-dark fw-bold">{{dest}}</span>
+                    </div>
+                    <i class="bi bi-x fs-4 text-dark cursor-pointer fw-bold" (click)="removeDestination(i)"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label">Special Requests (Optional)</label>
+              <textarea class="form-control" rows="2" placeholder="Need child seat, etc." [(ngModel)]="specialRequests"></textarea>
+            </div>
+
+            <button class="btn btn-request-booking w-100 py-3 fw-bold mt-2" (click)="onRequestBooking()">
+              Request Booking
+            </button>
+            
+            <div class="booking-note-container mt-3">
+              <p class="text-center text-muted small mb-3">
+                No payment required now. Provider will contact you to confirm.
+              </p>
+              
+              <div class="cancellation-policy">
+                <h6 class="policy-title">Cancellation Policy:</h6>
+                <ul class="policy-list">
+                  <li>Free cancellation up to 24 hours before start date</li>
+                  <li>Please notify the provider as early as possible</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-note mt-3 p-3 bg-light rounded-2 small text-muted">
+          <strong>Note:</strong> Final payment must be made directly to the driver at the end of the trip.
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div>
