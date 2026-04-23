@@ -1,32 +1,26 @@
-import { Component,ViewEncapsulation, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DiscussionService, DiscussionItem } from '../services/discussion.service';
 import { SignalrService } from '../services/signalr.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs'; 
 import Swal from 'sweetalert2';
-
-// CommentsComponent එක import කරන්න (පාර නිවැරදි දැයි බලන්න)
 import { CommentsComponent } from '../comments/comments';
 
 @Component({
   selector: 'app-discussion',
   standalone: true,
-  imports: [FormsModule, CommonModule, CommentsComponent], // මෙහි CommentsComponent ඇතුළත් කළා
+  imports: [FormsModule, CommonModule, CommentsComponent],
   templateUrl: './discussion.html',
   styleUrls: ['./discussion.css'],
   encapsulation: ViewEncapsulation.None
-  
 })
 export class DiscussionComponent implements OnInit, OnDestroy { 
   discussions: DiscussionItem[] = [];
-  
   private voteSub!: Subscription;
   private deleteSub!: Subscription;
   private newDiscussionSub!: Subscription;
-
   currentUser: string = 'Guest User';
-
   newTrip: any = {
     title: '',
     description: '',
@@ -38,7 +32,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     private discussionService: DiscussionService,
     private signalrService: SignalrService,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone 
+    private zone: NgZone
   ) {}
 
   ngOnInit() {
@@ -64,9 +58,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   }
 
   isVotingDisabled(item: any): boolean {
-    const votes = item.userVotes?.length || 0;
-    const limit = item.memberLimit || 5;
-    return !!(item.isConfirmed || item.isRejected || (votes >= limit));
+    return !!(item.isConfirmed || item.isRejected);
   }
 
   setupSignalRListeners() {
@@ -80,7 +72,6 @@ export class DiscussionComponent implements OnInit, OnDestroy {
           this.discussions[index].isRejected = updatedItem.isRejected || updatedItem.IsRejected;
           this.discussions[index].userVotes = updatedItem.userVotes || updatedItem.UserVotes;
           this.discussions[index].memberLimit = updatedItem.memberLimit || updatedItem.MemberLimit;
-
           this.checkStatusAlerts(this.discussions[index]);
           this.cdr.detectChanges();
         }
@@ -107,7 +98,6 @@ export class DiscussionComponent implements OnInit, OnDestroy {
 
   private checkStatusAlerts(item: DiscussionItem) {
     const totalVotes = item.userVotes?.length || 0;
-    
     if (totalVotes >= item.memberLimit) {
       if (item.isConfirmed) {
         Swal.fire({
@@ -140,21 +130,21 @@ export class DiscussionComponent implements OnInit, OnDestroy {
 
   castVote(discussionId: string | undefined, optionText: string) {
     if (!discussionId) return;
-    
     const item = this.discussions.find(d => d.id === discussionId);
     
-    if (item?.isConfirmed || item?.isRejected) {
+    if (this.isVotingDisabled(item)) {
       Swal.fire('Locked', 'Voting is already closed for this item.', 'info');
       return;
     }
 
     const currentVotes = item?.userVotes?.length || 0;
     const limit = item?.memberLimit || 5;
-    
-    const hasAlreadyVoted = item?.userVotes?.some(v => v.userId === this.currentUser);
-    
+    const hasAlreadyVoted = item?.userVotes?.some(
+      (v: any) => (v.userId || v.UserId) === this.currentUser
+    );
+
     if (!hasAlreadyVoted && currentVotes >= limit) {
-      Swal.fire('Limit Reached', 'No more votes can be cast for this proposal.', 'warning');
+      Swal.fire('Limit Reached', 'All member slots are filled. Only existing voters can change their vote.', 'warning');
       return;
     }
 
@@ -165,9 +155,9 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Voting failed:', err);
         if (err.status === 400) {
-           Swal.fire('Info', err.error.message || 'Voting is closed.', 'info');
+          Swal.fire('Info', err.error.message || 'Voting is closed.', 'info');
         } else {
-           Swal.fire('Error', 'Vote cast failed.', 'error');
+          Swal.fire('Error', 'Vote cast failed.', 'error');
         }
       }
     });
@@ -192,13 +182,11 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       Swal.fire('Invalid Title', 'Please provide a meaningful title (at least 3 letters and 1 vowel).', 'warning');
       return;
     }
-
     let options = [];
     if (this.newTrip.type === 'Other') {
       const validOptions = this.newTrip.customOptions
         .map((opt: string) => opt.trim())
         .filter((opt: string) => opt !== '');
-
       if (validOptions.length < 2) {
         Swal.fire('Info', 'Please add at least 2 options for a poll.', 'info');
         return;
@@ -210,7 +198,6 @@ export class DiscussionComponent implements OnInit, OnDestroy {
         { optionText: 'Disagree', voteCount: 0 }
       ];
     }
-
     const item: any = {
       title: title,
       description: this.newTrip.description,
@@ -220,18 +207,13 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       isConfirmed: false,
       isRejected: false,
       options: options,
-      comments: []
+      comments: [],
+      memberLimit: 5
     };
-
     this.discussionService.createDiscussion(item).subscribe({
       next: () => {
         this.resetForm();
-        Swal.fire({
-          icon: 'success',
-          title: 'Posted',
-          showConfirmButton: false,
-          timer: 1500
-        });
+        Swal.fire({ icon: 'success', title: 'Posted', showConfirmButton: false, timer: 1500 });
       },
       error: (err) => console.error('Creation error:', err)
     });
@@ -243,7 +225,6 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'Only the creator can delete this vote box!' });
       return;
     }
-
     Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this!",
@@ -268,7 +249,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   addOptionField() { this.newTrip.customOptions.push(''); }
   removeOptionField(index: number) { if (this.newTrip.customOptions.length > 2) this.newTrip.customOptions.splice(index, 1); }
   trackByIndex(index: number) { return index; }
-
+  
   getVotePercentage(item: any, index: number): number {
     if (!item || !item.options) return 0;
     const total = item.options.reduce((acc: number, curr: any) => acc + (curr.voteCount || 0), 0);
