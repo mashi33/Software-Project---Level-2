@@ -15,15 +15,13 @@ namespace SmartJourney.Api.Controllers
             _dashboardService = dashboardService;
         }
 
+        // --- Stats ---
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats() 
             => Ok(await _dashboardService.GetDashboardStats());
-        public async Task<IActionResult> GetStats() 
-            => Ok(await _dashboardService.GetDashboardStats());
 
+        // --- Vehicle Operations ---
         [HttpGet("vehicles")]
-        public async Task<IActionResult> GetVehicles() 
-            => Ok(await _dashboardService.GetAllVehicles());
         public async Task<IActionResult> GetVehicles() 
             => Ok(await _dashboardService.GetAllVehicles());
 
@@ -41,37 +39,25 @@ namespace SmartJourney.Api.Controllers
             return Ok();
         }
 
+        // --- Booking Operations ---
         [HttpGet("bookings")]
         public async Task<IActionResult> GetBookings() 
             => Ok(await _dashboardService.GetAllBookings());
 
-[HttpPut("bookings/{id}/complete")]
-public async Task<IActionResult> CompleteBooking(string id)
-{
-    var success = await _dashboardService.UpdateBookingStatus(id, "Completed");
-    
-    if (!success) return NotFound();
-    
-    return NoContent();
-}
-        public async Task<IActionResult> GetBookings() 
-            => Ok(await _dashboardService.GetAllBookings());
-
-[HttpPut("bookings/{id}/complete")]
-public async Task<IActionResult> CompleteBooking(string id)
-{
-    var success = await _dashboardService.UpdateBookingStatus(id, "Completed");
-    
-    if (!success) return NotFound();
-    
-    return NoContent();
-}
+        [HttpPut("bookings/{id}/complete")]
+        public async Task<IActionResult> CompleteBooking(string id)
+        {
+            var success = await _dashboardService.UpdateBookingStatus(id, "Completed");
+            
+            if (!success) return NotFound();
+            
+            return NoContent();
+        }
 
         [HttpDelete("bookings/{id}")]
         public async Task<IActionResult> RejectBooking(string id)
         {
             await _dashboardService.DeleteBooking(id);
-
             return NoContent();
         }
     }
