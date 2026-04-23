@@ -20,22 +20,15 @@ namespace SmartJourneyPlanner.Controllers
             _vehicleService = vehicleService;
         }
 
-        /// <summary>
-        /// GET: api/TransportVehicles
-        /// Fetches only the providers that have been APPROVED by the Admin.
-        /// </summary>
+        // GET: api/TransportVehicles - Get all vehicles that admin has approved
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
-            // Now fetching from the TransportVehicles collection via AdminService (or directly via vehicleService)
             var approved = await _adminService.GetApprovedProvidersAsync();
             return Ok(approved);
         }
 
-        /// <summary>
-        /// POST: api/TransportVehicles
-        /// Registers a new vehicle and sets status to Pending.
-        /// </summary>
+        // POST: api/TransportVehicles - Register a new vehicle and wait for admin approval
         [HttpPost]
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
@@ -53,6 +46,7 @@ namespace SmartJourneyPlanner.Controllers
             }
         }
 
+        // POST: api/TransportVehicles/seed - Fill the database with sample vehicle data
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
@@ -62,7 +56,7 @@ namespace SmartJourneyPlanner.Controllers
             
             var vehiclesToInsert = vehicles.Select(v => { 
                 v.Id = null; 
-                v.Status = "Approved"; // Seeded ones are approved by default
+                v.Status = "Approved"; 
                 return v; 
             }).ToList();
 
@@ -70,6 +64,7 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
+        // GET: api/TransportVehicles/{id} - Get details of one specific vehicle
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
         {
@@ -78,6 +73,7 @@ namespace SmartJourneyPlanner.Controllers
             return vehicle;
         }
 
+        // DELETE: api/TransportVehicles/{id} - Remove a vehicle from the system
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -87,5 +83,26 @@ namespace SmartJourneyPlanner.Controllers
             await _vehicleService.RemoveAsync(id);
             return NoContent();
         }
+
+        // POST: api/TransportVehicles/{id}/reviews - Add a new customer rating and comment
+        [HttpPost("{id}/reviews")]
+        public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
+        {
+            var vehicle = await _vehicleService.GetAsync(id);
+            if (vehicle is null) 
+            {
+                return NotFound(new { message = $"Vehicle with ID {id} not found." });
+            }
+
+            // Set current date if it is not provided
+            if (string.IsNullOrEmpty(review.Date))
+            {
+                review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            }
+
+            // Save the review to the database
+            await _vehicleService.AddReviewAsync(id, review);
+            return Ok(new { message = "Review added successfully" });
+        }
     }
-}
+}

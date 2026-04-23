@@ -5,7 +5,7 @@ using SmartJourneyPlanner.Models;
 
 namespace SmartJourneyPlanner.API.Services
 {
-    // This service handles the database logic for the Admin Panel
+    // This service handles all the database logic for the Administrator's dashboard
     public class AdminService
     {
         private readonly IMongoCollection<User> _usersCollection;
@@ -13,16 +13,15 @@ namespace SmartJourneyPlanner.API.Services
 
         public AdminService(IOptions<MongoDBSettings> settings)
         {
-            // Connect to MongoDB using the settings provided
+            // Connect to MongoDB and find the 'Users' and 'TransportVehicles' collections
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
 
-            // Define which collections to use
             _usersCollection = database.GetCollection<User>("Users");
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // Gets all vehicles that are marked as 'Pending' in the database
+        // Get a list of all transport providers (vehicles) that are waiting for admin approval
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
         {
             return await _vehiclesCollection
@@ -30,7 +29,7 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        // Gets all vehicles that have been 'Approved'
+        // Get a list of all transport providers (vehicles) that have already been approved
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -38,27 +37,28 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        // Updates the Status of a vehicle (Approve/Reject) by its unique ID
+        // Change the status of a vehicle (e.g. from 'Pending' to 'Approved' or 'Rejected')
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
             var update = Builders<TransportVehicle>.Update.Set(v => v.Status, newStatus);
             
-            // Apply the update to the database
+            // Apply the status change in the database
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
-        // ✅ NEW: Saves vehicle details to the User document
+        // Save vehicle-related details back into a specific User document
         public async Task UpdateUserVehicleAsync(string id, User updatedUser)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            // Replaces the existing user document with the one containing vehicle info
+            // Replace the old user data with the updated information
             await _usersCollection.ReplaceOneAsync(filter, updatedUser);
         }
-        // ✅ NEW: Creates a new provider/vehicle document
+
+        // Add a brand new transport provider (User) record to the system
         public async Task CreateProviderAsync(User newUser)
         {
             await _usersCollection.InsertOneAsync(newUser);
         }
     }
-}
+}

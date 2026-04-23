@@ -39,14 +39,7 @@ export class TransportBookingService {
     return this.http.patch<void>(`${this.apiUrl}/${id}/rated`, {});
   }
 
-  deleteBooking(id: string) {
-  // THIS MUST BE .delete()
-  return this.http.delete(`/api/ProviderDashboard/bookings/${id}`);
-}
-
-completeBooking(bookingId: string) {
-  // Matches the route in your Controller
-  return this.http.put(`api/ProviderDashboard/bookings/${bookingId}/complete`, {});
-}
-  
+  deleteBooking(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }
