@@ -14,8 +14,8 @@ body{
 }
 
 .container{
-  width:900px;
-  height:560px;
+  width:920px;
+  height:640px;
   display:flex;
   background:white;
   border-radius:20px;

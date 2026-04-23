@@ -3,7 +3,7 @@ import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form'; 
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { LoginComponent } from './login/login';
-import { SignupComponent } from './signup/signup'; 
+import { Signup } from './signup/signup'; 
 import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
@@ -11,11 +11,14 @@ import { ProviderDashboardComponent } from './provider-dashboard/provider-dashbo
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 
-// --- Admin Imports ---
+
+
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { adminGuard } from './guards/admin-guard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
+import { TripSummaryComponent } from './trip-summary/trip-summary';
+
 
 export const routes: Routes = [
   // 1. Default Route
@@ -23,8 +26,12 @@ export const routes: Routes = [
   
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
-  { path: 'signup', component: SignupComponent },
+  { path: 'signup', component: Signup },
+
   { path: 'createTrip', component: TripCreateComponent },
+  { path: 'editTrip/:id', component: TripCreateComponent },
+  { path: 'trip-summary/:id', component: TripSummaryComponent },
+  { path: 'trip-summary', component: TripSummaryComponent },
   
   // 3. Your Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },

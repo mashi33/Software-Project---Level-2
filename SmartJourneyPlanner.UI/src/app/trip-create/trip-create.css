@@ -72,15 +72,7 @@ textarea {
   background: #d0d0d0;
 }
 
-/* Upload */
-.upload-box {
-  height: 150px;
-  border-radius: 15px;
-  background: #eee;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+
 
 /* Members */
 .members-box {
