@@ -11,6 +11,7 @@ import { ProviderDashboardComponent } from './provider-dashboard/provider-dashbo
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
+import { ExploreWelcome } from './explore-welcome/explore-welcome';
 
 // --- Admin Imports ---
 // ✅ Ensure the file extension matches your folder structure (.component if applicable)
@@ -38,13 +39,16 @@ export const routes: Routes = [
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
-  { 
+   { 
     path: 'explore', 
     children: [
-      { path: '', component: RouteOptimization }, 
+
+      { path: '', component: ExploreWelcome },
+      { path: 'route-optimization', component: RouteOptimization },
+ 
       { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
     ]
-  }, 
+  },
   { path: 'timeline', component: TripTimelineComponent },
 
   // 6. Admin Control Center

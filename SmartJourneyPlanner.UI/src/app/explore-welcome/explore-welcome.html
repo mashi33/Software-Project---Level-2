@@ -1,0 +1,54 @@
+<div class="timeline-container">
+  <div class="bg-image-layer"></div>
+  
+  <div class="content-wrapper">
+    <div class="hero-section">
+      <div class="hero-icons-wrapper">
+        <div class="main-icon-container">
+          <span class="material-icons main-route-icon">explore</span>
+        </div>
+        
+        <div class="floating-icon icon-hotel wiggle-1">
+          <span class="material-icons">location_on</span>
+        </div>
+        <div class="floating-icon icon-dining wiggle-2">
+          <span class="material-icons">map</span>
+        </div>
+        <div class="floating-icon icon-explore wiggle-3">
+          <span class="material-icons">travel_explore</span>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <h2 class="hero-title">Discover Sri Lanka</h2>
+        <p class="hero-description">
+          Choose a feature to start planning your perfect journey across the island.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="explore-card" (click)="onSelect('route-optimization')">
+          <div class="category-box cat-sightseeing">
+            <span class="material-icons">route</span>
+          </div>
+          <div class="explore-info">
+            <h3>Route Optimization</h3>
+            <p>Find the fastest, Cheapest and most scenic paths.</p>
+          </div>
+          <span class="material-icons arrow-icon">arrow_forward_ios</span>
+        </div>
+
+        <div class="explore-card" (click)="onSelect('hotel-restaurant-finder')">
+          <div class="category-box cat-hotel">
+            <span class="material-icons">hotel</span>
+          </div>
+          <div class="explore-info">
+            <h3>Hotels & Restaurants Finder</h3>
+            <p>Discover best places to stay and eat nearby.</p>
+          </div>
+          <span class="material-icons arrow-icon">arrow_forward_ios</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

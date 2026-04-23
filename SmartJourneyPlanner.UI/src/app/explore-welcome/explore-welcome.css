@@ -1,0 +1,142 @@
+/* මුළු පේජ් එකම පාලනය කරන container එක */
+.timeline-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.bg-image-layer {
+  position: fixed; 
+  top: 0; 
+  left: 0;
+  width: 100vw;
+  height: 100vh; 
+  
+  background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)), 
+                    url('https://i.postimg.cc/SNdb95Xg/beautiful-beach.jpg');
+  
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
+  z-index: -1; 
+  opacity: 1;
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+  margin-top: 70px; 
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 70px);
+}
+
+/* Material Icons */
+.material-icons {
+  font-family: 'Material Icons' !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Explore Card Icons */
+.category-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Cards Layout  */
+.feature-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  margin: 2rem auto;
+  z-index: 10;
+}
+
+/* Explore Card Styles */
+.explore-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.explore-card:hover {
+  transform: translateY(-5px);
+  background: #ffffff;
+  box-shadow: 0 12px 25px rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+}
+
+.explore-info {
+  flex: 1;
+  text-align: left;
+}
+
+.explore-info h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.explore-info p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.arrow-icon {
+  font-size: 1.2rem;
+  color: #cbd5e1;
+  transition: color 0.3s;
+}
+
+.explore-card:hover .arrow-icon {
+  color: #3b82f6;
+}
+
+/* Category Icons colors */
+.cat-sightseeing { background: #f0fdf4; color: #16a34a; }
+.cat-hotel { background: #f0f7ff; color: #2563eb; }
+
+/* Hero Section  */
+.hero-content {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.hero-description {
+  color: #475569;
+  font-size: 1.1rem;
+}
