@@ -1,6 +1,6 @@
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
-using smart_journey.backend.Models; // 👈 MATCHES YOUR User.cs NAMESPACE
+//using smart_journey.backend.Models; // 👈 MATCHES YOUR User.cs NAMESPACE
 using SmartJourneyPlanner.API.Models;   // Still needed for MongoDBSettings
 
 namespace SmartJourneyPlanner.API.Services
