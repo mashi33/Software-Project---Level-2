@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Interfaces;
@@ -16,7 +16,7 @@ namespace SmartJourneyPlanner.Services
 
         public RouteService(IMongoClient client, IConfiguration config)
         {
-            var database = client.GetDatabase("SmartJourneyDB");
+            var database = client.GetDatabase("SmartJourneyDb");
             _routeCollection = database.GetCollection<SavedRoute>("SavedRoutes");
             _apiKey = config["GoogleApi:ApiKey"] ?? string.Empty;
         }

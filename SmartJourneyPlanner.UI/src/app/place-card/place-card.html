@@ -1,0 +1,53 @@
+<div class="card-container">
+
+  <div class="toast" [class.show]="toastVisible">
+    ✅ Added to your trip!
+  </div>
+
+  <ng-container *ngIf="places !== null">
+
+    <div *ngFor="let place of places" 
+         [id]="'card-' + place.id"
+         class="place-card"
+         [class.selected-card]="place.id === selectedPlaceId">
+         
+      <img
+        *ngIf="place.photoReference"
+        [src]="'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=' + place.photoReference + '&key=' + googleMapsApiKey"
+        loading="lazy"
+        class="card-img"
+      />
+      <div *ngIf="!place.photoReference" class="no-img">No Image Available</div>
+
+      <div class="details">
+        <div class="card-header">
+          <h3>{{ place.name }}</h3>
+          <span class="distance-badge" *ngIf="place.distanceFromUser != null">
+            📍 {{ place.distanceFromUser | number:'1.1-1' }} km
+          </span>
+        </div>
+
+        <p>{{ place.address }}</p>
+
+        <div class="meta">
+          <span>⭐ {{ place.rating }}</span>
+          <span>{{ '$'.repeat(place.priceLevel) }}</span>
+        </div>
+
+        <button
+          class="add-to-trip-btn"
+          [class.added]="isAdded(place.placeId)"
+          (click)="addToTrip(place)"
+        >
+          {{ isAdded(place.placeId) ? '✓ Added' : '+ Add to Trip' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="places.length === 0" class="empty-state">
+      No places found. Try a different search or category.
+    </div>
+
+  </ng-container>
+
+</div>

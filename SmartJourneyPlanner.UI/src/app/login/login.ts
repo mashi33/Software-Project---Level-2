@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../auth';
+import { AuthService } from '../services/auth.service';
 import { Router, RouterLink } from '@angular/router'; // Router යන්න මෙහි අනිවාර්යයෙන්ම තිබිය යුතුයි
 
 @Component({

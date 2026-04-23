@@ -1,9 +1,11 @@
-﻿namespace SmartJourneyPlanner.Models
+namespace SmartJourneyPlanner.Models
 {
     public class DatabaseSettings
     {
         public string ConnectionString { get; set; } = null!;
         public string DatabaseName { get; set; } = null!;
         public string CollectionName { get; set; } = null!;
+        public string TransportVehiclesCollectionName { get; set; } = null!;
+        public string TransportBookingsCollectionName { get; set; } = null!;
     }
 }

@@ -1,5 +1,5 @@
 using MongoDB.Driver;
-using SmartJourney.Api.Models;
+using SmartJourneyPlanner.API.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

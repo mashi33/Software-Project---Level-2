@@ -1,0 +1,14 @@
+System.TimeoutException: A timeout occurred after 30004ms selecting a server using CompositeServerSelector{ Selectors = WritableServerSelector, LatencyLimitingServerSelector{ AllowedLatencyRange = 00:00:00.0150000 }, OperationsCountServerSelector }. Client view of cluster state is { ClusterId : "2", Type : "Unknown", State : "Disconnected", Servers : [] }.
+   at MongoDB.Driver.Core.Clusters.Cluster.SelectServerAsync(OperationContext operationContext, IServerSelector selector)
+   at MongoDB.Driver.Core.Clusters.IClusterExtensions.SelectServerAndPinIfNeededAsync(IClusterInternal cluster, OperationContext operationContext, ICoreSessionHandle session, IServerSelector selector, IReadOnlyCollection`1 deprioritizedServers)
+   at MongoDB.Driver.Core.Bindings.WritableServerBinding.GetWriteChannelSourceAsync(OperationContext operationContext, IReadOnlyCollection`1 deprioritizedServers)
+   at MongoDB.Driver.Core.Operations.RetryableWriteContext.AcquireOrReplaceChannelAsync(OperationContext operationContext, IReadOnlyCollection`1 deprioritizedServers)
+   at MongoDB.Driver.Core.Operations.RetryableWriteContext.CreateAsync(OperationContext operationContext, IWriteBinding binding, Boolean retryRequested)
+   at MongoDB.Driver.Core.Operations.BulkMixedWriteOperation.ExecuteAsync(OperationContext operationContext, IWriteBinding binding)
+   at MongoDB.Driver.OperationExecutor.ExecuteWriteOperationAsync[TResult](OperationContext operationContext, IClientSessionHandle session, IWriteOperation`1 operation, Boolean allowChannelPinning)
+   at MongoDB.Driver.MongoCollectionImpl`1.ExecuteWriteOperationAsync[TResult](IClientSessionHandle session, IWriteOperation`1 operation, Nullable`1 timeout, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IClientSessionHandle session, IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionImpl`1.BulkWriteAsync(IEnumerable`1 requests, BulkWriteOptions options, CancellationToken cancellationToken)
+   at MongoDB.Driver.MongoCollectionBase`1.InsertOneAsync(TDocument document, InsertOneOptions options, Func`3 bulkWriteAsync)
+   at SmartJourneyPlanner.API.Services.TimelineService.CreateAsync(TimelinePlan newPlan) in F:\Software Project\Software-Project---Level-2\SmartJourneyPlanner.API\Services\TimelineService.cs:line 91
+   at SmartJourneyPlanner.API.Controllers.TimelineController.Post(TimelinePlan newPlan) in F:\Software Project\Software-Project---Level-2\SmartJourneyPlanner.API\Controllers\TimelineController.cs:line 49

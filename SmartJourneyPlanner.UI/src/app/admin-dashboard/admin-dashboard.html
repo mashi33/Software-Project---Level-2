@@ -1,0 +1,87 @@
+<div class="admin-layout">
+  <aside class="sidebar">
+    <h2>⚙️ Admin Panel</h2>
+    <ul>
+      <li class="active">Dashboard Home</li>
+      <li>Manage Providers</li>
+      <li>Manage Users</li>
+      <li>Platform Settings</li>
+    </ul>
+  </aside>
+
+  <main class="content">
+    <header>
+      <h1>⚙️ Smart Journey Planner - Admin Control Center</h1>
+    </header>
+
+    <div class="dashboard-cards">
+      <div class="card warning">
+        <h3>Pending Transport Providers</h3>
+        <h1>{{ pendingProviders.length }}</h1>
+        <p>Providers waiting for approval.</p>
+        <button class="btn-primary">Review Providers</button>
+      </div>
+
+      <div class="card success">
+        <h3>Platform Statistics</h3>
+        <p><strong>Total Users:</strong> 150</p>
+        <p><strong>Active Trips:</strong> 42</p>
+      </div>
+    </div>
+
+    <div class="verification-section">
+      <h2>📋 Pending Approvals</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Owner</th>
+            <th>Vehicle</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pendingProviders">
+            <td>{{ p.fullName }}</td>
+            <td>{{ p.vehicleModel }}</td>
+            <td>{{ p.vehicleType }}</td>
+            <td><span class="badge warning">{{ p.status }}</span></td>
+            <td>
+              <button class="btn-view" (click)="viewDetails(p)">🔍 View Docs</button>
+              <button class="btn-approve" (click)="updateProviderStatus(p.id, 'Approved')">✅</button>
+              <button class="btn-reject" (click)="updateProviderStatus(p.id, 'Rejected')">❌</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p *ngIf="errorMessage" class="error-text">{{ errorMessage }}</p>
+    </div>
+  </main>
+
+  <div class="modal" *ngIf="selectedProvider">
+    <div class="modal-content">
+      <span class="close" (click)="selectedProvider = null">&times;</span>
+      
+      <h2>Documents for {{ selectedProvider.fullName }}</h2>
+      <hr>
+      
+      <div class="doc-images">
+        <div class="img-box">
+          <p><strong>Driver License</strong></p>
+          <img [src]="selectedProvider.licenseUrl" alt="Driver License" onerror="this.src='assets/no-image.png'">
+        </div>
+        
+        <div class="img-box">
+          <p><strong>NIC Front</strong></p>
+          <img [src]="selectedProvider.nicUrl" alt="NIC Front" onerror="this.src='assets/no-image.png'">
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+          <button class="btn-primary" (click)="selectedProvider = null">Close Review</button>
+      </div>
+    </div>
+  </div>
+</div>

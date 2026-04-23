@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; // Fixes *ngFor errors
+import { RouterLink } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 
 @Component({
   selector: 'app-provider-dashboard',
   standalone: true,
-  imports: [CommonModule], // Required to use *ngFor in HTML
+  imports: [CommonModule, RouterLink], // Required to use *ngFor in HTML
   templateUrl: './provider-dashboard.html',
   styleUrls: ['./provider-dashboard.css']
 })
