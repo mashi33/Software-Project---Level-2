@@ -11,5 +11,6 @@ import { MyBookings } from './my-bookings/my-bookings';
   styleUrl: './transport-provider.css',
 })
 export class TransportProvider {
+  // This variable tracks which tab is currently selected (Find Transport or My Bookings)
   activeTab: 'search' | 'bookings' = 'search';
 }

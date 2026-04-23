@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-=======
-using Microsoft.Extensions.Options;
->>>>>>> Transport-provider
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
