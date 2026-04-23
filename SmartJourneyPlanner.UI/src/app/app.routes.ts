@@ -8,6 +8,7 @@ import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
+import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 
 // --- Admin Imports ---
@@ -23,6 +24,7 @@ export const routes: Routes = [
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
+  { path: 'createTrip', component: TripCreateComponent },
   
   // 3. Your Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },

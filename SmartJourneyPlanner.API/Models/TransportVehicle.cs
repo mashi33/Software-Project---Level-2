@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.Models
 {
+    /// <summary>
+    /// Model representing a transport vehicle
+    /// </summary>
     [BsonIgnoreExtraElements]
     public class TransportVehicle
     {
@@ -15,8 +18,8 @@ namespace SmartJourneyPlanner.Models
 
         public TransportProviderProfile ProviderProfile { get; set; } = new();
 
-        public string Type { get; set; } = string.Empty; // Budget, Luxury, Group
-        public string VehicleClass { get; set; } = string.Empty; // Car, Van, Bus
+        public string Type { get; set; } = string.Empty; // e.g. Budget, Luxury, Group
+        public string VehicleClass { get; set; } = string.Empty; // e.g. Car, Van, Bus
         public int YearOfManufacture { get; set; }
         public int SeatCount { get; set; }
         public bool IsAc { get; set; }
@@ -32,6 +35,7 @@ namespace SmartJourneyPlanner.Models
         public string? InteriorPhoto { get; set; }
         public string? ExteriorPhoto { get; set; }
 
+        // URLs for driver and vehicle documents
         public string? DriverNicUrl { get; set; }
         public string? DriverLicenseUrl { get; set; }
         public string? InsuranceDocUrl { get; set; }
@@ -52,6 +56,9 @@ namespace SmartJourneyPlanner.Models
         public List<TransportReview> Reviews { get; set; } = new();
     }
 
+    /// <summary>
+    /// Information about the transport service provider
+    /// </summary>
     public class TransportProviderProfile
     {
         public string Name { get; set; } = string.Empty;
@@ -59,6 +66,9 @@ namespace SmartJourneyPlanner.Models
         public string Location { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Specific features available in the vehicle
+    /// </summary>
     public class TransportVehicleFeatures
     {
         public bool? Wifi { get; set; }
@@ -72,6 +82,9 @@ namespace SmartJourneyPlanner.Models
         public bool? Tv { get; set; }
     }
 
+    /// <summary>
+    /// Customer review for a vehicle
+    /// </summary>
     public class TransportReview
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
