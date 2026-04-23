@@ -19,7 +19,7 @@
         <h3>Pending Transport Providers</h3>
         <h1>{{ pendingProviders.length }}</h1>
         <p>Providers waiting for approval.</p>
-        <button class="btn-primary">Review Providers</button>
+        <button class="btn-primary" (click)="fetchPendingProviders()">Refresh List</button>
       </div>
 
       <div class="card success">
@@ -31,7 +31,16 @@
 
     <div class="verification-section">
       <h2>📋 Pending Approvals</h2>
-      <table class="admin-table">
+
+      <div *ngIf="errorMessage" class="error-banner">
+        ⚠️ {{ errorMessage }}
+      </div>
+
+      <div *ngIf="pendingProviders.length === 0 && !errorMessage" class="empty-state">
+        <p>✅ All caught up! No providers waiting for approval.</p>
+      </div>
+
+      <table class="admin-table" *ngIf="pendingProviders.length > 0">
         <thead>
           <tr>
             <th>Owner</th>
@@ -44,7 +53,7 @@
         <tbody>
           <tr *ngFor="let p of pendingProviders">
             <td>{{ p.fullName }}</td>
-            <td>{{ p.vehicleModel }}</td>
+            <td>{{ p.vehicleModel }} ({{ p.registrationNumber }})</td>
             <td>{{ p.vehicleType }}</td>
             <td><span class="badge warning">{{ p.status }}</span></td>
             <td>
@@ -55,30 +64,24 @@
           </tr>
         </tbody>
       </table>
-      
-      <p *ngIf="errorMessage" class="error-text">{{ errorMessage }}</p>
     </div>
   </main>
 
   <div class="modal" *ngIf="selectedProvider">
     <div class="modal-content">
       <span class="close" (click)="selectedProvider = null">&times;</span>
-      
       <h2>Documents for {{ selectedProvider.fullName }}</h2>
       <hr>
-      
       <div class="doc-images">
         <div class="img-box">
           <p><strong>Driver License</strong></p>
           <img [src]="selectedProvider.licenseUrl" alt="Driver License" onerror="this.src='assets/no-image.png'">
         </div>
-        
         <div class="img-box">
           <p><strong>NIC Front</strong></p>
           <img [src]="selectedProvider.nicUrl" alt="NIC Front" onerror="this.src='assets/no-image.png'">
         </div>
       </div>
-      
       <div class="modal-actions">
           <button class="btn-primary" (click)="selectedProvider = null">Close Review</button>
       </div>

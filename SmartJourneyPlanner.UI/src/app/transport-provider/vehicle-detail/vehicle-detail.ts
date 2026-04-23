@@ -261,7 +261,13 @@ export class VehicleDetailComponent implements OnInit {
           destinations: this.destinations,
           vehicleImage: this.vehicle?.exteriorPhoto,
           providerName: this.vehicle?.providerProfile.name,
-          userName: this.customerName
+          userName: this.customerName,
+          pricingSummary: {
+            dailyRate: this.vehicle?.standardDailyRate || 0,
+            dailyRental: dailyTotal,
+            nightlyRate: this.vehicle?.driverNightOutFee || 0,
+            driverNightOut: nightTotal
+          }
         };
 
         this.transportBookingService.createBooking(newBooking).subscribe({
