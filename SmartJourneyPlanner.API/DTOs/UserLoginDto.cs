@@ -1,4 +1,4 @@
-﻿namespace smart_journey.backend.DTOs
+﻿namespace SmartJourneyPlanner.API.DTOs
 {
     public class UserLoginDto
     {

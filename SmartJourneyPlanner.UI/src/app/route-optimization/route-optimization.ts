@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { RouteService } from '../services/route.service';
@@ -12,7 +13,7 @@ import { GenerationComponent } from '../generation/generation';
 @Component({
   selector: 'app-route-optimization',
   standalone: true,
-  imports: [CommonModule, FormsModule, GoogleMapsModule, GenerationComponent],
+  imports: [CommonModule, FormsModule,RouterLink, GoogleMapsModule, GenerationComponent],
   templateUrl: './route-optimization.html',
   styleUrl: './route-optimization.css',
 })
@@ -38,13 +39,18 @@ export class RouteOptimization implements OnInit, OnDestroy {
   selectedRouteType: string = 'fastest';
   selectedRouteDetails: any = null;
 
+  // Pre-computed distance cache — avoids O(n) recalculation on every render cycle
+  // Key: "lat_lng", Value: formatted distance string
+  private distanceCache = new Map<string, string>();
+
   private searchSubject = new Subject<{ input: string, type: 'start' | 'end' }>();
   private searchSubscription?: Subscription;
 
   constructor(private routeService: RouteService) {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
-      distinctUntilChanged((prev, curr) => prev.input === curr.input && prev.type === curr.type)
+      distinctUntilChanged(
+        (prev, curr) => prev.input === curr.input && prev.type === curr.type)
     ).subscribe(({ input, type }) => {
       this.performSearch(input, type);
     });
@@ -123,14 +129,22 @@ export class RouteOptimization implements OnInit, OnDestroy {
   calculate() {
     this.routeService.getOptimizedRoutes(this.start, this.end).subscribe({
       next: (res: any) => {
-        this.results = res; // ✅ Full response — fastest, scenic, cheapest all stored
-
+        this.results = res;
         this.selectedRouteType = 'fastest';
 
         if (res.fastest && res.fastest.polyline) {
           this.drawPath(res.fastest.polyline);
           this.autoFitMap();
           this.updateRouteDetails('fastest', res.fastest);
+        }
+
+        // FIX 6: Pre-compute distances after BOTH path and viewpoints are loaded
+        // drawPath() alone may pre-compute before results arrive on first load
+        // This guarantees viewpoints exist when pre-computation runs
+        if (res.scenicViewpoints?.length > 0
+          && this.currentPath.length > 0
+          && this.apiLoaded) {
+          this.preComputeDistances(res.scenicViewpoints);
         }
       },
       error: (err) => {
@@ -156,7 +170,76 @@ export class RouteOptimization implements OnInit, OnDestroy {
         lat: pos.lat(),
         lng: pos.lng()
       }));
+
+      // Clear stale distances from previous route
+      this.distanceCache.clear();
+
+      // Pre-compute distances if viewpoints already loaded
+      // (handles route switching after initial load)
+      if (this.results?.scenicViewpoints?.length > 0 && this.apiLoaded) {
+        this.preComputeDistances(this.results.scenicViewpoints);
+      }
     }
+  }
+
+  // Pre-compute all POI distances once — results cached in distanceCache map
+  // Called from both calculate() and drawPath() to cover all timing scenarios
+  private preComputeDistances(viewpoints: any[]): void {
+    if (!this.apiLoaded || !(window as any).google) return;
+
+    viewpoints.forEach(spot => {
+      const key = `${spot.lat}_${spot.lng}`;
+      if (!this.distanceCache.has(key)) {
+        this.distanceCache.set(key, this.computeDistance(spot.lat, spot.lng));
+      }
+    });
+  }
+
+  // Core distance compute — called once per POI, result cached
+  private computeDistance(pointLat: number, pointLng: number): string {
+    if (!this.currentPath || this.currentPath.length === 0) return 'N/A';
+    if (!this.apiLoaded || !(window as any).google) return 'N/A';
+
+    try {
+      const viewpoint = new google.maps.LatLng(pointLat, pointLng);
+      let minDistance = Infinity;
+
+      this.currentPath.forEach(pathPoint => {
+        const dist = google.maps.geometry.spherical.computeDistanceBetween(
+          new google.maps.LatLng(pathPoint.lat, pathPoint.lng),
+          viewpoint
+        );
+        if (dist < minDistance) minDistance = dist;
+      });
+
+      // Guard against Infinity — currentPath had no valid points
+      if (!isFinite(minDistance)) return 'N/A';
+
+      return minDistance > 1000
+        ? (minDistance / 1000).toFixed(1) + ' km from route'
+        : Math.round(minDistance) + ' m from route';
+    } catch {
+      return 'N/A';
+    }
+  }
+
+  // Template calls this — returns cached value instantly (no recalculation per render)
+  calculateDistanceFromRoute(pointLat: number, pointLng: number): string {
+    const key = `${pointLat}_${pointLng}`;
+
+    // Return cached value if available — O(1) lookup
+    if (this.distanceCache.has(key)) {
+      return this.distanceCache.get(key)!;
+    }
+
+    // Compute and cache on demand — fallback for late-loaded spots
+    if (this.currentPath.length > 0 && this.apiLoaded) {
+      const result = this.computeDistance(pointLat, pointLng);
+      this.distanceCache.set(key, result);
+      return result;
+    }
+
+    return 'N/A';
   }
 
   autoFitMap() {
@@ -189,13 +272,13 @@ export class RouteOptimization implements OnInit, OnDestroy {
       endLocation:   this.end,
       selectedType:  type.toUpperCase(),
 
-      // Selected route data — for map image
       distance: this.formatDistance(route.distance),
       duration: this.formatDuration(route.duration),
       polyline: route.polyline,
-      markerString: `color:green|label:S|${this.startCoords?.lat},${this.startCoords?.lng}&markers=color:red|label:E|${this.endCoords?.lat},${this.endCoords?.lng}`,
+      markerString: `color:green|label:S|${this.startCoords?.lat},` +
+                    `${this.startCoords?.lng}&markers=color:red|label:E|` +
+                    `${this.endCoords?.lat},${this.endCoords?.lng}`,
 
-      // Scenic viewpoints — only scenic route has these
       stops: this.results?.scenicViewpoints || [],
 
       // ✅ All 3 routes for comparison table
@@ -235,27 +318,13 @@ export class RouteOptimization implements OnInit, OnDestroy {
     const n = name.toLowerCase();
     if (n.includes('mountain') || n.includes('peak') || n.includes('rock')) return 'terrain';
     if (n.includes('forest') || n.includes('park') || n.includes('garden')) return 'park';
-    if (n.includes('waterfall') || n.includes('lake') || n.includes('river') || n.includes('fall')) return 'waves';
-    if (n.includes('temple') || n.includes('kovil') || n.includes('shrine') || n.includes('viharaya')) return 'account_balance';
+    if (n.includes('waterfall') || n.includes('lake') || n.includes('river')
+      || n.includes('fall')) return 'waves';
+    if (n.includes('temple') || n.includes('kovil') || n.includes('shrine')
+      || n.includes('viharaya')) return 'account_balance';
     if (n.includes('museum') || n.includes('gallery')) return 'museum';
     if (n.includes('fort') || n.includes('castle') || n.includes('palace')) return 'castle';
     return 'explore';
-  }
-
-  calculateDistanceFromRoute(pointLat: number, pointLng: number): string {
-    if (!this.currentPath || this.currentPath.length === 0 || !this.apiLoaded) return '';
-    const viewpoint = new google.maps.LatLng(pointLat, pointLng);
-    let minDistance = Infinity;
-    this.currentPath.forEach(pathPoint => {
-      const dist = google.maps.geometry.spherical.computeDistanceBetween(
-        new google.maps.LatLng(pathPoint.lat, pathPoint.lng),
-        viewpoint
-      );
-      if (dist < minDistance) minDistance = dist;
-    });
-    return minDistance > 1000
-      ? (minDistance / 1000).toFixed(1) + ' km'
-      : Math.round(minDistance) + ' m';
   }
 
   focusOnSpot(spot: any) {

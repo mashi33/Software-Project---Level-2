@@ -8,6 +8,8 @@ import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion'; 
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
+import { TripCreateComponent } from './trip-create/trip-create';
+import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 
 // --- Admin Imports ---
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
@@ -22,6 +24,7 @@ export const routes: Routes = [
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
+  { path: 'createTrip', component: TripCreateComponent },
   
   // 3. Your Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
@@ -33,7 +36,13 @@ export const routes: Routes = [
 
   // 5. Other Team 43 Modules
   { path: 'groupChat', component: DiscussionComponent },
-  { path: 'explore', component: RouteOptimization }, 
+   { 
+    path: 'explore', 
+    children: [
+      { path: '', component: RouteOptimization }, 
+      { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
+    ]
+  }, 
   { path: 'timeline', component: TripTimelineComponent },
 
   // 6. Admin Control Center (The VIP Room)
