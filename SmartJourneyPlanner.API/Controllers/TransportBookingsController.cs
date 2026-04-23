@@ -79,5 +79,16 @@ namespace SmartJourneyPlanner.Controllers
             await _bookingService.UpdateAsync(id, booking);
             return NoContent();
         }
+
+        // DELETE: api/TransportBookings/{id} - Remove a booking record
+        [HttpDelete("{id:length(24)}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var booking = await _bookingService.GetAsync(id);
+            if (booking is null) return NotFound();
+
+            await _bookingService.RemoveAsync(id);
+            return NoContent();
+        }
     }
 }

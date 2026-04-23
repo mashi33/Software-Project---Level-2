@@ -18,7 +18,7 @@ import { ExploreWelcome } from './explore-welcome/explore-welcome';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
-import { TripSummaryComponent } from './trip-summary/trip-summary';
+import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
 
 export const routes: Routes = [

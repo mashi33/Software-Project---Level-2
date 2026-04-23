@@ -177,6 +177,27 @@ export class MyBookings implements OnInit {
     });
   }
 
+  // Remove a booking from the list entirely
+  removeBooking(booking: Booking) {
+    Swal.fire({
+      title: 'Remove Booking?',
+      text: 'This will permanently remove this record from your history.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Remove'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (!booking.id) return;
+        this.transportBookingService.deleteBooking(booking.id).subscribe(() => {
+          Swal.fire('Removed', 'The booking has been removed from your history.', 'success');
+          this.loadBookings(); // Refresh the list
+        });
+      }
+    });
+  }
+
   // Go back to the transport search page
   goToSearch() {
     this.switchTab.emit('search');
