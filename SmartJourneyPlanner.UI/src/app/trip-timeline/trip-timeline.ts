@@ -1,7 +1,7 @@
 // This is the main logic file for the Trip Timeline page.
 // It handles showing the trip days, adding events, and dragging items around.
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
@@ -51,6 +51,9 @@ export class TripTimelineComponent {
   // Remembers which day we are adding an event to (e.g., Day 1 or Day 2)
   selectedDayId: string = ''; 
 
+  constructor() {
+    // We don't auto-hide the hero anymore, let the user click the button
+  }
   // --- Validation State ---
   // These help us track if a user has clicked on a field and if there are any errors (like empty fields)
   formTouched = {
@@ -64,6 +67,13 @@ export class TripTimelineComponent {
     time: '',
     location: ''
   };
+
+  ngOnInit() {
+    // If we already have data loaded, don't show the welcome hero
+    if (this.timeline().days.length > 0) {
+      this.showHero = false;
+    }
+  }
 
   // Checks if the form is filled out correctly before saving
   validateForm(): boolean {

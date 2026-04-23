@@ -4,6 +4,9 @@ using SmartJourneyPlanner.Services;
 
 namespace SmartJourneyPlanner.Controllers
 {
+    /// <summary>
+    /// API Controller for managing transport vehicles
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TransportVehiclesController : ControllerBase
@@ -15,10 +18,12 @@ namespace SmartJourneyPlanner.Controllers
             _vehicleService = vehicleService;
         }
 
+        // GET: api/TransportVehicles - Get all vehicles
         [HttpGet]
         public async Task<List<TransportVehicle>> Get() =>
             await _vehicleService.GetAsync();
 
+        // GET: api/TransportVehicles/{id} - Get a specific vehicle by ID
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
         {
@@ -27,10 +32,12 @@ namespace SmartJourneyPlanner.Controllers
             return vehicle;
         }
 
+        // GET: api/TransportVehicles/provider/{providerId} - Get all vehicles of a provider
         [HttpGet("provider/{providerId}")]
         public async Task<List<TransportVehicle>> GetByProvider(string providerId) =>
             await _vehicleService.GetByProviderAsync(providerId);
 
+        // POST: api/TransportVehicles - Register a new vehicle
         [HttpPost]
         public async Task<IActionResult> Post(TransportVehicle newVehicle)
         {
@@ -40,6 +47,7 @@ namespace SmartJourneyPlanner.Controllers
             return CreatedAtAction(nameof(Get), new { id = newVehicle.Id }, newVehicle);
         }
 
+        // PUT: api/TransportVehicles/{id} - Update vehicle details
         [HttpPut("{id:length(24)}")]
         public async Task<IActionResult> Put(string id, TransportVehicle updatedVehicle)
         {
@@ -51,6 +59,7 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
+        // DELETE: api/TransportVehicles/{id} - Remove a vehicle
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -61,6 +70,7 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
+        // POST: api/TransportVehicles/seed - Populate initial data
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
@@ -75,6 +85,7 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
+        // POST: api/TransportVehicles/{id}/reviews - Add a review to a vehicle
         [HttpPost("{id:length(24)}/reviews")]
         public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
         {

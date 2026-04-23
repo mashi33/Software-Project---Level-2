@@ -14,12 +14,12 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
   styleUrl: './my-bookings.css'
 })
 export class MyBookings implements OnInit {
-  @Input() role: 'user' | 'provider' = 'user';
+  @Input() role: 'user' | 'provider' = 'user'; // Determines if we show the user view or provider view
   
-  userBookings: Booking[] = [];
-  providerBookings: Booking[] = [];
+  userBookings: Booking[] = []; // List of bookings for the traveler
+  providerBookings: Booking[] = []; // List of bookings for the transport owner
 
-  // Rating Modal State
+  // Variables for the rating/review popup
   showRatingModal: boolean = false;
   selectedBooking: Booking | null = null;
   tempRating: number = 0;
@@ -34,24 +34,25 @@ export class MyBookings implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadBookings();
+    this.loadBookings(); // Load data when the component starts
   }
 
+  // Fetch bookings from the server based on the user's role
   loadBookings() {
     if (this.role === 'user') {
-      // Mock user ID for now
+      // Load bookings for the traveler
       this.transportBookingService.getUserBookings('u1').subscribe(res => {
         this.userBookings = res;
       });
     } else {
-      // Mock provider ID for now
+      // Load bookings for the transport owner
       this.transportBookingService.getProviderBookings('p1').subscribe(res => {
         this.providerBookings = res;
       });
     }
   }
 
-  // User Actions
+  // Cancel a booking request (only if it's still pending)
   cancelBooking(booking: Booking) {
     Swal.fire({
       title: 'Cancel Booking?',
@@ -72,7 +73,7 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Rating Methods
+  // Show the review popup for a completed trip
   openRatingModal(booking: Booking) {
     this.selectedBooking = booking;
     this.tempRating = 0;
@@ -81,15 +82,18 @@ export class MyBookings implements OnInit {
     this.showRatingModal = true;
   }
 
+  // Close the review popup
   closeModal() {
     this.showRatingModal = false;
     this.selectedBooking = null;
   }
 
+  // Set the star rating number
   setRating(rating: number) {
     this.tempRating = rating;
   }
 
+  // Save the review and update the booking status
   submitReview() {
     if (!this.selectedBooking || !this.selectedBooking.id) return;
     
@@ -100,10 +104,10 @@ export class MyBookings implements OnInit {
       date: new Date().toISOString().split('T')[0]
     };
 
-    // 1. Add review to the vehicle
+    // 1. Add the review to the vehicle's record
     this.transportVehicleService.addVehicleReview(this.selectedBooking.vehicleId, reviewData).subscribe({
       next: () => {
-        // 2. Mark booking as rated
+        // 2. Mark the booking as rated so the button disappears
         if (this.selectedBooking?.id) {
           this.transportBookingService.markBookingAsRated(this.selectedBooking.id).subscribe({
             next: () => {
@@ -114,7 +118,7 @@ export class MyBookings implements OnInit {
               
               setTimeout(() => {
                 this.closeModal();
-                this.loadBookings(); // Refresh list
+                this.loadBookings(); // Refresh the list
               }, 1500);
             },
             error: (err) => {
@@ -131,7 +135,7 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Provider Actions
+  // Transport Owner: Accept a booking request
   acceptBooking(booking: Booking) {
     Swal.fire({
       title: 'Accept Request?',
@@ -152,6 +156,7 @@ export class MyBookings implements OnInit {
     });
   }
 
+  // Transport Owner: Reject a booking request
   rejectBooking(booking: Booking) {
     Swal.fire({
       title: 'Reject Request?',
@@ -172,11 +177,12 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Navigation & Refresh
+  // Go back to the transport search page
   goToSearch() {
     this.switchTab.emit('search');
   }
 
+  // Refresh the booking list manually
   refreshBookings() {
     Swal.fire({
       title: 'Refreshing...',

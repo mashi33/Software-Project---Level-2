@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.Models
 {
+    /// <summary>
+    /// Model representing a booking for a transport vehicle
+    /// </summary>
     [BsonIgnoreExtraElements]
     public class TransportBooking
     {
@@ -22,10 +25,11 @@ namespace SmartJourneyPlanner.Models
         public int Days { get; set; }
         public decimal TotalAmount { get; set; }
         public string? ContactNumber { get; set; }
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled, Rejected, etc.
         public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
         public bool? HasBeenRated { get; set; }
 
+        // Trip details
         public string? PickupAddress { get; set; }
         public string? DestinationAddress { get; set; }
         public List<string>? Destinations { get; set; }
@@ -40,6 +44,9 @@ namespace SmartJourneyPlanner.Models
         public string? UserName { get; set; }
     }
 
+    /// <summary>
+    /// Breakdown of the booking costs
+    /// </summary>
     public class TransportPricingSummary
     {
         public decimal DailyRate { get; set; }
