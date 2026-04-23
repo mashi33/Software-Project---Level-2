@@ -4,56 +4,55 @@ using SmartJourneyPlanner.Models;
 
 namespace SmartJourneyPlanner.Services
 {
-    /// <summary>
-    /// Service to manage transport vehicles in the database
-    /// </summary>
+    // This service handles the actual database operations for transport vehicles
     public class TransportVehicleService
     {
         private readonly IMongoCollection<TransportVehicle> _vehiclesCollection;
 
         public TransportVehicleService(IMongoClient mongoClient, IOptions<DatabaseSettings> databaseSettings)
         {
-            // Connect to the database and get the vehicles collection
+            // Connect to MongoDB and find the 'TransportVehicles' collection
             var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
             _vehiclesCollection = mongoDatabase.GetCollection<TransportVehicle>(databaseSettings.Value.TransportVehiclesCollectionName);
         }
 
-        // Get all vehicles that are either approved or waiting for approval
+        // Fetch all vehicles that are either ready to be booked (Approved) or waiting for review (Pending)
         public async Task<List<TransportVehicle>> GetAsync() =>
             await _vehiclesCollection.Find(v => v.Status == "Approved" || v.Status == "Pending").ToListAsync();
 
-        // Get vehicles owned by a specific provider
+        // Get a list of all vehicles belonging to a specific transport provider
         public async Task<List<TransportVehicle>> GetByProviderAsync(string providerId) =>
             await _vehiclesCollection.Find(v => v.ProviderId == providerId).ToListAsync();
 
-        // Get a single vehicle by its unique ID
+        // Find one specific vehicle using its unique ID
         public async Task<TransportVehicle?> GetAsync(string id) =>
             await _vehiclesCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
 
-        // Save a new vehicle to the database
+        // Add a new vehicle record to the database
         public async Task CreateAsync(TransportVehicle newVehicle) =>
             await _vehiclesCollection.InsertOneAsync(newVehicle);
 
-        // Update an existing vehicle's information
+        // Update the details of an existing vehicle record
         public async Task UpdateAsync(string id, TransportVehicle updatedVehicle) =>
             await _vehiclesCollection.ReplaceOneAsync(v => v.Id == id, updatedVehicle);
 
-        // Delete a vehicle from the database
+        // Delete a vehicle record from the database
         public async Task RemoveAsync(string id) =>
             await _vehiclesCollection.DeleteOneAsync(v => v.Id == id);
 
-        // Clear all vehicles from the database (use with care)
+        // Wipe out all vehicle records (used mainly during testing or seeding)
         public async Task DeleteAllAsync() =>
             await _vehiclesCollection.DeleteManyAsync(_ => true);
             
-        // Bulk insert multiple vehicles at once
+        // Insert many vehicle records at the same time
         public async Task InsertManyAsync(List<TransportVehicle> vehicles) =>
             await _vehiclesCollection.InsertManyAsync(vehicles);
 
-        // Add a customer review to a specific vehicle
+        // Add a customer rating and comment to a vehicle's review history
         public async Task AddReviewAsync(string id, TransportReview review)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
+            // We use 'Push' to add the new review to the 'Reviews' list in the document
             var update = Builders<TransportVehicle>.Update.Push(v => v.Reviews, review);
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
