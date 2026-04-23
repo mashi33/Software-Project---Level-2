@@ -29,8 +29,10 @@ namespace SmartJourney.Api.Services
         public async Task<List<TransportVehicle>> GetAllVehicles() 
             => await _vehicleCollection.Find(_ => true).ToListAsync();
 
-        public async Task DeleteVehicle(string vehicleId) 
-            => await _vehicleCollection.DeleteOneAsync(vehicle => vehicle.Id == vehicleId);
+        public async Task DeleteVehicle(string vehicleId)
+        {
+            await _vehicleCollection.DeleteOneAsync(vehicle => vehicle.Id == vehicleId);
+        }
 
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {
@@ -45,7 +47,18 @@ namespace SmartJourney.Api.Services
         public async Task<List<TransportBooking>> GetAllBookings() 
             => await _bookingCollection.Find(_ => true).ToListAsync();
 
-        public async Task DeleteBooking(string bookingId) 
-            => await _bookingCollection.DeleteOneAsync(booking => booking.Id == bookingId);
+        public async Task DeleteBooking(string bookingId)
+        {
+            await _bookingCollection.DeleteOneAsync(booking => booking.Id == bookingId);
+        }
+
+        public async Task<bool> UpdateBookingStatus(string bookingId, string status)
+        {
+            var filter = Builders<TransportBooking>.Filter.Eq(booking => booking.Id, bookingId);
+            var update = Builders<TransportBooking>.Update.Set(booking => booking.Status, status);
+            
+            var result = await _bookingCollection.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
     }
 }

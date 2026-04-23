@@ -49,11 +49,13 @@ namespace SmartJourneyPlanner.Controllers
                 newDiscussion.UserVotes = new List<UserVoteRecord>();
                 newDiscussion.Comments = new List<CommentItem>();
 
-                if (newDiscussion.MemberLimit <= 0) newDiscussion.MemberLimit = 5;
+                if (newDiscussion.MemberLimit <= 0)
+                    newDiscussion.MemberLimit = 5;
 
                 if (newDiscussion.Type == "Trip")
                 {
-                    newDiscussion.Options = new List<VoteOption> {
+                    newDiscussion.Options = new List<VoteOption>
+                    {
                         new VoteOption { OptionText = "Agree", VoteCount = 0 },
                         new VoteOption { OptionText = "Disagree", VoteCount = 0 }
                     };
@@ -83,18 +85,26 @@ namespace SmartJourneyPlanner.Controllers
 
                 var discussion = await _discussionsService.GetAsync(id);
                 if (discussion == null) return NotFound();
-                if (discussion.IsConfirmed) return BadRequest(new { message = "Voting is closed." });
+
+                // Check BOTH to ensure "Rejected" also locks the API
+                if (discussion.IsConfirmed || discussion.IsRejected) 
+                    return BadRequest(new { message = "Voting is closed and finalized." });
 
                 discussion.UserVotes ??= new List<UserVoteRecord>();
                 discussion.Options ??= new List<VoteOption>();
 
-                var existingVote = discussion.UserVotes.FirstOrDefault(v => v.UserId.Trim().Equals(request.UserName.Trim(), StringComparison.OrdinalIgnoreCase));
+                var existingVote = discussion.UserVotes.FirstOrDefault(v =>
+                    v.UserId.Trim().Equals(request.UserName.Trim(), StringComparison.OrdinalIgnoreCase));
 
                 if (existingVote != null)
                 {
-                    if (existingVote.OptionText.Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase)) return Ok(discussion);
+                    if (existingVote.OptionText.Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return Ok(discussion);
+
                     var oldOption = discussion.Options.FirstOrDefault(o => o.OptionText == existingVote.OptionText);
-                    if (oldOption != null && oldOption.VoteCount > 0) oldOption.VoteCount--;
+                    if (oldOption != null && oldOption.VoteCount > 0)
+                        oldOption.VoteCount--;
+
                     existingVote.OptionText = request.OptionText.Trim();
                 }
                 else
@@ -104,19 +114,43 @@ namespace SmartJourneyPlanner.Controllers
                     discussion.VotedUsers.Add(request.UserName);
                 }
 
-                var option = discussion.Options.FirstOrDefault(o => o.OptionText.Trim().Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase));
+                var option = discussion.Options.FirstOrDefault(o =>
+                    o.OptionText.Trim().Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase));
+
                 if (option == null) return BadRequest(new { message = "Option not found." });
                 option.VoteCount++;
 
-                // Majority Logic
                 if (discussion.Type == "Trip")
                 {
                     int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 5;
+
                     var agreeCount = discussion.Options.FirstOrDefault(o => o.OptionText == "Agree")?.VoteCount ?? 0;
+                    var disagreeCount = discussion.Options.FirstOrDefault(o => o.OptionText == "Disagree")?.VoteCount ?? 0;
+
                     if (discussion.UserVotes.Count >= limit)
                     {
-                        discussion.IsConfirmed = agreeCount > (limit * 0.5);
-                        discussion.IsRejected = !discussion.IsConfirmed;
+                        if (agreeCount > disagreeCount)
+                        {
+                            discussion.IsConfirmed = true;
+                            discussion.IsRejected = false;
+                        }
+                        else if (disagreeCount > agreeCount)
+                        {
+                            discussion.IsConfirmed = false;
+                            discussion.IsRejected = true;
+                        }
+                        else
+                        {
+                            // Tie logic: agree == disagree
+                            discussion.IsConfirmed = false;
+                            discussion.IsRejected = false;
+                        }
+                    }
+                    else
+                    {
+                        // Waiting for more votes
+                        discussion.IsConfirmed = false;
+                        discussion.IsRejected = false;
                     }
                 }
 
