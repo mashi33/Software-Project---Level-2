@@ -16,10 +16,12 @@ namespace SmartJourney.Api.Controllers
         }
 
         [HttpGet("stats")]
-        public async Task<IActionResult> GetStats() => Ok(await _dashboardService.GetDashboardStats());
+        public async Task<IActionResult> GetStats() 
+            => Ok(await _dashboardService.GetDashboardStats());
 
         [HttpGet("vehicles")]
-        public async Task<IActionResult> GetVehicles() => Ok(await _dashboardService.GetAllVehicles());
+        public async Task<IActionResult> GetVehicles() 
+            => Ok(await _dashboardService.GetAllVehicles());
 
         [HttpDelete("vehicles/{id}")]
         public async Task<IActionResult> DeleteVehicle(string id)
@@ -36,12 +38,30 @@ namespace SmartJourney.Api.Controllers
         }
 
         [HttpGet("bookings")]
-        public async Task<IActionResult> GetBookings() => Ok(await _dashboardService.GetAllBookings());
+        public async Task<IActionResult> GetBookings() 
+            => Ok(await _dashboardService.GetAllBookings());
+
+[HttpPut("bookings/{id}/complete")]
+public async Task<IActionResult> CompleteBooking(string id)
+{
+    var success = await _dashboardService.UpdateBookingStatus(id, "Completed");
+    
+    if (!success) return NotFound();
+    
+    return NoContent();
+}
 
         [HttpDelete("bookings/{id}")]
-        public async Task<IActionResult> DeleteBooking(string id)
+        public async Task<IActionResult> RejectBooking(string id)
         {
-            await _dashboardService.DeleteBooking(id);
+            // Call the service, NOT the database context directly
+            var success = await _dashboardService.RejectBooking(id);
+            
+            if (!success)
+            {
+                return NotFound($"Booking with ID {id} not found.");
+            }
+
             return NoContent();
         }
     }

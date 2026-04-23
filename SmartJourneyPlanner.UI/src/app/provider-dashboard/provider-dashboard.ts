@@ -1,56 +1,106 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Fixes *ngFor errors
-import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { RouterLink, Router } from '@angular/router'; // Added Router
 import { VehicleService } from '../services/providerDashboard';
+import { TransportBookingService } from '../services/transport-booking.service';
+import { Booking } from '../models/transport.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-provider-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink], // Required to use *ngFor in HTML
+  imports: [CommonModule, RouterLink],
   templateUrl: './provider-dashboard.html',
   styleUrls: ['./provider-dashboard.css']
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  // Declaring properties here fixes the red underlines
   stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0 };
   vehicles: any[] = [];
-  bookings: any[] = [];
+  bookings: Booking[] = [];
 
-  constructor(private svc: VehicleService) {}
+  constructor(
+    private vehicleService: VehicleService,
+    private bookingService: TransportBookingService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.loadAll();
   }
 
   loadAll() {
-    // Fetches fresh data from your API
-    this.svc.getStats().subscribe(data => this.stats = data);
-    this.svc.getVehicles().subscribe(data => this.vehicles = data);
-    this.svc.getBookings().subscribe(data => this.bookings = data);
+    // Stats and Vehicles
+    this.vehicleService.getStats().subscribe(data => this.stats = data);
+    this.vehicleService.getVehicles().subscribe(data => this.vehicles = data);
+    
+    // Bookings - Using 'p1' as an example ID
+    this.bookingService.getProviderBookings('p1').subscribe(data => {
+      this.bookings = data;
+    });
   }
 
-  // Action: Toggle Availability
-  toggleAvailability(v: any) {
-    this.svc.updateAvailability(v.id, !v.available).subscribe(() => this.loadAll());
+  // --- Vehicle Actions ---
+  toggleAvailability(vehicle: any) {
+    this.vehicleService.updateAvailability(vehicle.id, !vehicle.available).subscribe(() => this.loadAll());
   }
 
-  // Action: Delete Vehicle
   deleteVehicle(id: string) {
-    if(confirm('Are you sure you want to delete this vehicle?')) {
-      this.svc.deleteVehicle(id).subscribe(() => this.loadAll());
+    if(confirm('Are you sure?')) {
+      this.vehicleService.deleteVehicle(id).subscribe(() => this.loadAll());
     }
   }
 
-  // Action: Delete Booking
-  deleteBooking(id: string) {
-    this.svc.deleteBooking(id).subscribe(() => this.loadAll());
+  // --- Booking Actions ---
+  acceptBooking(booking: Booking) {
+    if (!booking.id) return;
+    this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
+      this.loadAll();
+    });
   }
 
-  // Action: Accept Booking
-  acceptBooking(id: string) {
-    // You should add an 'acceptBooking' method in your vehicle.service.ts
-    // this.svc.acceptBooking(id).subscribe(() => this.loadAll());
-    console.log("Booking accepted:", id);
+  // Add this method to your ProviderDashboardComponent class
+completeBooking(booking: any) {
+  // 1. Safety check: make sure the ID exists
+  if (!booking.id) {
+    console.error('No ID found for this booking.');
+    return;
+  }
+
+  // 2. Call the service to update the database
+  this.bookingService.completeBooking(booking.id).subscribe({
+    next: () => {
+      // 3. Refresh the list to remove the completed item from the screen
+      this.loadAll();
+    },
+    error: (err) => {
+      console.error('Error completing booking:', err);
+      alert('Could not complete the booking. Please try again.');
+    }
+  });
+}
+  
+  // Replace the old deleteBooking with this:
+// --- ACTIONS ---
+rejectBooking(booking: Booking) {
+  if (!booking.id) return;
+
+  if (confirm('Are you sure you want to reject this booking?')) {
+    this.bookingService.deleteBooking(booking.id).subscribe({
+      next: () => {
+        this.loadAll(); // Refreshes the list after rejection
+      },
+      error: (err: HttpErrorResponse) => { // <--- This is where your code goes
+        console.error('Error Status:', err.status);
+        alert('Could not reject booking. Please try again.');
+      }
+    });
+  }
+}
+
+  viewBookingDetails(id: string | undefined) {
+    if (id) {
+      this.router.navigate(['/booking-details', id]);
+    }
   }
 }
