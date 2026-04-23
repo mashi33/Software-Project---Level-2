@@ -95,11 +95,11 @@
   background: linear-gradient(to right, #2563eb, #1d4ed8);
   border: none;
   color: #ffffff !important;
-  font-weight: 800;
-  padding: 0.7rem 2rem;
+  font-weight: 600; /* Slightly reduced weight for clarity */
+  padding: 0.8rem 2.2rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

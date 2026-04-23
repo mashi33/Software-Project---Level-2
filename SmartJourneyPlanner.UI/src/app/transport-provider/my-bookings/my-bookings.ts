@@ -130,7 +130,8 @@ export class MyBookings implements OnInit {
       },
       error: (err) => {
         console.error('Error adding review:', err);
-        Swal.fire('Error', 'Failed to submit review.', 'error');
+        const msg = err.error?.message || 'Failed to submit review.';
+        Swal.fire('Error', msg, 'error');
       }
     });
   }

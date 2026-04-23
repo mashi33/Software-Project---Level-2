@@ -69,7 +69,7 @@ namespace SmartJourneyPlanner.Controllers
         }
 
         // PATCH: api/TransportBookings/{id}/rated - Mark a booking as rated by the user
-        [HttpPatch("{id:length(24)}/rated")]
+        [HttpPatch("{id}/rated")]
         public async Task<IActionResult> PatchRated(string id)
         {
             var booking = await _bookingService.GetAsync(id);

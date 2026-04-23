@@ -87,5 +87,28 @@ namespace SmartJourneyPlanner.Controllers
             await _vehicleService.RemoveAsync(id);
             return NoContent();
         }
+
+        // POST: api/TransportVehicles/{id}/reviews - Add a review to a vehicle
+        [HttpPost("{id}/reviews")]
+        public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
+        {
+            Console.WriteLine($"[DEBUG] Adding review for vehicle: {id}");
+            Console.WriteLine($"[DEBUG] Review Data: {review.UserName}, {review.Rating}, {review.Comment}");
+            
+            var vehicle = await _vehicleService.GetAsync(id);
+            if (vehicle is null) 
+            {
+                Console.WriteLine($"[DEBUG] Vehicle NOT FOUND for ID: {id}");
+                return NotFound(new { message = $"Vehicle with ID {id} not found." });
+            }
+
+            if (string.IsNullOrEmpty(review.Date))
+            {
+                review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            }
+
+            await _vehicleService.AddReviewAsync(id, review);
+            return Ok(new { message = "Review added successfully" });
+        }
     }
 }
