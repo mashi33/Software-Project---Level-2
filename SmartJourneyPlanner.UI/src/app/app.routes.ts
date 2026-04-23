@@ -10,6 +10,7 @@ import { TripTimelineComponent } from './trip-timeline/trip-timeline';
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
+import { TripSummaryComponent } from './trip-summary/trip-summary';
 
 // --- Admin Imports ---
 // ✅ Ensure the file extension matches your folder structure (.component if applicable)
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'createTrip', component: TripCreateComponent },
+  { path: 'trip-summary', component: TripSummaryComponent },
   
   // 3. Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
