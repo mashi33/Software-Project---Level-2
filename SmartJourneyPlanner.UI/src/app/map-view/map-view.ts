@@ -7,11 +7,10 @@ import { Subscription } from 'rxjs';
 declare var google: any;
 
 @Component({
-  selector: 'app-map-view',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './map-view.html',
-  styleUrl: './map-view.css',
+    selector: 'app-map-view',
+    imports: [CommonModule],
+    templateUrl: './map-view.html',
+    styleUrl: './map-view.css'
 })
 export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;

@@ -4,11 +4,10 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-trip-summary',
-  standalone: true,
-  imports: [CommonModule,RouterLink],
-  templateUrl: './trip-summary.html',
-  styleUrls: ['./trip-summary.css']
+    selector: 'app-trip-summary',
+    imports: [CommonModule, RouterLink],
+    templateUrl: './trip-summary.html',
+    styleUrls: ['./trip-summary.css']
 })
 export class TripSummaryComponent implements OnInit {
   tripDetails: any;

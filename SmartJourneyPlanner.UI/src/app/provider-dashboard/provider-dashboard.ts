@@ -7,11 +7,10 @@ import { Booking } from '../models/transport.model';
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-provider-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  templateUrl: './provider-dashboard.html',
-  styleUrls: ['./provider-dashboard.css']
+    selector: 'app-provider-dashboard',
+    imports: [CommonModule, RouterLink],
+    templateUrl: './provider-dashboard.html',
+    styleUrls: ['./provider-dashboard.css']
 })
 export class ProviderDashboardComponent implements OnInit {
   

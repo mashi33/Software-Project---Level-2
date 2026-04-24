@@ -19,11 +19,10 @@ interface CalendarDay {
 }
 
 @Component({
-  selector: 'app-user-search',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './user-search.html',
-  styleUrl: './user-search.css'
+    selector: 'app-user-search',
+    imports: [CommonModule, FormsModule, RouterLink],
+    templateUrl: './user-search.html',
+    styleUrl: './user-search.css'
 })
 export class UserSearch implements OnInit {
   // Search Filters

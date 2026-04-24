@@ -8,12 +8,11 @@ import Swal from 'sweetalert2';
 import { CommentsComponent } from '../comments/comments';
 
 @Component({
-  selector: 'app-discussion',
-  standalone: true,
-  imports: [FormsModule, CommonModule, CommentsComponent],
-  templateUrl: './discussion.html',
-  styleUrls: ['./discussion.css'],
-  encapsulation: ViewEncapsulation.None
+    selector: 'app-discussion',
+    imports: [FormsModule, CommonModule, CommentsComponent],
+    templateUrl: './discussion.html',
+    styleUrls: ['./discussion.css'],
+    encapsulation: ViewEncapsulation.None
 })
 export class DiscussionComponent implements OnInit, OnDestroy { 
   discussions: DiscussionItem[] = [];

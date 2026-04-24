@@ -5,11 +5,10 @@ import { PlacesService } from '../services/places.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Component({
-  selector: 'app-filter',
-  standalone: true,
-  imports: [ReactiveFormsModule],
-  templateUrl: './filter.html',
-  styleUrls: ['./filter.css']
+    selector: 'app-filter',
+    imports: [ReactiveFormsModule],
+    templateUrl: './filter.html',
+    styleUrls: ['./filter.css']
 })
 export class FilterComponent implements OnInit {
   searchControl  = new FormControl('');

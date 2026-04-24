@@ -3,11 +3,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common'; 
 
 @Component({
-  selector: 'app-explore-welcome',
-  standalone: true, 
-  imports: [CommonModule],
-  templateUrl: './explore-welcome.html',
-  styleUrl: './explore-welcome.css',
+    selector: 'app-explore-welcome',
+    imports: [CommonModule],
+    templateUrl: './explore-welcome.html',
+    styleUrl: './explore-welcome.css'
 })
 export class ExploreWelcome {
 

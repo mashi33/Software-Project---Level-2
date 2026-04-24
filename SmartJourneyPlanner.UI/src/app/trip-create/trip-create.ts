@@ -5,11 +5,10 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-trip-create',
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
-  templateUrl: './trip-create.html',
-  styleUrls: ['./trip-create.css']
+    selector: 'app-trip-create',
+    imports: [ReactiveFormsModule, CommonModule],
+    templateUrl: './trip-create.html',
+    styleUrls: ['./trip-create.css']
 })
 export class TripCreateComponent implements OnInit {
 

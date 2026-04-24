@@ -8,11 +8,10 @@ import { HttpEventType }   from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-comments',
-  standalone: true,
-  imports: [FormsModule, CommonModule],
-  templateUrl: './comments.html',
-  styleUrls: ['./comments.css']
+    selector: 'app-comments',
+    imports: [FormsModule, CommonModule],
+    templateUrl: './comments.html',
+    styleUrls: ['./comments.css']
 })
 export class CommentsComponent implements OnInit, OnDestroy {
 

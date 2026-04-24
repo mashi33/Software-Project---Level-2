@@ -4,12 +4,11 @@ import { RouterModule } from '@angular/router'; // Required for routerLink
 
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true,
-  // This imports property is what was missing:
-  imports: [CommonModule, RouterModule],
-  templateUrl: './navbar.html',
-  styleUrl: './navbar.css',
+    selector: 'app-navbar',
+    // This imports property is what was missing:
+    imports: [CommonModule, RouterModule],
+    templateUrl: './navbar.html',
+    styleUrl: './navbar.css'
 })
 export class NavbarComponent {
   userName: string = 'Krishan Karunarathna';

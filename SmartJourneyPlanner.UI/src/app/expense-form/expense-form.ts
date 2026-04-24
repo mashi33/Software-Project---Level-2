@@ -5,11 +5,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { BudgetService } from '../services/budget';
 
 @Component({
-  selector: 'app-expense-form',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './expense-form.html',
-  styleUrls: ['./expense-form.css']
+    selector: 'app-expense-form',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './expense-form.html',
+    styleUrls: ['./expense-form.css']
 })
 export class ExpenseForm implements OnInit {
 

@@ -11,12 +11,11 @@ import { CalendarSyncUtil } from '../utils/calendar-sync.util';
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-trip-timeline',
-  standalone: true,
-  // ✅ Removed RouterLink from here to fix the NG8113 Warning
-  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
-  templateUrl: './trip-timeline.html',
-  styleUrl: './trip-timeline.css'
+    selector: 'app-trip-timeline',
+    // ✅ Removed RouterLink from here to fix the NG8113 Warning
+    imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
+    templateUrl: './trip-timeline.html',
+    styleUrl: './trip-timeline.css'
 })
 export class TripTimelineComponent implements OnInit {
   private timelineService = inject(TimelineService);

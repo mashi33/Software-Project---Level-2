@@ -5,11 +5,10 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-place-card',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './place-card.html',
-  styleUrl: './place-card.css',
+    selector: 'app-place-card',
+    imports: [CommonModule],
+    templateUrl: './place-card.html',
+    styleUrl: './place-card.css'
 })
 export class PlaceCardListComponent implements OnInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;

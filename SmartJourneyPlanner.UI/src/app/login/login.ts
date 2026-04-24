@@ -4,11 +4,10 @@ import { AuthService } from '../services/auth.service';
 import { Router, RouterLink } from '@angular/router'; 
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [FormsModule , RouterLink],
-  templateUrl: './login.html',
-  styleUrl: './login.css',
+    selector: 'app-login',
+    imports: [FormsModule, RouterLink],
+    templateUrl: './login.html',
+    styleUrl: './login.css'
 })
 export class LoginComponent {
   //  variable to get data from form

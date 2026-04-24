@@ -6,16 +6,15 @@ import { MapViewComponent } from '../map-view/map-view';
 import { PlaceCardListComponent } from '../place-card/place-card';
 
 @Component({
-  selector: 'app-hotel-restaurant-finder',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FilterComponent,
-    MapViewComponent,
-    PlaceCardListComponent
-  ],
-  templateUrl: './hotel-restaurant-finder.html',
-  styleUrl: './hotel-restaurant-finder.css',
+    selector: 'app-hotel-restaurant-finder',
+    imports: [
+        CommonModule,
+        FilterComponent,
+        MapViewComponent,
+        PlaceCardListComponent
+    ],
+    templateUrl: './hotel-restaurant-finder.html',
+    styleUrl: './hotel-restaurant-finder.css'
 })
 export class HotelRestaurantFinder {
   constructor(private router: Router) {}

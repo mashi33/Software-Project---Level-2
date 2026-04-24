@@ -34,11 +34,10 @@ interface TransportProvider {
 }
 
 @Component({
-  selector: 'app-admin-dashboard',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './admin-dashboard.html',
-  styleUrls: ['./admin-dashboard.css']
+    selector: 'app-admin-dashboard',
+    imports: [CommonModule],
+    templateUrl: './admin-dashboard.html',
+    styleUrls: ['./admin-dashboard.css']
 })
 export class AdminDashboardComponent implements OnInit {
   pendingProviders: any[] = []; // List to store vehicles waiting for approval
