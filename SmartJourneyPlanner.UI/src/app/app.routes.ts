@@ -13,12 +13,9 @@ import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restauran
 import { TripSummaryComponent } from './trip-summary/trip-summary';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
 
-
-
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
-import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
 
 export const routes: Routes = [
