@@ -1,4 +1,4 @@
-/* The main full-screen background container */
+/* 1. LAYOUT & BACKGROUND */
 .main-container {
   min-height: 100vh; 
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -6,7 +6,6 @@
   flex-direction: column;
 }
 
-/* Centers the cards and gives them a maximum width so they don't stretch too far on big screens */
 .content-wrapper {
   padding: 30px 30px 60px 30px; 
   max-width: 1400px;
@@ -14,14 +13,12 @@
   width: 100%;
 }
 
-/* Splits the layout into two columns: Left takes up 2 parts (2fr), Right takes up 1 part (1fr) */
 .content-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 25px;
 }
 
-/* Background Image logic */
 .background-container {
   background-image: url('/Budget_bg.png'); 
   background-color: #E0F7FA; 
@@ -31,43 +28,40 @@
   min-height: 100vh;
 }
 
-/* 2. CARD STYLING                            */
+/* 2. CARD STYLING (Glassmorphism) */
 .card {
   background: rgba(255, 255, 255, 0.65); 
-  backdrop-filter: blur(16px);           
-  -webkit-backdrop-filter: blur(16px);   
+  backdrop-filter: blur(16px); 
+  -webkit-backdrop-filter: blur(16px); 
   border-radius: 12px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); 
   border: 1px solid rgba(255, 255, 255, 0.6);  
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease;
 }
 
-/* The title section at the top of the Table card */
 .card-header-blue {
   background-color: transparent;
   padding: 15px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   color: #1b6970;
   text-align: center;
 }
 
-/* The title section at the top of the Summary card */
 .card-header-white {
   padding: 15px;
   text-align: center;
   color: #00838F;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* 3. TABLE STYLING                           */
+/* 3. TABLE STYLING */
 .table-container { padding: 20px; }
 .custom-table { width: 100%; border-collapse: collapse; }
-
 .table-header-row { background-color: rgba(148, 211, 219, 0.6); }
 
-/* Table Column Headers */
 .custom-table th {
   padding: 12px;
   text-align: left;
@@ -77,13 +71,11 @@
 
 .table-header-row th:hover { background-color: rgba(128, 222, 234, 0.8); }
 
-/* Table Data Rows */
 .custom-table td {
   padding: 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.05); 
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); 
 }
 
-/* The little rounded label for "Meals", "Transport", etc. */
 .category-pill {
   background-color: rgba(194, 228, 233, 0.6); 
   color: #006064;
@@ -100,106 +92,52 @@
   color: #006064;
 }
 
-/* 4. BUTTONS & ACTIONS                       */
-
-/* The trash can and pencil icons */
-.btn-delete { background: none; border: none; cursor: pointer; font-size: 1.1rem; }
-.btn-edit { background: none; border: none; cursor: pointer; font-size: 1.2rem; margin-right: 10px; }
-
-/* Right-aligns the bottom buttons */
-.add-btn-wrapper { margin-top: 20px; text-align: right; }
-
-/* The main Teal "+ Add Expense" Button */
-.btn-add-teal {
-  background-color: #2a59a0 !important;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  text-decoration: none;
-  font-weight: bold;
-}
-.btn-add-teal:hover { background-color: #006064; }
-
-/* The white & blue "Export to PDF" Button */
-.btn-export-pdf {
-  background-color: white;
-  color: #0A4087;
-  border: 2px solid #0A4087;
-  padding: 8px 18px;
-  border-radius: 5px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* 4. WARNING & ALERT SYSTEM */
+.alert-box {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-.btn-export-pdf:hover {
-  background-color: #0A4087;
-  color: white;
-  box-shadow: 0 4px 8px rgba(10, 64, 135, 0.2);
+  justify-content: center;
+  border: 1px solid transparent;
+  width: 90%;
+  margin: 10px auto;
 }
 
-/* 5. SUMMARY CHART & LEGEND                  */
-.chart-content-wrapper { display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; flex-grow: 1; }
-.chart-container { height: 200px; width: 100%; margin-bottom: 20px; display: flex; justify-content: center; }
-
-/* The list of categories below the pie chart */
-.custom-legend { display: flex; flex-direction: column; gap: 8px; width: 80%; max-height: 200px; overflow-y: auto; }
-.legend-item { display: flex; align-items: center; font-size: 0.9rem; color: #555; padding: 6px 0; border-bottom: 1px dashed #eee; }
-.color-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
-.legend-label { font-weight: 600; color: #006064; }
-
-/* 6. EMPTY STATE (When no data exists)       */
-.empty-state { text-align: center; padding: 40px 20px; background: rgba(248, 249, 250, 0.6); border-radius: 12px; border: 2px dashed rgba(224, 224, 224, 0.8); margin-bottom: 20px; }
-.empty-icon { font-size: 3rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
-.empty-state h3 { color: #2c3e50; margin-bottom: 8px; }
-.empty-state p { color: #7f8c8d; font-size: 0.95rem; margin: 0 auto; }
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+.warning-alert { 
+  background-color: #fff3cd; 
+  color: #856404; 
+  border-color: #ffeeba; 
 }
 
-/* 7. GLASS HEADER & INLINE DROPDOWN          */
-
-.glass-header {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 12px 40px;          
-  border-radius: 50px;         
-  width: max-content;          
-  margin: 0 auto 30px auto;    
-  max-width: 100%;             
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+/* ✅ Updated Pulsing Danger Alert */
+.danger-alert { 
+  background-color: #f8d7da !important; 
+  color: #721c24 !important; 
+  border: 2px solid #f5c6cb !important; 
+  font-weight: 600;
+  
+  /* Force the animation to run */
+  animation: pulse-red 1.3s infinite !important; 
 }
 
-.header-content-flex { display: flex; justify-content: space-between; align-items: center; }
-
-/* ✅ FIXED: Removed underline, reduced font size to match sentence */
-.inline-selector {
-  font-size: 1.2rem;         
-  padding: 2px 25px 2px 5px;
-  color: #00838F;
-  background-color: transparent;
-  border: none;              /* This strips away all borders, including the underline */
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  appearance: none;          
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300838F%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 5px top 50%; /* Re-aligned the arrow for the smaller text */
-  background-size: 12px auto;
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+    transform: scale(1.02); /* Slight grow effect */
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    transform: scale(1);
+  }
 }
-.inline-selector:hover { background-color: rgba(0, 131, 143, 0.08); color: #0A4087; }
-.inline-selector:focus { outline: none; }
 
-/* 8. PROGRESS BAR & INTERACTIVE SPLITTER     */
+/* 5. PROGRESS BAR */
 .budget-tracker {
   background: rgba(255, 255, 255, 0.4); 
   padding: 15px;
@@ -219,9 +157,77 @@
   transition: width 0.5s ease-in-out, background-color 0.3s;
 }
 
-.progress-bar-fill.warning { background: #FFE66D; } 
-.progress-bar-fill.danger { background: #FF6B6B; }  
+.progress-bar-fill.warning { background: #FFE66D !important; } 
+.progress-bar-fill.danger { background: #FF6B6B !important; } 
 
+/* 6. BUTTONS & ACTIONS */
+.btn-delete { background: none; border: none; cursor: pointer; font-size: 1.1rem; transition: opacity 0.2s; }
+.btn-edit { background: none; border: none; cursor: pointer; font-size: 1.2rem; margin-right: 10px; transition: opacity 0.2s; }
+.btn-delete:hover, .btn-edit:hover { opacity: 0.7; }
+
+.btn-add-teal {
+  background-color: #2a59a0 !important;
+  color: white;
+  padding: 10px 25px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  display: inline-block;
+  transition: background-color 0.3s;
+}
+.btn-add-teal:hover { background-color: #1b427a; }
+
+.btn-export-pdf {
+  background-color: white;
+  color: #0A4087;
+  border: 2px solid #0A4087;
+  padding: 8px 18px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-export-pdf:hover {
+  background-color: #0A4087;
+  color: white;
+  box-shadow: 0 4px 12px rgba(10, 64, 135, 0.3);
+}
+
+/* 7. GLASS HEADER & SELECTOR */
+.glass-header {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 12px 40px;          
+  border-radius: 50px;         
+  width: max-content;          
+  margin: 0 auto 30px auto;    
+  max-width: 100%;             
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.inline-selector {
+  font-size: 1.2rem;         
+  padding: 2px 25px 2px 5px;
+  color: #00838F;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  appearance: none;          
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300838F%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%0-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 5px top 50%; 
+  background-size: 12px auto;
+}
+
+/* 8. INTERACTIVE ELEMENTS */
 .interactive-split-box {
   background: rgba(224, 247, 250, 0.6); 
   display: inline-block;
@@ -230,7 +236,15 @@
   border: 1px dashed rgba(0, 131, 143, 0.5);
 }
 
-.member-input-wrapper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0, 131, 143, 0.2); }
+.member-input-wrapper { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px; 
+  margin-top: 8px; 
+  padding-top: 8px; 
+  border-top: 1px solid rgba(0, 131, 143, 0.2); 
+}
 
 .member-input {
   width: 45px;
@@ -242,3 +256,63 @@
   color: #006064;
   background-color: rgba(255, 255, 255, 0.7); 
 }
+
+/* ✅ Updated to make the Pie Chart large and prominent */
+.chart-container { 
+  height: 280px;            /* Increased height significantly */
+  width: 100%; 
+  max-width: 350px;         /* Increased max-width for a larger circle */
+  margin: 20px auto;        /* Balanced margins */
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  position: relative;
+}
+
+/* Forces the chart canvas to fill the larger container */
+.chart-container canvas {
+  height: 100% !important;
+  width: 100% !important;
+  max-height: 280px;
+}
+
+/* Tighten the spacing above the chart so it doesn't get pushed out of the card */
+.interactive-split-box {
+  margin-bottom: 0px !important;
+}
+
+/* 9. EMPTY STATE & ANIMATIONS */
+.empty-state { 
+  text-align: center; 
+  padding: 40px 20px; 
+  background: rgba(248, 249, 250, 0.6); 
+  border-radius: 12px; 
+  border: 2px dashed rgba(224, 224, 224, 0.8); 
+  margin-bottom: 20px; 
+}
+
+.empty-icon { 
+  font-size: 3rem; 
+  margin-bottom: 10px; 
+  animation: float 3s ease-in-out infinite; 
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling for a cleaner look */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+::-webkit-scrollbar-thumb { background: rgba(0, 96, 100, 0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 96, 100, 0.5); }

@@ -16,42 +16,43 @@ namespace SmartJourneyPlanner.API.Services
         {
             var mongoClient = new MongoClient(mongoDBSettings.Value.ConnectionString);
             var mongoDatabase = mongoClient.GetDatabase(mongoDBSettings.Value.DatabaseName);
-            // Points to your "Budgets" collection in Atlas
             _budgetCollection = mongoDatabase.GetCollection<TripBudget>("Budgets");
         }
 
-        // --- 1. THE CONNECTOR METHOD ---
-        // This is what you use to load the Budget page based on the TripId
-        public async Task<TripBudget?> GetBudgetByTripIdAsync(string tripId)
+        // --- 1. THE CONNECTOR (Updated with Auto-Creation) ---
+        public async Task<TripBudget> GetBudgetByTripIdAsync(string tripId)
         {
-            return await _budgetCollection.Find(x => x.TripId == tripId).FirstOrDefaultAsync();
+            // Search for an existing budget for this trip
+            var budget = await _budgetCollection.Find(x => x.TripId == tripId).FirstOrDefaultAsync();
+
+            // ✅ Fix: If it's a brand new trip, create the container automatically!
+            if (budget == null)
+            {
+                budget = new TripBudget 
+                { 
+                    TripId = tripId, 
+                    TotalSpent = 0, 
+                    Expenses = new List<Expense>() 
+                };
+                
+                await _budgetCollection.InsertOneAsync(budget);
+            }
+            
+            return budget;
         }
 
-        // --- 2. ADD EXPENSE (Smart Upsert) ---
+        // --- 2. ADD EXPENSE ---
         public async Task AddExpenseAsync(string tripId, Expense expense)
         {
+            // Reuse the connector to ensure a budget exists
             var existingTrip = await GetBudgetByTripIdAsync(tripId);
 
-            if (existingTrip == null)
-            {
-                // Create new budget container if it doesn't exist for this TripId
-                var newBudget = new TripBudget
-                {
-                    TripId = tripId,
-                    TotalSpent = (double)expense.Amount,
-                    Expenses = new List<Expense> { expense }
-                };
-                await _budgetCollection.InsertOneAsync(newBudget);
-            }
-            else
-            {
-                // Push to existing list and increment total
-                var updatePush = Builders<TripBudget>.Update.Push(t => t.Expenses, expense);
-                var updateInc = Builders<TripBudget>.Update.Inc(t => t.TotalSpent, (double)expense.Amount);
-                var combinedUpdate = Builders<TripBudget>.Update.Combine(updatePush, updateInc);
+            // Push to existing list and increment total
+            var updatePush = Builders<TripBudget>.Update.Push(t => t.Expenses, expense);
+            var updateInc = Builders<TripBudget>.Update.Inc(t => t.TotalSpent, (double)expense.Amount);
+            var combinedUpdate = Builders<TripBudget>.Update.Combine(updatePush, updateInc);
 
-                await _budgetCollection.UpdateOneAsync(t => t.TripId == tripId, combinedUpdate);
-            }
+            await _budgetCollection.UpdateOneAsync(t => t.TripId == tripId, combinedUpdate);
         }
 
         // --- 3. DELETE EXPENSE ---
@@ -61,16 +62,12 @@ namespace SmartJourneyPlanner.API.Services
 
             if (trip == null || trip.Expenses == null) return;
 
-            // Find the item using the ID (much safer than searching by Name)
             var expenseToRemove = trip.Expenses.FirstOrDefault(e => e.Id == expenseId);
 
             if (expenseToRemove != null)
             {
                 trip.Expenses.Remove(expenseToRemove);
-                
-                // Recalculate Total
                 trip.TotalSpent = (double)trip.Expenses.Sum(e => e.Amount);
-
                 await _budgetCollection.ReplaceOneAsync(t => t.TripId == tripId, trip);
             }
         }
