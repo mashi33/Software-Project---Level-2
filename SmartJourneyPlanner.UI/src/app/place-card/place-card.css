@@ -157,3 +157,85 @@
   box-shadow: 0 4px 15px rgba(0, 74, 153, 0.3);
   z-index: 10;
 }
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+/* Modal Box */
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-loading,
+.modal-empty {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+/* Trip List Items */
+.trip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trip-item {
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trip-item:hover {
+  border-color: #004a99;
+  background: #f0f7ff;
+}
+
+.trip-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.trip-meta {
+  font-size: 0.8rem;
+  color: #666;
+}

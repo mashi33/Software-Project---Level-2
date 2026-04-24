@@ -20,7 +20,7 @@ export class TripCreateComponent implements OnInit {
   constructor(
     private tripService: TripService, 
     private router: Router,
-    private route: ActivatedRoute // URL එකේ ID එක කියවන්න මේක ඕනේ
+    private route: ActivatedRoute
   ) {
     this.tripForm = new FormGroup({
       tripName: new FormControl('', Validators.required),
@@ -37,14 +37,12 @@ export class TripCreateComponent implements OnInit {
   ngOnInit() {
     console.log("Checking for trip data...");
 
-    // 1. URL එකේ ID එකක් තියෙනවාද බලනවා (Edit කරන වෙලාවට)
     const idFromUrl = this.route.snapshot.paramMap.get('id');
 
     if (idFromUrl) {
       this.tripId = idFromUrl;
       this.isEditMode = true;
 
-      // Database එකෙන් අලුත්ම දත්ත ගන්නවා
       this.tripService.getTripById(idFromUrl).subscribe({
         next: (data) => {
           if (data) {
@@ -55,7 +53,6 @@ export class TripCreateComponent implements OnInit {
         error: (err) => console.error("Error fetching trip for edit:", err)
       });
     } else {
-      // 2. URL එකේ ID එකක් නැත්නම් temporary data බලනවා
       const savedData = this.tripService.getTempTripData();
       if (savedData) {
         this.isEditMode = true;
@@ -65,25 +62,24 @@ export class TripCreateComponent implements OnInit {
     }
   }
 
-  // Form එක දත්ත වලින් පුරවන function එක
- fillForm(data: any) {
-  this.tripForm.patchValue({
-    tripName: data.tripName || data.TripName,
-    departFrom: data.departFrom || data.DepartFrom,
-    destination: data.destination || data.Destination,
-    startDate: this.formatDate(data.startDate || data.StartDate),
-    endDate: this.formatDate(data.endDate || data.EndDate),
-    description: data.description || data.Description
-  });
+  fillForm(data: any) {
+    this.tripForm.patchValue({
+      tripName: data.tripName || data.TripName,
+      departFrom: data.departFrom || data.DepartFrom,
+      destination: data.destination || data.Destination,
+      startDate: this.formatDate(data.startDate || data.StartDate),
+      endDate: this.formatDate(data.endDate || data.EndDate),
+      description: data.description || data.Description
+    });
 
-  const members = data.members || data.Members;
-  if (members) {
-    this.invitedMembers = members.map((m: any) => ({
-      email: m.email || m.Email,
-      role: m.role || m.Role
-    }));
+    const members = data.members || data.Members;
+    if (members) {
+      this.invitedMembers = members.map((m: any) => ({
+        email: m.email || m.Email,
+        role: m.role || m.Role
+      }));
+    }
   }
-}
 
   formatDate(date: any) {
     if (!date) return '';
@@ -109,6 +105,15 @@ export class TripCreateComponent implements OnInit {
 
   onSubmit() {
     if (this.tripForm.valid) {
+
+      // FIX: JWT token එකෙන් email ලබාගෙන CreatedBy field එකට save කිරීම
+      const token = localStorage.getItem('token');
+      let createdBy = '';
+      if (token) {
+        const decoded: any = JSON.parse(atob(token.split('.')[1]));
+        createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+      }
+
       const tripData = {
         TripName: this.tripForm.value.tripName,
         Destination: this.tripForm.value.destination,
@@ -119,11 +124,12 @@ export class TripCreateComponent implements OnInit {
         Members: this.invitedMembers.map(m => ({
           Email: m.email,
           Role: m.role
-        }))
+        })),
+        // FIX: Trip create කළ user ගේ email save කිරීම
+        CreatedBy: createdBy
       };
 
       if (this.isEditMode && this.tripId) {
-        // UPDATE EXISTING TRIP
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: (res: any) => {
             console.log("Update Success:", res);
@@ -134,12 +140,10 @@ export class TripCreateComponent implements OnInit {
           error: (err) => alert("Error updating trip")
         });
       } else {
-        // CREATE NEW TRIP
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
             console.log("Backend Response:", res);
-            const newId = res.tripId || res.id; 
-
+            const newId = res.tripId || res.id;
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
               alert("Trip saved successfully!");

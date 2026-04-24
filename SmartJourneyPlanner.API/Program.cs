@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Email Settings Configuration
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddHttpClient<PlacesService>();
 
 // ==========================================================
 // DATABASE CONFIG
@@ -106,6 +107,7 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
+builder.Services.AddHttpClient<PlacesService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE

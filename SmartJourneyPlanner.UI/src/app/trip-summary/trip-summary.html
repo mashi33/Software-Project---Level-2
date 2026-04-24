@@ -58,23 +58,31 @@
           <span class="fs-5 fw-semibold">{{ tripDetails.transportMode }}</span>
         </div>
 
-        <div class="mb-3 d-flex justify-content-between align-items-center">
+        <!-- FIX: filter hotels from SavedPlace and show -->
+         <div class="mb-3 d-flex justify-content-between align-items-center">
           <label class="text-muted small">Hotels</label>
           <select class="form-select form-select-sm summary-dropdown">
             <option selected>View Hotels List</option>
-            <option *ngFor="let hotel of tripDetails.hotels">{{ hotel }}</option>
+            <ng-container *ngFor="let place of (tripDetails.savedPlaces || tripDetails.SavedPlaces)">
+              <option *ngIf="place.category === 'hotel' || place.category === 'lodging'">
+                {{ place.name }}
+              </option>
+            </ng-container>
           </select>
         </div>
 
+        <!-- FIX: filter hotels from SavedPlace and show -->
         <div class="mb-3 d-flex justify-content-between align-items-center">
           <label class="text-muted small">Places</label>
           <select class="form-select form-select-sm summary-dropdown">
             <option selected>View Places List</option>
-            <option *ngFor="let place of tripDetails.places">{{ place }}</option>
+            <ng-container *ngFor="let place of (tripDetails.savedPlaces || tripDetails.SavedPlaces)">
+              <option *ngIf="place.category === 'restaurant' || place.category === 'dining'">
+                {{ place.name }}
+              </option>
+            </ng-container>
           </select>
         </div>
-      </div>
-    </div>
 
     <div class="col-md-7">
       <p class="text-muted mb-3">Explore more options for your trip:</p>

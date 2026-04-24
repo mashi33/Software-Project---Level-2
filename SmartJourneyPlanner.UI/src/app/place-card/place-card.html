@@ -1,21 +1,21 @@
 <div class="card-container">
 
+  <!-- Toast Message -->
   <div class="toast" [class.show]="toastVisible">
-    ✅ Added to your trip!
+    {{ toastMessage }}
   </div>
 
   <ng-container *ngIf="places !== null">
-
-    <div *ngFor="let place of places" 
+    <div *ngFor="let place of places"
          [id]="'card-' + place.id"
          class="place-card"
          [class.selected-card]="place.id === selectedPlaceId">
-         
+
       <img
-        *ngIf="place.photoReference"
-        [src]="'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=' + place.photoReference + '&key=' + googleMapsApiKey"
-        loading="lazy"
-        class="card-img"
+          *ngIf="place.photoReference"
+          [src]="'https://places.googleapis.com/v1/' + place.photoReference + '/media?maxWidthPx=400&key=' + googleMapsApiKey"
+          loading="lazy"
+          class="card-img"
       />
       <div *ngIf="!place.photoReference" class="no-img">No Image Available</div>
 
@@ -26,19 +26,15 @@
             📍 {{ place.distanceFromUser | number:'1.1-1' }} km
           </span>
         </div>
-
         <p>{{ place.address }}</p>
-
         <div class="meta">
           <span>⭐ {{ place.rating }}</span>
           <span>{{ '$'.repeat(place.priceLevel) }}</span>
         </div>
-
         <button
           class="add-to-trip-btn"
           [class.added]="isAdded(place.placeId)"
-          (click)="addToTrip(place)"
-        >
+          (click)="addToTrip(place)">
           {{ isAdded(place.placeId) ? '✓ Added' : '+ Add to Trip' }}
         </button>
       </div>
@@ -47,7 +43,41 @@
     <div *ngIf="places.length === 0" class="empty-state">
       No places found. Try a different search or category.
     </div>
-
   </ng-container>
+
+  <!-- FIX: overlay click ඉවත් කිරීම — flicker වළක්වා ගැනීමට -->
+  <div class="modal-overlay" *ngIf="showTripModal">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h3>Select a Trip</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoadingTrips" class="modal-loading">
+        Loading your trips...
+      </div>
+
+      <!-- No Trips -->
+      <div *ngIf="!isLoadingTrips && userTrips.length === 0" class="modal-empty">
+        No trips found. Create a trip first!
+      </div>
+
+      <!-- Trip List -->
+      <div *ngIf="!isLoadingTrips && userTrips.length > 0" class="trip-list">
+        <div *ngFor="let trip of userTrips"
+             class="trip-item"
+             (click)="selectTrip(trip)">
+          <div class="trip-name">{{ trip.tripName }}</div>
+          <div class="trip-meta">
+            📍 {{ trip.destination }} &nbsp;|&nbsp;
+            🗓️ {{ trip.startDate | date:'MMM d' }} – {{ trip.endDate | date:'MMM d, y' }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
