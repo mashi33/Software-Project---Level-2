@@ -12,7 +12,7 @@ import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
-
+//import { MyBookingsComponent } from './my-bookings/my-bookings'; 
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
@@ -38,7 +38,7 @@ export const routes: Routes = [
   // 4. Map & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
-  { path: 'booking-details/:id', component: MyBookings },
+  //{ path: 'booking-details/:id', component: MyBookingsComponent },
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },

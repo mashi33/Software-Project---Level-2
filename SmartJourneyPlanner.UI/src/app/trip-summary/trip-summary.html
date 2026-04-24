@@ -16,10 +16,14 @@
         </button>
       </div>
 
-      <button class="btn btn-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
-        Edit Trip
+      <button *ngIf="userRole === 'owner'" class="btn btn-primary rounded-pill px-4 shadow-sm">
+        Delete Trip
       </button>
     </div>
+  </div>
+
+  <div *ngIf="userRole === 'viewer'" class="alert alert-info border-0 shadow-sm mb-4 rounded-pill py-2">
+    <i class="bi bi-info-circle-fill me-2"></i> You are viewing this trip in <strong>Read-Only</strong> mode.
   </div>
 
   <div class="row g-4">
@@ -117,11 +121,11 @@
         </div>
       </div>
 
-      <div class="mt-4 d-flex gap-3">
+      <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
         <button class="btn btn-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
           Back to Edit Trip
         </button>
-        <button class="btn btn-primary px-4 py-2 flex-grow-1">Confirm & Save Trip</button>
+        <button class="btn btn-primary px-4 py-2 flex-grow-1 shadow-sm">Confirm & Save Trip</button>
       </div>
     </div>
   </div>
@@ -136,14 +140,14 @@
       </div>
       <div class="modal-body">
         <ul class="list-group list-group-flush">
-          <li *ngFor="let member of (tripDetails.members || tripDetails.Members)" class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <li *ngFor="let member of (tripDetails?.members || tripDetails?.Members|| [])" class="list-group-item d-flex justify-content-between align-items-center px-0">
             <div>
               <p class="mb-0 fw-medium">{{ member.email || member.Email }}</p>
               <small class="text-muted">{{ member.role || member.Role }}</small>
             </div>
             <span class="badge bg-light text-primary rounded-pill border border-primary-subtle">Invited</span>
           </li>
-          <li *ngIf="!(tripDetails.members || tripDetails.Members)?.length" class="list-group-item text-center py-4 border-0">
+          <li *ngIf="!(tripDetails?.members || tripDetails?.Members)?.length" class="list-group-item text-center py-4 border-0">
             <i class="bi bi-people text-muted fs-1 d-block mb-2"></i>
             <p class="text-muted">No members invited yet.</p>
           </li>
