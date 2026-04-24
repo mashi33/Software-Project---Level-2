@@ -258,7 +258,7 @@
             <div class="row g-2 mb-3">
               <div class="col-md-6">
                 <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" [(ngModel)]="startDate" (change)="onDateChange()">
+                <input type="date" class="form-control" [(ngModel)]="startDate" (change)="onDateChange()" [min]="minDate">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Drop-off Date <span class="text-danger">*</span></label>
