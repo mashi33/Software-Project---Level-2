@@ -42,6 +42,17 @@ export class ProviderForm implements OnInit {
   isFuelTypeDropdownOpen = false;
   isTransmissionDropdownOpen = false;
 
+  // City Autocomplete
+  sriLankanCities = [
+    'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Dehiwala-Mount Lavinia',
+    'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi',
+    'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala', 'Moratuwa', 'Mullaitivu',
+    'Negombo', 'Nuwara Eliya', 'Panadura', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
+    'Sri Jayawardenepura Kotte', 'Trincomalee', 'Vavuniya', 'Wattala'
+  ];
+  filteredCities: string[] = [];
+  isCityDropdownOpen = false;
+
   // Image previews
   interiorPreview: string | ArrayBuffer | null = null;
   exteriorPreview: string | ArrayBuffer | null = null;
@@ -145,6 +156,7 @@ export class ProviderForm implements OnInit {
 
   toggleLanguageDropdown() {
     this.isLanguageDropdownOpen = !this.isLanguageDropdownOpen;
+    if (this.isLanguageDropdownOpen) this.closeAllDropdownsExcept('language');
   }
 
   getSelectedLanguagesDisplay(): string {
@@ -156,7 +168,7 @@ export class ProviderForm implements OnInit {
 
   toggleCategoryDropdown() {
     this.isCategoryDropdownOpen = !this.isCategoryDropdownOpen;
-    if (this.isCategoryDropdownOpen) this.isLanguageDropdownOpen = false;
+    if (this.isCategoryDropdownOpen) this.closeAllDropdownsExcept('category');
   }
 
   selectCategory(type: VehicleType) {
@@ -205,16 +217,42 @@ export class ProviderForm implements OnInit {
     this.isVehicleClassDropdownOpen = except === 'vehicleClass';
     this.isFuelTypeDropdownOpen = except === 'fuelType';
     this.isTransmissionDropdownOpen = except === 'transmission';
+    this.isCityDropdownOpen = except === 'city';
+  }
+
+  filterCities(event: any) {
+    const value = event.target.value.toLowerCase();
+    if (value) {
+      this.filteredCities = this.sriLankanCities.filter(city => city.toLowerCase().includes(value));
+      this.isCityDropdownOpen = this.filteredCities.length > 0;
+    } else {
+      this.filteredCities = [];
+      this.isCityDropdownOpen = false;
+    }
+  }
+
+  selectCity(city: string) {
+    this.vehicleForm.get('providerProfile.location')?.setValue(city);
+    this.isCityDropdownOpen = false;
   }
 
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target)) {
+    const targetElement = event.target as HTMLElement;
+
+    // If click is outside of any pf-dropdown, close them all
+    if (!targetElement.closest('.pf-dropdown')) {
       this.isLanguageDropdownOpen = false;
       this.isCategoryDropdownOpen = false;
       this.isVehicleClassDropdownOpen = false;
       this.isFuelTypeDropdownOpen = false;
       this.isTransmissionDropdownOpen = false;
+    }
+
+    // Close city autocomplete if click is outside the location input and its dropdown
+    const isCityAutocompleteClick = targetElement.closest('input[formControlName="location"]') || targetElement.closest('.pf-dropdown-menu');
+    if (!isCityAutocompleteClick) {
+      this.isCityDropdownOpen = false;
     }
   }
 

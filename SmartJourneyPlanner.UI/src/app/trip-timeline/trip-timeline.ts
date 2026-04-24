@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
 
 import { TimelineService } from '../services/timeline.service';
 import { TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
@@ -17,6 +16,8 @@ import Swal from 'sweetalert2';
   selector: 'app-trip-timeline',
   standalone: true,
   imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule, RouterLink],
+  // ✅ Removed RouterLink from here to fix the NG8113 Warning
+  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
 })
@@ -87,6 +88,7 @@ export class TripTimelineComponent implements OnInit {
   }
 
   // --- Logic Functions ---
+  // --- Existing Logic ---
 
   validateForm(): boolean {
     let isValid = true;
@@ -110,6 +112,7 @@ export class TripTimelineComponent implements OnInit {
     } else {
       this.formErrors.location = '';
     }
+    // ... logic for time/location ...
     return isValid;
   }
 
@@ -127,9 +130,7 @@ export class TripTimelineComponent implements OnInit {
 
   triggerDatePicker(dayId: string) {
     const picker = document.getElementById('date-picker-' + dayId) as HTMLInputElement;
-    if (picker) {
-      picker.showPicker(); 
-    }
+    if (picker) picker.showPicker(); 
   }
 
   get connectedTo(): string[] {
@@ -143,6 +144,9 @@ export class TripTimelineComponent implements OnInit {
   addNewDay() {
     this.timelineService.addDay();
   }
+  startItinerary() { this.showHero = false; }
+
+  addNewDay() { this.timelineService.addDay(); }
 
   deleteDay(dayId: string) {
     Swal.fire({
@@ -151,12 +155,9 @@ export class TripTimelineComponent implements OnInit {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#DC3545',
-      cancelButtonColor: '#6C757D',
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.timelineService.deleteDay(dayId);
-      }
+      if (result.isConfirmed) this.timelineService.deleteDay(dayId);
     });
   }
 
@@ -200,9 +201,7 @@ export class TripTimelineComponent implements OnInit {
       confirmButtonColor: '#DC3545',
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.timelineService.deleteEvent(dayId, eventItem.id);
-      }
+      if (result.isConfirmed) this.timelineService.deleteEvent(dayId, eventItem.id);
     });
   }
 
@@ -246,5 +245,27 @@ export class TripTimelineComponent implements OnInit {
 
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
+  }
+}
+
+  // Closes the activity modal
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
+  // Returns true if the form is invalid
+  get isFormInvalid(): boolean {
+    return !this.validateForm();
+  }
+
+  // Gets the index of a day
+  getDayIndex(day: TimelineDay): number {
+    return this.timeline().days.indexOf(day) + 1;
+  }
+
+  // Gets a CSS class based on event category
+  getCategoryClass(eventItem: TimelineEvent): string {
+    if (!eventItem || !eventItem.category) return 'category-default';
+    return `category-${eventItem.category.toLowerCase()}`;
   }
 }

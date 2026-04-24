@@ -3,6 +3,9 @@ using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using MailKit.Net.Smtp;
 using MimeKit;
+using System.Collections.Generic; // ✅ Required for List<>
+using System.Threading.Tasks;    // ✅ Required for Task<>
+using System;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -17,6 +20,10 @@ namespace SmartJourneyPlanner.API.Controllers
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
         }
+    
+     
+
+        
 
         [HttpPost]
         public async Task<IActionResult> CreateTrip([FromBody]Trip newTrip)
@@ -42,6 +49,7 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
+
         [HttpGet("{id}")]
 public async Task<IActionResult> GetTrip(string id)
 {
@@ -62,6 +70,16 @@ public async Task<IActionResult> GetTrip(string id)
         return BadRequest(new { message = "Error: " + ex.Message });
     }
 }
+
+        // --- 3. PUT: api/trips/{id} ---
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
+        {
+            try
+            {
+                var filter = Builders<Trip>.Filter.Eq(t => t.Id, id);
+                updatedTrip.Id = id;
+
 
 [HttpPut("{id}")]
 public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)

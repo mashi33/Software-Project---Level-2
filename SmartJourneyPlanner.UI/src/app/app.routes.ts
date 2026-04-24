@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard'; 
 import { ExpenseForm } from './expense-form/expense-form'; 
 import { MemoriesMapComponent } from './memories-map/memories-map';
+import { CommunityMapComponent } from './community-map/community-map';
 import { LoginComponent } from './login/login';
 import { Signup } from './signup/signup'; 
 import { RouteOptimization } from './route-optimization/route-optimization';
@@ -25,6 +26,8 @@ export const routes: Routes = [
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
+  { path: 'createTrip', component: TripCreateComponent },
+  { path: 'signup', component: Signup },
 
   { path: 'createTrip', component: TripCreateComponent },
   { path: 'editTrip/:id', component: TripCreateComponent },
@@ -37,6 +40,7 @@ export const routes: Routes = [
 
   // 4. Map & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
+  { path: 'community', component: CommunityMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
   //{ path: 'booking-details/:id', component: MyBookingsComponent },
 
