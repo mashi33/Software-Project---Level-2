@@ -3,6 +3,9 @@ using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models; 
 using MailKit.Net.Smtp;
 using MimeKit;
+using System.Collections.Generic; // ✅ Required for List<>
+using System.Threading.Tasks;    // ✅ Required for Task<>
+using System;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -18,7 +21,25 @@ namespace SmartJourneyPlanner.API.Controllers
             _tripsCollection = database.GetCollection<Trip>("Trips");
         }
 
-        // --- 1. GET: api/trips/{id} (Summary Page එකට දත්ත ලබා ගැනීම) ---
+        // --- ✅ FIXED: GET: api/trips ---
+        // Adding [HttpGet] with no parameters tells .NET this is the main entrance.
+        [HttpGet]
+        public async Task<ActionResult<List<Trip>>> GetAllTrips()
+        {
+            try
+            {
+                // Finds everything in the collection
+                var trips = await _tripsCollection.Find(_ => true).ToListAsync();
+                return Ok(trips);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error: " + ex.Message });
+            }
+        }
+
+        // --- 1. GET: api/trips/{id} ---
+        // This is specifically for fetching one trip by its ID.
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTrip(string id)
         {
@@ -39,7 +60,7 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
-        // --- 2. POST: api/trips (නව Trip එකක් සෑදීම) ---
+        // --- 2. POST: api/trips ---
         [HttpPost]
         public async Task<IActionResult> CreateTrip([FromBody] Trip newTrip)
         {
@@ -63,15 +84,12 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
-        // --- 3. PUT: api/trips/{id} (තිබෙන Trip එකක් Update කිරීම) ---
+        // --- 3. PUT: api/trips/{id} ---
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
         {
             try
             {
-                Console.WriteLine($"---> Update request received for ID: {id}");
-
-                // Model එකේ [BsonRepresentation(BsonType.ObjectId)] තියෙනවා නම් මේ Filter එක වැඩ කරයි
                 var filter = Builders<Trip>.Filter.Eq(t => t.Id, id);
                 updatedTrip.Id = id;
 
@@ -79,21 +97,18 @@ namespace SmartJourneyPlanner.API.Controllers
 
                 if (result.MatchedCount == 0)
                 {
-                    Console.WriteLine($"---> No trip found with ID: {id}");
                     return NotFound(new { message = "Trip not found in database." });
                 }
 
-                Console.WriteLine("---> Trip updated successfully!");
                 return Ok(new { message = "Trip updated successfully!" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"---> Error: {ex.Message}");
                 return BadRequest(new { message = ex.Message });
             }
         }
 
-        // --- 4. Email Method (ආරාධනා පත්‍ර යැවීම) ---
+        // --- 4. Email Method ---
         private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
         {
             try

@@ -8,7 +8,7 @@ import { Vehicle } from '../models/transport.model';
 @Component({
   selector: 'app-register-vehicle',
   standalone: true,
-  imports: [CommonModule, RouterLink, ProviderForm],
+  imports: [CommonModule, ProviderForm],
   templateUrl: './register-vehicle.html',
   styleUrl: './register-vehicle.css'
 })
