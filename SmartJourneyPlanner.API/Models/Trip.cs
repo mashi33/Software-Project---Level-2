@@ -2,7 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
 
-namespace smart_journey.backend.Models
+namespace SmartJourneyPlanner.API.Models
 {
     public class Trip
     {
@@ -15,6 +15,7 @@ namespace smart_journey.backend.Models
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? Description { get; set; }
+        public string DepartFrom { get; set; } = null!;
         
         //invite many members
         public List<TripMember> Members { get; set; } = new List<TripMember>();

@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service';
   templateUrl: './signup.html',
   styleUrl: './signup.css'
 })
-export class SignupComponent {
+export class Signup {
   signupData = {
     FullName: '',
     Email: '',

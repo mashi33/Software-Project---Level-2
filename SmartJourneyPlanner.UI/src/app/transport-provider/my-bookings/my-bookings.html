@@ -19,7 +19,10 @@
 
       <!-- Booking Card -->
       <div class="mb-card position-relative" *ngFor="let b of userBookings">
-        <!-- Booking ID removed -->
+        <!-- Close Button (Remove Booking) -->
+        <button class="btn-remove-card" (click)="removeBooking(b)" title="Remove from history">
+          <i class="bi bi-x"></i>
+        </button>
         
         <div class="mb-card-header d-flex justify-content-between align-items-center">
           <div class="d-flex flex-column">

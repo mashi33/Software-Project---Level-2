@@ -11,6 +11,26 @@ interface TransportProvider {
   status: string; 
   licenseUrl?: string;
   nicUrl?: string;
+  
+  // New fields from TransportVehicle
+  description?: string;
+  type?: string;
+  vehicleClass?: string;
+  seatCount?: number;
+  isAc?: boolean;
+  standardDailyRate?: number;
+  driverNightOutFee?: number;
+  interiorPhoto?: string;
+  exteriorPhoto?: string;
+  driverNicUrl?: string;
+  driverLicenseUrl?: string;
+  insuranceDocUrl?: string;
+  revenueLicenseUrl?: string;
+  providerProfile?: {
+    name: string;
+    phone: string;
+    location: string;
+  };
 }
 
 @Component({
@@ -21,41 +41,50 @@ interface TransportProvider {
   styleUrls: ['./admin-dashboard.css']
 })
 export class AdminDashboardComponent implements OnInit {
-  pendingProviders: TransportProvider[] = [];
-  errorMessage: string = '';
-  selectedProvider: TransportProvider | null = null;
+  pendingProviders: any[] = []; // List to store vehicles waiting for approval
+  errorMessage: string = '';    // String to store any error messages
+  selectedProvider: any = null; // Currently selected vehicle for the 'View Docs' modal
 
   constructor(private http: HttpClient) {}
 
-  ngOnInit(): void {
-    // Hardcoded data removed. Dashboard now depends entirely on fetchPendingProviders().
+  // This runs when the page loads
+  ngOnInit() {
     this.fetchPendingProviders();
   }
 
-  // Helper to generate the Auth header for every request
-  private getHeaders() {
+  // Gets the security token from browser storage
+  getHeaders() {
     const token = localStorage.getItem('token');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
+  // Fetches the list of pending vehicles from the Backend API
   fetchPendingProviders() {
-    this.http.get<TransportProvider[]>('http://localhost:5233/api/admin/pending-providers', { headers: this.getHeaders() })
+    this.http.get<any[]>('http://localhost:5233/api/admin/pending-providers', { headers: this.getHeaders() })
       .subscribe({
         next: (data) => { 
-          this.pendingProviders = data;
-          this.errorMessage = ''; 
+          console.log('Fetched Pending:', data);
+          this.pendingProviders = data; // Save the data to our list
+          this.errorMessage = '';       // Clear any previous errors
         },
         error: (err) => { 
+          // Show error if backend is offline or unauthorized
           this.errorMessage = 'Unauthorized or Backend Offline. Please log in as Admin.';
           console.error('API Error:', err);
         }
       });
   }
 
-  viewDetails(provider: TransportProvider) {
+  // Opens the detailed review modal for a specific vehicle
+  viewDetails(provider: any) {
+    console.log('Viewing Provider Details:', provider);
     this.selectedProvider = provider;
+  }
+
+  openImage(url: string | undefined) {
+    if (url) {
+      window.open(url, '_blank');
+    }
   }
 
   updateProviderStatus(providerId: string, newStatus: string) {
