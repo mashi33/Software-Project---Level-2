@@ -225,4 +225,25 @@ export class TripTimelineComponent implements OnInit {
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }
+
+  // Closes the activity modal
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
+  // Returns true if the form is invalid
+  get isFormInvalid(): boolean {
+    return !this.validateForm();
+  }
+
+  // Gets the index of a day
+  getDayIndex(day: TimelineDay): number {
+    return this.timeline().days.indexOf(day) + 1;
+  }
+
+  // Gets a CSS class based on event category
+  getCategoryClass(eventItem: TimelineEvent): string {
+    if (!eventItem || !eventItem.category) return 'category-default';
+    return `category-${eventItem.category.toLowerCase()}`;
+  }
 }
