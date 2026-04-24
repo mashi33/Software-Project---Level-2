@@ -27,7 +27,7 @@ export const routes: Routes = [
   
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
-  { path: 'signup', component: SignupComponent },
+  { path: 'signup', component: Signup },
   { path: 'createTrip', component: TripCreateComponent },
   { path: 'signup', component: Signup },
 

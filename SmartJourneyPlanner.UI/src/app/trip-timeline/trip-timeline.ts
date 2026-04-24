@@ -57,37 +57,6 @@ export class TripTimelineComponent implements OnInit {
     }
   }
 
-  // --- 🛠️ ADDED TO FIX TS2339 ERRORS ---
-
-  /**
-   * Returns the index of the day (Day 1, Day 2, etc.)
-   */
-  getDayIndex(day: TimelineDay): number {
-    return this.timeline().days.indexOf(day) + 1;
-  }
-
-  /**
-   * Closes the Activity Modal
-   */
-  closeModal() {
-    this.isModalOpen = false;
-    this.editingEventId = null;
-  }
-
-  /**
-   * Returns a CSS class name based on activity category
-   */
-  getCategoryClass(eventItem: TimelineEvent): string {
-    return `category-${eventItem.category?.toLowerCase() || 'default'}`;
-  }
-
-  /**
-   * Getter used by the HTML to disable the Save button if fields are empty
-   */
-  get isFormInvalid(): boolean {
-    return !this.formData.title || !this.formData.time || !this.formData.location;
-  }
-
   // --- Existing Logic ---
 
   validateForm(): boolean {
