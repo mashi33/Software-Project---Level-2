@@ -1,0 +1,210 @@
+.tp-container {
+    min-height: 100vh;
+    background: #ffffff;
+    padding-bottom: 5rem;
+}
+
+.tp-header {
+    background: #ffffff;
+    padding: 1.5rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hero-text h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.hero-text p {
+    color: #64748b;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.tp-switcher-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.tp-switcher {
+    position: relative;
+    display: flex;
+    background: #f1f5f9;
+    padding: 6px;
+    border-radius: 999px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: fit-content;
+    min-width: 320px;
+}
+
+.tp-switcher-glider {
+    position: absolute;
+    width: calc(50% - 6px);
+    height: calc(100% - 12px);
+    background: #2563eb; /* Vibrant Blue */
+    border-radius: 999px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+    z-index: 1;
+}
+
+.glider-bookings {
+    transform: translateX(100%);
+}
+
+.tp-switcher-btn {
+    flex: 1;
+    position: relative;
+    z-index: 2;
+    padding: 10px 24px;
+    border: none;
+    background: transparent;
+    color: #718096; /* Medium Gray for inactive */
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.tp-switcher-btn.active {
+    color: #ffffff; /* White active text */
+    font-weight: 800; /* Bold active text */
+}
+
+.tp-switcher-btn:hover:not(.active) {
+    color: #1e293b;
+}
+
+.tp-content-area {
+    background: #ffffff;
+}
+
+/* Original Grid CSS (kept for reference, though unused by subcomponents directly) */
+.tp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tp-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.tp-card:hover {
+    transform: translateY(-10px);
+    background: rgba(30, 41, 59, 0.9);
+    border-color: #38bdf8;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.tp-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, #38bdf8, #818cf8);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tp-card:hover::before {
+    opacity: 1;
+}
+
+.tp-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    color: #38bdf8;
+    font-size: 1.5rem;
+}
+
+.tp-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.tp-card p {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.tp-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    margin-bottom: 1rem;
+}
+
+.tp-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+
+.tp-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fbbf24;
+}
+
+.tp-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    background: #38bdf8;
+    color: #0f172a;
+    border: none;
+    cursor: pointer;
+}
+
+.tp-btn:hover {
+    background: #0ea5e9;
+    transform: scale(1.05);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

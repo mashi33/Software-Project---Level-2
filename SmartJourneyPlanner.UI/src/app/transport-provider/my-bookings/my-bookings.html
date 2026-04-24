@@ -1,0 +1,352 @@
+<div class="mb-container shadow-sm">
+
+  <div class="mb-list">
+    <!-- USER VIEW -->
+    <ng-container *ngIf="role === 'user'">
+      <!-- Empty State -->
+      <div *ngIf="userBookings.length === 0" class="empty-state-wrapper">
+        <div class="empty-state-card shadow-sm">
+          <div class="icon-circle mb-4">
+            <i class="bi bi-calendar2-x"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-2">No bookings yet</h4>
+          <p class="text-secondary mb-4 mx-auto" style="max-width: 320px;">Your journey is waiting! Start by finding the perfect transport for your next trip.</p>
+          <button class="btn btn-premium-cta btn-lg rounded-pill" (click)="goToSearch()">
+            <i class="bi bi-search me-2"></i> Find Transport
+          </button>
+        </div>
+      </div>
+
+      <!-- Booking Card -->
+      <div class="mb-card position-relative" *ngFor="let b of userBookings">
+        <!-- Close Button (Remove Booking) -->
+        <button class="btn-remove-card" (click)="removeBooking(b)" title="Remove from history">
+          <i class="bi bi-x"></i>
+        </button>
+        
+        <div class="mb-card-header d-flex justify-content-between align-items-center">
+          <div class="d-flex flex-column">
+            <div class="d-flex align-items-center">
+              <span class="badge" [ngClass]="{
+                'bg-warning': b.status === 'Pending',
+                'bg-info': b.status === 'Confirmed',
+                'bg-success': b.status === 'Active' || b.status === 'Completed',
+                'bg-secondary': b.status === 'Cancelled',
+                'bg-danger': b.status === 'Rejected'
+              }">{{b.status}}</span>
+              <span class="text-muted small ms-3">Requested on {{b.createdAt | date:'MMM d, yyyy'}}</span>
+            </div>
+            <div *ngIf="b.status === 'Pending'" class="text-secondary extra-small fw-bold mt-2">
+              <i class="bi bi-clock-history me-1"></i> Waiting for provider's confirmation
+            </div>
+            <div *ngIf="b.status === 'Rejected'" class="text-danger extra-small fw-bold mt-2">
+              <i class="bi bi-x-circle-fill me-1"></i> Request declined by provider
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-card-body mt-3">
+          <div class="row align-items-center">
+            <!-- Vehicle Image -->
+            <div class="col-md-3 mb-4 mb-md-0 text-center">
+              <div class="mb-img-wrapper shadow-sm">
+                <img [src]="b.vehicleImage" [alt]="b.vehicleId" class="img-fluid rounded-3 mb-vehicle-img">
+              </div>
+            </div>
+
+            <!-- Vehicle & Trip Info -->
+            <div class="col-md-5 mb-4 mb-md-0">
+              <h5 class="text-dark fw-bold mb-2">Transport Booking</h5>
+              
+              <!-- Trip Route Details -->
+              <div class="trip-route-card mb-3 p-2 rounded-2 bg-light border-start border-3 border-primary">
+                <div class="small d-flex align-items-center mb-1">
+                  <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                  <span class="text-navy fw-bold me-2">From:</span>
+                  <span class="text-secondary">{{b.pickupAddress || b.location}}</span>
+                </div>
+                <div class="small d-flex align-items-start">
+                  <i class="bi bi-flag-fill text-success me-2 mt-1"></i>
+                  <span class="text-navy fw-bold me-2">To:</span>
+                  <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <ng-container *ngIf="b.destinations && b.destinations.length > 0; else singleDest">
+                      <span *ngFor="let dest of b.destinations; let last = last" class="text-secondary">
+                        {{dest}}<span *ngIf="!last" class="mx-1 ms-2 text-primary">→</span>
+                      </span>
+                    </ng-container>
+                    <ng-template #singleDest>
+                      <span class="text-secondary">{{b.destinationAddress || 'As specified'}}</span>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Booking specs removed -->
+              <div class="text-secondary small">
+                <div class="mb-2"><i class="bi bi-calendar-event me-2"></i> {{b.startDate | date:'mediumDate'}} to {{b.endDate | date:'mediumDate'}}</div>
+                <div><i class="bi bi-clock me-2"></i> {{b.days}} Days & {{b.nights}} Nights</div>
+              </div>
+            </div>
+            
+            <!-- Contact Info -->
+            <div class="col-md-4 border-start border-secondary ps-md-4">
+              <div class="mb-3">
+                <p class="text-secondary small mb-1">Provider Name</p>
+                <h5 class="text-dark fw-bold mb-0">{{b.providerName}}</h5>
+              </div>
+              
+              <div class="mb-1">
+                <p class="text-secondary small mb-2">Provider Contact</p>
+                <div *ngIf="b.status === 'Confirmed' || b.status === 'Active' || b.status === 'Completed'" class="d-flex align-items-center mb-contact-reveal">
+                  <i class="bi bi-telephone-fill text-secondary me-3"></i>
+                  <span class="fw-bold text-dark">{{b.contactNumber}}</span>
+                </div>
+                <div *ngIf="b.status === 'Pending'" class="mb-contact-hidden">
+                  <i class="bi bi-lock-fill text-secondary me-2"></i>
+                  <span class="text-secondary italic">Number revealed once confirmed.</span>
+                </div>
+                <div *ngIf="b.status === 'Cancelled'" class="mb-contact-hidden">
+                  <i class="bi bi-x-circle text-danger me-2"></i>
+                  <span class="text-secondary italic">Booking cancelled.</span>
+                </div>
+                <div *ngIf="b.status === 'Rejected'" class="mb-contact-hidden">
+                  <i class="bi bi-person-x-fill text-danger me-2"></i>
+                  <span class="text-secondary italic">Request declined.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing Summary Box -->
+          <div class="mb-pricing-summary mt-4 p-4 rounded-3">
+            <h6 class="text-dark fw-bold mb-3">Pricing Summary</h6>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="pricing-label">Daily Rental ({{b.days}} Days)</span>
+              <span class="text-dark fw-semibold">
+                <span class="text-secondary small me-2">(Rs {{b.pricingSummary?.dailyRate | number}} x {{b.days}})</span>
+                Rs {{b.pricingSummary?.dailyRental | number}}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="pricing-label">Driver Night Out ({{b.nights}} Nights)</span>
+              <span class="text-dark fw-semibold">
+                <span class="text-secondary small me-2">(Rs {{b.pricingSummary?.nightlyRate | number}} x {{b.nights}})</span>
+                Rs {{b.pricingSummary?.driverNightOut | number}}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between mt-3 pt-3 border-top border-secondary">
+              <span class="fw-bold text-dark">Total Amount</span>
+              <span class="fw-bold text-primary fs-5">Rs {{b.totalAmount | number}}</span>
+            </div>
+            <div class="mt-3">
+              <p class="text-secondary extra-small mb-0 italic">Note: Extra KM charges not included. These will be settled directly with the provider based on actual usage.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Footer Actions -->
+        <div class="mb-card-footer mt-4 pt-3 border-top border-secondary d-flex justify-content-end gap-3">
+          <!-- Cancel Button (Pending only) -->
+          <button *ngIf="b.status === 'Pending'" class="btn btn-outline-danger btn-sm rounded-pill px-4" (click)="cancelBooking(b)">
+            <i class="bi bi-x me-1"></i> Cancel Request
+          </button>
+          
+          <!-- Rate Trip Button (Completed only) -->
+          <button *ngIf="b.status === 'Completed' && !b.hasBeenRated" class="btn btn-rate-trip btn-sm rounded-pill px-5" (click)="openRatingModal(b)">
+            <i class="bi bi-star-fill me-2 text-gold"></i> Rate Trip
+          </button>
+          
+          <!-- Rated Status -->
+          <span *ngIf="b.hasBeenRated" class="text-success small fw-bold align-self-center">
+            <i class="bi bi-check-circle-fill me-2"></i> Feedback Submitted
+          </span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Rating Modal -->
+    <div class="rating-modal-overlay" *ngIf="showRatingModal" (click)="closeModal()">
+      <div class="rating-modal-card p-5" (click)="$event.stopPropagation()">
+        <div class="text-center mb-4" *ngIf="!showSuccessMessage">
+          <h4 class="text-navy fw-bold mb-2">How was your journey?</h4>
+          <p class="text-secondary small">Your feedback helps us improve your travel experience.</p>
+          
+          <!-- Interactive Stars -->
+          <div class="star-rating-interactive my-4">
+            <i class="bi" *ngFor="let s of [1,2,3,4,5]" 
+               [ngClass]="s <= tempRating ? 'bi-star-fill text-gold' : 'bi-star text-muted'"
+               (click)="setRating(s)"></i>
+          </div>
+
+          <!-- Feedback Box -->
+          <div class="mb-4 text-start">
+            <label class="form-label small fw-bold text-navy">Share your feedback</label>
+            <textarea class="form-control rounded-3" rows="3" 
+                      placeholder="Tell us about the vehicle and the driver's service..."
+                      [(ngModel)]="tempComment"></textarea>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button class="btn btn-light flex-grow-1 py-3 rounded-pill fw-bold" (click)="closeModal()">Cancel</button>
+            <button class="btn btn-rate-trip flex-grow-1 py-3 rounded-pill fw-bold" 
+                    [disabled]="tempRating === 0" 
+                    (click)="submitReview()">Submit Review</button>
+          </div>
+        </div>
+
+        <!-- Success Message -->
+        <div class="text-center py-4" *ngIf="showSuccessMessage">
+          <div class="success-icon mb-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+          </div>
+          <h4 class="text-navy fw-bold">Thank you!</h4>
+          <p class="text-secondary">Your feedback has been submitted successfully.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROVIDER VIEW -->
+    <ng-container *ngIf="role === 'provider'">
+      <!-- Empty State -->
+      <div *ngIf="providerBookings.length === 0" class="empty-state-wrapper">
+        <div class="empty-state-card shadow-sm">
+          <div class="icon-circle icon-circle-provider mb-4">
+            <i class="bi bi-inbox-fill"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-2">No active requests</h4>
+          <p class="text-secondary mb-4 mx-auto" style="max-width: 320px;">You don't have any incoming transport requests at the moment. Check back later!</p>
+          <button class="btn btn-premium-cta btn-premium-cta-provider btn-lg rounded-pill" (click)="refreshBookings()">
+            <i class="bi bi-arrow-clockwise me-2"></i> Refresh Requests
+          </button>
+        </div>
+      </div>
+
+      <!-- Booking Card -->
+      <div class="mb-card position-relative" *ngFor="let b of providerBookings">
+        <!-- Booking ID removed -->
+        
+        <div class="mb-card-header d-flex justify-content-between align-items-center">
+          <div class="d-flex flex-column">
+            <div class="d-flex align-items-center">
+              <span class="badge" [ngClass]="{
+                'bg-warning': b.status === 'Pending',
+                'bg-info': b.status === 'Confirmed',
+                'bg-success': b.status === 'Active' || b.status === 'Completed',
+                'bg-secondary': b.status === 'Cancelled',
+                'bg-danger': b.status === 'Rejected'
+              }">{{b.status}}</span>
+              <span class="text-muted small ms-3">Received on {{b.createdAt | date:'MMM d, yyyy'}}</span>
+            </div>
+            <div *ngIf="b.status === 'Pending'" class="text-secondary extra-small fw-bold mt-2">
+              <i class="bi bi-exclamation-circle me-1"></i> Action Required: Confirm or Reject
+            </div>
+            <div *ngIf="b.status === 'Rejected'" class="text-danger extra-small fw-bold mt-2">
+              <i class="bi bi-x-circle-fill me-1"></i> You rejected this request
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-card-body mt-3">
+          <div class="row align-items-center">
+            <!-- Vehicle Image -->
+            <div class="col-md-3 mb-4 mb-md-0 text-center">
+              <div class="mb-img-wrapper shadow-sm">
+                <img [src]="b.vehicleImage" [alt]="b.vehicleId" class="img-fluid rounded-3 mb-vehicle-img">
+              </div>
+            </div>
+
+            <!-- Vehicle & Trip Info -->
+            <div class="col-md-5 mb-4 mb-md-0">
+              <h5 class="text-dark fw-bold mb-2">Transport Booking</h5>
+              
+              <!-- Trip Route Details -->
+              <div class="trip-route-card mb-3 p-2 rounded-2 bg-light border-start border-3 border-primary">
+                <div class="small d-flex align-items-center mb-1">
+                  <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                  <span class="text-navy fw-bold me-2">From:</span>
+                  <span class="text-secondary">{{b.pickupAddress || b.location}}</span>
+                </div>
+                <div class="small d-flex align-items-center">
+                  <i class="bi bi-flag-fill text-success me-2"></i>
+                  <span class="text-navy fw-bold me-2">To:</span>
+                  <span class="text-secondary">{{b.destinationAddress || 'As specified'}}</span>
+                </div>
+              </div>
+
+              <!-- Booking specs removed -->
+              <div class="text-secondary small">
+                <div class="mb-2"><i class="bi bi-calendar-event me-2"></i> {{b.startDate | date:'mediumDate'}} to {{b.endDate | date:'mediumDate'}}</div>
+                <div><i class="bi bi-clock me-2"></i> {{b.days}} Days & {{b.nights}} Nights</div>
+              </div>
+            </div>
+            
+            <!-- Contact Info -->
+            <div class="col-md-4 border-start border-secondary ps-md-4">
+              <div class="mb-3">
+                <p class="text-secondary small mb-1">Traveler Name</p>
+                <h5 class="text-dark fw-bold mb-0">{{b.userName}}</h5>
+              </div>
+              
+              <div class="mb-1">
+                <p class="text-secondary small mb-2">Traveler Contact</p>
+                <div *ngIf="b.status === 'Confirmed' || b.status === 'Active' || b.status === 'Completed'" class="d-flex align-items-center mb-contact-reveal">
+                  <i class="bi bi-telephone-fill text-secondary me-3"></i>
+                  <span class="fw-bold text-dark">{{b.contactNumber}}</span>
+                </div>
+                <div *ngIf="b.status === 'Pending'" class="mb-contact-hidden">
+                  <i class="bi bi-lock-fill text-secondary me-2"></i>
+                  <span class="text-secondary italic">Accept request to view contact.</span>
+                </div>
+                <div *ngIf="b.status === 'Cancelled'" class="mb-contact-hidden">
+                  <i class="bi bi-x-circle text-danger me-2"></i>
+                  <span class="text-secondary italic">Booking cancelled.</span>
+                </div>
+                <div *ngIf="b.status === 'Rejected'" class="mb-contact-hidden">
+                  <i class="bi bi-person-x-fill text-danger me-2"></i>
+                  <span class="text-secondary italic">Request rejected.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing Summary Box -->
+          <div class="mb-pricing-summary mt-4 p-4 rounded-3">
+            <h6 class="text-dark fw-bold mb-3">Earnings Breakdown</h6>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="pricing-label">Daily Rental Rate ({{b.days}} Days)</span>
+              <span class="text-dark fw-semibold">
+                <span class="text-secondary small me-2">(Rs {{b.pricingSummary?.dailyRate | number}} x {{b.days}})</span>
+                Rs {{b.pricingSummary?.dailyRental | number}}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="pricing-label">Driver Night Out Fee ({{b.nights}} Nights)</span>
+              <span class="text-dark fw-semibold">
+                <span class="text-secondary small me-2">(Rs {{b.pricingSummary?.nightlyRate | number}} x {{b.nights}})</span>
+                Rs {{b.pricingSummary?.driverNightOut | number}}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between mt-3 pt-3 border-top border-secondary">
+              <span class="fw-bold text-dark">Total Earnings</span>
+              <span class="fw-bold text-info fs-5">Rs {{b.totalAmount | number}}</span>
+            </div>
+            <div class="mt-3">
+              <p class="text-secondary extra-small mb-0 italic">Note: Extra KM charges are to be collected directly from the customer. Standard rates apply.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Provider Actions -->
+        <div class="mb-card-footer mt-4 pt-3 border-top border-secondary d-flex justify-content-end gap-3" *ngIf="b.status === 'Pending'">
+          <button class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" (click)="rejectBooking(b)">
+            <i class="bi bi-x-circle me-1"></i> Reject
+          </button>
+          <button class="btn btn-success btn-sm rounded-pill px-4 fw-bold shadow-sm" (click)="acceptBooking(b)">
+            <i class="bi bi-check-circle me-1"></i> Accept Request
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

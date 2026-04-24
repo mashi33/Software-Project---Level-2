@@ -1,0 +1,95 @@
+.finder-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header-section h2 {
+  color: #004a99;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.main-layout {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.map-section {
+  flex: 2;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: white;
+  height: 600px;
+}
+
+.list-section {
+  flex: 1;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+app-filter {
+  display: block;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+app-place-card {
+  display: block;
+  margin-bottom: 15px;
+  transition: transform 0.2s;
+}
+
+app-place-card:hover {
+  transform: translateY(-5px);
+}
+
+@media (max-width: 992px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .map-section {
+    height: 400px;
+  }
+}
+
+/* Back and View Route Buttons */
+
+.floating-buttons {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  pointer-events: none; 
+  z-index: 1000;
+}
+
+.nav-btn {
+  pointer-events: auto; 
+  padding: 10px 25px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  color: white;
+  background-color: #007bff; 
+}
+
+.nav-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}

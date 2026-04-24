@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
@@ -13,32 +13,27 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Email Settings Configuration
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
 // ==========================================================
 // DATABASE CONFIG
 // ==========================================================
 
-builder.Services.Configure<MongoDBSettings>(
-    builder.Configuration.GetSection("MongoDBSettings"));
+// 1. Configure Settings Sections
+builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-// ✅ Configure Database Settings
-builder.Services.Configure<DatabaseSettings>(
-    builder.Configuration.GetSection("DatabaseSettings"));
+// 2. Direct MongoDB Connection (Using your hardcoded Atlas string)
+var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
+var databaseName = "SmartJourneyDb"; 
 
-
-
-var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
-builder.Services.Configure<MongoDBSettings>(mongoDbSettingsSection);
-
-var connectionString = mongoDbSettingsSection["ConnectionString"];
-var databaseName = mongoDbSettingsSection["DatabaseName"];
-
-builder.Services.AddSingleton<IMongoClient>(_ =>
-    new MongoClient(connectionString));
-
+// 3. Register the Client and Database globally
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
-  var client = sp.GetRequiredService<IMongoClient>();
-  return client.GetDatabase(databaseName);
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase(databaseName);
 });
 
 // ==========================================================
@@ -62,7 +57,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 });
 
 // ==========================================================
-// SIGNALR
+// SIGNALR & CONTROLLERS
 // ==========================================================
 
 builder.Services.AddSignalR(options =>
@@ -73,10 +68,6 @@ builder.Services.AddSignalR(options =>
 {
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
-
-// ==========================================================
-// CONTROLLERS
-// ==========================================================
 
 builder.Services.AddControllers()
 .AddJsonOptions(options =>
@@ -91,18 +82,21 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
-  options.AddPolicy("AllowAngularApp", policy =>
-  {
-    policy.WithOrigins("http://localhost:4200")
-          .AllowAnyHeader()
-          .AllowAnyMethod()
-          .AllowCredentials();
-  });
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // Angular URL 
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
 // ==========================================================
-// SERVICES
+// SERVICES REGISTRATION
 // ==========================================================
+
+// ✅ This ensures AdminService is available to your TransportVehiclesController
+builder.Services.AddSingleton<AdminService>(); 
 
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>();
@@ -110,41 +104,31 @@ builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
+builder.Services.AddSingleton<TransportVehicleService>();
+builder.Services.AddSingleton<TransportBookingService>();
 
 // ==========================================================
-// SWAGGER
+// BUILD & MIDDLEWARE
 // ==========================================================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
-// ==========================================================
-// BUILD
-// ==========================================================
-
 var app = builder.Build();
-
-// ==========================================================
-// MIDDLEWARE
-// ==========================================================
 
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
-  app.UseSwaggerUI();
+  app.UseSwaggerUI(); // ✅ This is the correct method
 }
 
 app.UseRouting();
-
 app.UseCors("AllowAngularApp");
-
-app.UseAuthentication();   // 🔥 IMPORTANT (JWT)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// SignalR
 app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

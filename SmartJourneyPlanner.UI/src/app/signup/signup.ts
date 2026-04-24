@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../auth';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-signup',
@@ -10,7 +10,7 @@ import { AuthService } from '../auth';
   templateUrl: './signup.html',
   styleUrl: './signup.css'
 })
-export class SignupComponent {
+export class Signup {
   signupData = {
     FullName: '',
     Email: '',
