@@ -99,7 +99,7 @@
                 <p class="text-secondary small mb-2">Provider Contact</p>
                 <div *ngIf="b.status === 'Confirmed' || b.status === 'Active' || b.status === 'Completed'" class="d-flex align-items-center mb-contact-reveal">
                   <i class="bi bi-telephone-fill text-secondary me-3"></i>
-                  <span class="fw-bold text-dark">{{b.contactNumber}}</span>
+                  <span class="fw-bold text-dark">{{b.providerPhone}}</span>
                 </div>
                 <div *ngIf="b.status === 'Pending'" class="mb-contact-hidden">
                   <i class="bi bi-lock-fill text-secondary me-2"></i>

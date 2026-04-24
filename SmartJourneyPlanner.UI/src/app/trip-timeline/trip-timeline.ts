@@ -15,8 +15,6 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-trip-timeline',
   standalone: true,
-  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule, RouterLink],
-  // ✅ Removed RouterLink from here to fix the NG8113 Warning
   imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
@@ -60,10 +58,6 @@ export class TripTimelineComponent implements OnInit {
     }
   }
 
-  /**
-   * MISSING FUNCTIONS ADDED BELOW TO FIX COMPILATION ERRORS
-   */
-
   // 1. Get the index of the day (e.g., Day 1, Day 2)
   getDayIndex(day: TimelineDay): number {
     return this.timeline().days.findIndex(d => d.id === day.id) + 1;
@@ -71,7 +65,7 @@ export class TripTimelineComponent implements OnInit {
 
   // 2. Returns a CSS class name based on the activity category
   getCategoryClass(eventItem: TimelineEvent): string {
-    return eventItem.category ? eventItem.category.toLowerCase() : 'default';
+    return eventItem.category ? `cat-${eventItem.category.toLowerCase()}` : 'cat-default';
   }
 
   // 3. Closes the Add/Edit activity modal
@@ -86,9 +80,6 @@ export class TripTimelineComponent implements OnInit {
   get isFormInvalid(): boolean {
     return !this.formData.title || !this.formData.time || !this.formData.location;
   }
-
-  // --- Logic Functions ---
-  // --- Existing Logic ---
 
   validateForm(): boolean {
     let isValid = true;
@@ -112,7 +103,6 @@ export class TripTimelineComponent implements OnInit {
     } else {
       this.formErrors.location = '';
     }
-    // ... logic for time/location ...
     return isValid;
   }
 
@@ -144,9 +134,6 @@ export class TripTimelineComponent implements OnInit {
   addNewDay() {
     this.timelineService.addDay();
   }
-  startItinerary() { this.showHero = false; }
-
-  addNewDay() { this.timelineService.addDay(); }
 
   deleteDay(dayId: string) {
     Swal.fire({
@@ -245,27 +232,5 @@ export class TripTimelineComponent implements OnInit {
 
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
-  }
-}
-
-  // Closes the activity modal
-  closeModal() {
-    this.isModalOpen = false;
-  }
-
-  // Returns true if the form is invalid
-  get isFormInvalid(): boolean {
-    return !this.validateForm();
-  }
-
-  // Gets the index of a day
-  getDayIndex(day: TimelineDay): number {
-    return this.timeline().days.indexOf(day) + 1;
-  }
-
-  // Gets a CSS class based on event category
-  getCategoryClass(eventItem: TimelineEvent): string {
-    if (!eventItem || !eventItem.category) return 'category-default';
-    return `category-${eventItem.category.toLowerCase()}`;
   }
 }
