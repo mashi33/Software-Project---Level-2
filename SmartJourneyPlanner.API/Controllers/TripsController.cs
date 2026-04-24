@@ -71,18 +71,11 @@ public async Task<IActionResult> GetTrip(string id)
     }
 }
 
-        // --- 3. PUT: api/trips/{id} ---
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
-        {
-            try
-            {
-                var filter = Builders<Trip>.Filter.Eq(t => t.Id, id);
-                updatedTrip.Id = id;
+    
 
 
 [HttpPut("{id}")]
-public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
+private async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
 {
     try
     {
@@ -105,6 +98,7 @@ public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTr
         return BadRequest(new { message = "Update error: " + ex.Message });
     }
 }
+            
         private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
         {
             try
