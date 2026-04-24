@@ -1,5 +1,5 @@
 using MongoDB.Driver;
-using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.Models; // This must match your model's namespace exactly
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -26,32 +26,26 @@ namespace SmartJourney.Api.Services
         }
 
         // --- Vehicle Operations ---
-        public async Task<List<TransportVehicle>> GetAllVehicles()
-        {
-            return await _vehicleCollection.Find(_ => true).ToListAsync();
-        }
+        public async Task<List<TransportVehicle>> GetAllVehicles() 
+            => await _vehicleCollection.Find(_ => true).ToListAsync();
 
         public async Task DeleteVehicle(string vehicleId)
         {
             await _vehicleCollection.DeleteOneAsync(vehicle => vehicle.Id == vehicleId);
         }
 
-        public async Task UpdateVehicleAvailability(string vehicleId, bool isAvailable)
+        public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {
+            // Note: Your model did not have an 'Available' property. 
+            // I updated this to use your existing 'Status' property instead.
             var filter = Builders<TransportVehicle>.Filter.Eq(vehicle => vehicle.Id, vehicleId);
-            
-            // Mapping boolean to Status string
-            string statusValue = isAvailable ? "Available" : "Unavailable";
-            
-            var update = Builders<TransportVehicle>.Update.Set(vehicle => vehicle.Status, statusValue);
+            var update = Builders<TransportVehicle>.Update.Set(vehicle => vehicle.Status, newStatus);
             await _vehicleCollection.UpdateOneAsync(filter, update);
         }
 
         // --- Booking Operations ---
-        public async Task<List<TransportBooking>> GetAllBookings()
-        {
-            return await _bookingCollection.Find(_ => true).ToListAsync();
-        }
+        public async Task<List<TransportBooking>> GetAllBookings() 
+            => await _bookingCollection.Find(_ => true).ToListAsync();
 
         public async Task DeleteBooking(string bookingId)
         {
