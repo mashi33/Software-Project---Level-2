@@ -1,3 +1,5 @@
+// src/app/trip-timeline/trip-timeline.ts
+
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +15,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-trip-timeline',
   standalone: true,
+  imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule, RouterLink],
   // ✅ Removed RouterLink from here to fix the NG8113 Warning
   imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
   templateUrl: './trip-timeline.html',
@@ -57,6 +60,34 @@ export class TripTimelineComponent implements OnInit {
     }
   }
 
+  /**
+   * MISSING FUNCTIONS ADDED BELOW TO FIX COMPILATION ERRORS
+   */
+
+  // 1. Get the index of the day (e.g., Day 1, Day 2)
+  getDayIndex(day: TimelineDay): number {
+    return this.timeline().days.findIndex(d => d.id === day.id) + 1;
+  }
+
+  // 2. Returns a CSS class name based on the activity category
+  getCategoryClass(eventItem: TimelineEvent): string {
+    return eventItem.category ? eventItem.category.toLowerCase() : 'default';
+  }
+
+  // 3. Closes the Add/Edit activity modal
+  closeModal() {
+    this.isModalOpen = false;
+    this.editingEventId = null;
+    // Reset validation errors when closing
+    this.formErrors = { title: '', time: '', location: '' };
+  }
+
+  // 4. Getter to check if the form is invalid (used for button disabling)
+  get isFormInvalid(): boolean {
+    return !this.formData.title || !this.formData.time || !this.formData.location;
+  }
+
+  // --- Logic Functions ---
   // --- Existing Logic ---
 
   validateForm(): boolean {
@@ -66,6 +97,20 @@ export class TripTimelineComponent implements OnInit {
       isValid = false;
     } else {
       this.formErrors.title = '';
+    }
+
+    if (!this.formData.time) {
+      this.formErrors.time = 'Time is required';
+      isValid = false;
+    } else {
+      this.formErrors.time = '';
+    }
+
+    if (!this.formData.location?.trim()) {
+      this.formErrors.location = 'Location is required';
+      isValid = false;
+    } else {
+      this.formErrors.location = '';
     }
     // ... logic for time/location ...
     return isValid;
@@ -92,6 +137,13 @@ export class TripTimelineComponent implements OnInit {
     return this.timeline().days.map(d => d.id);
   }
 
+  startItinerary() {
+    this.showHero = false;
+  }
+
+  addNewDay() {
+    this.timelineService.addDay();
+  }
   startItinerary() { this.showHero = false; }
 
   addNewDay() { this.timelineService.addDay(); }
@@ -194,6 +246,7 @@ export class TripTimelineComponent implements OnInit {
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }
+}
 
   // Closes the activity modal
   closeModal() {
