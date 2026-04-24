@@ -25,6 +25,7 @@ export class VehicleDetailComponent implements OnInit {
   // Form fields
   startDate: string = '';
   endDate: string = '';
+  minDate: string = '';
   customerName: string = '';
   customerPhone: string = '';
   customerEmail: string = '';
@@ -57,7 +58,10 @@ export class VehicleDetailComponent implements OnInit {
     private transportVehicleService: TransportVehicleService,
     private transportBookingService: TransportBookingService,
     public calcService: TransportCalculationService
-  ) {}
+  ) {
+    const today = new Date();
+    this.minDate = today.toISOString().split('T')[0];
+  }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -184,6 +188,21 @@ export class VehicleDetailComponent implements OnInit {
   onRequestBooking() {
     if (!this.startDate || !this.endDate || !this.customerName || !this.customerPhone || !this.customerEmail || !this.pickupAddress || this.destinations.length === 0) {
       Swal.fire('Missing Information', 'Please fill in all mandatory fields (*). You must add at least one destination and travel dates.', 'warning');
+      return;
+    }
+
+    const start = new Date(this.startDate);
+    const end = new Date(this.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      Swal.fire('Invalid Date', 'Pickup date cannot be in the past.', 'warning');
+      return;
+    }
+    
+    if (end < start) {
+      Swal.fire('Invalid Date', 'Drop-off date cannot be earlier than the pickup date.', 'warning');
       return;
     }
 
