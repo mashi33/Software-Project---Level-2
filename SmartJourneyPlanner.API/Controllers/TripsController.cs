@@ -71,34 +71,30 @@ public async Task<IActionResult> GetTrip(string id)
     }
 }
 
-    
-
-
-[HttpPut("{id}")]
-private async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
-{
-    try
-    {
-        // 1. URL එකේ තියෙන ID එක Trip එකේ ඇතුළටත් දානවා (ෂුවර් වෙන්න)
-        updatedTrip.Id = id; 
-
-        // 2. MongoDB Update එක කරනවා
-        var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
-
-        if (result.MatchedCount == 0)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
         {
-            return NotFound(new { message = "Trip not found in database!" });
-        }
+            try
+            {
+                // 1. URL එකේ තියෙන ID එක Trip එකේ ඇතුළටත් දානවා (ෂුවර් වෙන්න)
+                updatedTrip.Id = id;
 
-        return Ok(new { message = "Trip updated successfully!" });
-    }
-    catch (Exception ex)
-    {
-        // මොකක් හරි error එකක් ආවොත් ඒක මෙතනින් බලාගන්න පුළුවන්
-        return BadRequest(new { message = "Update error: " + ex.Message });
-    }
-}
-            
+                // 2. MongoDB Update එක කරනවා
+                var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
+
+                if (result.MatchedCount == 0)
+                {
+                    return NotFound(new { message = "Trip not found in database!" });
+                }
+
+                return Ok(new { message = "Trip updated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                // මොකක් හරි error එකක් ආවොත් ඒක මෙතනින් බලාගන්න පුළුවන්
+                return BadRequest(new { message = "Update error: " + ex.Message });
+            }
+        }
         private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
         {
             try

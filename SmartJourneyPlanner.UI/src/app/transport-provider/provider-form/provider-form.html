@@ -257,9 +257,9 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Free KM Limit per Day</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('freeKMLimit')" formControlName="freeKMLimit">
-          <div *ngIf="isFieldInvalid('freeKMLimit')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Daily KM limit is required
+          <input type="number" class="form-control pf-input-soft" formControlName="freeKMLimit" readonly>
+          <div class="pf-fixed-hint">
+            <i class="bi bi-info-circle"></i> Standard fixed limit (100km)
           </div>
         </div>
         <div class="col-md-6">

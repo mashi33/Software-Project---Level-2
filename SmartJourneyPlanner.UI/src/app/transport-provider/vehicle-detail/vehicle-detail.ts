@@ -280,7 +280,9 @@ export class VehicleDetailComponent implements OnInit {
           destinations: this.destinations,
           vehicleImage: this.vehicle?.exteriorPhoto,
           providerName: this.vehicle?.providerProfile.name,
+          providerPhone: this.vehicle?.providerProfile.phone,
           userName: this.customerName,
+          contactNumber: this.customerPhone,
           pricingSummary: {
             dailyRate: this.vehicle?.standardDailyRate || 0,
             dailyRental: dailyTotal,
