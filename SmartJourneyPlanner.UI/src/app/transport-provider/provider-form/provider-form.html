@@ -29,11 +29,23 @@
             <i class="bi bi-exclamation-circle"></i> Phone number is required
           </div>
         </div>
-        <div class="col-md-12 text-start mt-3">
+        <div class="col-md-12 text-start mt-3 position-relative">
           <label class="form-label fw-bold">Residential Area</label>
-          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.location')" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle">
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.location')" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle" (input)="filterCities($event)" (focus)="filterCities($event)" autocomplete="off">
           <div *ngIf="isFieldInvalid('providerProfile.location')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> Residential area is required
+          </div>
+          
+          <!-- City Autocomplete Dropdown -->
+          <div class="pf-dropdown-menu w-100 mt-1 shadow-sm border-0" *ngIf="isCityDropdownOpen" style="display: block; position: absolute; z-index: 1000; top: 100%;">
+            <div class="pf-category-grid d-flex flex-column gap-1 p-2" style="max-height: 200px; overflow-y: auto;">
+              <div *ngFor="let city of filteredCities" 
+                   class="pf-category-item d-flex align-items-center justify-content-between px-3 py-2 rounded-2 hover-bg-dark"
+                   style="cursor: pointer;"
+                   (click)="selectCity(city)">
+                <span class="small fw-semibold">{{city}}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
