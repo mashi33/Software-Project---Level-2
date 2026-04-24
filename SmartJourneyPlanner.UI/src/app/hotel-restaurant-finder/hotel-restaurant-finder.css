@@ -61,3 +61,35 @@ app-place-card:hover {
     height: 400px;
   }
 }
+
+/* Back and View Route Buttons */
+
+.floating-buttons {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  pointer-events: none; 
+  z-index: 1000;
+}
+
+.nav-btn {
+  pointer-events: auto; 
+  padding: 10px 25px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  color: white;
+  background-color: #007bff; 
+}
+
+.nav-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}

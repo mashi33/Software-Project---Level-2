@@ -12,16 +12,33 @@ namespace SmartJourneyPlanner.API.Models
         public string FullName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
-
-        // UserType tracks if they are a "Traveler", "Provider", or "Admin"
-        public string UserType { get; set; } = null!; 
-
-        // Added for Admin Dashboard functionality
-        public string Status { get; set; } = "Pending"; 
         
-        // Added for Transport Provider specific details
-        public string? RegistrationNumber { get; set; } 
+        // "Admin", "Provider", or "Traveller"
+        public string UserType { get; set; } = "Traveller"; 
+        
+        // "Pending", "Approved", or "Rejected"
+        public string Status { get; set; } = "Approved"; 
+
+        // --- Vehicle Details (Populated by Provider) ---
+        [BsonIgnoreIfNull]
+        public string? RegistrationNumber { get; set; }
+
+        [BsonIgnoreIfNull]
+        public string? VehicleModel { get; set; }
+
+        [BsonIgnoreIfNull]
+        public string? VehicleType { get; set; }
+
+        [BsonIgnoreIfNull]
+        public string? LicenseUrl { get; set; }
+
+        [BsonIgnoreIfNull]
+        public string? NicUrl { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // ✅ Prevents 400 errors if other team members add random fields to the DB
+        [BsonExtraElements]
+        public BsonDocument? CatchAll { get; set; }
     }
 }
