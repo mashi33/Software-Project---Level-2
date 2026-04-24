@@ -43,7 +43,22 @@
         <i class="bi bi-geo-alt-fill"></i> Location ready to pin!
       </div>
 
-      <button (click)="saveMemory()" class="btn-save" [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
+      
+      <div class="upload-field-group">
+  <label class="field-label">Visibility :</label>
+
+  <div class="visibility-options">
+
+    <label class="visible">Public:</label>
+    <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
+    
+    <label class="visible">Private:</label>
+    <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
+  </div>
+      </div>
+
+      <button (click)="saveMemory()" class="btn-save" 
+[disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
         Save & Pin to Map 
       </button>
     </section>
@@ -66,6 +81,7 @@
               <div class="thumb-dates" *ngIf="m?.startDate || m?.endDate">
                 <span class="date-range">{{ m?.startDate | date:'mediumDate' }} — {{ m?.endDate | date:'mediumDate' }}</span>
               </div>
+              <span class="visibility-status">{{ m?.isPublic ? 'Public' : 'Private' }}</span>
               <button class="delete-overlay-btn" (click)="deleteMemory(m.id, $event)">
                 <span class="trash-icon">🗑️</span>
               </button>
