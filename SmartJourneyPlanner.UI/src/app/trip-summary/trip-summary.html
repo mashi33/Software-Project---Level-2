@@ -1,21 +1,18 @@
 <div class="container mt-4 mb-5" *ngIf="tripDetails">
-  
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold m-0">Trip Summary</h2>
-    
     <div class="d-flex gap-2">
       <div class="dropdown">
         <button class="btn btn-header-outline dropdown-toggle shadow-sm" type="button">
           Edited History
         </button>
       </div>
-
       <div class="dropdown">
-        <button class="btn btn-header-outline shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#membersModal">
+        <button class="btn btn-header-outline shadow-sm" type="button"
+          data-bs-toggle="modal" data-bs-target="#membersModal">
           View members
         </button>
       </div>
-
       <button *ngIf="userRole === 'owner'" class="btn btn-primary rounded-pill px-4 shadow-sm">
         Delete Trip
       </button>
@@ -29,6 +26,7 @@
   <div class="row g-4">
     <div class="col-md-5">
       <div class="p-4 shadow-sm detail-card h-100">
+
         <div class="mb-4">
           <label class="text-muted small d-block">Destination</label>
           <span class="fs-5 fw-semibold">{{ tripDetails.Destination || tripDetails.destination }}</span>
@@ -42,7 +40,7 @@
         <div class="mb-4">
           <label class="text-muted small d-block">Date Range</label>
           <span class="fs-5 fw-semibold">
-            {{ (tripDetails.StartDate || tripDetails.startDate) | date:'mediumDate' }} - 
+            {{ (tripDetails.StartDate || tripDetails.startDate) | date:'mediumDate' }} -
             {{ (tripDetails.EndDate || tripDetails.endDate) | date:'mediumDate' }}
           </span>
         </div>
@@ -62,21 +60,44 @@
           <span class="fs-5 fw-semibold">{{ tripDetails.transportMode }}</span>
         </div>
 
+        <!-- Hotels Dropdown: filtered from savedPlaces where category = 'hotel' or 'lodging' -->
         <div class="mb-3 d-flex justify-content-between align-items-center">
           <label class="text-muted small">Hotels</label>
           <select class="form-select form-select-sm summary-dropdown">
-            <option selected>View Hotels List</option>
-            <option *ngFor="let hotel of tripDetails.hotels">{{ hotel }}</option>
+            <!-- Show count badge next to label if hotels exist -->
+            <option selected disabled>
+              View Hotels List {{ savedHotels.length > 0 ? '(' + savedHotels.length + ')' : '' }}
+            </option>
+            <!-- Loop through hotels filtered from savedPlaces -->
+            <option *ngFor="let hotel of savedHotels" [value]="hotel.placeId || hotel.PlaceId">
+              {{ hotel.name || hotel.Name }}
+            </option>
+            <!-- Fallback if no hotels added to this trip yet -->
+            <option *ngIf="savedHotels.length === 0" disabled>
+              No hotels added yet
+            </option>
           </select>
         </div>
 
+        <!-- Restaurants Dropdown: filtered from savedPlaces where category = 'restaurant' or 'food' -->
         <div class="mb-3 d-flex justify-content-between align-items-center">
-          <label class="text-muted small">Places</label>
+          <label class="text-muted small">Restaurants</label>
           <select class="form-select form-select-sm summary-dropdown">
-            <option selected>View Places List</option>
-            <option *ngFor="let place of tripDetails.places">{{ place }}</option>
+            <!-- Show count badge next to label if restaurants exist -->
+            <option selected disabled>
+              View Restaurants List {{ savedRestaurants.length > 0 ? '(' + savedRestaurants.length + ')' : '' }}
+            </option>
+            <!-- Loop through restaurants filtered from savedPlaces -->
+            <option *ngFor="let restaurant of savedRestaurants" [value]="restaurant.placeId || restaurant.PlaceId">
+              {{ restaurant.name || restaurant.Name }}
+            </option>
+            <!-- Fallback if no restaurants added to this trip yet -->
+            <option *ngIf="savedRestaurants.length === 0" disabled>
+              No restaurants added yet
+            </option>
           </select>
         </div>
+
       </div>
     </div>
 
@@ -102,7 +123,7 @@
           </div>
         </div>
         <div class="col-6">
-          <div class="suggestion-box">
+          <div class="suggestion-box" (click)="navigateToChat()" style="cursor: pointer;">
             <i class="bi bi-chat-left-text fs-3 mb-2"></i>
             <span>View Chat</span>
           </div>
@@ -122,15 +143,19 @@
       </div>
 
       <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm"
+          [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
           Back to Edit Trip
         </button>
-        <button class="btn btn-primary px-4 py-2 flex-grow-1 shadow-sm">Confirm & Save Trip</button>
+        <button class="btn btn-primary px-4 py-2 flex-grow-1 shadow-sm">
+          Confirm & Save Trip
+        </button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Members Modal -->
 <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 border-0 shadow">
@@ -140,14 +165,18 @@
       </div>
       <div class="modal-body">
         <ul class="list-group list-group-flush">
-          <li *ngFor="let member of (tripDetails?.members || tripDetails?.Members|| [])" class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <li *ngFor="let member of (tripDetails?.members || tripDetails?.Members || [])"
+            class="list-group-item d-flex justify-content-between align-items-center px-0">
             <div>
               <p class="mb-0 fw-medium">{{ member.email || member.Email }}</p>
               <small class="text-muted">{{ member.role || member.Role }}</small>
             </div>
-            <span class="badge bg-light text-primary rounded-pill border border-primary-subtle">Invited</span>
+            <span class="badge bg-light text-primary rounded-pill border border-primary-subtle">
+              Invited
+            </span>
           </li>
-          <li *ngIf="!(tripDetails?.members || tripDetails?.Members)?.length" class="list-group-item text-center py-4 border-0">
+          <li *ngIf="!(tripDetails?.members || tripDetails?.Members)?.length"
+            class="list-group-item text-center py-4 border-0">
             <i class="bi bi-people text-muted fs-1 d-block mb-2"></i>
             <p class="text-muted">No members invited yet.</p>
           </li>

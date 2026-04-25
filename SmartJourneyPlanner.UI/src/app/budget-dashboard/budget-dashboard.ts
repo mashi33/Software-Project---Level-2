@@ -12,11 +12,10 @@ import autoTable from 'jspdf-autotable';
 Chart.register(...registerables); 
 
 @Component({
-  selector: 'app-budget-dashboard',
-  standalone: true,
-  imports: [CommonModule, BaseChartDirective, FormsModule, RouterModule],
-  templateUrl: './budget-dashboard.html',
-  styleUrls: ['./budget-dashboard.css']
+    selector: 'app-budget-dashboard',
+    imports: [CommonModule, BaseChartDirective, FormsModule, RouterModule],
+    templateUrl: './budget-dashboard.html',
+    styleUrls: ['./budget-dashboard.css']
 })
 export class BudgetDashboard implements OnInit {
 

@@ -2,6 +2,18 @@
   <div class="header-content">
     <h1>WELCOME</h1>
     <p>Smart Journey Group Chat</p>
+
+    <div class="trip-selection-wrapper">
+      <div class="trip-selector">
+        <label for="tripSelect">Select Trip:</label>
+        <select id="tripSelect" [(ngModel)]="selectedTripId" (change)="onTripChange()" class="minimal-dropdown">
+          <option *ngFor="let trip of userTrips" [value]="trip.id">
+            {{ trip.tripName }}
+          </option>
+          <option *ngIf="userTrips.length === 0" value="">No Trips Found</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <div class="split-container">
@@ -137,14 +149,17 @@
       </div>
     </div>
 
-    <app-comments class="column-half right-column glass-chat-panel"></app-comments>
+   <app-comments 
+  [selectedTripId]="selectedTripId" 
+  class="column-half right-column glass-chat-panel">
+</app-comments>
   </div>
 
   <div class="navigation-footer">
     <button class="nav-btn" (click)="showNotReadyAlert()">
       <i class="material-icons">dashboard</i> Back to Dashboard
     </button>
-    <button class="nav-btn" (click)="showNotReadyAlert()">
+    <button class="nav-btn" (click)="navigateToSummary()">
       <i class="material-icons">summarize</i> View Summary
     </button>
   </div>

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute,Router, RouterLink } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-trip-summary',
@@ -12,15 +13,22 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 })
 export class TripSummaryComponent implements OnInit {
   tripDetails: any;
-  // To store the current user's role (e.g., 'owner' or 'viewer')
-  userRole: string = 'owner'; 
+  userRole: string = 'owner';
+
+  tripId: string = '';
+  // Filtered lists separated from savedPlaces array
+  savedHotels: any[] = [];
+  savedRestaurants: any[] = [];
 
   constructor(
     private tripService: TripService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+
+    this.tripId = this.route.snapshot.paramMap.get('id') || '';
     /**
      * 1. Extract the Trip ID from the route path parameter (/trip-summary/:id)
      * 2. Extract the User Role from query parameters (/trip-summary/:id?role=viewer)
@@ -28,7 +36,6 @@ export class TripSummaryComponent implements OnInit {
     const tripId = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
 
-    // Set userRole if provided in URL, otherwise defaults to 'owner'
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);
@@ -36,22 +43,42 @@ export class TripSummaryComponent implements OnInit {
 
     if (tripId) {
       console.log('Fetching database data for ID:', tripId);
-      // Fetch the latest trip data from the database using the service
       this.tripService.getTripById(tripId).subscribe({
         next: (data) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
+          this.filterSavedPlaces();
         },
         error: (err) => {
           console.error('Data load error:', err);
-          // Fallback to temporary storage if database fetch fails
           this.loadFromTemp();
         }
       });
     } else {
-      // If no ID is present in the URL, try loading from temporary storage
       this.loadFromTemp();
     }
+  }
+
+  /**
+   * Filters savedPlaces array into hotels and restaurants separately.
+   */
+  filterSavedPlaces() {
+    const places = this.tripDetails?.savedPlaces || this.tripDetails?.SavedPlaces || [];
+
+    console.log('All saved places:', places);
+
+    this.savedHotels = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('hotel') || cat.includes('lodging');
+    });
+
+    this.savedRestaurants = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('restaurant') || cat.includes('food') || cat.includes('dining');
+    });
+
+    console.log('Filtered Hotels:', this.savedHotels);
+    console.log('Filtered Restaurants:', this.savedRestaurants);
   }
 
   /**
@@ -69,5 +96,14 @@ export class TripSummaryComponent implements OnInit {
         description: 'Sample data description (Fallback)'
       };
     }
+    this.filterSavedPlaces();
   }
+
+  navigateToChat() {
+  if (this.tripId) {
+    this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+  } else {
+    Swal.fire('Error', 'Trip ID not found!', 'error');
+  }
+}
 }

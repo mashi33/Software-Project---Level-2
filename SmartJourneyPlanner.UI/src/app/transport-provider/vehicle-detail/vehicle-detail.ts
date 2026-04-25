@@ -9,11 +9,10 @@ import { TransportCalculationService } from '../../services/transport-calculatio
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-vehicle-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './vehicle-detail.html',
-  styleUrl: './vehicle-detail.css'
+    selector: 'app-vehicle-detail',
+    imports: [CommonModule, RouterLink, FormsModule],
+    templateUrl: './vehicle-detail.html',
+    styleUrl: './vehicle-detail.css'
 })
 export class VehicleDetailComponent implements OnInit {
   vehicle: Vehicle | undefined;

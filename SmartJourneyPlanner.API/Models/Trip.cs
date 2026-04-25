@@ -1,12 +1,11 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System;
 using System.Collections.Generic;
-using System; // ✅ Added for DateTime
 
 namespace SmartJourneyPlanner.API.Models
 {
-    // ✅ CRITICAL: This tells MongoDB to ignore any fields in the database 
-    // that are NOT defined in this C# class. This prevents 400 errors.
+    // Ignores extra fields in the MongoDB document that do not match the class properties
     [BsonIgnoreExtraElements]
     public class Trip
     {
@@ -17,22 +16,36 @@ namespace SmartJourneyPlanner.API.Models
         public string TripName { get; set; } = null!;
         public string Destination { get; set; } = null!;
 
-        // ✅ Using Nullable DateTime (DateTime?) is safer in case some 
+        // Using Nullable DateTime (DateTime?) is safer in case some
         // documents in your database have missing or null dates.
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
 
         public string? Description { get; set; }
         public string DepartFrom { get; set; } = null!;
-        
-        // invite many members
+
+        // Invite many members to the trip
         public List<TripMember> Members { get; set; } = new List<TripMember>();
+        public List<TripPlace> SavedPlaces { get; set; } = new List<TripPlace>();
+        public string? CreatedBy { get; set; }
     }
 
+    // Represents a member invited to the trip
     [BsonIgnoreExtraElements]
     public class TripMember
     {
         public string Email { get; set; } = null!;
         public string Role { get; set; } = "Viewer"; // Editor or Viewer
+    }
+
+    // Represents a specific location saved within a trip
+    public class TripPlace
+    {
+        public string PlaceId { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string Address { get; set; } = null!;
+        public double Rating { get; set; }
+        public string Category { get; set; } = null!;
+        public string? PhotoReference { get; set; }
     }
 }
