@@ -111,3 +111,54 @@
 .hide-caret::after {
   display: none !important;
 }
+
+/* Container for the dropdown */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* The toggle link */
+.dropdown-toggle {
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  color: #E3F2FD !important;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 8px 12px !important;
+}
+
+/* Hidden by default, shown only when .show is added */
+.dropdown-menu {
+  display: none; 
+  position: absolute;
+  top: 100%; /* Position right below the toggle */
+  left: 0;
+  background-color: #ffffff;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 1000; /* Ensure it stays above other content */
+  padding: 8px 0;
+}
+
+/* Angular binding adds 'show' class here */
+.dropdown-menu.show {
+  display: block; 
+}
+
+/* Styling the links inside the menu */
+.dropdown-menu a {
+  color: #333;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Hover effect for better UX */
+.dropdown-menu a:hover {
+  background-color: #f8f9fa;
+  color: #0D47A1 ;
+  font-weight: 500;
+}
