@@ -1,7 +1,6 @@
 <div class="explore-wrapper">
   <main class="map-section">
-    <div id="map">
-      </div>
+    <div id="map"></div>
   </main>
 
   <aside class="sidebar-section">
@@ -17,16 +16,16 @@
       </header>
 
       <div class="gallery-grid">
-        <div class="gallery-item" *ngFor="let m of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
-          <div class="thumb-card" (click)="selectedMemory = m" [class.active]="selectedMemory === m">
+        <div class="gallery-item" *ngFor="let memory of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
+          <div class="thumb-card" (click)="selectedMemory = memory" [class.active]="selectedMemory === memory">
             <div class="img-container">
-              <img *ngIf="m?.imageUrl" [src]="m?.imageUrl" class="thumb-img" [alt]="m?.title">
+              <img *ngIf="memory?.imageUrl" [src]="memory?.imageUrl" class="thumb-img" [alt]="memory?.title">
             </div>
 
             <div class="thumb-info">
-              <p class="thumb-text">{{ m?.title || 'Untitled' }}</p>
-              <div class="thumb-dates" *ngIf="m?.startDate || m?.endDate">
-                <span class="date-range">{{ m?.startDate | date:'mediumDate' }} — {{ m?.endDate | date:'mediumDate' }}</span>
+              <p class="thumb-text">{{ memory?.title || 'Untitled' }}</p>
+              <div class="thumb-dates" *ngIf="memory?.startDate || memory?.endDate">
+                <span class="date-range">{{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}</span>
               </div>
             </div>
           </div>

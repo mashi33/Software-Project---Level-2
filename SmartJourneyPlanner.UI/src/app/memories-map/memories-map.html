@@ -45,7 +45,7 @@
 
       
       <div class="upload-field-group">
-  <label class="field-label">Visibility :</label>
+    <label class="field-label">Visibility :</label>
 
   <div class="visibility-options">
 
@@ -55,11 +55,11 @@
     <label class="visible">Private:</label>
     <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
   </div>
-      </div>
+  </div>
 
       <button (click)="saveMemory()" class="btn-save" 
-[disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
-        Save & Pin to Map 
+             [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
+             Save & Pin to Map 
       </button>
     </section>
 
@@ -70,19 +70,19 @@
       </header>
 
       <div class="gallery-grid">
-        <div class="gallery-item" *ngFor="let m of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
-          <div class="thumb-card" (click)="selectedMemory = m">
+        <div class="gallery-item" *ngFor="let memory of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
+          <div class="thumb-card" (click)="selectedMemory = memory">
             <div class="img-container">
-              <img *ngIf="m?.imageUrl" [src]="m?.imageUrl" class="thumb-img" [alt]="m?.title">
+              <img *ngIf="memory?.imageUrl" [src]="memory?.imageUrl" class="thumb-img" [alt]="memory?.title">
             </div>
 
             <div class="thumb-info">
-              <p class="thumb-text">{{ m?.title || 'Untitled' }}</p>
-              <div class="thumb-dates" *ngIf="m?.startDate || m?.endDate">
-                <span class="date-range">{{ m?.startDate | date:'mediumDate' }} — {{ m?.endDate | date:'mediumDate' }}</span>
+              <p class="thumb-text">{{ memory?.title || 'Untitled' }}</p>
+              <div class="thumb-dates" *ngIf="memory?.startDate || memory?.endDate">
+                <span class="date-range">{{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}</span>
               </div>
-              <span class="visibility-status">{{ m?.isPublic ? 'Public' : 'Private' }}</span>
-              <button class="delete-overlay-btn" (click)="deleteMemory(m.id, $event)">
+              <span class="visibility-status">{{ memory?.isPublic ? 'Public' : 'Private' }}</span>
+              <button class="delete-overlay-btn" (click)="deleteMemory(memory.id, $event)">
                 <span class="trash-icon">🗑️</span>
               </button>
             </div>

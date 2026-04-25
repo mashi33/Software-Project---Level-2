@@ -7,14 +7,14 @@ import { Booking } from '../models/transport.model';
 import Swal from 'sweetalert2';
 
 @Component({
-    selector: 'app-provider-dashboard',
-    imports: [CommonModule, RouterLink],
-    templateUrl: './provider-dashboard.html',
-    styleUrls: ['./provider-dashboard.css']
+  selector: 'app-provider-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './provider-dashboard.html',
+  styleUrls: ['./provider-dashboard.css']
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  // Data variables to store statistics, vehicles, and bookings
   stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
@@ -25,7 +25,6 @@ export class ProviderDashboardComponent implements OnInit {
     private router: Router
   ) {}
 
-  // This runs when the page loads
   ngOnInit() {
     this.loadAll();
   }
@@ -42,31 +41,23 @@ export class ProviderDashboardComponent implements OnInit {
     });
   }
 
-  // --- Vehicle Actions ---
-  
-  // Turn vehicle availability ON or OFF
   toggleAvailability(vehicle: any) {
     this.vehicleService.updateAvailability(vehicle.id, !vehicle.available).subscribe(() => this.loadAll());
   }
 
-  // Remove a vehicle from the provider's list
   deleteVehicle(id: string) {
     if(confirm('Are you sure you want to delete this vehicle?')) {
       this.vehicleService.deleteVehicle(id).subscribe(() => this.loadAll());
     }
   }
 
-  // --- Booking Actions ---
-
-  // Accept a customer's booking request
   acceptBooking(booking: Booking) {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
-      this.loadAll(); // Refresh the list
+      this.loadAll();
     });
   }
 
-  // Mark a trip as successfully completed
   completeBooking(booking: Booking) {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Completed').subscribe({
@@ -75,7 +66,6 @@ export class ProviderDashboardComponent implements OnInit {
     });
   }
 
-  // Reject a customer's booking request
   rejectBooking(booking: Booking) {
     if (!booking.id) return;
     
@@ -87,12 +77,11 @@ export class ProviderDashboardComponent implements OnInit {
     }
   }
 
-  // Show a popup with full details for a specific booking
+  
   viewBookingDetails(id: string | undefined) {
-    const booking = this.bookings.find(b => b.id === id);
+    const booking = this.bookings.find(booking => booking.id === id);
     if (!booking) return;
 
-    // Use SweetAlert2 to show a clean, detailed summary modal
     Swal.fire({
       title: 'Booking Request Details',
       width: '700px',
@@ -147,4 +136,4 @@ export class ProviderDashboardComponent implements OnInit {
       confirmButtonColor: '#0c92f4'
     });
   }
-}
+}

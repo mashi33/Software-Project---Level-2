@@ -14,10 +14,10 @@
       <h4>Fleet Management</h4>
       <a routerLink="/register-vehicle" class="btn-add">+ Add Vehicle</a>
     </div>
-    <div *ngFor="let v of vehicles" class="item-card">
-      <span>{{v.name}}</span>
-      <input type="checkbox" [checked]="v.available" (change)="toggleAvailability(v)">
-      <button (click)="deleteVehicle(v.id)">🗑️</button>
+    <div *ngFor="let vehicle of vehicles" class="item-card">
+      <span>{{vehicle.name}}</span>
+      <input type="checkbox" [checked]="vehicle.available" (change)="toggleAvailability(vehicle)">
+      <button (click)="deleteVehicle(vehicle.id)">🗑️</button>
     </div>
   </section>
   </div>
@@ -31,39 +31,25 @@
       No bookings found at the moment.
     </div>
 
-    <div *ngFor="let b of bookings" class="card mb-3 shadow-sm">
+    <div *ngFor="let booking of bookings" class="card mb-3 shadow-sm">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h5 class="card-title" 
-    (click)="viewBookingDetails(b.id)" 
-    style="cursor: pointer; color: #007bff; text-decoration: underline;">
-    Booking from {{b.userName}}
-</h5>
+            <h5 class="card-title" (click)="viewBookingDetails(booking.id)" >
+                Booking from {{booking.userName}}
+            </h5>
             <p class="card-text text-muted mb-1">
-              <strong>Status:</strong> {{b.status}} | <strong>Date:</strong> {{b.startDate | date:'shortDate'}}
+              <strong>Status:</strong> {{booking.status}} | <strong>Date:</strong> {{booking.startDate | date:'shortDate'}}
             </p>
           </div>
 
          <div class="actions d-flex gap-2">
-  <button *ngIf="b.status === 'Pending'" 
-          class="btn btn-success btn-sm" 
-          (click)="acceptBooking(b)">
-    Accept
-  </button>
+           <button *ngIf="booking.status === 'Pending'" class="btn btn-success btn-sm" (click)="acceptBooking(booking)">Accept</button>
 
-  <button *ngIf="b.status === 'Pending'" 
-          class="btn btn-outline-danger btn-sm" 
-          (click)="rejectBooking(b)">
-    Reject
-  </button>
+           <button *ngIf="booking.status === 'Pending'" class="btn btn-outline-danger btn-sm" (click)="rejectBooking(booking)">Reject</button>
 
-  <button *ngIf="b.status === 'Confirmed'" 
-          class="btn btn-primary btn-sm" 
-          (click)="completeBooking(b)">
-    Complete
-  </button>
-</div>
+           <button *ngIf="booking.status === 'Confirmed'" class="btn btn-primary btn-sm" (click)="completeBooking(booking)">Complete</button>
+         </div>
         </div>
       </div>
     </div>
