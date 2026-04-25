@@ -68,11 +68,11 @@ export class AdminDashboardComponent implements OnInit {
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
-      next: (data) => {
+      next: (data: any[]) => {
         this.pendingProviders = data;
         this.errorMessage = '';
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error("Fetch error:", err);
         this.errorMessage = "Failed to load providers.";
       }
@@ -81,8 +81,8 @@ export class AdminDashboardComponent implements OnInit {
 
   fetchAllUsers() {
     this.adminService.getAllUsers().subscribe({
-      next: (data) => this.allUsers = data,
-      error: () => console.error("Could not load users")
+      next: (data: any[]) => this.allUsers = data,
+      error: (err: any) => console.error("Could not load users", err)
     });
   }
 
@@ -114,7 +114,7 @@ export class AdminDashboardComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.adminService.updateProviderStatus(id, status).subscribe({
-          next: () => {
+          next: (response: any) => {
             this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
             this.selectedProvider = null; // Automatically close the detail modal
             Swal.fire({
@@ -124,7 +124,7 @@ export class AdminDashboardComponent implements OnInit {
               heightAuto: false
             });
           },
-          error: (err) => {
+          error: (err: any) => {
             console.error("Update failed", err);
             Swal.fire({
               title: 'Error',
@@ -139,28 +139,30 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   /**
-   * Promotes a regular user to an Admin role.
+   * ✅ UPDATED: Promotes a regular user to an Admin role.
+   * Added explicit types to resolve TS compiler errors.
    */
-  changeRole(userId: string, newRole: string) {
-    this.adminService.updateUserRole(userId, newRole).subscribe({
-      next: () => {
-        const user = this.allUsers.find(u => (u._id || u.id) === userId);
-        if (user) user.role = newRole;
-        Swal.fire({
-          title: 'Updated',
-          text: `User is now an ${newRole}`,
-          icon: 'success',
-          heightAuto: false
-        });
-      },
-      error: () => Swal.fire({
-        title: 'Error',
-        text: 'Role update failed.',
-        icon: 'error',
-        heightAuto: false
-      })
-    });
+ changeRole(userId: string, newRole: string) {
+  console.log("Button clicked! Target User ID:", userId); // This should appear in Console
+
+  if (!userId) {
+    Swal.fire('Error', 'User ID is missing!', 'error');
+    return;
   }
+
+  this.adminService.updateUserRole(userId, newRole).subscribe({
+    next: (res: any) => {
+      console.log("Success from server:", res);
+      const user = this.allUsers.find(u => (u._id || u.id) === userId);
+      if (user) user.role = newRole;
+      Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
+    },
+    error: (err: any) => {
+      console.error("Server returned an error:", err);
+      Swal.fire('Error', 'Role update failed.', 'error');
+    }
+  });
+}
 
   /**
    * Opens the detail modal for a specific provider.

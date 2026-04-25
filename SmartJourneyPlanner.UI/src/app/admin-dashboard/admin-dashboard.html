@@ -89,7 +89,7 @@
             <td>{{ u.email }}</td>
             <td><span class="role-badge" [ngClass]="u.role">{{ u.role }}</span></td>
             <td>
-              <button *ngIf="u.role !== 'Admin'" (click)="changeRole(u.id || u._id, 'Admin')" class="btn-promote">Promote</button>
+              <button (click)="changeRole(u.id || u._id, 'Admin')" class="btn-promote">Promote</button>
               <button class="btn-icon reject" title="Deactivate">🚫</button>
             </td>
           </tr>
