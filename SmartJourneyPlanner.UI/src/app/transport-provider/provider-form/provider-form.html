@@ -19,14 +19,18 @@
           <label class="form-label fw-bold">Full Name</label>
           <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera">
           <div *ngIf="isFieldInvalid('providerProfile.name')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Full name is required
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['required']">Full name is required</span>
+            <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['minlength']">Name must be at least 3 characters</span>
           </div>
         </div>
         <div class="col-md-6 text-start">
           <label class="form-label fw-bold">Phone Number</label>
           <input type="tel" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.phone')" formControlName="phone" placeholder="+94 77 123 4567">
           <div *ngIf="isFieldInvalid('providerProfile.phone')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Phone number is required
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['required']">Phone number is required</span>
+            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['pattern']">Use format: +94771234567 or 0771234567</span>
           </div>
         </div>
         <div class="col-md-12 text-start mt-3 position-relative">
@@ -107,7 +111,9 @@
           <label class="form-label fw-bold">Vehicle Model</label>
           <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('description')" formControlName="description" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
           <div *ngIf="isFieldInvalid('description')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Vehicle model is required
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('description')?.errors?.['required']">Vehicle model/description is required</span>
+            <span *ngIf="vehicleForm.get('description')?.errors?.['minlength']">Please provide more detail (min 10 chars)</span>
           </div>
         </div>
         <div class="col-md-3">
@@ -163,11 +169,17 @@
           <div class="row mb-4 g-3">
             <div class="col-md-4">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-people text-primary"></i> Seats</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" formControlName="seatCount" min="1">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('seatCount')" formControlName="seatCount" min="1">
+              <div *ngIf="isFieldInvalid('seatCount')" class="pf-error-text">
+                <i class="bi bi-exclamation-circle"></i> Min 1 seat
+              </div>
             </div>
             <div class="col-md-4" formGroupName="features">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-luggage text-primary"></i> Luggage</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" formControlName="luggage" min="0">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('features.luggage')" formControlName="luggage" min="1">
+              <div *ngIf="isFieldInvalid('features.luggage')" class="pf-error-text">
+                <i class="bi bi-exclamation-circle"></i> Min 1 luggage
+              </div>
             </div>
           </div>
 
@@ -250,7 +262,7 @@
       <div class="row g-4">
         <div class="col-md-6">
           <label class="form-label fw-bold">Standard Daily Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate" min="500">
           <div *ngIf="isFieldInvalid('standardDailyRate')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> Valid daily rate is required
           </div>
@@ -264,11 +276,11 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Extra KM Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="extraKMRate">
+          <input type="number" class="form-control pf-input-soft" formControlName="extraKMRate" min="1">
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Driver Night Out Fee (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="driverNightOutFee">
+          <input type="number" class="form-control pf-input-soft" formControlName="driverNightOutFee" min="0">
         </div>
       </div>
     </div>
@@ -352,7 +364,7 @@
           </div>
           <div class="mt-2">
             <label class="form-label small mb-1">Insurance Expiry Date</label>
-            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry">
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry" [min]="todayStr">
             <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text">
               <i class="bi bi-exclamation-circle"></i> Expiry date required
             </div>
@@ -373,7 +385,7 @@
           </div>
           <div class="mt-2">
             <label class="form-label small mb-1">Revenue License Expiry</label>
-            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry">
+            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry" [min]="todayStr">
             <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text">
               <i class="bi bi-exclamation-circle"></i> Expiry date required
             </div>
