@@ -64,7 +64,7 @@ export class UserSearch implements OnInit {
   bookingDays: number = 2;
   bookingNights: number = 1;
 
-  // Mock Data
+  // Dynamic Vehicle Data
   allVehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
   vehicleCategories = ['All Categories', ...Object.values(VehicleType)];
@@ -132,7 +132,7 @@ export class UserSearch implements OnInit {
   }
 
   ngOnInit() {
-    this.loadMockVehicles();
+    this.loadAvailableVehicles();
     this.calculateDays();
     this.applyFilters();
   }
@@ -182,7 +182,7 @@ export class UserSearch implements OnInit {
     // Scroll to results or show a loading state if needed
   }
 
-  loadMockVehicles() {
+  loadAvailableVehicles() {
     this.transportVehicleService.getVehicles().subscribe(vehicles => {
       this.allVehicles = vehicles;
       this.applyFilters();
