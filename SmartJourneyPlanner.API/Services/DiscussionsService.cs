@@ -2,6 +2,9 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SmartJourneyPlanner.Models;
 using MongoDB.Bson;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace SmartJourneyPlanner.Services
 {
@@ -11,11 +14,8 @@ namespace SmartJourneyPlanner.Services
 
     public DiscussionsService(IOptions<DatabaseSettings> databaseSettings)
     {
-      // ✅ Configuration (appsettings.json) මගින් දත්ත ලබා ගැනීම
       var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
       var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
-
-      // ✅ Collection එක ලබා ගැනීම (DatabaseSettings හි CollectionName එක "Discussions" ලෙස තිබිය යුතුය)
       _discussionsCollection = mongoDatabase.GetCollection<DiscussionItem>(databaseSettings.Value.CollectionName);
     }
 
@@ -23,7 +23,11 @@ namespace SmartJourneyPlanner.Services
     public async Task<List<DiscussionItem>> GetAsync() =>
         await _discussionsCollection.Find(_ => true).ToListAsync();
 
-    // 2. Get new discussion according to ID
+    // Fetch discussions by TripId
+    public async Task<List<DiscussionItem>> GetByTripAsync(string tripId) =>
+        await _discussionsCollection.Find(x => x.TripId == tripId).ToListAsync();
+
+    // 2. Get discussion according to ID
     public async Task<DiscussionItem?> GetAsync(string id) =>
         await _discussionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
@@ -54,21 +58,40 @@ namespace SmartJourneyPlanner.Services
       if (discussion.IsConfirmed || discussion.IsRejected) return false;
 
       discussion.VotedUsers ??= new List<string>();
+      discussion.UserVotes ??= new List<UserVoteRecord>();
 
-      // If already provide vote or member limit <= vote count, stop count votes
-      if (discussion.VotedUsers.Contains(userId)) return false;
+      int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 1;
 
-      int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 5;
-      if (discussion.VotedUsers.Count >= limit) return false;
+      // Check if this user has voted before
+      var existingVote = discussion.UserVotes.Find(v =>
+          v.UserId.Equals(userId, StringComparison.OrdinalIgnoreCase));
+
+      if (existingVote == null)
+      {
+        // New voter — only allow if under the member limit
+        if (discussion.VotedUsers.Count >= limit) return false;
+      }
 
       if (optionIndex >= 0 && optionIndex < discussion.Options.Count)
       {
-        discussion.Options[optionIndex].VoteCount++;
-        discussion.VotedUsers.Add(userId);
+        if (existingVote != null)
+        {
+          // Remove the old vote count before switching
+          var oldOption = discussion.Options.Find(o => o.OptionText == existingVote.OptionText);
+          if (oldOption != null && oldOption.VoteCount > 0) oldOption.VoteCount--;
+          existingVote.OptionText = discussion.Options[optionIndex].OptionText;
+        }
+        else
+        {
+          discussion.UserVotes.Add(new UserVoteRecord { UserId = userId, OptionText = discussion.Options[optionIndex].OptionText });
+          discussion.VotedUsers.Add(userId);
+        }
 
+        discussion.Options[optionIndex].VoteCount++;
         await UpdateAsync(id, discussion);
         return true;
       }
+
       return false;
     }
 

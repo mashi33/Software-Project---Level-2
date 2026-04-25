@@ -11,11 +11,10 @@ import Swal from 'sweetalert2';
 import { GenerationComponent } from '../generation/generation';
 
 @Component({
-  selector: 'app-route-optimization',
-  standalone: true,
-  imports: [CommonModule, FormsModule,RouterLink, GoogleMapsModule, GenerationComponent],
-  templateUrl: './route-optimization.html',
-  styleUrl: './route-optimization.css',
+    selector: 'app-route-optimization',
+    imports: [CommonModule, FormsModule, RouterLink, GoogleMapsModule, GenerationComponent],
+    templateUrl: './route-optimization.html',
+    styleUrl: './route-optimization.css'
 })
 export class RouteOptimization implements OnInit, OnDestroy {
   @ViewChild(GoogleMap, { static: false }) map!: GoogleMap;
