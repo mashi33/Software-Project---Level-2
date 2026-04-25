@@ -108,5 +108,6 @@ export interface Booking {
   };
   vehicleImage?: string;
   providerName?: string;
+  providerPhone?: string;
   userName?: string;
 }

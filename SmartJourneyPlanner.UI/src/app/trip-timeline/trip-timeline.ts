@@ -75,6 +75,7 @@ export class TripTimelineComponent {
     }
   }
 
+  // --- Validation Logic ---
   // Checks if the form is filled out correctly before saving
   validateForm(): boolean {
     let isValid = true;
@@ -102,7 +103,6 @@ export class TripTimelineComponent {
     } else {
       this.formErrors.location = '';
     }
-
     return isValid;
   }
 

@@ -563,6 +563,8 @@ button {
 .cat-dining { background: #fffbeb; color: #d97706; }
 .cat-sightseeing { background: #f0fdf4; color: #16a34a; }
 .cat-transport { background: #f8fafc; color: #475569; }
+.cat-default { background: #f1f5f9; color: #64748b; }
+
 
 .event-card:hover .category-box {
   transform: scale(1.05);
