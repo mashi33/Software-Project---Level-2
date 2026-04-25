@@ -64,6 +64,14 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
+        // DELETE: api/TransportVehicles/clear - Remove all vehicles from the system
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearAll()
+        {
+            await _vehicleService.DeleteAllAsync();
+            return Ok(new { message = "All vehicles cleared successfully!" });
+        }
+
         // GET: api/TransportVehicles/{id} - Get details of one specific vehicle
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
