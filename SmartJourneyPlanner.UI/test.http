@@ -1,132 +1,45 @@
-### Send a global chat message
-POST http://localhost:5233/api/discussions/comments
+
+POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
 Content-Type: application/json
 
 {
-    "user": "Tester_01",
-    "text": "Hello, my dear friends"
-}
-
-### Check trip voting - User 1
-POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
-Content-Type: application/json
-
-{
-    "optionText": "Disagree",
-    "userName": "Tester_01"
+  "optionText": "Agree",
+  "userName": "ann"
 }
 
 
-### Check trip voting - User 2
-POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
+### Vote by User 2 (Bob)
+POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
 Content-Type: application/json
 
 {
-    "optionText": "Disagree",
-    "userName": "Tester_02"
+  "optionText": "Disagree",
+  "userName": "bob"
 }
 
-### Check trip voting - User 3
-POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
+### Vote by User 2 (Charlie)
+POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
 Content-Type: application/json
 
 {
-    "optionText": "Agree",
-    "userName": "Tester_03"
+  "optionText": "Disagree",
+  "userName": "charlie"
 }
 
-### Check trip voting - User 4
-POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
+### Vote by User 3
+POST http://localhost:5233/api/discussions/69ecbda0d2077f9da6a167bd/vote
 Content-Type: application/json
 
 {
-    "optionText": "Agree",
-    "userName": "Tester_04"
+  "optionText": "Disagree",
+  "userName": "harry"
 }
 
-### Check trip voting - User 5
-POST http://localhost:5233/api/discussions/699e9f3dc61399ed0cbb49bb/vote
+### Vote by User 3
+POST http://localhost:5233/api/discussions/69ecbda0d2077f9da6a167bd/vote
 Content-Type: application/json
 
 {
-    "optionText": "Disagree",
-    "userName": "Tester_05"
-}
-
-### Check trip voting - User 6
-POST http://localhost:5233/api/discussions/699c468e5f7de3e75fdf4dab/vote
-Content-Type: application/json
-
-{
-    "optionText": "Agree",
-    "userName": "Tester_06"
-}
-
-### Check trip voting - User 7
-POST http://localhost:5233/api/discussions/699c468e5f7de3e75fdf4dab/vote
-Content-Type: application/json
-
-{
-    "optionText": "Agree",
-    "userName": "Tester_07"
-}
-
-### Check trip voting - User 8
-POST http://localhost:5233/api/discussions/699c468e5f7de3e75fdf4dab/vote
-Content-Type: application/json
-
-{
-    "optionText": "Agree",
-    "userName": "Tester_08"
-}
-
-### Check trip voting - User 9
-POST http://localhost:5233/api/discussions/699c468e5f7de3e75fdf4dab/vote
-Content-Type: application/json
-
-{
-    "optionText": "Agree",
-    "userName": "Tester_09"
-}
-
-### User 1 votes for Pizza
-POST http://localhost:5233/api/discussions/6999d4c86b18556e452a845a/vote
-Content-Type: application/json
-
-{
-    "optionText": "Pizza",
-    "userName": "Foodie_01"
-}
-
-### User 2 votes for Burger
-POST http://localhost:5233/api/discussions/6999d4c86b18556e452a845a/vote
-Content-Type: application/json
-
-{
-    "optionText": "Burger",
-    "userName": "Foodie_02"
-}
-
-### create vote box of agree vs disagree
-POST http://localhost:5233/api/discussions    
-Content-Type: application/json
-
-{
-  "title": "Temple of the tooth relic",
-  "description": "",
-  "type": "Trip",
-  "user": "Admin",
-  "isConfirmed": false,
-  "isRejected": false,
-  "memberLimit": 10,
-  "options": [
-    {
-      "optionText": "Agree",
-      "voteCount": 0
-    },
-    {
-      "optionText": "Disagree",
-      "voteCount": 0
-    }
-  ]
+  "optionText": "Agree",
+  "userName": "sarah"
 }

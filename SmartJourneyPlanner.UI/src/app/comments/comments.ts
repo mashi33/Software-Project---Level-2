@@ -1,21 +1,25 @@
-import {Component, OnInit, OnDestroy,ChangeDetectorRef, NgZone, ViewChild, ElementRef} from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone, ViewChild, ElementRef, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommentsService, CommentItem } from '../services/comments.service';
-import { SignalrService }  from '../services/signalr.service';
-import { FormsModule }     from '@angular/forms';
-import { CommonModule }    from '@angular/common';
-import { Subscription }    from 'rxjs';
-import { HttpEventType }   from '@angular/common/http';
+import { SignalrService } from '../services/signalr.service';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { HttpEventType } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-comments',
+    standalone: true,
     imports: [FormsModule, CommonModule],
     templateUrl: './comments.html',
     styleUrls: ['./comments.css']
 })
-export class CommentsComponent implements OnInit, OnDestroy {
+export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   @ViewChild('chatWrapper') chatWrapperRef!: ElementRef;
+  
+  // Discussion Component එකෙන් Trip ID එක ලබා ගැනීම සඳහා
+  @Input() selectedTripId: string = '';
 
   allComments:       CommentItem[]    = [];
   globalCommentText: string           = '';
@@ -46,8 +50,17 @@ export class CommentsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadInitialData();
     this.setupSignalRListeners();
+    // මුලින්ම loadInitialData මෙතනදී අවශ්‍ය නොවේ, මන්ද ngOnChanges මගින් එය සිදු කරන බැවිනි.
+  }
+
+  // Trip එක මාරු වන විට හඳුනා ගැනීමට
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['selectedTripId'] && !changes['selectedTripId'].firstChange) {
+      this.loadInitialData();
+    } else if (changes['selectedTripId'] && changes['selectedTripId'].firstChange) {
+      this.loadInitialData();
+    }
   }
 
   ngOnDestroy(): void {
@@ -61,8 +74,13 @@ export class CommentsComponent implements OnInit, OnDestroy {
   }
 
   loadInitialData(): void {
+    if (!this.selectedTripId) return;
+
     this.isLoading = true;
-    this.commentsService.getComments().subscribe({
+    this.allComments = []; // පරණ දත්ත ඉවත් කරන්න
+
+    // Backend එකේ අප සෑදූ getCommentsByTrip(tripId) මෙතඩ් එක භාවිතා කරන්න
+    this.commentsService.getCommentsByTrip(this.selectedTripId).subscribe({
       next: (comments) => {
         this.zone.run(() => {
           this.isLoading   = false;
@@ -75,7 +93,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.isLoading = false;
-        Swal.fire('Error', 'Could not load messages. Please refresh.', 'error');
+        Swal.fire('Error', 'Could not load messages for this trip.', 'error');
       }
     });
   }
@@ -83,23 +101,29 @@ export class CommentsComponent implements OnInit, OnDestroy {
   setupSignalRListeners(): void {
     this.commentSub = this.signalrService.messageReceived.subscribe((comment: any) => {
       this.zone.run(() => {
-        const newMsg: CommentItem = {
-          id:          comment.id          || comment.Id,
-          text:        comment.text        || comment.Text        || '',
-          user:        comment.user        || comment.User        || 'Guest',
-          createdAt:   comment.createdAt   || comment.CreatedAt   || new Date(),
-          messageType: comment.messageType || comment.MessageType || 'text',
-          fileId:      comment.fileId      || comment.FileId      || undefined,
-          fileName:    comment.fileName    || comment.FileName    || undefined,
-          fileSize:    comment.fileSize    || comment.FileSize    || undefined
-        };
+        const nTripId = comment.tripId || comment.TripId;
 
-        this.allComments.push(newMsg);
-        this.allComments.sort((a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-        this.scrollToBottom();
-        this.cdr.detectChanges();
+        // දැනට තෝරාගෙන ඇති Trip එකට අදාළ පණිවිඩයක් නම් පමණක් UI එකට එක් කරන්න
+        if (nTripId === this.selectedTripId) {
+          const newMsg: CommentItem = {
+            id:          comment.id          || comment.Id,
+            tripId:      nTripId,
+            text:        comment.text        || comment.Text        || '',
+            user:        comment.user        || comment.User        || 'Guest',
+            createdAt:   comment.createdAt   || comment.CreatedAt   || new Date(),
+            messageType: comment.messageType || comment.MessageType || 'text',
+            fileId:      comment.fileId      || comment.FileId      || undefined,
+            fileName:    comment.fileName    || comment.FileName    || undefined,
+            fileSize:    comment.fileSize    || comment.FileSize    || undefined
+          };
+
+          this.allComments.push(newMsg);
+          this.allComments.sort((a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          this.scrollToBottom();
+          this.cdr.detectChanges();
+        }
       });
     });
 
@@ -108,7 +132,6 @@ export class CommentsComponent implements OnInit, OnDestroy {
       this.signalrService.hubConnection.on('CommentDeleted', (commentId: string) => {
         this.zone.run(() => {
           this.allComments = this.allComments.filter(c => c.id !== commentId);
-          // Clear search if deleted message was a match
           if (this.searchQuery) this.runSearch();
           this.cdr.detectChanges();
         });
@@ -120,7 +143,6 @@ export class CommentsComponent implements OnInit, OnDestroy {
           const index = this.allComments.findIndex(c => c.id === cId);
           if (index !== -1) {
             this.allComments[index].text = updatedComment.text || updatedComment.Text;
-            // Refresh search results in case updated text affects matches
             if (this.searchQuery) this.runSearch();
             this.cdr.detectChanges();
           }
@@ -131,7 +153,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
 
   postCommentToLatest(): void {
     const text = this.globalCommentText.trim();
-    if (!text) return;
+    if (!text || !this.selectedTripId) return;
 
     if (this.isEditing && this.editingCommentId) {
       this.commentsService.updateComment(this.editingCommentId, text).subscribe({
@@ -140,6 +162,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
       });
     } else {
       const comment: CommentItem = {
+        tripId:    this.selectedTripId, // Trip ID එක ඇතුළත් කිරීම අනිවාර්යයි
         user:      this.currentUser,
         text,
         createdAt: new Date()
@@ -154,7 +177,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file  = input.files?.[0];
-    if (!file) return;
+    if (!file || !this.selectedTripId) return;
 
     input.value = '';
 
@@ -162,15 +185,12 @@ export class CommentsComponent implements OnInit, OnDestroy {
       Swal.fire('Invalid file', 'Only PDF files can be shared.', 'warning');
       return;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      Swal.fire('File too large', 'PDF must be under 20 MB.', 'warning');
-      return;
-    }
 
     this.isUploading    = true;
     this.uploadProgress = 0;
 
-    this.commentsService.uploadPdf(file, this.currentUser).subscribe({
+    // මෙහිදී TripId එකත් සමඟ PDF එක upload කළ යුතුය
+    this.commentsService.uploadPdf(file, this.currentUser, this.selectedTripId).subscribe({
       next: (httpEvent) => {
         if (httpEvent.type === HttpEventType.UploadProgress && httpEvent.total) {
           this.uploadProgress = Math.round(100 * httpEvent.loaded / httpEvent.total);
@@ -183,7 +203,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.isUploading = false;
-        Swal.fire('Upload failed', 'Could not upload the PDF. Please try again.', 'error');
+        Swal.fire('Upload failed', 'Could not upload the PDF.', 'error');
       }
     });
   }
@@ -210,7 +230,7 @@ export class CommentsComponent implements OnInit, OnDestroy {
   }
 
   formatFileSize(bytes: number = 0): string {
-    if (bytes < 1024)         return `${bytes} B`;
+    if (bytes < 1024)          return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
@@ -263,7 +283,6 @@ export class CommentsComponent implements OnInit, OnDestroy {
   }
 
   // ── SEARCH METHODS ──
-
   toggleSearch(): void {
     this.isSearchOpen = !this.isSearchOpen;
     if (!this.isSearchOpen) {
@@ -286,7 +305,6 @@ export class CommentsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Match text messages by content, PDF messages by file name
     this.searchResults = this.allComments.filter(c => {
       if (c.messageType === 'pdf') {
         return c.fileName?.toLowerCase().includes(query);
@@ -294,7 +312,6 @@ export class CommentsComponent implements OnInit, OnDestroy {
       return c.text?.toLowerCase().includes(query);
     });
 
-    // Reset to first match whenever query changes
     this.currentMatchIndex = this.searchResults.length > 0 ? 0 : -1;
     if (this.currentMatchIndex === 0) {
       this.scrollToMatch(this.searchResults[0]);
@@ -331,12 +348,10 @@ export class CommentsComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // Returns true if this comment is a search match
   isMatch(comment: CommentItem): boolean {
     return this.searchResults.some(r => r.id === comment.id);
   }
 
-  // Returns true if this comment is the currently focused match
   isActiveMatch(comment: CommentItem): boolean {
     return this.currentMatchIndex >= 0 &&
            this.searchResults[this.currentMatchIndex]?.id === comment.id;

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute,Router, RouterLink } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-trip-summary',
@@ -14,15 +15,20 @@ export class TripSummaryComponent implements OnInit {
   tripDetails: any;
   userRole: string = 'owner';
 
+  tripId: string = '';
+  // Filtered lists separated from savedPlaces array
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
 
   constructor(
     private tripService: TripService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+
+    this.tripId = this.route.snapshot.paramMap.get('id') || '';
     /**
      * 1. Extract the Trip ID from the route path parameter (/trip-summary/:id)
      * 2. Extract the User Role from query parameters (/trip-summary/:id?role=viewer)
@@ -92,4 +98,12 @@ export class TripSummaryComponent implements OnInit {
     }
     this.filterSavedPlaces();
   }
+
+  navigateToChat() {
+  if (this.tripId) {
+    this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+  } else {
+    Swal.fire('Error', 'Trip ID not found!', 'error');
+  }
+}
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text.Json;
@@ -16,12 +16,29 @@ namespace SmartJourneyPlanner.Hubs
             _discussionsService = discussionsService;
         }
 
-        //  (Broadcast)
+        /// <summary>
+        /// Adds a user to a specific Trip Group based on the trip ID.
+        /// Should be called from the frontend when a user selects or changes a trip.
+        
+        public async Task JoinTripGroup(string tripId)
+        {
+            if (!string.IsNullOrEmpty(tripId))
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, tripId);
+                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} joined group: {tripId}");
+            }
+        }
+
+        /// <summary>
+        /// Broadcasts a message to all connected clients.
+        /// Note: While this broadcasts globally, it can be modified to target specific groups.
+        /// </summary>
         public async Task SendMessage(object comment)
         {
             try
             {
-                //only send messages to clients
+                // Currently broadcasts to all users. 
+                // Consider using Clients.Group(tripId) for group-specific messaging.
                 await Clients.All.SendAsync("ReceiveComment", comment);
 
                 Console.WriteLine("[SignalR Hub] Global message broadcasted.");
@@ -33,7 +50,9 @@ namespace SmartJourneyPlanner.Hubs
             }
         }
 
-        //  (Votes only) broadcast 
+        /// <summary>
+        /// Broadcasts vote updates to all connected clients.
+        /// </summary>
         public async Task BroadcastVoteUpdate(object updatedDiscussion)
         {
             try
