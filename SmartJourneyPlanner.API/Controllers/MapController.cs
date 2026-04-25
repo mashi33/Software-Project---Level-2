@@ -10,7 +10,7 @@ namespace SmartJourneyPlanner.Controllers
     [Route("api/[controller]")]
     [ApiController]
     // Program.cs හි ඔබ "AllowAngular" ලෙස policy එක නම් කර ඇති බැවින් එය මෙහි සඳහන් කරන්න
-    [EnableCors("AllowAngular")]
+    [EnableCors("AllowAngularApp")]
     public class MapController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
