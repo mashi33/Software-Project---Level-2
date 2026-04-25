@@ -13,9 +13,6 @@ import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
-
-
-
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
@@ -52,10 +49,8 @@ export const routes: Routes = [
    { 
     path: 'explore', 
     children: [
-
       { path: '', component: ExploreWelcome },
       { path: 'route-optimization', component: RouteOptimization },
- 
       { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
     ]
   },

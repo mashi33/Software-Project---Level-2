@@ -1,4 +1,3 @@
-/* Layout Base */
 .main-wrapper {
     display: flex;
     width: 100%;
@@ -13,7 +12,6 @@
     border-right: 1px solid #dee2e6;
     padding: 1.5rem;
     overflow-y: auto;
-    
 }
 
 .map-container,#map {
@@ -21,7 +19,6 @@
     height: 100%;
 }
 
-/* Card & Form Styles */
 .upload-card {
     background: white;
     border-radius: 10px;
@@ -72,7 +69,7 @@
 }
 
 .form-input[type="date"] {
-    color: #8D7B7B; /* Changes the text color */
+    color: #8D7B7B; 
     font-weight: 500;
 }
 
@@ -80,7 +77,6 @@
     color: black;
     font-weight: 500;
 }
-
 
 .date-row {
     display: flex;         /* Horizontal alignment */
@@ -151,7 +147,6 @@
    cursor: not-allowed;
    }
 
-/* Gallery Styles */
 .gallery-header {
     display: flex;
     justify-content: space-between;
@@ -181,15 +176,14 @@
 
 .gallery-item {
    width: calc(33.33% - 8px);
- }
+}
 
- .delete-overlay-btn{
-   border: none;
+.delete-overlay-btn{
+  border: none;
   display: flex;
   align-items: left;
   justify-content: right;
-  }
-
+}
   
 .thumb-card {
     display: flex;
@@ -206,27 +200,27 @@
 
 .thumb-card:hover {
    transform: scale(1.05); 
-  }
+}
 
 .img-container { 
   height: 100px;
   width: 40%;
   flex-shrink: 0;
-   background: #f0f0f0; 
+  background: #f0f0f0; 
 }
 
 .thumb-img { 
   width: 100%;
-   height: 100%;
-    object-fit: cover; }
+  height: 100%;
+  object-fit: cover; 
+}
 
 .thumb-info { 
   background: rgb(255, 255, 255);
-   padding: 4px; 
-   text-align: left;
-   width: 60%;
-   
- }
+  padding: 4px; 
+  text-align: left;
+  width: 60%; 
+}
 
 .thumb-text {
     font-size: 16px;
@@ -234,11 +228,9 @@
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    
+    text-overflow: ellipsis; 
 }
 
-/* Lightbox */
 .lightbox-overlay {
     position: fixed;
     top: 0;
@@ -255,7 +247,8 @@
 .lightbox-img { 
   max-width: 90%;
    max-height: 80vh;
-    border-radius: 8px; }
+    border-radius: 8px;
+}
 
 .btn-close {
     margin-top: 15px;
@@ -267,7 +260,6 @@
     cursor: pointer;
 }
 
-
 .upload-box-wrapper {
     width: 100%;
     padding: 0.5rem;
@@ -278,15 +270,12 @@
                 0 0px 5px -5px rgba(0, 0, 0, 0.04);
 }
 
-
-
 .file-input {
     width: 100%;
     margin-top: 3px;
     margin-bottom: 10px;
     font-size: 14px;
     color: #8D7B7B;
-
 }
 
 .upload-preview {
@@ -322,8 +311,6 @@
     justify-content: center;
 }
 
-
-/* NEWLY ADDED CODE PART START */
 .see-more-container {
     width: 100%;
     display: flex;
@@ -333,7 +320,7 @@
 
 .btn-see-more {
     background: none;
-    border: 1px solid #495fd0; /* Matching your pink theme */
+    border: 1px solid #495fd0; 
     color: #495fd0;
     padding: 6px 15px;
     border-radius: 10px;
@@ -347,12 +334,11 @@
     background: #4641c6;
     color: white;
 }
-/* NEWLY ADDED CODE PART END */
 
 .thumb-dates {
     display: flex;
     align-items: center;
-    font-size: 11px;       /* Smaller than the title */
+    font-size: 11px;       
     color: #888;    
     font-style: italic;       
 }
@@ -360,7 +346,7 @@
 .visibility-status {
     display: flex;
     align-items: center;
-    font-size: 11px;       /* Smaller than the title */
+    font-size: 11px;       
     color: #888;    
     font-style: italic;       
 }
