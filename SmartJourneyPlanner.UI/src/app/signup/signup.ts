@@ -11,6 +11,7 @@ import { AuthService } from '../services/auth.service';
   styleUrl: './signup.css'
 })
 export class Signup {
+  //Model for signup form data
   signupData = {
     FullName: '',
     Email: '',
@@ -22,32 +23,36 @@ export class Signup {
 
   constructor(private authService: AuthService,
               private router: Router,
-              private route: ActivatedRoute) {}
+              private route: ActivatedRoute
+            ) {}
+  
+   /**
+   * Handles the signup process and manages conditional redirection
+   * based on whether the user was invited to a specific trip.
+   */
 
   onSignup() {
   console.log('Signup Attempt:', this.signupData);
 
-  // Sign up request එක backend එකට යවනවා
   this.authService.signup(this.signupData).subscribe({
     next: (response: any) => {
       console.log('Signup Success!', response);
       
-      // 1. URL එකේ තියෙන parameters අල්ලගන්න (tripId සහ role)
+      // Extract optional query parameters for invitation logic
       const tripId = this.route.snapshot.queryParamMap.get('tripId');
       const role = this.route.snapshot.queryParamMap.get('role');
 
-      // 2. යූසර්ට සාර්ථක බව පෙන්වන්න
       alert('Registration Successful!');
 
-      // 3. Redirect Logic එක
+      // -- Redirect Logic 
+      // If tripId exists, user was invited; redirect to that specific trip.
+      // Otherwise, redirect to the standard login page.
       if (tripId) {
         console.log('Redirecting to invited trip:', tripId);
-        // ඉන්වයිට් එකකින් ආපු කෙනෙක් නම් කෙලින්ම Summary එකට යවනවා
         this.router.navigate(['/trip-summary', tripId], { 
           queryParams: { role: role } 
         });
       } else {
-        // සාමාන්‍ය විදිහට ආපු කෙනෙක් නම් පරණ විදිහටම Login එකට යවනවා
         this.router.navigate(['/login']);
       }
     },

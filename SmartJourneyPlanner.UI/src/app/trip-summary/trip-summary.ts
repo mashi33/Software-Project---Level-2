@@ -10,8 +10,16 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
   templateUrl: './trip-summary.html',
   styleUrls: ['./trip-summary.css']
 })
+
 export class TripSummaryComponent implements OnInit {
+  // To hold the trip details fetched from the database or temporary storage
   tripDetails: any;
+  editHistory: any[] = [];
+  isDropdownOpen = false;
+
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
   // To store the current user's role (e.g., 'owner' or 'viewer')
   userRole: string = 'owner'; 
 
@@ -41,6 +49,7 @@ export class TripSummaryComponent implements OnInit {
         next: (data) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
+          this.loadHistory(tripId);
         },
         error: (err) => {
           console.error('Data load error:', err);
@@ -52,6 +61,17 @@ export class TripSummaryComponent implements OnInit {
       // If no ID is present in the URL, try loading from temporary storage
       this.loadFromTemp();
     }
+  }
+  loadHistory(id: string) {
+    this.tripService.getTripHistory(id).subscribe({
+      next: (data) => {
+        this.editHistory = data;
+        console.log('Edit history loaded:', this.editHistory);
+      },
+      error: (err) => {
+        console.error('History load error:', err);
+      }
+    });
   }
 
   /**

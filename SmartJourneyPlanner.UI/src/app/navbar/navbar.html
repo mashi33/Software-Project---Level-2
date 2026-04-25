@@ -12,7 +12,8 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
-
+    
+    <!-- Navbar links -->
     <div class="collapse navbar-collapse" id="navbarNav">
 
       <div class="navbar-nav mx-auto nav-links-group">
@@ -29,7 +30,8 @@
       </div>
 
       <div class="user-actions">
-
+        
+        <!-- Notification dropdown -->
         <div class="dropdown notification-dropdown">
           <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-bell"></i>
@@ -44,16 +46,24 @@
           </ul>
         </div>
 
-        <div class="dropdown profile-dropdown">
-          <a class="dropdown-toggle profile-trigger" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <img [src]="profilePic" alt="user" class="profile-img">
+        <!-- Profile dropdown -->
+        <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
+          <a class="dropdown-toggle profile-trigger" 
+             id="profileDropdown" 
+             style="cursor: pointer;"
+             (click)="toggleDropdown()"> 
+             <img [src]="profilePic" alt="user" class="profile-img">
             <span class="profile-name">{{ userName }}</span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
-            <li><a class="dropdown-item" routerLink="/profile">Profile</a></li>
-            <li><a class="dropdown-item" routerLink="/settings">Settings</a></li>
+          
+          <!-- Profile dropdown menu -->
+          <ul class="dropdown-menu dropdown-menu-end shadow" 
+              [class.show]="isDropdownOpen" 
+              aria-labelledby="profileDropdown">
+            <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">Profile</a></li>
+            <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">Settings</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" routerLink="/login">Sign out</a></li>
+            <li><a class="dropdown-item text-danger" routerLink="/login" (click)="onLogout()">Sign out</a></li>
           </ul>
         </div>
 
