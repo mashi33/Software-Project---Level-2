@@ -38,6 +38,10 @@ export class UserSearch implements OnInit {
   showCityDropdown: boolean = false;
   sortBy: string = 'Default'; // Default, Price: Low to High, Price: High to Low, Best Rated
 
+  // State Variables
+  isLoading: boolean = false;
+  errorMessage: string | null = null;
+  
   sriLankanCities: string[] = [
     'Colombo', 'Kandy', 'Galle', 'Matara', 'Negombo', 'Jaffna', 'Kurunegala', 'Anuradhapura',
     'Ratnapura', 'Badulla', 'Trincomalee', 'Batticaloa', 'Kalutara', 'Gampaha', 'Puttalam',
@@ -158,21 +162,32 @@ export class UserSearch implements OnInit {
   onDateChange() {
     // 1. Prevent selection of past dates for Start Date
     if (this.startDate && this.startDate < this.todayStr) {
-      this.startDate = this.todayStr;
-      Swal.fire({
-        title: 'Invalid Date',
-        text: 'The start date cannot be in the past.',
-        icon: 'warning',
-        confirmButtonColor: '#0c92f4'
-      });
+      setTimeout(() => {
+        this.startDate = this.todayStr;
+        this.calculateDays();
+        this.applyFilters();
+      }, 1500);
     }
 
     // 2. Ensure End Date is at least the same as Start Date
     if (this.startDate && this.endDate && this.endDate < this.startDate) {
-      this.endDate = this.startDate;
+      setTimeout(() => {
+        this.endDate = this.startDate;
+        this.calculateDays();
+        this.applyFilters();
+      }, 1500);
     }
 
     this.calculateDays();
+    this.applyFilters();
+  }
+
+  validatePassengerCount() {
+    if (this.passengerCount < 1) {
+      this.passengerCount = 1;
+    } else if (this.passengerCount > 60) {
+      this.passengerCount = 60;
+    }
     this.applyFilters();
   }
 
@@ -183,14 +198,25 @@ export class UserSearch implements OnInit {
   }
 
   loadAvailableVehicles() {
-    this.transportVehicleService.getVehicles().subscribe(vehicles => {
-      this.allVehicles = vehicles;
-      this.applyFilters();
+    this.isLoading = true;
+    this.errorMessage = null;
+    
+    this.transportVehicleService.getVehicles().subscribe({
+      next: (vehicles) => {
+        this.allVehicles = vehicles;
+        this.applyFilters();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error fetching vehicles:', err);
+        this.errorMessage = 'Could not load vehicles. Please check your connection or try again later.';
+        this.isLoading = false;
+        Swal.fire('Error', this.errorMessage, 'error');
+      }
     });
   }
 
   applyFilters() {
-    if (this.passengerCount < 1) this.passengerCount = 1;
     const cleanQuery = this.searchQuery.trim().toLowerCase();
 
     this.filteredVehicles = this.allVehicles.filter(v => {
@@ -199,7 +225,7 @@ export class UserSearch implements OnInit {
       const matchSearch = v.description.toLowerCase().includes(cleanQuery) || 
                           v.vehicleClass.toLowerCase().includes(cleanQuery);
       
-      const matchPickup = !this.pickupArea || v.providerProfile.location.toLowerCase().includes(this.pickupArea.toLowerCase());
+      const matchPickup = !this.pickupArea || v.providerProfile.location.toLowerCase().includes(this.pickupArea.trim().toLowerCase());
 
       let matchFeatures = true;
       if (this.featureFilters.luggage && v.features.luggage < 1) matchFeatures = false;
@@ -217,11 +243,15 @@ export class UserSearch implements OnInit {
       // Check if global date selection conflicts with vehicle booked dates
       let dateConflict = false;
       if (this.startDate && this.endDate && v.bookedDates) {
-        let current = new Date(this.startDate);
-        let end = new Date(this.endDate);
+        const start = new Date(this.startDate);
+        const end = new Date(this.endDate);
+        let current = new Date(start);
+        
         while (current <= end) {
-          if (v.bookedDates.includes(current.toISOString().split('T')[0])) {
-            dateConflict = true; break;
+          const dateStr = current.toISOString().split('T')[0];
+          if (v.bookedDates.includes(dateStr)) {
+            dateConflict = true;
+            break;
           }
           current.setDate(current.getDate() + 1);
         }
@@ -238,6 +268,30 @@ export class UserSearch implements OnInit {
     } else if (this.sortBy === 'Best Rated') {
       this.filteredVehicles.sort((a, b) => this.getAverageRating(b) - this.getAverageRating(a));
     }
+  }
+
+  resetFilters() {
+    this.searchQuery = '';
+    this.selectedCategory = 'All Categories';
+    this.passengerCount = 1;
+    this.pickupArea = '';
+    this.sortBy = 'Default';
+    
+    // Reset Dates to Today/Tomorrow
+    this.startDate = this.todayStr;
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    this.endDate = tomorrow.toISOString().split('T')[0];
+
+    // Reset Languages
+    Object.keys(this.selectedLanguages).forEach(key => this.selectedLanguages[key] = false);
+
+    // Reset Features
+    this.featureFilters = { luggage: false, safety: false, entertainment: false, wifi: false, airbags: false };
+
+    this.calculateDays();
+    this.applyFilters();
   }
 
   getAverageRating(vehicle: Vehicle): number {
@@ -382,6 +436,11 @@ export class UserSearch implements OnInit {
   // --- BOOKING LOGIC ---
 
   requestBooking(vehicle: Vehicle) {
+    if (this.bookingDays <= 0) {
+      Swal.fire('Invalid Selection', 'Please select a valid date range before booking.', 'warning');
+      return;
+    }
+
     const dailyTotal = vehicle.standardDailyRate * this.bookingDays;
     const nightTotal = vehicle.driverNightOutFee * this.bookingNights;
     const subtotal = dailyTotal + nightTotal;
