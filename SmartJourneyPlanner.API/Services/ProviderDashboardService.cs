@@ -1,9 +1,9 @@
 using MongoDB.Driver;
-using SmartJourneyPlanner.API.Models; // This must match your model's namespace exactly
+using SmartJourneyPlanner.Models; 
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SmartJourneyPlanner.API.Services
+namespace SmartJourneyPlanner.Services
 {
     public class ProviderDashboardService
     {

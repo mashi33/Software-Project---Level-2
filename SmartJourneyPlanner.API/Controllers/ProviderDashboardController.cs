@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartJourneyPlanner.API.Models;
-using SmartJourneyPlanner.API.Services;
+using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.Services;
 using System.Threading.Tasks;
 
 namespace SmartJourneyPlanner.API.Controllers
