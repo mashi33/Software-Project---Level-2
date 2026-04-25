@@ -2,6 +2,9 @@ using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace SmartJourneyPlanner.API.Services
 {
@@ -13,7 +16,7 @@ namespace SmartJourneyPlanner.API.Services
 
         public AdminService(IOptions<MongoDBSettings> settings)
         {
-            // Connect to MongoDB and find the 'Users' and 'TransportVehicles' collections
+            // Connect to MongoDB using the configured settings
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
 
@@ -21,7 +24,18 @@ namespace SmartJourneyPlanner.API.Services
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // Get a list of all transport providers (vehicles) that are waiting for admin approval
+        // --- ✅ FIX FOR CS1061 ERROR ---
+        // Finds all vehicles belonging to a specific provider ID
+        public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
+        {
+            return await _vehiclesCollection
+                .Find(v => v.ProviderId == providerId)
+                .ToListAsync();
+        }
+
+        // --- 🚐 TRANSPORT PROVIDER LOGIC ---
+
+        // Get a list of all transport providers waiting for admin approval
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
         {
             return await _vehiclesCollection
@@ -29,7 +43,7 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        // Get a list of all transport providers (vehicles) that have already been approved
+        // Get a list of all transport providers that have already been approved
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -37,28 +51,32 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        // Change the status of a vehicle (e.g. from 'Pending' to 'Approved' or 'Rejected')
+        // Change the status of a vehicle and sync the 'IsVerified' flag
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
-            var update = Builders<TransportVehicle>.Update.Set(v => v.Status, newStatus);
             
-            // Apply the status change in the database
+            // If approved, set IsVerified to true; otherwise, keep it false
+            var update = Builders<TransportVehicle>.Update
+                .Set(v => v.Status, newStatus)
+                .Set(v => v.IsVerified, newStatus == "Approved");
+            
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
-        // Save vehicle-related details back into a specific User document
+        // --- 👥 USER MANAGEMENT LOGIC ---
+
+        // Update a specific User document (used for role promotions or profile changes)
         public async Task UpdateUserVehicleAsync(string id, User updatedUser)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            // Replace the old user data with the updated information
             await _usersCollection.ReplaceOneAsync(filter, updatedUser);
         }
 
-        // Add a brand new transport provider (User) record to the system
+        // Add a brand new user record to the system
         public async Task CreateProviderAsync(User newUser)
         {
             await _usersCollection.InsertOneAsync(newUser);
         }
     }
-}
+}

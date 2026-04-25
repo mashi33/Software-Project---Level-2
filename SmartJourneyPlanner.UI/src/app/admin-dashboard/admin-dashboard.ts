@@ -32,9 +32,7 @@ export class AdminDashboardComponent implements OnInit {
   searchEmail: string = '';
 
   ngOnInit() {
-    // Initial data load for counts and dashboard
-    this.fetchPendingProviders();
-    this.fetchAllUsers();
+    this.refreshDashboard();
   }
 
   // --- VIEW HANDLERS ---
@@ -49,12 +47,35 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchAllUsers();
   }
 
+  // ✅ DEDICATED REFRESH LOGIC
+  refreshDashboard() {
+    this.errorMessage = '';
+    this.fetchPendingProviders();
+    this.fetchAllUsers();
+    
+    // Optional toast notification
+    Swal.fire({
+      title: 'Dashboard Refreshed',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      icon: 'success'
+    });
+  }
+
   // --- DATA FETCHING ---
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
-      next: (data) => this.pendingProviders = data,
-      error: () => this.errorMessage = "Failed to load providers."
+      next: (data) => {
+        this.pendingProviders = data;
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        console.error("Fetch error:", err);
+        this.errorMessage = "Failed to load providers.";
+      }
     });
   }
 
@@ -68,29 +89,49 @@ export class AdminDashboardComponent implements OnInit {
   // --- ACTIONS ---
 
   /**
-   * Approves or Rejects a transport provider.
-   * Updates the UI immediately by filtering the local list.
+   * ✅ UPDATED: Approves or Rejects a transport provider.
+   * Fixed navigation issues by disabling heightAuto and forcing focus on Confirm.
    */
-  updateProviderStatus(id: string, status: string) {
+  updateProviderStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
+
+    if (!id) {
+      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
+      return;
+    }
+
     Swal.fire({
       title: `Confirm ${status}?`,
       text: `Are you sure you want to set this provider to ${status}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
-      confirmButtonText: 'Yes, proceed'
+      confirmButtonText: 'Yes, proceed',
+      cancelButtonText: 'No, cancel',
+      heightAuto: false,     // 🛠️ Prevents page jumping/navigation issues
+      focusConfirm: true,    // 🛠️ Ensures you can hit 'Enter' to approve
+      returnFocus: true      // 🛠️ Puts focus back on dashboard after close
     }).then((result) => {
       if (result.isConfirmed) {
         this.adminService.updateProviderStatus(id, status).subscribe({
           next: () => {
-            // Remove from local list so the table updates
             this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-            this.selectedProvider = null;
-            Swal.fire('Success', `Provider has been ${status}`, 'success');
+            this.selectedProvider = null; // Automatically close the detail modal
+            Swal.fire({
+              title: 'Success',
+              text: `Provider has been ${status}`,
+              icon: 'success',
+              heightAuto: false
+            });
           },
           error: (err) => {
             console.error("Update failed", err);
-            Swal.fire('Error', 'Failed to update status on the server.', 'error');
+            Swal.fire({
+              title: 'Error',
+              text: 'Update failed. Backend might be down.',
+              icon: 'error',
+              heightAuto: false
+            });
           }
         });
       }
@@ -105,25 +146,56 @@ export class AdminDashboardComponent implements OnInit {
       next: () => {
         const user = this.allUsers.find(u => (u._id || u.id) === userId);
         if (user) user.role = newRole;
-        Swal.fire('Updated', `User is now an ${newRole}`, 'success');
+        Swal.fire({
+          title: 'Updated',
+          text: `User is now an ${newRole}`,
+          icon: 'success',
+          heightAuto: false
+        });
       },
-      error: () => Swal.fire('Error', 'Role update failed.', 'error')
+      error: () => Swal.fire({
+        title: 'Error',
+        text: 'Role update failed.',
+        icon: 'error',
+        heightAuto: false
+      })
     });
   }
 
   /**
    * Opens the detail modal for a specific provider.
+   * Fetches full data (including heavy Base64 images) on-demand.
    */
   viewDetails(provider: any) {
-    this.selectedProvider = provider;
+    const id = provider._id || provider.id;
+    
+    this.adminService.getProviderById(id).subscribe({
+      next: (fullData: any) => {
+        this.selectedProvider = fullData;
+      },
+      error: (err: any) => {
+        console.error("Could not fetch details", err);
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to load vehicle documents.',
+          icon: 'error',
+          heightAuto: false
+        });
+      }
+    });
   }
 
   /**
-   * Opens Base64 document images in a new window with a stylized background.
+   * Opens Base64 document images in a new window.
    */
   openImage(base64Data: string | undefined) {
     if (!base64Data) {
-      Swal.fire('Error', 'No document image found for this provider.', 'error');
+      Swal.fire({
+        title: 'Error',
+        text: 'No document image found.',
+        icon: 'error',
+        heightAuto: false
+      });
       return;
     }
 
@@ -136,7 +208,12 @@ export class AdminDashboardComponent implements OnInit {
         </body>
       `);
     } else {
-      Swal.fire('Pop-up Blocked', 'Please allow pop-ups to view documents.', 'warning');
+      Swal.fire({
+        title: 'Pop-up Blocked',
+        text: 'Please allow pop-ups to view documents.',
+        icon: 'warning',
+        heightAuto: false
+      });
     }
   }
 }

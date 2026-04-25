@@ -80,7 +80,7 @@ namespace SmartJourneyPlanner.Models
         public string? RevenueLicenseExpiry { get; set; }
 
         [BsonElement("IsVerified")]
-        public bool IsVerified { get; set; }
+        public bool IsVerified { get; set; } = false; // Admin flips this to true
 
         [BsonElement("Status")]
         public string Status { get; set; } = "Pending";

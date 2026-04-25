@@ -114,3 +114,21 @@
 .btn-approve-main { background: #10b981; color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .btn-reject-main { background: #ef4444; color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .btn-approve-main:hover, .btn-reject-main:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+.btn-action-primary, .btn-action-success {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-action-primary:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #d97706;
+}
