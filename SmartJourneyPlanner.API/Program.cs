@@ -108,6 +108,7 @@ builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
+builder.Services.AddSingleton<MemoryService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE

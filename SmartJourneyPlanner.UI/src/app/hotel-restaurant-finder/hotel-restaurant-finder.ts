@@ -15,7 +15,8 @@ import { PlaceCardListComponent } from '../place-card/place-card';
     ],
     templateUrl: './hotel-restaurant-finder.html',
     styleUrl: './hotel-restaurant-finder.css'
-})
+}) 
+
 export class HotelRestaurantFinder {
   constructor(private router: Router) {}
 

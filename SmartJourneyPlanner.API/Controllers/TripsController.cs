@@ -50,13 +50,11 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
-    // FIX: logged-in user ගේ email මගින් trips ලබාගැනීම
     [HttpGet("by-email/{email}")]
     public async Task<ActionResult<List<Trip>>> GetTripsByEmail(string email)
     {
       try
       {
-        // Members array එකේ email match වන trips සොයා ගැනීම
         var filter = Builders<Trip>.Filter.Or(
             Builders<Trip>.Filter.Eq(t => t.CreatedBy, email),
             Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == email)
@@ -70,13 +68,11 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
-    // FIX: trip එකකට hotel/restaurant save කිරීම
     [HttpPost("{tripId}/add-place")]
     public async Task<IActionResult> AddPlaceToTrip(string tripId, [FromBody] TripPlace place)
     {
       try
       {
-        // Trip එකේ SavedPlaces array එකට නව place එක push කිරීම
         var filter = Builders<Trip>.Filter.Eq(t => t.Id, tripId);
         var update = Builders<Trip>.Update.Push(t => t.SavedPlaces, place);
         var result = await _tripsCollection.UpdateOneAsync(filter, update);
@@ -143,10 +139,10 @@ namespace SmartJourneyPlanner.API.Controllers
         message.Body = new TextPart("html")
         {
           Text = $@"<div style='font-family: Arial, sans-serif;'>
-                                <h3>Hi there!</h3>
-                                <p>You have been invited to join the trip <b>{tripName}</b> as an <b>{role}</b>.</p>
-                                <a href='{invitationLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>View Trip Details</a>
-                             </div>"
+                        <h3>Hi there!</h3>
+                        <p>You have been invited to join the trip <b>{tripName}</b> as an <b>{role}</b>.</p>
+                        <a href='{invitationLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>View Trip Details</a>
+                     </div>"
         };
         using (var client = new SmtpClient())
         {
@@ -155,6 +151,7 @@ namespace SmartJourneyPlanner.API.Controllers
           await client.SendAsync(message);
           await client.DisconnectAsync(true);
         }
+        Console.WriteLine($"Email sent to {receiverEmail}");
       }
       catch (Exception ex)
       {

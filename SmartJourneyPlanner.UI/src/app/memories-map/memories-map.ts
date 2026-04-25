@@ -25,7 +25,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     L.latLng(9.9, 82.0)  // North
   );
 
-  private apiUrl = 'https://localhost:7001/api/memories'; 
+  private apiUrl = 'http://localhost:5233/api/memories'; 
+
+  visibilityStatus: string = 'public'; 
 
   newMemory = { 
     title: '', 
@@ -35,7 +37,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     startDate: '',
     endDate: '',
     latitude: 0, 
-    longitude: 0 
+    longitude: 0,
+    isPublic: true
   };
   
   searchQuery: string = '';
@@ -98,7 +101,8 @@ removeImage(fileInput: HTMLInputElement): void {
       longitude: Number(m.longitude || m.Longitude || 0),
       locationName: m.locationName || m.LocationName || 'Unknown Location',
       startDate:  m.startDate, 
-       endDate:  m.endDate
+       endDate:  m.endDate,
+       isPublic: m.isPublic || m.IsPublic || false
     };
   }
 
@@ -153,14 +157,17 @@ toggleSeeMore() {
           alert("Location not found. Try another city.");
         }
       },
-      error: () => alert("Search for your location.")
+      error: () => alert("Searching for your location.")
     });
   }
 
   // 4. SAVE: Post to MongoDB and update UI without page refresh
   saveMemory() {
- const body = { ...this.newMemory };
-
+    this.newMemory.isPublic = (this.visibilityStatus === 'public');
+ const body = { 
+    ...this.newMemory, // This copies all fields like title, imageUrl, etc.
+    isPublic: this.newMemory.isPublic // Ensures the property name matches your backend attribute
+  };
  this.http.post(this.apiUrl, body).subscribe({
  next: (response: any) => {
  const savedData = this.formatData(response);
@@ -169,11 +176,18 @@ toggleSeeMore() {
  this.allMemories.push(savedData);
  this.myRecentUploads.unshift(savedData);
  if(this.myRecentUploads.length > 6) this.myRecentUploads.pop(); // Keep sidebar clean
+
+ if (savedData.isPublic) {
+          console.log("This will be visible on the Community Map");
+          // If you have a separate communityMemories array, push it there too:
+          // this.communityMemories.push(savedData);
+      }
  
  this.refreshMapMarkers();
 
  // Reset Form
- this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0 };
+ this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0,isPublic: true };
+ this.visibilityStatus = 'public';
  this.searchQuery = '';
  alert("Memory pinned successfully!");
  },

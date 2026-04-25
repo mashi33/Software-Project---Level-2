@@ -1,0 +1,45 @@
+<div class="explore-wrapper">
+  <main class="map-section">
+    <div id="map">
+      </div>
+  </main>
+
+  <aside class="sidebar-section">
+    <div class="search-container">
+      <input type="text" placeholder="Search City" class="search-input">
+      <button class="search-btn">Find</button>
+    </div>
+
+    <section class="community-card">
+      <header class="gallery-header">
+        <h5 class="gallery-title">Community Gallery</h5>
+        <span class="gallery-count" *ngIf="myRecentUploads">{{myRecentUploads.length}}</span>
+      </header>
+
+      <div class="gallery-grid">
+        <div class="gallery-item" *ngFor="let m of myRecentUploads | slice:0:showMax; trackBy: trackByFn">
+          <div class="thumb-card" (click)="selectedMemory = m" [class.active]="selectedMemory === m">
+            <div class="img-container">
+              <img *ngIf="m?.imageUrl" [src]="m?.imageUrl" class="thumb-img" [alt]="m?.title">
+            </div>
+
+            <div class="thumb-info">
+              <p class="thumb-text">{{ m?.title || 'Untitled' }}</p>
+              <div class="thumb-dates" *ngIf="m?.startDate || m?.endDate">
+                <span class="date-range">{{ m?.startDate | date:'mediumDate' }} — {{ m?.endDate | date:'mediumDate' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <p class="empty-state" *ngIf="myRecentUploads?.length === 0">Your session uploads will appear here instantly.</p>
+      </div> 
+
+     <div class="see-more-container" *ngIf="myRecentUploads.length > 3">
+        <button class="btn-see-more" (click)="toggleSeeMore()">
+          {{ showMax === 3 ? 'See More (' + (myRecentUploads.length - 3) + ')' : 'Show Less' }}
+        </button>
+      </div>
+    </section> 
+  </aside>
+</div>

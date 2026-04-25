@@ -7,10 +7,11 @@ import { Subscription } from 'rxjs';
 declare var google: any;
 
 @Component({
-    selector: 'app-map-view',
-    imports: [CommonModule],
-    templateUrl: './map-view.html',
-    styleUrl: './map-view.css'
+  selector: 'app-map-view',
+  standalone: true, // standalone true බව තහවුරු කරගන්න
+  imports: [CommonModule],
+  templateUrl: './map-view.html',
+  styleUrl: './map-view.css'
 })
 export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;
@@ -24,14 +25,12 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.placesSubscription = this.placesService.currentPlaces.subscribe((result: PlacesResult | null) => {
       if (!result) return;
 
-      // FIX: Pan the map to the geocoded city center
       if (this.map) {
         const center = { lat: result.centerLat, lng: result.centerLon };
         this.map.setCenter(center);
         this.map.setZoom(13);
       }
 
-      // FIX: Render markers for the new results
       this.renderMapMarkers(result.places);
     });
   }
@@ -56,7 +55,8 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const script = document.createElement('script');
       script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&callback=onGoogleMapsReady`;
+      // වැදගත්: libraries=places එකතු කළා (Autocomplete සඳහා අත්‍යවශ්‍යයි)
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&callback=onGoogleMapsReady`;
       script.async = true;
       script.defer = true;
 
@@ -68,11 +68,14 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   initMap() {
     const mapElement = document.getElementById('hotelMap');
     if (mapElement && !this.map) {
-      // Start at a neutral Sri Lanka center — map will pan to the searched city automatically
       const mapOptions = {
-        center: { lat: 7.8731, lng: 80.7718 }, // Sri Lanka center
+        center: { lat: 7.8731, lng: 80.7718 }, 
         zoom: 8,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        // සිතියම වඩාත් පිරිසිදුව පෙනීමට UI settings කිහිපයක්
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
       };
       this.map = new google.maps.Map(mapElement, mapOptions);
     }
@@ -81,7 +84,6 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   renderMapMarkers(places: any[]) {
     if (!this.map) return;
 
-    // Clear existing markers first
     this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
 
@@ -92,20 +94,33 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
         const marker = new google.maps.Marker({
           position: { lat: p.latitude, lng: p.longitude },
           map: this.map,
-          title: p.name
+          title: p.name,
+          animation: google.maps.Animation.DROP // වැටෙන ස්වභාවයක් ලබා දීමට
         });
 
-        // Show place name popup on marker click
+        // අලංකාර Custom Popup Content එක මෙතැනට
+        const content = `
+          <div class="custom-popup" style="width:200px; font-family: sans-serif;">
+            ${p.photoReference ? 
+              `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photoReference}&key=${this.googleMapsApiKey}" 
+                    style="width:100%; height:100px; object-fit:cover; border-radius:8px;" />` : ''
+            }
+            <div style="padding:10px 0 5px 0;">
+              <h4 style="margin:0; font-size:14px;">${p.name}</h4>
+              <p style="margin:5px 0; font-size:12px; color:#666;">${p.address}</p>
+              <div style="color:#f39c12; font-weight:bold; font-size:13px;">⭐ ${p.rating}</div>
+            </div>
+          </div>
+        `;
+
         const infoWindow = new google.maps.InfoWindow({
-          content: `<div style="font-weight:600">${p.name}</div>
-                    <div style="font-size:0.85rem;color:#666">${p.address}</div>
-                    <div style="color:#f39c12">⭐ ${p.rating}</div>`
+          content: content
         });
 
         marker.addListener('click', () => {
+          // කලින් විවෘත කර ඇති info windows වසා දැමීමට (විකල්ප)
           infoWindow.open(this.map, marker);
           
-          // --- අලුත් කොටස: Marker එකක් ක්ලික් කළ විට Card එක Highlight කිරීමට ---
           this.placesService.selectPlace(p.id); 
           this.animateMarker(marker);
         });
@@ -115,7 +130,6 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Marker එක Bounce කර පරිශීලකයාට පෙන්වීමට
   animateMarker(marker: any) {
     marker.setAnimation(google.maps.Animation.BOUNCE);
     setTimeout(() => marker.setAnimation(null), 1500);

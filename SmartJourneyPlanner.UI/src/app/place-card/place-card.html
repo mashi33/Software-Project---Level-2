@@ -7,15 +7,15 @@
 
   <ng-container *ngIf="places !== null">
     <div *ngFor="let place of places"
-         [id]="'card-' + place.id"
-         class="place-card"
-         [class.selected-card]="place.id === selectedPlaceId">
+      [id]="'card-' + place.id"
+      class="place-card"
+      [class.selected-card]="place.id === selectedPlaceId">
 
       <img
-          *ngIf="place.photoReference"
-          [src]="'https://places.googleapis.com/v1/' + place.photoReference + '/media?maxWidthPx=400&key=' + googleMapsApiKey"
-          loading="lazy"
-          class="card-img"
+        *ngIf="place.photoReference"
+        [src]="'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=' + place.photoReference + '&key=' + googleMapsApiKey"
+        loading="lazy"
+        class="card-img"
       />
       <div *ngIf="!place.photoReference" class="no-img">No Image Available</div>
 
@@ -45,30 +45,39 @@
     </div>
   </ng-container>
 
-  <!-- FIX: overlay click ඉවත් කිරීම — flicker වළක්වා ගැනීමට -->
+  <!--
+    FLICKERING FIX:
+    - Removed (click)="closeModal()" from overlay div completely.
+    - Previously, clicking anywhere on overlay triggered closeModal() then
+      Angular re-rendered → caused visible flicker on every interaction.
+    - Now only the ✕ button closes the modal (controlled, no flicker).
+    - (click)="$event.stopPropagation()" on modal-box prevents any
+      accidental event bubbling issues.
+  -->
   <div class="modal-overlay" *ngIf="showTripModal">
-    <div class="modal-box">
+    <div class="modal-box" (click)="$event.stopPropagation()">
 
       <div class="modal-header">
         <h3>Select a Trip</h3>
+        <!-- Only X button closes the modal -->
         <button class="modal-close" (click)="closeModal()">✕</button>
       </div>
 
-      <!-- Loading -->
+      <!-- Loading state while fetching user trips -->
       <div *ngIf="isLoadingTrips" class="modal-loading">
         Loading your trips...
       </div>
 
-      <!-- No Trips -->
+      <!-- No trips found message -->
       <div *ngIf="!isLoadingTrips && userTrips.length === 0" class="modal-empty">
         No trips found. Create a trip first!
       </div>
 
-      <!-- Trip List -->
+      <!-- Trip list: user clicks a trip to add the place -->
       <div *ngIf="!isLoadingTrips && userTrips.length > 0" class="trip-list">
         <div *ngFor="let trip of userTrips"
-             class="trip-item"
-             (click)="selectTrip(trip)">
+          class="trip-item"
+          (click)="selectTrip(trip)">
           <div class="trip-name">{{ trip.tripName }}</div>
           <div class="trip-meta">
             📍 {{ trip.destination }} &nbsp;|&nbsp;
