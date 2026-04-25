@@ -2,72 +2,100 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SmartJourneyPlanner.API.Models;   // For User and StatusUpdateDto
-using SmartJourneyPlanner.API.Services; // For AdminService
+using SmartJourneyPlanner.Models;         // For TransportVehicle
+using SmartJourneyPlanner.API.Models;    // For User
+using SmartJourneyPlanner.API.Services;  // For AdminService
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
-    // [Authorize(Roles = "Admin")] // ❌ Commented out to bypass 401 error during testing
-    // This controller handles all Admin-related tasks like approvals
-    [AllowAnonymous] // Allow everyone to access for now (no login required for testing)
+    [AllowAnonymous] // ⚠️ For testing only: allow access without login
     [ApiController]
     [Route("api/[controller]")]
     public class AdminController : ControllerBase
     {
         private readonly AdminService _adminService;
+        private readonly IMongoCollection<User> _userCollection;
+        private readonly IMongoCollection<TransportVehicle> _vehicleCollection;
 
-        public AdminController(AdminService adminService)
+        public AdminController(AdminService adminService, IMongoClient mongoClient)
         {
             _adminService = adminService;
+            
+            // Connect to the database collections
+            var database = mongoClient.GetDatabase("SmartJourneyDb");
+            _userCollection = database.GetCollection<User>("Users");
+            _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // This method gets all vehicles that are waiting for Admin approval
+        // --- 🚐 TRANSPORT PROVIDER APPROVALS ---
+
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
         {
             try 
             {
-                var pending = await _adminService.GetPendingProvidersAsync();
-                return Ok(pending); // Return the list of pending vehicles
+                // Fetches vehicles where status is exactly "Pending"
+                var pending = await _vehicleCollection.Find(v => v.Status == "Pending").ToListAsync();
+                return Ok(pending); 
             }
             catch (Exception ex)
             {
-                // If something goes wrong, return an error message
                 return BadRequest(new { message = "Error fetching providers", error = ex.Message });
             }
         }
 
-        // This method is for debugging - it shows the raw data from the database
-        [HttpGet("debug-pending")]
-        public async Task<IActionResult> DebugPending()
-        {
-            var client = new MongoDB.Driver.MongoClient("mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority");
-            var database = client.GetDatabase("SmartJourneyDb");
-            var collection = database.GetCollection<MongoDB.Bson.BsonDocument>("TransportVehicles");
-            var docs = await collection.Find(MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("Status", "Pending")).ToListAsync();
-            return Ok(docs.Select(d => d.ToJson())); // Return raw database documents as JSON
-        }
+        // --- 👥 USER MANAGEMENT ---
 
-        // This method updates a vehicle status to 'Approved' or 'Rejected'
-        [HttpPut("verify-provider/{id}")]
-        public async Task<IActionResult> VerifyProvider(string id, [FromBody] StatusUpdateDto updateDto)
+        [HttpGet("all-users")]
+        public async Task<IActionResult> GetAllUsers()
         {
             try
             {
-                // Call the service to update the status in MongoDB
-                await _adminService.UpdateStatusAsync(id, updateDto.Status);
-                return Ok(new { message = $"Provider status updated to {updateDto.Status}" });
+                var users = await _userCollection.Find(_ => true).ToListAsync();
+                return Ok(users);
             }
             catch (Exception ex)
             {
-                // Return error if the update fails
+                return BadRequest(new { message = "Error fetching users", error = ex.Message });
+            }
+        }
+
+        [HttpPut("promote-user/{id}")]
+        public async Task<IActionResult> PromoteUser(string id, [FromBody] string newRole)
+        {
+            try
+            {
+                var filter = Builders<User>.Filter.Eq(u => u.Id, id);
+                var update = Builders<User>.Update.Set(u => u.Role, newRole);
+                
+                var result = await _userCollection.UpdateOneAsync(filter, update);
+
+                if (result.MatchedCount == 0)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                return Ok(new { message = "Role successfully updated to " + newRole });
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(new { message = "Update failed", error = ex.Message });
             }
         }
-    }
 
-    public class StatusUpdateDto
-    {
-        public string Status { get; set; } = string.Empty;
+        // --- 🛠️ DEBUGGING ---
+
+        [HttpGet("debug-pending")]
+        public async Task<IActionResult> DebugPending()
+        {
+            // Raw BsonDocument check to see exactly what is in Atlas
+            var docs = await _vehicleCollection.Find(v => v.Status == "Pending")
+                                              .Project(new BsonDocument())
+                                              .ToListAsync();
+            return Ok(docs.Select(d => d.ToString())); 
+        }
     }
 }
