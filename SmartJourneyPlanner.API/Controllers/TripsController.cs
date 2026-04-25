@@ -3,8 +3,8 @@ using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
 using MailKit.Net.Smtp;
 using MimeKit;
-using System.Collections.Generic; // ✅ Required for List<>
-using System.Threading.Tasks;    // ✅ Required for Task<>
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System;
 
 namespace SmartJourneyPlanner.API.Controllers
@@ -22,7 +22,6 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         // --- ✅ GET: api/trips ---
-        // This is the "Main Entrance" that your Budget Dashboard calls to fill the dropdown.
         [HttpGet]
         public async Task<ActionResult<List<Trip>>> GetAllTrips()
         {
@@ -82,57 +81,22 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
-
-        [HttpGet("{id}")]
-public async Task<IActionResult> GetTrip(string id)
-{
-    try
-    {
-        // MongoDB එකේ ID එක අනුව Trip එක හොයනවා
-        var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
-
-        if (trip == null)
-        {
-            return NotFound(new { message = "Trip not found in database!" });
-        }
-
-        return Ok(trip);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = "Error: " + ex.Message });
-    }
-}
-
+        // --- ✅ PUT: api/trips/{id} ---
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
         {
             try
             {
-                // 1. URL එකේ තියෙන ID එක Trip එකේ ඇතුළටත් දානවා (ෂුවර් වෙන්න)
+                // Ensure the ID from the URL is assigned to the trip object
                 updatedTrip.Id = id;
 
-                // 2. MongoDB Update එක කරනවා
-                var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
                 var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
 
                 if (result.MatchedCount == 0)
                 {
                     return NotFound(new { message = "Trip not found in database!" });
                 }
-                if (result.MatchedCount == 0)
-                {
-                    return NotFound(new { message = "Trip not found in database!" });
-                }
 
-                return Ok(new { message = "Trip updated successfully!" });
-            }
-            catch (Exception ex)
-            {
-                // මොකක් හරි error එකක් ආවොත් ඒක මෙතනින් බලාගන්න පුළුවන්
-                return BadRequest(new { message = "Update error: " + ex.Message });
-            }
-        }
                 return Ok(new { message = "Trip updated successfully!" });
             }
             catch (Exception ex)
