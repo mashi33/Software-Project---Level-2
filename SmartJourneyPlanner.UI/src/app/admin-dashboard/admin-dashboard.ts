@@ -1,105 +1,221 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-interface TransportProvider {
-  id: string;
-  fullName: string;
-  vehicleModel: string;
-  vehicleType: string; 
-  registrationNumber: string;
-  status: string; 
-  licenseUrl?: string;
-  nicUrl?: string;
-  
-  // New fields from TransportVehicle
-  description?: string;
-  type?: string;
-  vehicleClass?: string;
-  seatCount?: number;
-  isAc?: boolean;
-  standardDailyRate?: number;
-  driverNightOutFee?: number;
-  interiorPhoto?: string;
-  exteriorPhoto?: string;
-  driverNicUrl?: string;
-  driverLicenseUrl?: string;
-  insuranceDocUrl?: string;
-  revenueLicenseUrl?: string;
-  providerProfile?: {
-    name: string;
-    phone: string;
-    location: string;
-  };
-}
+import { FormsModule } from '@angular/forms';
+import { AdminService } from '../services/admin.service';
+import { AuthService } from '../services/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
-    selector: 'app-admin-dashboard',
-    imports: [CommonModule],
-    templateUrl: './admin-dashboard.html',
-    styleUrls: ['./admin-dashboard.css']
+  selector: 'app-admin-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './admin-dashboard.html',
+  styleUrls: ['./admin-dashboard.css']
 })
 export class AdminDashboardComponent implements OnInit {
-  pendingProviders: any[] = []; // List to store vehicles waiting for approval
-  errorMessage: string = '';    // String to store any error messages
-  selectedProvider: any = null; // Currently selected vehicle for the 'View Docs' modal
+  private adminService = inject(AdminService);
+  private authService = inject(AuthService);
 
-  constructor(private http: HttpClient) {}
+  // System Data
+  currentDate = new Date();
 
-  // This runs when the page loads
+  // View Switcher
+  view: 'stats' | 'providers' | 'users' = 'stats';
+
+  // Data Lists
+  pendingProviders: any[] = [];
+  allUsers: any[] = [];
+  selectedProvider: any = null;
+  
+  // States
+  errorMessage: string = '';
+  searchEmail: string = '';
+
   ngOnInit() {
+    this.refreshDashboard();
+  }
+
+  // --- VIEW HANDLERS ---
+
+  onReviewNow() {
+    this.view = 'providers'; 
     this.fetchPendingProviders();
   }
 
-  // Gets the security token from browser storage
-  getHeaders() {
-    const token = localStorage.getItem('token');
-    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  onManageLogins() {
+    this.view = 'users'; 
+    this.fetchAllUsers();
   }
 
-  // Fetches the list of pending vehicles from the Backend API
+  // ✅ DEDICATED REFRESH LOGIC
+  refreshDashboard() {
+    this.errorMessage = '';
+    this.fetchPendingProviders();
+    this.fetchAllUsers();
+    
+    // Optional toast notification
+    Swal.fire({
+      title: 'Dashboard Refreshed',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      icon: 'success'
+    });
+  }
+
+  // --- DATA FETCHING ---
+
   fetchPendingProviders() {
-    this.http.get<any[]>('http://localhost:5233/api/admin/pending-providers', { headers: this.getHeaders() })
-      .subscribe({
-        next: (data) => { 
-          console.log('Fetched Pending:', data);
-          this.pendingProviders = data; // Save the data to our list
-          this.errorMessage = '';       // Clear any previous errors
-        },
-        error: (err) => { 
-          // Show error if backend is offline or unauthorized
-          this.errorMessage = 'Unauthorized or Backend Offline. Please log in as Admin.';
-          console.error('API Error:', err);
-        }
-      });
-  }
-
-  // Opens the detailed review modal for a specific vehicle
-  viewDetails(provider: any) {
-    console.log('Viewing Provider Details:', provider);
-    this.selectedProvider = provider;
-  }
-
-  openImage(url: string | undefined) {
-    if (url) {
-      window.open(url, '_blank');
-    }
-  }
-
-  updateProviderStatus(providerId: string, newStatus: string) {
-    this.http.put(`http://localhost:5233/api/admin/verify-provider/${providerId}`, 
-      { status: newStatus }, 
-      { headers: this.getHeaders() }
-    ).subscribe({
-      next: () => {
-        // Success: Remove from UI list
-        this.pendingProviders = this.pendingProviders.filter(p => p.id !== providerId);
-        this.selectedProvider = null; 
+    this.adminService.getPendingProviders().subscribe({
+      next: (data: any[]) => {
+        this.pendingProviders = data;
+        this.errorMessage = '';
       },
-      error: (err) => {
-        console.error('Failed to update status', err);
-        this.errorMessage = 'Action failed. You may not have permission.';
+      error: (err: any) => {
+        console.error("Fetch error:", err);
+        this.errorMessage = "Failed to load providers.";
       }
     });
+  }
+
+  fetchAllUsers() {
+    this.adminService.getAllUsers().subscribe({
+      next: (data: any[]) => this.allUsers = data,
+      error: (err: any) => console.error("Could not load users", err)
+    });
+  }
+
+  // --- ACTIONS ---
+
+  /**
+   * ✅ UPDATED: Approves or Rejects a transport provider.
+   * Fixed navigation issues by disabling heightAuto and forcing focus on Confirm.
+   */
+  updateProviderStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
+
+    if (!id) {
+      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
+      return;
+    }
+
+    Swal.fire({
+      title: `Confirm ${status}?`,
+      text: `Are you sure you want to set this provider to ${status}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
+      confirmButtonText: 'Yes, proceed',
+      cancelButtonText: 'No, cancel',
+      heightAuto: false,     // 🛠️ Prevents page jumping/navigation issues
+      focusConfirm: true,    // 🛠️ Ensures you can hit 'Enter' to approve
+      returnFocus: true      // 🛠️ Puts focus back on dashboard after close
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.updateProviderStatus(id, status).subscribe({
+          next: (response: any) => {
+            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
+            this.selectedProvider = null; // Automatically close the detail modal
+            Swal.fire({
+              title: 'Success',
+              text: `Provider has been ${status}`,
+              icon: 'success',
+              heightAuto: false
+            });
+          },
+          error: (err: any) => {
+            console.error("Update failed", err);
+            Swal.fire({
+              title: 'Error',
+              text: 'Update failed. Backend might be down.',
+              icon: 'error',
+              heightAuto: false
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * ✅ UPDATED: Promotes a regular user to an Admin role.
+   * Added explicit types to resolve TS compiler errors.
+   */
+ changeRole(userId: string, newRole: string) {
+  console.log("Button clicked! Target User ID:", userId); // This should appear in Console
+
+  if (!userId) {
+    Swal.fire('Error', 'User ID is missing!', 'error');
+    return;
+  }
+
+  this.adminService.updateUserRole(userId, newRole).subscribe({
+    next: (res: any) => {
+      console.log("Success from server:", res);
+      const user = this.allUsers.find(u => (u._id || u.id) === userId);
+      if (user) user.role = newRole;
+      Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
+    },
+    error: (err: any) => {
+      console.error("Server returned an error:", err);
+      Swal.fire('Error', 'Role update failed.', 'error');
+    }
+  });
+}
+
+  /**
+   * Opens the detail modal for a specific provider.
+   * Fetches full data (including heavy Base64 images) on-demand.
+   */
+  viewDetails(provider: any) {
+    const id = provider._id || provider.id;
+    
+    this.adminService.getProviderById(id).subscribe({
+      next: (fullData: any) => {
+        this.selectedProvider = fullData;
+      },
+      error: (err: any) => {
+        console.error("Could not fetch details", err);
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to load vehicle documents.',
+          icon: 'error',
+          heightAuto: false
+        });
+      }
+    });
+  }
+
+  /**
+   * Opens Base64 document images in a new window.
+   */
+  openImage(base64Data: string | undefined) {
+    if (!base64Data) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No document image found.',
+        icon: 'error',
+        heightAuto: false
+      });
+      return;
+    }
+
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(`
+        <title>Document Viewer</title>
+        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
+          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+        </body>
+      `);
+    } else {
+      Swal.fire({
+        title: 'Pop-up Blocked',
+        text: 'Please allow pop-ups to view documents.',
+        icon: 'warning',
+        heightAuto: false
+      });
+    }
   }
 }

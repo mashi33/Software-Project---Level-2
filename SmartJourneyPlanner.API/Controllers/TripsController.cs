@@ -21,6 +21,8 @@ namespace SmartJourneyPlanner.API.Controllers
       _tripsCollection = database.GetCollection<Trip>("Trips");
     }
 
+    // GET: api/trips
+    // Returns all trips stored in the database
     [HttpGet]
     public async Task<ActionResult<List<Trip>>> GetAllTrips()
     {
@@ -31,17 +33,19 @@ namespace SmartJourneyPlanner.API.Controllers
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = "Error: " + ex.Message });
+        return BadRequest(new { message = "Error fetching all trips: " + ex.Message });
       }
     }
 
+    // GET: api/trips/{id}
+    // Returns a single trip by its ID
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTrip(string id)
     {
       try
       {
         var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
-        if (trip == null) return NotFound(new { message = "Trip not found" });
+        if (trip == null) return NotFound(new { message = "Trip not found in database!" });
         return Ok(trip);
       }
       catch (Exception ex)
@@ -50,6 +54,8 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
+    // GET: api/trips/by-email/{email}
+    // Returns all trips where the user is the creator or a member
     [HttpGet("by-email/{email}")]
     public async Task<ActionResult<List<Trip>>> GetTripsByEmail(string email)
     {
@@ -68,6 +74,8 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
+    // POST: api/trips/{tripId}/add-place
+    // Adds a hotel or restaurant to a trip's saved places list
     [HttpPost("{tripId}/add-place")]
     public async Task<IActionResult> AddPlaceToTrip(string tripId, [FromBody] TripPlace place)
     {
@@ -88,6 +96,8 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
+    // POST: api/trips
+    // Creates a new trip and sends invitation emails to all members
     [HttpPost]
     public async Task<IActionResult> CreateTrip([FromBody] Trip newTrip)
     {
@@ -109,11 +119,14 @@ namespace SmartJourneyPlanner.API.Controllers
       }
     }
 
+    // PUT: api/trips/{id}
+    // Updates an existing trip by replacing the full document
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
     {
       try
       {
+        // Ensure the ID from the URL is assigned to the trip object
         updatedTrip.Id = id;
         var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
         if (result.MatchedCount == 0)
@@ -122,10 +135,11 @@ namespace SmartJourneyPlanner.API.Controllers
       }
       catch (Exception ex)
       {
-        return BadRequest(new { message = ex.Message });
+        return BadRequest(new { message = "Update error: " + ex.Message });
       }
     }
 
+    // Sends an HTML invitation email to a trip member with a link to view the trip
     private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
     {
       try

@@ -1,6 +1,10 @@
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using Microsoft.Extensions.Options;
+using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace SmartJourneyPlanner.Services
 {
@@ -15,6 +19,17 @@ namespace SmartJourneyPlanner.Services
             var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
             _vehiclesCollection = mongoDatabase.GetCollection<TransportVehicle>(databaseSettings.Value.TransportVehiclesCollectionName);
         }
+
+        // --- ✅ FIX FOR CS1061 ERROR ---
+        // This links the controller call to the MongoDB query for provider-specific fleet
+        public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
+        {
+            return await _vehiclesCollection
+                .Find(v => v.ProviderId == providerId)
+                .ToListAsync();
+        }
+
+        // --- 🚐 CORE OPERATIONS ---
 
         // Fetch all vehicles that are either ready to be booked (Approved) or waiting for review (Pending)
         public async Task<List<TransportVehicle>> GetAsync() =>
@@ -47,6 +62,8 @@ namespace SmartJourneyPlanner.Services
         // Insert many vehicle records at the same time
         public async Task InsertManyAsync(List<TransportVehicle> vehicles) =>
             await _vehiclesCollection.InsertManyAsync(vehicles);
+
+        // --- ⭐ REVIEWS ---
 
         // Add a customer rating and comment to a vehicle's review history
         public async Task AddReviewAsync(string id, TransportReview review)

@@ -70,13 +70,15 @@ builder.Services.AddSignalR(options =>
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
+// Find this section in your Program.cs
 builder.Services.AddControllers()
-.AddJsonOptions(options =>
-{
-  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-});
-
+    .AddJsonOptions(options =>
+    {
+        // This forces the API to send 'fullName' instead of 'FullName'
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // This makes the API more flexible when receiving data back from Angular
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 // ==========================================================
 // CORS
 // ==========================================================

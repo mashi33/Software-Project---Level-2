@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment.development';
-import { jwtDecode } from 'jwt-decode'; // Clean decoder
+import { jwtDecode } from 'jwt-decode'; // Ensure you ran: npm install jwt-decode
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   
-  // Uses the URL we fixed in your environment file earlier
+  // Uses the URL from your environment file
   private apiUrl = environment.apiUrl; 
 
   constructor(private http: HttpClient) { }
@@ -26,7 +26,6 @@ export class AuthService {
 
   // --- TOKEN & ROLE MANAGEMENT ---
 
-  // Standardized key name to 'token' to match your latest preference
   saveToken(token: string): void {
     localStorage.setItem('token', token);
   }
@@ -39,28 +38,34 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  // THE NEW & IMPROVED ROLE READER
+  /**
+   * Decodes the JWT and extracts the user role.
+   * This is used by the adminGuard to protect routes.
+   */
   getUserRole(): string {
     const token = this.getToken();
     
     if (!token) return 'Guest'; 
 
     try {
-      // Using the library instead of manual splitting/atob
       const decoded: any = jwtDecode(token);
       
-      // Standard .NET role claims
-      return decoded['role'] || 
-             decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-             'User';
+      // .NET Core often uses the full schema URI for role claims.
+      // We check both the short name and the long schema name.
+      const role = decoded['role'] || 
+                   decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      
+      return role || 'User';
       
     } catch (error) {
       console.error('Token decoding failed', error);
-      return 'User';
+      // Fallback to localStorage if decoding fails, or default to 'User'
+      return localStorage.getItem('userRole') || 'User';
     }
   }
 
   logout(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('userRole'); // Clean up both
   }
 }

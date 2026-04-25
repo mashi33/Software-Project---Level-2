@@ -4,6 +4,10 @@ using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using MongoDB.Bson;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
+using System.Linq;
 
 namespace SmartJourneyPlanner.Controllers
 {
@@ -20,21 +24,32 @@ namespace SmartJourneyPlanner.Controllers
             _vehicleService = vehicleService;
         }
 
-        // GET: api/TransportVehicles - Get all vehicles that admin has approved
+        // --- 🌍 PUBLIC VIEW (Travelers) ---
+
+        // GET: api/TransportVehicles
+        // Fetches only vehicles that have been vetted and approved by the Admin
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
+            // This service method should filter by Status == "Approved"
             var approved = await _adminService.GetApprovedProvidersAsync();
             return Ok(approved);
         }
 
-        // POST: api/TransportVehicles - Register a new vehicle and wait for admin approval
+        // --- 🚐 PROVIDER ACTIONS ---
+
+        // POST: api/TransportVehicles
+        // Entry point for providers to list a new vehicle
         [HttpPost]
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
             try 
             {
+                // ✅ FORCE LOGIC: Every new vehicle starts as Pending and Unverified
                 vehicleInfo.Status = "Pending";
+                vehicleInfo.IsVerified = false;
+
+                // Handle ID initialization for MongoDB
                 if (string.IsNullOrEmpty(vehicleInfo.Id)) vehicleInfo.Id = null;
 
                 await _vehicleService.CreateAsync(vehicleInfo);
@@ -46,7 +61,25 @@ namespace SmartJourneyPlanner.Controllers
             }
         }
 
-        // POST: api/TransportVehicles/seed - Fill the database with sample vehicle data
+        // GET: api/TransportVehicles/my-vehicles/{providerId}
+        // Allows a provider to see their specific fleet and their approval status
+        [HttpGet("my-vehicles/{providerId}")]
+        public async Task<IActionResult> GetMyVehicles(string providerId)
+        {
+            try
+            {
+                // This calls the service to filter by the logged-in user's ID
+                var myVehicles = await _vehicleService.GetByProviderIdAsync(providerId);
+                return Ok(myVehicles);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching your vehicles", error = ex.Message });
+            }
+        }
+
+        // --- 🛠️ MANAGEMENT & SEEDING ---
+
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
@@ -57,6 +90,7 @@ namespace SmartJourneyPlanner.Controllers
             var vehiclesToInsert = vehicles.Select(v => { 
                 v.Id = null; 
                 v.Status = "Approved"; 
+                v.IsVerified = true;
                 return v; 
             }).ToList();
 
@@ -81,7 +115,6 @@ namespace SmartJourneyPlanner.Controllers
             return vehicle;
         }
 
-        // DELETE: api/TransportVehicles/{id} - Remove a vehicle from the system
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -92,7 +125,8 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
-        // POST: api/TransportVehicles/{id}/reviews - Add a new customer rating and comment
+        // --- ⭐ REVIEWS ---
+
         [HttpPost("{id}/reviews")]
         public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
         {
@@ -102,15 +136,13 @@ namespace SmartJourneyPlanner.Controllers
                 return NotFound(new { message = $"Vehicle with ID {id} not found." });
             }
 
-            // Set current date if it is not provided
             if (string.IsNullOrEmpty(review.Date))
             {
                 review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
             }
 
-            // Save the review to the database
             await _vehicleService.AddReviewAsync(id, review);
             return Ok(new { message = "Review added successfully" });
         }
     }
-}
+}
