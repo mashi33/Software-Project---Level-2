@@ -41,6 +41,7 @@ namespace SmartJourneyPlanner.Models
         public TransportPricingSummary? PricingSummary { get; set; }
         public string? VehicleImage { get; set; }
         public string? ProviderName { get; set; }
+        public string? ProviderPhone { get; set; }
         public string? UserName { get; set; }
     }
 

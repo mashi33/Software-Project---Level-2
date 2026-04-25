@@ -183,6 +183,20 @@ input[type="date"].is-invalid {
   animation: pfFadeIn 0.3s ease-out;
 }
 
+.pf-fixed-hint {
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f0f9ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
 @keyframes pfFadeIn {
   from { opacity: 0; transform: translateY(-3px); }
   to { opacity: 1; transform: translateY(0); }

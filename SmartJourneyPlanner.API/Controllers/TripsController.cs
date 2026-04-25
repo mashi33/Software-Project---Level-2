@@ -114,11 +114,10 @@ namespace SmartJourneyPlanner.API.Controllers
     {
       try
       {
-        var filter = Builders<Trip>.Filter.Eq(t => t.Id, id);
         updatedTrip.Id = id;
-        var result = await _tripsCollection.ReplaceOneAsync(filter, updatedTrip);
+        var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
         if (result.MatchedCount == 0)
-          return NotFound(new { message = "Trip not found in database." });
+          return NotFound(new { message = "Trip not found in database!" });
         return Ok(new { message = "Trip updated successfully!" });
       }
       catch (Exception ex)
@@ -135,14 +134,35 @@ namespace SmartJourneyPlanner.API.Controllers
         message.From.Add(new MailboxAddress("Smart Journey", "dinuriththsarani@gmail.com"));
         message.To.Add(new MailboxAddress("", receiverEmail));
         message.Subject = "Trip Invitation - Smart Journey";
-        string invitationLink = $"http://localhost:4200/trip-summary/{tripId}";
+        string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
         message.Body = new TextPart("html")
         {
-          Text = $@"<div style='font-family: Arial, sans-serif;'>
-                        <h3>Hi there!</h3>
-                        <p>You have been invited to join the trip <b>{tripName}</b> as an <b>{role}</b>.</p>
-                        <a href='{invitationLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>View Trip Details</a>
-                     </div>"
+          Text = $@"
+    <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
+        <h2 style=""color: #007bff;"">Hi there!</h2>
+        <p>You have been invited to join the trip <b>'{tripName}'</b> as a <b>{role}</b>.</p>
+        <p>To view the trip details and join your friends, please click the button below:</p>
+        
+        <div style=""margin: 30px 0;"">
+            <a href=""{invitationLink}"" 
+               style=""background-color: #007bff; 
+                      color: #ffffff !important; 
+                      padding: 15px 30px; 
+                      text-decoration: none; 
+                      border-radius: 6px; 
+                      font-weight: bold; 
+                      display: inline-block;
+                      font-size: 16px;"">
+               Accept Invitation & View Details
+            </a>
+        </div>
+
+        <p style=""font-size: 14px; color: #666;"">
+            If you don't have an account yet, you'll be asked to create one after clicking the button.
+        </p>
+        <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
+        <p>Happy Journey!<br><b>Smart Journey Team</b></p>
+    </div>"
         };
         using (var client = new SmtpClient())
         {
@@ -151,11 +171,11 @@ namespace SmartJourneyPlanner.API.Controllers
           await client.SendAsync(message);
           await client.DisconnectAsync(true);
         }
-        Console.WriteLine($"Email sent to {receiverEmail}");
+        Console.WriteLine($"✅ Email sent to {receiverEmail}");
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Email fail: {ex.Message}");
+        Console.WriteLine($"❌ Failed to send email to {receiverEmail}: {ex.Message}");
       }
     }
   }

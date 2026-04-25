@@ -31,6 +31,7 @@ export class UserSearch implements OnInit {
   passengerCount: number = 1;
   startDate: string = '';
   endDate: string = '';
+  todayStr: string = ''; // Used for date validation
   pickupArea: string = '';
   showLanguageDropdown: boolean = false;
   showCityDropdown: boolean = false;
@@ -62,7 +63,7 @@ export class UserSearch implements OnInit {
   bookingDays: number = 2;
   bookingNights: number = 1;
 
-  // Mock Data
+  // Dynamic Vehicle Data
   allVehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
   vehicleCategories = ['All Categories', ...Object.values(VehicleType)];
@@ -121,14 +122,16 @@ export class UserSearch implements OnInit {
   ) {
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
     const today = new Date();
-    this.startDate = today.toISOString().split('T')[0];
+    this.todayStr = today.toISOString().split('T')[0];
+    
+    this.startDate = this.todayStr;
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     this.endDate = tomorrow.toISOString().split('T')[0];
   }
 
   ngOnInit() {
-    this.loadMockVehicles();
+    this.loadAvailableVehicles();
     this.calculateDays();
     this.applyFilters();
   }
@@ -152,16 +155,33 @@ export class UserSearch implements OnInit {
   }
 
   onDateChange() {
+    // 1. Prevent selection of past dates for Start Date
+    if (this.startDate && this.startDate < this.todayStr) {
+      this.startDate = this.todayStr;
+      Swal.fire({
+        title: 'Invalid Date',
+        text: 'The start date cannot be in the past.',
+        icon: 'warning',
+        confirmButtonColor: '#0c92f4'
+      });
+    }
+
+    // 2. Ensure End Date is at least the same as Start Date
+    if (this.startDate && this.endDate && this.endDate < this.startDate) {
+      this.endDate = this.startDate;
+    }
+
     this.calculateDays();
     this.applyFilters();
   }
 
   onSearch() {
+    this.searchQuery = this.searchQuery.trim();
     this.applyFilters();
     // Scroll to results or show a loading state if needed
   }
 
-  loadMockVehicles() {
+  loadAvailableVehicles() {
     this.transportVehicleService.getVehicles().subscribe(vehicles => {
       this.allVehicles = vehicles;
       this.applyFilters();
@@ -169,11 +189,14 @@ export class UserSearch implements OnInit {
   }
 
   applyFilters() {
+    if (this.passengerCount < 1) this.passengerCount = 1;
+    const cleanQuery = this.searchQuery.trim().toLowerCase();
+
     this.filteredVehicles = this.allVehicles.filter(v => {
       const matchCategory = this.selectedCategory === 'All Categories' || v.type === this.selectedCategory;
       const matchCapacity = v.seatCount >= this.passengerCount;
-      const matchSearch = v.description.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                          v.vehicleClass.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchSearch = v.description.toLowerCase().includes(cleanQuery) || 
+                          v.vehicleClass.toLowerCase().includes(cleanQuery);
       
       const matchPickup = !this.pickupArea || v.providerProfile.location.toLowerCase().includes(this.pickupArea.toLowerCase());
 

@@ -14,6 +14,7 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
 })
 export class ProviderForm implements OnInit {
   vehicleForm!: FormGroup;
+  todayStr: string = new Date().toISOString().split('T')[0];
   vehicleTypes = Object.values(VehicleType);
   categoryList = [
     { type: VehicleType.Budget, label: 'Budget (Alto, Axio)' },
@@ -71,25 +72,28 @@ export class ProviderForm implements OnInit {
   }
 
   initForm() {
+    const currentYear = new Date().getFullYear();
+    const phoneRegex = /^(?:0|94|\+94)?7(0|1|2|4|5|6|7|8)\d{7}$/;
+
     this.vehicleForm = this.fb.group({
       providerProfile: this.fb.group({
-        name: ['', Validators.required],
-        phone: ['', Validators.required],
+        name: ['', [Validators.required, Validators.minLength(3)]],
+        phone: ['', [Validators.required, Validators.pattern(phoneRegex)]],
         location: ['', Validators.required]
       }),
       type: [VehicleType.Budget, Validators.required],
       vehicleClass: ['Car', Validators.required],
-      yearOfManufacture: [new Date().getFullYear(), [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
-      seatCount: [4, [Validators.required, Validators.min(1)]],
-      description: ['', Validators.required],
+      yearOfManufacture: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 1)]],
+      seatCount: [4, [Validators.required, Validators.min(1), Validators.max(100)]],
+      description: ['', [Validators.required, Validators.minLength(10)]],
       isAc: [true],
-      standardDailyRate: [0, [Validators.required, Validators.min(1)]],
-      freeKMLimit: [100, [Validators.required, Validators.min(1)]],
-      extraKMRate: [0, [Validators.required, Validators.min(0)]],
-      driverNightOutFee: [0, [Validators.required, Validators.min(0)]],
+      standardDailyRate: [2000, [Validators.required, Validators.min(500)]],
+      freeKMLimit: [100, [Validators.required, Validators.min(10)]],
+      extraKMRate: [50, [Validators.required, Validators.min(1)]],
+      driverNightOutFee: [1000, [Validators.required, Validators.min(0)]],
       
       features: this.fb.group({
-        luggage: [2, [Validators.required, Validators.min(0)]],
+        luggage: [2, [Validators.required, Validators.min(1)]],
         safety: [false],
         childSeats: [false],
         entertainment: [false],
@@ -267,8 +271,20 @@ export class ProviderForm implements OnInit {
       return;
     }
 
+    // Trimming logic to remove extra whitespace
+    const rawValue = this.vehicleForm.value;
+    const cleanValue = {
+      ...rawValue,
+      providerProfile: {
+        ...rawValue.providerProfile,
+        name: rawValue.providerProfile.name.trim(),
+        location: rawValue.providerProfile.location.trim()
+      },
+      description: rawValue.description.trim()
+    };
+
     const formData: Vehicle = {
-      ...this.vehicleForm.value,
+      ...cleanValue,
       providerId: 'p1', // mock provider ID
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,

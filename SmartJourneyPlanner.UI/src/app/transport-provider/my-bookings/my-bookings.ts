@@ -45,13 +45,42 @@ export class MyBookings implements OnInit {
       // Get all trips booked by this user (u1 is a test user ID)
       this.transportBookingService.getUserBookings('u1').subscribe(res => {
         this.userBookings = res;
+        this.enrichBookings(this.userBookings);
       });
     } else {
       // Get all trips requested from this provider (p1 is a test provider ID)
       this.transportBookingService.getProviderBookings('p1').subscribe(res => {
         this.providerBookings = res;
+        this.enrichBookings(this.providerBookings);
       });
     }
+  }
+
+  /**
+   * For older booking records where 'providerPhone' or 'providerName' might be missing,
+   * this helper fetches the current vehicle data to fill those gaps.
+   */
+  private enrichBookings(bookings: Booking[]) {
+    bookings.forEach(b => {
+      // If phone is missing but we have a vehicle ID, fetch the vehicle details
+      if (!b.providerPhone && b.vehicleId) {
+        this.transportVehicleService.getVehicleById(b.vehicleId).subscribe({
+          next: (v) => {
+            if (v && v.providerProfile) {
+              b.providerPhone = v.providerProfile.phone;
+              // Also fill provider name if it's missing
+              if (!b.providerName) {
+                b.providerName = v.providerProfile.name;
+              }
+            }
+          },
+          error: () => {
+            // Silently fail if vehicle cannot be found (e.g. deleted)
+            if (!b.providerPhone) b.providerPhone = 'Not available';
+          }
+        });
+      }
+    });
   }
 
   // Cancel a booking request (only works if the status is still 'Pending')
@@ -100,11 +129,23 @@ export class MyBookings implements OnInit {
   submitReview() {
     if (!this.selectedBooking || !this.selectedBooking.id) return;
     
+    // Validation: Ensure a rating is selected
+    if (this.tempRating === 0) {
+      Swal.fire('Rating Required', 'Please select a star rating before submitting.', 'warning');
+      return;
+    }
+
+    // Validation: Ensure a comment is provided
+    if (!this.tempComment || this.tempComment.trim().length < 5) {
+      Swal.fire('Comment Required', 'Please write a short review (at least 5 characters).', 'warning');
+      return;
+    }
+
     // Prepare the review data object
     const reviewData = {
       userName: this.selectedBooking.userName || 'Anonymous User',
       rating: this.tempRating,
-      comment: this.tempComment,
+      comment: this.tempComment.trim(),
       date: new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
     };
 
