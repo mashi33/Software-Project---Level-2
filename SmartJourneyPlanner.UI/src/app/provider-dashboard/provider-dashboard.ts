@@ -28,19 +28,18 @@ export class ProviderDashboardComponent implements OnInit {
     this.loadAll();
   }
 
-  // Fetch all data from the backend services
   loadAll() {
-    // Get summary statistics and list of vehicles
+    // Loads all dashboard data separately to keep concerns modular (stats, vehicles, bookings)
     this.vehicleService.getStats().subscribe(data => this.stats = data);
     this.vehicleService.getVehicles().subscribe(data => this.vehicles = data);
     
-    // Get all bookings for this provider (p1 is a hardcoded ID for now)
     this.bookingService.getProviderBookings('p1').subscribe(data => {
       this.bookings = data;
     });
   }
 
   toggleAvailability(vehicle: any) {
+    // Inverts current state to avoid needing separate UI state tracking
     this.vehicleService.updateAvailability(vehicle.id, !vehicle.available).subscribe(() => this.loadAll());
   }
 
@@ -78,6 +77,7 @@ export class ProviderDashboardComponent implements OnInit {
 
   
   viewBookingDetails(id: string | undefined) {
+    // Defensive check prevents runtime errors from invalid or undefined IDs
     const booking = this.bookings.find(booking => booking.id === id);
     if (!booking) return;
   }

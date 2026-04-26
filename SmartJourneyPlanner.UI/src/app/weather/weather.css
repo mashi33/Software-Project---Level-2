@@ -122,8 +122,3 @@
   font-size: 0.95rem; 
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .weather-page-wrapper { flex-direction: column; }
-  .suggestions-grid { flex-direction: column; }
-}

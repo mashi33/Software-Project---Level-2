@@ -12,6 +12,7 @@ export class VehicleService {
 
   
   getStats(): Observable<any> {
+    // Fetches aggregated dashboard data to avoid multiple frontend calculations
     return this.http.get<any>(`${this.apiUrl}/stats`);
   }
 

@@ -14,12 +14,14 @@ public class WeatherController : ControllerBase
     [HttpGet("suggestions")]
     public IActionResult GetSuggestion(double temp, double humidity, string condition)
     {
+        // Delegates business logic to service layer to keep controller lightweight and testable
         var result = _service.GenerateSuggestion(temp, humidity, condition);
 
         if (result == null || string.IsNullOrEmpty(result.Message))
         {
             return NotFound("No suggestion generated.");
         }
+        // Standard REST response when valid recommendation data is produced
         return Ok(result);
     }
 }

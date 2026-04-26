@@ -1,4 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
+/*  add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* Ensure the page takes up at least 100% of the screen height */
@@ -17,5 +17,5 @@ app-root {
 /* This pushes the footer down */
 .main-content {
   flex: 1; /* Takes up all available empty space */
-  background-color: #F0F8FF; /* Matches your light blue theme */
+  background-color: #F0F8FF; 
 }

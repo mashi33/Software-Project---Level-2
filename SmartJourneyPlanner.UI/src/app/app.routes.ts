@@ -35,7 +35,7 @@ export const routes: Routes = [
   { path: 'budget', component: BudgetDashboard },
   { path: 'add-expense', component: ExpenseForm },
 
-  // 4. Map & Transport Provider Routes
+  // 4. Map, Weather & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
   { path: 'community', component: CommunityMapComponent },
   { path: 'weather', component: WeatherSuggestionComponent },

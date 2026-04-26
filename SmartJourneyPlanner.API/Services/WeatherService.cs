@@ -37,6 +37,7 @@ namespace SmartJourneyPlanner.API.Services
                 };
             }
 
+              // Fallback ensures system always returns a valid suggestion even for unexpected inputs
             return new WeatherSuggestionResult {
                 Message = "Enjoy your trip!",
                 Packing = new List<string> { "Water" },

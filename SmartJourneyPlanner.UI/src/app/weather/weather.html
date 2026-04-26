@@ -12,6 +12,7 @@
     </button>
   </aside>
 
+  <!-- Prevents rendering empty UI before data is available -->
   <main class="right-panel" *ngIf="weatherData">
     <div class="weather-header">
       <h1>{{ city | titlecase }}</h1>
@@ -34,6 +35,7 @@
   <div class="suggestions-grid">
     <div class="col">
       <h4>Packing List</h4>
+      <!-- ngFor dynamically renders list so UI adapts to varying backend responses -->
       <ul><li *ngFor="let item of suggestionResult.packing">{{ item }}</li></ul>
     </div>
     <div class="col">

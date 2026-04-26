@@ -14,11 +14,6 @@
     overflow-y: auto;
 }
 
-.map-container,#map {
-    flex-grow: 1;
-    height: 100%;
-}
-
 .upload-card {
     background: white;
     border-radius: 10px;
@@ -39,6 +34,18 @@
 .search-group {
     display: flex;
     margin-bottom: 1rem;
+}
+
+.btn-find {
+    background: #0d6efd;
+    color:white;
+    border: none;
+    padding: 0 1rem;
+    border-radius: 0 5px 5px 0;
+    margin-left: -5px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
+                0 0px 5px -5px rgba(0, 0, 0, 0.04);
 }
 
 .search-input, .form-input, .form-textarea {
@@ -98,12 +105,6 @@
     align-content: center;
 }
 
-.visibility-options label {
-    font-size: 14px;
-    margin-bottom: 6px;
-   
-}
-
 .form-input::-webkit-calendar-picker-indicator {
     background-color: transparent;
     cursor: pointer;
@@ -111,22 +112,14 @@
     filter: opacity(0.5); 
 }
 
+.visibility-options label {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
 .form-input:focus {
     outline: none;
     border-color: #443333; 
-}
-
-.btn-find {
-    background: #0d6efd;
-    color:white;
-    border: none;
-    padding: 0 1rem;
-    border-radius: 0 5px 5px 0;
-    margin-left: -5px;
-    margin-bottom: 0.75rem;
-    box-shadow: 0 9px 3px -5px rgba(0, 0, 0, 0.15), 
-                0 0px 5px -5px rgba(0, 0, 0, 0.04);
-    
 }
 
 .btn-save {
@@ -178,13 +171,6 @@
    width: calc(33.33% - 8px);
 }
 
-.delete-overlay-btn{
-  border: none;
-  display: flex;
-  align-items: left;
-  justify-content: right;
-}
-  
 .thumb-card {
     display: flex;
     flex-direction: row;
@@ -231,6 +217,58 @@
     text-overflow: ellipsis; 
 }
 
+.thumb-dates {
+    display: flex;
+    align-items: center;
+    font-size: 11px;       
+    color: #888;    
+    font-style: italic;       
+}
+
+.visibility-status {
+    display: flex;
+    align-items: center;
+    font-size: 11px;       
+    color: #888;    
+    font-style: italic;       
+}
+
+.delete-overlay-btn{
+  border: none;
+  display: flex;
+  align-items: left;
+  justify-content: right;
+}
+  
+.see-more-container {
+    width: 100%;
+    display: flex;
+    justify-content: right;
+    padding: 100px 0;
+}
+
+.btn-see-more {
+    background: none;
+    border: 1px solid #495fd0; 
+    color: #495fd0;
+    padding: 6px 15px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-see-more:hover {
+    background: #4641c6;
+    color: white;
+}
+
+.map-container,#map {
+    flex-grow: 1;
+    height: 100%;
+}
+
 .lightbox-overlay {
     position: fixed;
     top: 0;
@@ -253,7 +291,7 @@
 .btn-close {
     margin-top: 15px;
     background: transparent;
-    color: white;
+    color: rgb(254, 254, 254);
     border: 1px solid white;
     padding: 10px 20px;
     border-radius: 25px;
@@ -281,7 +319,7 @@
 .upload-preview {
     position: relative;
     width: 100%;
-    height: 150px; /* Fixed height for the preview box */
+    height: 150px; 
     border-radius: 6px;
     overflow: hidden;
     border: 1px solid #eee;
@@ -298,7 +336,7 @@
     position: absolute;
     top: 5px;
     right: 5px;
-    background: rgba(220, 38, 38, 0.8);
+    background: rgba(230, 9, 9, 0.8);
     color: white;
     border: none;
     border-radius: 50%;
@@ -309,44 +347,4 @@
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.see-more-container {
-    width: 100%;
-    display: flex;
-    justify-content: right;
-    padding: 100px 0;
-}
-
-.btn-see-more {
-    background: none;
-    border: 1px solid #495fd0; 
-    color: #495fd0;
-    padding: 6px 15px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-see-more:hover {
-    background: #4641c6;
-    color: white;
-}
-
-.thumb-dates {
-    display: flex;
-    align-items: center;
-    font-size: 11px;       
-    color: #888;    
-    font-style: italic;       
-}
-
-.visibility-status {
-    display: flex;
-    align-items: center;
-    font-size: 11px;       
-    color: #888;    
-    font-style: italic;       
 }

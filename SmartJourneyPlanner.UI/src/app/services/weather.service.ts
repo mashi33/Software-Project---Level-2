@@ -4,11 +4,11 @@ import { HttpClient } from '@angular/common/http';
 @Injectable({ providedIn: 'root' })
 export class WeatherService {
   
-  private baseUrl = 'http://localhost:5233/api/weather/suggestions'; 
+  private apiUrl = 'http://localhost:5233/api/weather/suggestions'; 
 
   constructor(private http: HttpClient) {}
 
   getSuggestions(temp: number, humidity: number, condition: string) {
-    return this.http.get<any>(`${this.baseUrl}?temp=${temp}&humidity=${humidity}&condition=${condition}`);
+    return this.http.get<any>(`${this.apiUrl}?temp=${temp}&humidity=${humidity}&condition=${condition}`);
   }
 }

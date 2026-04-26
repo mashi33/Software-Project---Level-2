@@ -14,6 +14,7 @@
       <h4>Fleet Management</h4>
       <a routerLink="/register-vehicle" class="btn-add">+ Add Vehicle</a>
     </div>
+    <!-- Each vehicle is rendered independently to allow per-item actions (toggle/delete) -->
     <div *ngFor="let vehicle of vehicles" class="item-card">
       <span>{{vehicle.name}}</span>
       <input type="checkbox" [checked]="vehicle.available" (change)="toggleAvailability(vehicle)">
@@ -35,6 +36,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
           <div>
+            <!-- Clickable title allows navigation to detailed booking view without extra button clutter -->
             <h5 class="card-title" (click)="viewBookingDetails(booking.id)" >
                 Booking from {{booking.userName}}
             </h5>

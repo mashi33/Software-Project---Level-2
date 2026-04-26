@@ -30,10 +30,12 @@ export class WeatherSuggestionComponent {
 
     const geoUrl = `https://nominatim.openstreetmap.org/search?q=${this.city}&format=json`;
 this.http.get<any[]>(geoUrl, {
-  headers: { 'User-Agent': 'SmartJourneyApp/1.0' } // Nominatim requires a user-agent
+  // Nominatim requires a user-agent
+  headers: { 'User-Agent': 'SmartJourneyApp/1.0' } 
 }).subscribe({
       next: (res) => {
         if (res && res.length > 0) {
+          // Uses the first match assuming it is the most relevant result from the API
           this.fetchWeather(res[0].lat, res[0].lon);
         } else {
           this.loading = false;
@@ -55,10 +57,11 @@ this.http.get<any[]>(geoUrl, {
         const temp = data.current.temperature_2m;
         const humidity = data.current.relative_humidity_2m;
         
+        // Simplifies raw weather data into categories expected by the recommendation system
         this.weatherCategory = (humidity > 80) ? 'Rainy' : (temp >= 25 ? 'Sunny' : 'Cloudy');
         this.weatherData = { temp, humidity };
         
-        // Now call your custom API via the service
+        // Delegates business logic to backend instead of handling it in the UI
         this.fetchSuggestions(temp, humidity, this.weatherCategory);
       },
       error: (err) => {
@@ -73,6 +76,7 @@ this.http.get<any[]>(geoUrl, {
       next: (res) => {
         console.log("Data Received from .NET:", res);
         this.suggestionResult = res;
+        // Marks completion only after final dependent API call finishes
         this.loading = false;
       },
       error: (err) => {
