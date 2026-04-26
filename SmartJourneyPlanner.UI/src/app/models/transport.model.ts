@@ -109,9 +109,14 @@ export interface Booking {
   
   // Trip details provided by the traveler
   pickupAddress?: string;
+  destinationAddress?: string; // Final drop-off location
   destinations?: string[]; // List of stop-over locations
   passengerCount?: number;
   luggageCount?: number;
+  
+  // Backward compatibility & UI Helpers
+  passengers?: number; 
+  location?: string; 
   
   // UI Helpers (used to show info on the My Bookings page)
   pricingSummary?: {
