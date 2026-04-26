@@ -8,13 +8,14 @@ export type VehicleClass = 'Car' | 'Van' | 'Bus';
 
 export interface Vehicle {
   id?: string;
-  modelName?: string;
+  modelName: string;
   providerId: string;
   
   // Provider Profile
   providerProfile: {
     name: string;
     phone: string;
+    email: string;
     location: string;
   };
 

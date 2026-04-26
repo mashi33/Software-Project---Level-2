@@ -25,6 +25,7 @@ namespace SmartJourneyPlanner.Models
         public bool IsAc { get; set; }
         public string Transmission { get; set; } = string.Empty;
         public string FuelType { get; set; } = string.Empty;
+        public string ModelName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
         public decimal StandardDailyRate { get; set; }
@@ -63,6 +64,7 @@ namespace SmartJourneyPlanner.Models
     {
         public string Name { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
     }
 

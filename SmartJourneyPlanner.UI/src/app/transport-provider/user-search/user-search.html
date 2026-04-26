@@ -179,7 +179,7 @@
         <div class="vh-card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <h4 class="vh-title mb-1">{{v.description.split(' - ')[0]}}</h4>
+              <h4 class="vh-title mb-1">{{v.modelName || v.description}}</h4>
               <div class="vh-meta">
                 <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> {{getAverageRating(v)
                   | number:'1.1-1'}} ({{v.reviews.length || 0}})</span>
@@ -226,7 +226,7 @@
           <button type="button" class="btn-close btn-close-white" (click)="closeCalendar()"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted small mb-3">Vehicle: <strong>{{targetVehicleForCalendar?.description}}</strong></p>
+          <p class="text-muted small mb-3">Vehicle: <strong>{{targetVehicleForCalendar?.modelName || targetVehicleForCalendar?.description}}</strong></p>
 
           <!-- Calendar Controls -->
           <div class="d-flex justify-content-between align-items-center mb-3">

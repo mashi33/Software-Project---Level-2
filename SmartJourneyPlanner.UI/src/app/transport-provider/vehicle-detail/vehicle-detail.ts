@@ -109,6 +109,7 @@ export class VehicleDetailComponent implements OnInit {
       
       // Auto fill from Find Transport, or default to today/tomorrow
       if (!start || !end) {
+        const today = new Date();
         start = this.minDate;
         const tomorrowDate = new Date(today);
         tomorrowDate.setDate(tomorrowDate.getDate() + 1);
@@ -172,7 +173,7 @@ export class VehicleDetailComponent implements OnInit {
   isNameValid(): boolean {
     if (!this.customerName) return false;
     const name = this.customerName.trim();
-    // Must contain at least 2 letters and overall be at least 3 chars long.
+    // Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
     const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/;
     if (!re.test(name)) return false;
 
@@ -206,8 +207,8 @@ export class VehicleDetailComponent implements OnInit {
   isPickupAddressValid(): boolean {
     if (!this.pickupAddress) return false;
     const addr = this.pickupAddress.trim();
-    // Must contain at least 2 letters and overall be at least 3 chars long.
-    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z0-9\s\.\,\-\/]{3,}$/;
+    // Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
     if (!re.test(addr)) return false;
 
     // Check if all letters are the same (e.g., "aaa")
@@ -231,8 +232,8 @@ export class VehicleDetailComponent implements OnInit {
   isDestinationValid(dest: string): boolean {
     if (!dest) return false;
     const d = dest.trim();
-    // Must contain at least 2 letters and overall be at least 3 chars long.
-    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z0-9\s\.\,\-\/]{3,}$/;
+    // Must contain at least 2 letters and ONLY letters, spaces, dots or hyphens. No numbers.
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
     if (!re.test(d)) return false;
 
     // Check if all letters are the same (e.g., "aaa")

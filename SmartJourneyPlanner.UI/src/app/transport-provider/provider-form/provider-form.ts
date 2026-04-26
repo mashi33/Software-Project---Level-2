@@ -15,7 +15,7 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
 })
 export class ProviderForm implements OnInit {
   vehicleForm!: FormGroup;
-  todayStr: string = new Date().toISOString().split('T')[0];
+  todayStr: string = '';
   vehicleTypes = Object.values(VehicleType);
   categoryList = [
     { type: VehicleType.Budget, label: 'Budget (Alto, Axio)' },
@@ -61,6 +61,17 @@ export class ProviderForm implements OnInit {
   licensePreview: string | ArrayBuffer | null = null;
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
+  
+  // File validation state
+  fileErrors: { [key: string]: string | null } = {
+    interior: null,
+    exterior: null,
+    nic: null,
+    license: null,
+    insurance: null,
+    revenue: null
+  };
+  submitted = false;
 
   constructor(
     private fb: FormBuilder, 
@@ -69,32 +80,46 @@ export class ProviderForm implements OnInit {
   ) {}
 
   ngOnInit() {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    this.todayStr = `${y}-${m}-${d}`;
+    
     this.initForm();
   }
 
   initForm() {
     const currentYear = new Date().getFullYear();
-    const phoneRegex = /^(?:0|94|\+94)?7(0|1|2|4|5|6|7|8)\d{7}$/;
+    // Support international formats and common separators (spaces, hyphens, brackets)
+    const phoneRegex = /^\+?[0-9\s\-\(\)]{7,20}$/;
+    // Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
+    const nameRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/;
+    // Location: Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
+    const locationRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
+    // Vehicle Model: Must contain at least one letter, allows numbers and common separators.
+    const modelRegex = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s\.\-]{2,50}$/;
 
     this.vehicleForm = this.fb.group({
       providerProfile: this.fb.group({
-        name: ['', [Validators.required, Validators.minLength(3)]],
-        phone: ['', [Validators.required, Validators.pattern(phoneRegex)]],
-        location: ['', Validators.required]
+        name: ['', [Validators.required, Validators.pattern(nameRegex), this.repeatedCharValidator]],
+        phone: ['', [Validators.required, Validators.pattern(phoneRegex), this.repeatedPhoneValidator]],
+        email: ['', [Validators.required, this.emailValidator]],
+        location: ['', [Validators.required, Validators.pattern(locationRegex), this.repeatedCharValidator]]
       }),
       type: [VehicleType.Budget, Validators.required],
       vehicleClass: ['Car', Validators.required],
+      modelName: ['', [Validators.required, Validators.pattern(modelRegex)]],
       yearOfManufacture: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 1)]],
       seatCount: [4, [Validators.required, Validators.min(1), Validators.max(100)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
       isAc: [true],
-      standardDailyRate: [2000, [Validators.required, Validators.min(500)]],
+      standardDailyRate: [2000, [Validators.required, Validators.min(500), Validators.max(500000)]],
       freeKMLimit: [100, [Validators.required, Validators.min(10)]],
-      extraKMRate: [50, [Validators.required, Validators.min(1)]],
-      driverNightOutFee: [1000, [Validators.required, Validators.min(0)]],
+      extraKMRate: [50, [Validators.required, Validators.min(1), Validators.max(2000)]],
+      driverNightOutFee: [1000, [Validators.required, Validators.min(0), Validators.max(50000)]],
       
       features: this.fb.group({
-        luggage: [2, [Validators.required, Validators.min(1)]],
+        luggage: [2, [Validators.required, Validators.min(1), Validators.max(50)]],
         safety: [false],
         childSeats: [false],
         entertainment: [false],
@@ -116,6 +141,69 @@ export class ProviderForm implements OnInit {
     });
   }
 
+  // Custom Validator to prevent repeated characters and numbers
+  repeatedCharValidator(control: any) {
+    if (!control.value) return null;
+    const val = control.value;
+    
+    // Check for numbers (Commonly not expected in City/Area name)
+    if (/[0-9]/.test(val)) {
+      return { hasNumbers: true };
+    }
+
+    const cleaned = val.replace(/[\s\.\-\/\,]/g, '').toLowerCase();
+    if (cleaned.length > 0) {
+      const allSame = cleaned.split('').every((char: string) => char === cleaned[0]);
+      if (allSame && cleaned.length < 10) return { repeatedChars: true };
+    }
+    return null;
+  }
+
+  // Custom Email Validator for fake detection
+  emailValidator(control: any) {
+    if (!control.value) return null;
+    const email = control.value.toLowerCase();
+    
+    // Basic regex for better format check
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return { invalidFormat: true };
+    }
+    
+    // Block common fake emails
+    const fakeEmails = ['test@test.com', 'abc@abc.com', 'a@a.com', 'aaa@aaa.com'];
+    if (fakeEmails.includes(email)) {
+      return { isFake: true };
+    }
+    
+    return null;
+  }
+
+  // Custom Validator for repeated digits in phone
+  repeatedPhoneValidator(control: any) {
+    if (!control.value) return null;
+    const val = control.value;
+    
+    // Check for letters
+    if (/[a-zA-Z]/.test(val)) {
+      return { hasLetters: true };
+    }
+
+    const digitsOnly = val.replace(/\D/g, '');
+    
+    // Sri Lankan specific check
+    const isSL = /^(?:0|94|\+94)?7[01245678]\d{7}$/.test(val.replace(/\s/g, ''));
+    if (!isSL) {
+      return { invalidSL: true };
+    }
+
+    if (digitsOnly.length > 5) {
+      const allSame = digitsOnly.split('').every((char: string) => char === digitsOnly[0]);
+      if (allSame) return { repeatedDigits: true };
+    }
+    return null;
+  }
+
   isFieldInvalid(path: string): boolean {
     const control = this.vehicleForm.get(path);
     if (!control) return false;
@@ -124,7 +212,25 @@ export class ProviderForm implements OnInit {
 
   onFileSelected(event: any, type: 'interior' | 'exterior' | 'nic' | 'license' | 'insurance' | 'revenue') {
     const file = event.target.files[0];
+    this.fileErrors[type] = null; // Reset error
+
     if (file) {
+      // 1. File Type Validation (.jpg, .png, .pdf)
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        this.fileErrors[type] = 'Only .jpg, .png, and .pdf files are allowed.';
+        this.clearPreview(type);
+        return;
+      }
+
+      // 2. File Size Validation (Max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        this.fileErrors[type] = 'File size must be less than 5MB.';
+        this.clearPreview(type);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = e => {
         const result = reader.result;
@@ -139,6 +245,22 @@ export class ProviderForm implements OnInit {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  private clearPreview(type: string) {
+    switch (type) {
+      case 'interior': this.interiorPreview = null; break;
+      case 'exterior': this.exteriorPreview = null; break;
+      case 'nic': this.nicPreview = null; break;
+      case 'license': this.licensePreview = null; break;
+      case 'insurance': this.insurancePreview = null; break;
+      case 'revenue': this.revenuePreview = null; break;
+    }
+  }
+
+  isFileMissing(type: string): boolean {
+    const preview = (this as any)[`${type}Preview`];
+    return this.submitted && !preview && !this.fileErrors[type];
   }
 
   onLanguageChange(lang: string, event: any) {
@@ -261,9 +383,16 @@ export class ProviderForm implements OnInit {
   }
 
   submitForm() {
+    this.submitted = true;
     if (this.vehicleForm.invalid) {
       this.vehicleForm.markAllAsTouched();
       Swal.fire('Error', 'Please fill all required fields correctly.', 'error');
+      return;
+    }
+
+    const hasFileErrors = Object.values(this.fileErrors).some(err => err !== null);
+    if (hasFileErrors) {
+      Swal.fire('Invalid Files', 'Please fix the errors in your uploaded files.', 'error');
       return;
     }
 
@@ -279,9 +408,10 @@ export class ProviderForm implements OnInit {
       providerProfile: {
         ...rawValue.providerProfile,
         name: rawValue.providerProfile.name.trim(),
+        email: rawValue.providerProfile.email.trim().toLowerCase(),
         location: rawValue.providerProfile.location.trim()
       },
-      description: rawValue.description.trim()
+      modelName: rawValue.modelName.trim()
     };
 
     const formData: Vehicle = {
@@ -293,6 +423,7 @@ export class ProviderForm implements OnInit {
       driverLicenseUrl: this.licensePreview as string,
       insuranceDocUrl: this.insurancePreview as string,
       revenueLicenseUrl: this.revenuePreview as string,
+      description: '',
       isVerified: false,
       status: 'Pending',
       reviews: [],
@@ -319,9 +450,10 @@ export class ProviderForm implements OnInit {
 
   resetForm() {
     this.vehicleForm.reset({
-      providerProfile: { name: '', phone: '', location: '' },
+      providerProfile: { name: '', phone: '', email: '', location: '' },
       type: VehicleType.Budget,
       vehicleClass: 'Car',
+      modelName: '',
       yearOfManufacture: new Date().getFullYear(),
       seatCount: 4,
       isAc: true,
