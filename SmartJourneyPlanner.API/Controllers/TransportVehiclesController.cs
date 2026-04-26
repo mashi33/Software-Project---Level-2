@@ -4,6 +4,10 @@ using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using MongoDB.Bson;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
+using System.Linq;
 
 namespace SmartJourneyPlanner.Controllers
 {
@@ -24,6 +28,8 @@ namespace SmartJourneyPlanner.Controllers
             _vehicleService = vehicleService;
         }
 
+        // --- 🌍 PUBLIC VIEW (Travelers) ---
+
         /**
          * GET: api/TransportVehicles
          * Returns a list of all vehicles that have been approved by the Admin.
@@ -35,6 +41,8 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(approved);
         }
 
+        // --- 🚐 PROVIDER ACTIONS ---
+
         /**
          * POST: api/TransportVehicles
          * Takes vehicle information from the frontend and saves it to the database.
@@ -45,7 +53,10 @@ namespace SmartJourneyPlanner.Controllers
         {
             try 
             {
+                // ✅ FORCE LOGIC: Every new vehicle starts as Pending and Unverified
                 vehicleInfo.Status = "Pending";
+                vehicleInfo.IsVerified = false;
+
                 if (string.IsNullOrEmpty(vehicleInfo.Id)) vehicleInfo.Id = null;
 
                 await _vehicleService.CreateAsync(vehicleInfo);
@@ -56,6 +67,26 @@ namespace SmartJourneyPlanner.Controllers
                 return BadRequest(new { message = "Failed to submit vehicle", error = ex.Message });
             }
         }
+
+        /**
+         * GET: api/TransportVehicles/my-vehicles/{providerId}
+         * Allows a provider to see their specific fleet and their approval status.
+         */
+        [HttpGet("my-vehicles/{providerId}")]
+        public async Task<IActionResult> GetMyVehicles(string providerId)
+        {
+            try
+            {
+                var myVehicles = await _vehicleService.GetByProviderIdAsync(providerId);
+                return Ok(myVehicles);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching your vehicles", error = ex.Message });
+            }
+        }
+
+        // --- 🛠️ MANAGEMENT & SEEDING ---
 
         /**
          * POST: api/TransportVehicles/seed
@@ -72,6 +103,7 @@ namespace SmartJourneyPlanner.Controllers
             var vehiclesToInsert = vehicles.Select(v => { 
                 v.Id = null; 
                 v.Status = "Approved"; 
+                v.IsVerified = true;
                 return v; 
             }).ToList();
 
@@ -116,6 +148,8 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
+        // --- ⭐ REVIEWS ---
+
         /**
          * POST: api/TransportVehicles/{id}/reviews
          * Receives a customer's review (stars and text) and adds it to the vehicle's history.
@@ -138,4 +172,4 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Review added successfully" });
         }
     }
-}
+}

@@ -2,24 +2,26 @@ import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import * as L from 'leaflet';
+import * as leaflet from 'leaflet';
 
 @Component({
-  selector: 'app-memories-map',
-  standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
-  templateUrl: './memories-map.html',
-  styleUrls: ['./memories-map.css']
+    selector: 'app-memories-map',
+    imports: [CommonModule, FormsModule,
+        // TODO: `HttpClientModule` should not be imported into a component directly.
+        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
+        // application bootstrap logic and remove the `HttpClientModule` import from this component.
+        /*HttpClientModule*/],
+    templateUrl: './memories-map.html',
+    styleUrls: ['./memories-map.css']
 })
 export class MemoriesMapComponent implements OnInit, AfterViewInit {
-  private map!: L.Map;
-  private markersLayer: L.LayerGroup = L.layerGroup();
+  private map!: leaflet.Map;
+  private markersLayer: leaflet.LayerGroup = leaflet.layerGroup();
   
   
-  // Strict boundary for Sri Lanka
-  private readonly sriLankaBounds = L.latLngBounds(
-    L.latLng(5.9, 79.5), // South
-    L.latLng(9.9, 82.0)  // North
+  private readonly sriLankaBounds = leaflet.latLngBounds(
+    leaflet.latLng(5.9, 79.5), 
+    leaflet.latLng(9.9, 82.0)  
   );
 
   private apiUrl = 'http://localhost:5233/api/memories'; 
@@ -40,7 +42,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   
   searchQuery: string = '';
   allMemories: any[] = [];
-  myRecentUploads: any[] = []; // This will display in your sidebar gallery
+  myRecentUploads: any[] = []; 
   selectedMemory: any | null = null;
 
   constructor(private http: HttpClient) {}
@@ -54,13 +56,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
-
-  // Add this method inside your MemoriesMapComponent class
 onFileSelected(event: any): void {
   const file: File = event.target.files[0];
 
   if (file) {
-    // Check file size (optional: e.g., limit to 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert("File is too large! Please choose an image under 2MB.");
       return;
@@ -68,47 +67,40 @@ onFileSelected(event: any): void {
 
     const reader = new FileReader();
     
-    // This runs once the file is finished loading
-    reader.onload = (e: any) => {
-      // Store the base64 string in your imageUrl variable
-      this.newMemory.imageUrl = e.target.result;
+    reader.onload = (event: any) => {
+      this.newMemory.imageUrl = event.target.result;
     };
 
-    reader.readAsDataURL(file); // Starts the conversion process
+    reader.readAsDataURL(file); 
   }
 }
 
 
 removeImage(fileInput: HTMLInputElement): void {
-  // 1. Clear the image preview from the UI
   this.newMemory.imageUrl = '';
 
-  // 2. Clear the actual file from the input element
   fileInput.value = '';
 }
 
-  // 1. DATA FORMATTING: Ensures consistent object keys regardless of Backend casing
-  private formatData(m: any) {
+  private formatData(memory: any) {
     return {
-      id: m.id || m._id || m.Id,
-      title: m.title || m.Title || 'Untitled',
-      imageUrl: m.imageUrl || m.ImageUrl || '',
-      description: m.description || m.Description || '',
-      latitude: Number(m.latitude || m.Latitude || 0),
-      longitude: Number(m.longitude || m.Longitude || 0),
-      locationName: m.locationName || m.LocationName || 'Unknown Location',
-      startDate:  m.startDate, 
-       endDate:  m.endDate,
-       isPublic: m.isPublic || m.IsPublic || false
+      id: memory.id || memory._id || memory.Id,
+      title: memory.title || memory.Title || 'Untitled',
+      imageUrl: memory.imageUrl || memory.ImageUrl || '',
+      description: memory.description || memory.Description || '',
+      latitude: Number(memory.latitude || memory.Latitude || 0),
+      longitude: Number(memory.longitude || memory.Longitude || 0),
+      locationName: memory.locationName || memory.LocationName || 'Unknown Location',
+      startDate:  memory.startDate, 
+       endDate:  memory.endDate,
+       isPublic: memory.isPublic || memory.IsPublic || false
     };
   }
 
-  // 2. INITIAL LOAD: Fetch data and populate both map and sidebar
   loadAllMemories() {
     this.http.get<any[]>(this.apiUrl).subscribe({
       next: (data) => {
-        this.allMemories = data.map(m => this.formatData(m));
-        // Fill sidebar with the 6 most recent memories
+        this.allMemories = data.map(memory => this.formatData(memory));
         this.myRecentUploads = [...this.allMemories].reverse();
         this.refreshMapMarkers();
       },
@@ -116,17 +108,12 @@ removeImage(fileInput: HTMLInputElement): void {
     });
   }
 
-
-  // NEWLY ADDED CODE PART START
 showMax: number = 3;
 
 toggleSeeMore() {
   this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
 }
-// NEWLY ADDED CODE PART END
 
-
-  // 3. SEARCH: Restricted specifically to Sri Lankan towns
   searchLocation() {
     if (!this.searchQuery) {
       alert("Please enter a city name (e.g., Kandy).");
@@ -158,31 +145,26 @@ toggleSeeMore() {
     });
   }
 
-  // 4. SAVE: Post to MongoDB and update UI without page refresh
   saveMemory() {
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
-    ...this.newMemory, // This copies all fields like title, imageUrl, etc.
-    isPublic: this.newMemory.isPublic // Ensures the property name matches your backend attribute
+    ...this.newMemory, 
+    isPublic: this.newMemory.isPublic 
   };
  this.http.post(this.apiUrl, body).subscribe({
  next: (response: any) => {
  const savedData = this.formatData(response);
  
-   // Update local arrays immediately
  this.allMemories.push(savedData);
  this.myRecentUploads.unshift(savedData);
- if(this.myRecentUploads.length > 6) this.myRecentUploads.pop(); // Keep sidebar clean
+ if(this.myRecentUploads.length > 6) this.myRecentUploads.pop(); 
 
  if (savedData.isPublic) {
           console.log("This will be visible on the Community Map");
-          // If you have a separate communityMemories array, push it there too:
-          // this.communityMemories.push(savedData);
       }
  
  this.refreshMapMarkers();
 
- // Reset Form
  this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0,isPublic: true };
  this.visibilityStatus = 'public';
  this.searchQuery = '';
@@ -192,35 +174,33 @@ toggleSeeMore() {
  });
  }    
 
-  // 5. MAP MARKERS: Redraws the icons on the map
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
-    this.allMemories.forEach((m) => {
-      const marker = L.marker([m.latitude, m.longitude]);
+    this.allMemories.forEach((memory) => {
+      const marker = leaflet.marker([memory.latitude, memory.longitude]);
       
       const popupHtml = `
         <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${m.title}</h6>
-          <img src="${m.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${m.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${m.locationName}</p>
+          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
+          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
+               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
+          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
         </div>`;
       
       marker.bindPopup(popupHtml).addTo(this.markersLayer);
     });
   }
 
-  // 6. INITIALIZE: Set up Leaflet with restricted bounds
   private initMap(): void {
-    this.map = L.map('map', {
+    this.map = leaflet.map('map', {
       center: [7.8731, 80.7718],
       zoom: 8,
-      minZoom: 8,                    // Prevents seeing other countries
-      maxBounds: this.sriLankaBounds, // Panning limit
-      maxBoundsViscosity: 1.0        // Elastic bounce at edges
+      minZoom: 8,                    
+      maxBounds: this.sriLankaBounds, 
+      maxBoundsViscosity: 1.0        
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(this.map);
 
@@ -232,17 +212,17 @@ toggleSeeMore() {
   }
 
   private fixLeafletIcons() {
-  const iconDefault = L.icon({
-    // Use official Leaflet CDN links
+  const iconDefault = leaflet.icon({
+
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
-    popupAnchor: [1, -34], // Ensures popups open in the right spot
+    popupAnchor: [1, -34], 
     shadowSize: [41, 41]
   });
-  L.Marker.prototype.options.icon = iconDefault;
+  leaflet.Marker.prototype.options.icon = iconDefault;
 }
 
 
@@ -254,10 +234,10 @@ deleteMemory(id: string, event: Event) {
     this.http.delete(`${this.apiUrl}/${id}`).subscribe({
       next: () => {
         // 1. Remove from allMemories (Map pins)
-        this.allMemories = this.allMemories.filter(m => m.id !== id);
+        this.allMemories = this.allMemories.filter(memory => memory.id !== id);
         
         // 2. Remove from myRecentUploads (Sidebar)
-        this.myRecentUploads = this.myRecentUploads.filter(m => m.id !== id);
+        this.myRecentUploads = this.myRecentUploads.filter(memory => memory.id !== id);
         
         // 3. Refresh the map markers
         this.refreshMapMarkers();

@@ -19,9 +19,9 @@ export class TripCreateComponent implements OnInit {
   tripId: string | null = null;
 
   constructor(
-    private tripService: TripService, 
+    private tripService: TripService, // ✅ Fixed: Only one instance here now
     private router: Router,
-    private route: ActivatedRoute // URL එකේ ID එක කියවන්න මේක ඕනේ
+    private route: ActivatedRoute
   ) {
     this.tripForm = new FormGroup({
       tripName: new FormControl('', Validators.required),
@@ -29,8 +29,9 @@ export class TripCreateComponent implements OnInit {
       destination: new FormControl('', Validators.required),
       startDate: new FormControl('', Validators.required),
       endDate: new FormControl('', Validators.required),
+      budgetLimit: new FormControl(''),
       description: new FormControl(''),
-      memberEmail: new FormControl(''),
+      memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
     });
   }
@@ -38,14 +39,12 @@ export class TripCreateComponent implements OnInit {
   ngOnInit() {
     console.log("Checking for trip data...");
 
-    // 1. URL එකේ ID එකක් තියෙනවාද බලනවා (Edit කරන වෙලාවට)
     const idFromUrl = this.route.snapshot.paramMap.get('id');
 
     if (idFromUrl) {
       this.tripId = idFromUrl;
       this.isEditMode = true;
 
-      // Database එකෙන් අලුත්ම දත්ත ගන්නවා
       this.tripService.getTripById(idFromUrl).subscribe({
         next: (data) => {
           if (data) {
@@ -56,7 +55,6 @@ export class TripCreateComponent implements OnInit {
         error: (err) => console.error("Error fetching trip for edit:", err)
       });
     } else {
-      // 2. URL එකේ ID එකක් නැත්නම් temporary data බලනවා
       const savedData = this.tripService.getTempTripData();
       if (savedData) {
         this.isEditMode = true;
@@ -66,30 +64,30 @@ export class TripCreateComponent implements OnInit {
     }
   }
 
-  // Form එක දත්ත වලින් පුරවන function එක
- fillForm(data: any) {
-  this.tripForm.patchValue({
-    tripName: data.tripName || data.TripName,
-    departFrom: data.departFrom || data.DepartFrom,
-    destination: data.destination || data.Destination,
-    startDate: this.formatDate(data.startDate || data.StartDate),
-    endDate: this.formatDate(data.endDate || data.EndDate),
-    description: data.description || data.Description
-  });
+  fillForm(data: any) {
+    this.tripForm.patchValue({
+      tripName: data.tripName || data.TripName,
+      departFrom: data.departFrom || data.DepartFrom,
+      destination: data.destination || data.Destination,
+      startDate: this.formatDate(data.startDate || data.StartDate),
+      endDate: this.formatDate(data.endDate || data.EndDate),
+      budgetLimit: data.budgetLimit || data.BudgetLimit,
+      description: data.description || data.Description
+    });
 
-  const members = data.members || data.Members;
-  if (members) {
-    this.invitedMembers = members.map((m: any) => ({
-      email: m.email || m.Email,
-      role: m.role || m.Role
-    }));
+    const members = data.members || data.Members;
+    if (members) {
+      this.invitedMembers = members.map((m: any) => ({
+        email: m.email || m.Email,
+        role: m.role || m.Role
+      }));
+    }
   }
-}
 
-  formatDate(date: any) {
+  formatDate(date: any): string {
     if (!date) return '';
     const d = new Date(date);
-    if (isNaN(d.getTime())) return ''; 
+    if (isNaN(d.getTime())) return '';
     const month = '' + (d.getMonth() + 1);
     const day = '' + d.getDate();
     const year = d.getFullYear();
@@ -110,21 +108,33 @@ export class TripCreateComponent implements OnInit {
 
   onSubmit() {
     if (this.tripForm.valid) {
+      const token = localStorage.getItem('token');
+      let createdBy = '';
+      if (token) {
+        try {
+          const decoded: any = JSON.parse(atob(token.split('.')[1]));
+          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        } catch (e) {
+          console.error("Token decoding failed", e);
+        }
+      }
+
       const tripData = {
         TripName: this.tripForm.value.tripName,
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
+        BudgetLimit: this.tripForm.value.budgetLimit,
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({
           Email: m.email,
           Role: m.role
-        }))
+        })),
+        CreatedBy: createdBy
       };
 
       if (this.isEditMode && this.tripId) {
-        // UPDATE EXISTING TRIP
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: (res: any) => {
             console.log("Update Success:", res);
@@ -135,11 +145,10 @@ export class TripCreateComponent implements OnInit {
           error: (err) => alert("Error updating trip")
         });
       } else {
-        // CREATE NEW TRIP
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
             console.log("Backend Response:", res);
-            const newId = res.tripId || res.id; 
+            const newId = res.tripId || res.id;
 
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
@@ -155,6 +164,11 @@ export class TripCreateComponent implements OnInit {
     } else {
       alert("Form has errors. Please check again.");
     }
+  }
+
+  onAddBudget() {
+    const budget = this.tripForm.get('budgetLimit')?.value;
+    console.log("Selected Budget:", budget);
   }
 
   removeMember(index: number) {

@@ -13,11 +13,11 @@ export interface PlacesResult {
 export class PlacesService {
   private apiUrl = 'http://localhost:5233/api/places/search';
 
-  // 1. සෙවුම් ප්‍රතිඵල (Places List) සඳහා
+  // සෙවුම් ප්‍රතිඵල (Places List) සඳහා
   private placesSource = new BehaviorSubject<PlacesResult | null>(null);
   currentPlaces = this.placesSource.asObservable();
 
-  // 2. තෝරාගත් හෝටලය (Selected Place ID) සඳහා නව Subject එකක්
+  // තෝරාගත් ස්ථානය (Selected Place ID) සඳහා
   private selectedPlaceSource = new BehaviorSubject<string | null>(null);
   selectedPlaceId = this.selectedPlaceSource.asObservable();
 
@@ -31,6 +31,8 @@ export class PlacesService {
 
     if (filters.budget) params = params.set('budget', filters.budget);
     if (filters.rating) params = params.set('rating', filters.rating);
+    // FIX: maxDistance filter backend එකට නිවැරදිව යැවීම
+    if (filters.maxDistance) params = params.set('maxDistance', filters.maxDistance);
 
     this.http.get<any>(this.apiUrl, { params })
       .pipe(
@@ -48,7 +50,7 @@ export class PlacesService {
       });
   }
 
-  // 3. සිතියමේ Marker එකක් ක්ලික් කළ විට Card එකට දැනුම් දීමට මෙම function එක පාවිච්චි කරන්න
+  // සිතියමේ Marker එකක් click කළ විට Card එකට දැනුම් දීම
   selectPlace(id: string | null) {
     this.selectedPlaceSource.next(id);
   }

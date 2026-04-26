@@ -6,11 +6,10 @@ import { TransportVehicleService } from '../services/transport-vehicle.service';
 import { Vehicle } from '../models/transport.model';
 
 @Component({
-  selector: 'app-register-vehicle',
-  standalone: true,
-  imports: [CommonModule, ProviderForm],
-  templateUrl: './register-vehicle.html',
-  styleUrl: './register-vehicle.css'
+    selector: 'app-register-vehicle',
+    imports: [CommonModule, ProviderForm],
+    templateUrl: './register-vehicle.html',
+    styleUrl: './register-vehicle.css'
 })
 export class RegisterVehicleComponent implements OnInit {
   providerVehicles: Vehicle[] = [];

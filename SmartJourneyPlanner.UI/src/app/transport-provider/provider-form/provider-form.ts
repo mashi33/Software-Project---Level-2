@@ -7,11 +7,10 @@ import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 
 @Component({
-  selector: 'app-provider-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './provider-form.html',
-  styleUrl: './provider-form.css'
+    selector: 'app-provider-form',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    templateUrl: './provider-form.html',
+    styleUrl: './provider-form.css'
 })
 /**
  * This component handles the form for transport providers to list their vehicles.

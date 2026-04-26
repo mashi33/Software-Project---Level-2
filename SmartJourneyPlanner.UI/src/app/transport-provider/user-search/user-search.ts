@@ -19,11 +19,10 @@ interface CalendarDay {
 }
 
 @Component({
-  selector: 'app-user-search',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './user-search.html',
-  styleUrl: './user-search.css'
+    selector: 'app-user-search',
+    imports: [CommonModule, FormsModule, RouterLink],
+    templateUrl: './user-search.html',
+    styleUrl: './user-search.css'
 })
 /**
  * This component handles the search and discovery of transport vehicles.
@@ -290,9 +289,6 @@ export class UserSearch implements OnInit {
     this.applyFilters();
   }
 
-  /**
-   * Toggles the driver language filter dropdown visibility.
-   */
   toggleLanguageDropdown() {
     this.showLanguageDropdown = !this.showLanguageDropdown;
     if (this.showLanguageDropdown) {
@@ -444,6 +440,13 @@ export class UserSearch implements OnInit {
   prevMonth() {
     this.currentCalendarMonth = new Date(this.currentCalendarMonth.getFullYear(), this.currentCalendarMonth.getMonth() - 1, 1);
     this.generateCalendar();
+  }
+
+  /**
+   * Returns a list of languages that are currently selected in the filter.
+   */
+  getSelectedLangs(): string[] {
+    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
   }
 
   /**

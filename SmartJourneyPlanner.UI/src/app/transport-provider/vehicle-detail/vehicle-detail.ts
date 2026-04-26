@@ -9,11 +9,10 @@ import { TransportCalculationService } from '../../services/transport-calculatio
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-vehicle-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './vehicle-detail.html',
-  styleUrl: './vehicle-detail.css'
+    selector: 'app-vehicle-detail',
+    imports: [CommonModule, RouterLink, FormsModule],
+    templateUrl: './vehicle-detail.html',
+    styleUrl: './vehicle-detail.css'
 })
 /**
  * This component displays the detailed profile of a single vehicle.
@@ -165,6 +164,12 @@ export class VehicleDetailComponent implements OnInit {
     return re.test(this.pickupAddress.trim());
   }
 
+  isDestinationValid(dest: string): boolean {
+    if (!dest) return false;
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
+    return re.test(dest.trim());
+  }
+
   // --- GALLERY LOGIC ---
 
   setMainView(view: 'exterior' | 'interior') {
@@ -186,11 +191,6 @@ export class VehicleDetailComponent implements OnInit {
     this.isReviewsExpanded = !this.isReviewsExpanded;
   }
 
-  isDestinationValid(dest: string): boolean {
-    if (!dest) return false;
-    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
-    return re.test(dest.trim());
-  }
 
   // --- ROUTE/STOP LOGIC ---
 

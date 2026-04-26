@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -6,12 +6,17 @@ using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.Models
 {
+    /// <summary>
+    /// Represents a discussion or voting thread within a specific trip.
+    /// </summary>
     [BsonIgnoreExtraElements]
     public class DiscussionItem
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
+
+        public string TripId { get; set; } = string.Empty;
 
         [BsonElement("type")]
         [JsonPropertyName("type")]
@@ -37,15 +42,14 @@ namespace SmartJourneyPlanner.Models
         [JsonPropertyName("isConfirmed")]
         public bool IsConfirmed { get; set; } = false;
 
-        // --- Check reject status and member limit ---
+        // Validation status and participation constraints
         [BsonElement("isRejected")]
         [JsonPropertyName("isRejected")]
         public bool IsRejected { get; set; } = false;
 
         [BsonElement("memberLimit")]
         [JsonPropertyName("memberLimit")]
-        public int MemberLimit { get; set; } = 5;
-        // --------------------------------------------------
+        public int MemberLimit { get; set; } 
 
         [BsonElement("createdAt")]
         [JsonPropertyName("createdAt")]
@@ -64,6 +68,9 @@ namespace SmartJourneyPlanner.Models
         public List<CommentItem>? Comments { get; set; } = new List<CommentItem>();
     }
 
+    /// <summary>
+    /// Represents an individual choice in a vote and its current tally.
+    /// </summary>
     public class VoteOption
     {
         [JsonPropertyName("optionText")]
@@ -73,6 +80,9 @@ namespace SmartJourneyPlanner.Models
         public int VoteCount { get; set; } = 0;
     }
 
+    /// <summary>
+    /// Tracks which specific option a user has selected.
+    /// </summary>
     public class UserVoteRecord
     {
         [JsonPropertyName("userId")]

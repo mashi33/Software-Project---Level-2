@@ -1,29 +1,31 @@
 import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import * as L from 'leaflet';
+import * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-community-map',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './community-map.html',
   styleUrls: ['./community-map.css']
 })
 export class CommunityMapComponent implements OnInit, AfterViewInit {
   private map!: L.Map;
-  private markersLayer: L.LayerGroup = L.layerGroup();
+  private markersLayer: L.LayerGroup = Leaflet.layerGroup();
   
-  private readonly sriLankaBounds = L.latLngBounds(
-    L.latLng(5.9, 79.5), 
-    L.latLng(9.9, 82.0)
+  private readonly sriLankaBounds = Leaflet.latLngBounds(
+    Leaflet.latLng(5.0, 78.0), 
+    Leaflet.latLng(10.5, 83.5)
   );
 
   private apiUrl = 'http://localhost:5233/api/memories'; 
 
-  // Variable names must match your HTML exactly to fix TS2339 errors
+  searchQuery: string = '';
   allMemories: any[] = [];
   myRecentUploads: any[] = []; 
+  filteredMemories: any[] = [];
   
   selectedMemory: any | null = null;
   showMax: number = 3;
@@ -40,41 +42,37 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   // Matches the naming used in your memories-map for consistency
-  private formatData(m: any) {
+  private formatData(memory: any) {
     return {
-      id: m.id || m._id || m.Id,
-      title: m.title || m.Title || 'Untitled',
-      imageUrl: m.imageUrl || m.ImageUrl || '',
-      description: m.description || m.Description || '',
-      latitude: Number(m.latitude || m.Latitude || 0),
-      longitude: Number(m.longitude || m.Longitude || 0),
-      locationName: m.locationName || m.LocationName || 'Unknown Location',
-      startDate: m.startDate, 
-      endDate: m.endDate,
-      isPublic: m.isPublic || m.IsPublic || false
+      id: memory.id || memory._id || memory.Id,
+      title: memory.title || memory.Title || 'Untitled',
+      imageUrl: memory.imageUrl || memory.ImageUrl || '',
+      description: memory.description || memory.Description || '',
+      latitude: Number(memory.latitude || memory.Latitude || 0),
+      longitude: Number(memory.longitude || memory.Longitude || 0),
+      locationName: memory.locationName || memory.LocationName || 'Unknown Location',
+      startDate: memory.startDate, 
+      endDate: memory.endDate,
+      isPublic: memory.isPublic || memory.IsPublic || false
     };
   }
 
   loadCommunityMemories() {
-  this.http.get<any[]>(this.apiUrl).subscribe({
-    next: (data) => {
-      console.log("RAW DATA FROM API:", data); // ADD THIS LINE
-
-      const allFormatted = data.map(m => this.formatData(m));
-      console.log("FORMATTED DATA:", allFormatted); // ADD THIS LINE
-      
-      this.allMemories = allFormatted.filter(m => m.isPublic === true);
-      console.log("FILTERED DATA:", this.allMemories); // ADD THIS LINE
-      
-      this.myRecentUploads = [...this.allMemories].reverse();
-      this.refreshMapMarkers();
-    },
-    error: (err) => console.error("Database connection error:", err)
-  });
-}
+    this.http.get<any[]>(this.apiUrl).subscribe({
+      next: (data) => {
+        const allFormatted = data.map(memory => this.formatData(memory));
+        this.allMemories = allFormatted.filter(memory => memory.isPublic === true);
+        
+        // Initialize filtered list with all memories
+        this.filteredMemories = [...this.allMemories].reverse();
+    
+        this.refreshMapMarkers(this.filteredMemories); // Pass the list
+      }
+    });
+  }
 
   toggleSeeMore() {
-    this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
+    this.showMax = (this.showMax === 3) ? this.filteredMemories.length : 3;
   }
 
   // Required by your HTML: trackBy: trackByFn
@@ -82,50 +80,62 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return item.id || index;
   }
 
-  refreshMapMarkers() {
+  filterMemories() {
+    if (!this.searchQuery || this.searchQuery.trim() === '') {
+    this.filteredMemories = [...this.allMemories];
+    } else {
+      const query = this.searchQuery.toLowerCase();
+      this.filteredMemories = this.allMemories.filter(memory => 
+        memory.locationName.toLowerCase().includes(query)
+      );
+    }
+    this.refreshMapMarkers(this.filteredMemories);
+  }
+
+  refreshMapMarkers(memories: any[]) {
     this.markersLayer.clearLayers();
-    this.allMemories.forEach((m) => {
-      const marker = L.marker([m.latitude, m.longitude]);
+    memories.forEach((memory) => {
+      const marker = Leaflet.marker([memory.latitude, memory.longitude]);
       
       const popupHtml = `
         <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${m.title}</h6>
-          <img src="${m.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${m.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${m.locationName}</p>
+          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
+          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
+               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
+          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
         </div>`;
       
       marker.bindPopup(popupHtml).addTo(this.markersLayer);
     });
   }
 
-  private initMap(): void {
-    this.map = L.map('map', {
-      center: [7.8731, 80.7718],
-      zoom: 8,
-      minZoom: 8,
-      maxBounds: this.sriLankaBounds,
-      maxBoundsViscosity: 1.0
+    private initMap(): void {
+      this.map = Leaflet.map('map', {
+        center: [7.8731, 80.7718],
+        zoom: 8,
+        minZoom: 7,
+        maxBounds: this.sriLankaBounds,
+        maxBoundsViscosity: 1.0
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(this.map);
 
     this.markersLayer.addTo(this.map);
   }
 
-  private fixLeafletIcons() {
-    const iconDefault = L.icon({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
+    private fixLeafletIcons() {
+      const iconDefault = Leaflet.icon({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
     });
-    L.Marker.prototype.options.icon = iconDefault;
+      Leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
   @HostListener('window:viewBig', ['$event'])

@@ -7,11 +7,10 @@ import { TransportBookingService } from '../../services/transport-booking.servic
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 
 @Component({
-  selector: 'app-my-bookings',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './my-bookings.html',
-  styleUrl: './my-bookings.css'
+    selector: 'app-my-bookings',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './my-bookings.html',
+    styleUrl: './my-bookings.css'
 })
 /**
  * This component displays a list of bookings.

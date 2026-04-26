@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartJourney.Api.Services;
+using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.Services;
 using System.Threading.Tasks;
 
-namespace SmartJourney.Api.Controllers
+namespace SmartJourneyPlanner.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
