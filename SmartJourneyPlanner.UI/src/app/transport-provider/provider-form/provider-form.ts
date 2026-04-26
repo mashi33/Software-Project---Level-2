@@ -114,7 +114,7 @@ export class ProviderForm implements OnInit {
     const phoneRegex = /^\+?[0-9\s\-\(\)]{7,20}$/; // Standard phone format
     const nameRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/; // No numbers, min 3 chars
     const locationRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/; // Address format
-    const modelRegex = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s\.\-]{2,50}$/; // Car model name
+    const modelRegex = /^[a-zA-Z0-9\s\.\-\(\)]{2,50}$/; // Allows parentheses too
 
     this.vehicleForm = this.fb.group({
       // Personal details of the transport owner
@@ -128,7 +128,7 @@ export class ProviderForm implements OnInit {
       // Basic vehicle details
       type: [VehicleType.Budget, Validators.required],
       vehicleClass: ['Car', Validators.required],
-      modelName: ['', [Validators.required, Validators.pattern(modelRegex)]],
+      modelName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       yearOfManufacture: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 1)]],
       seatCount: [4, [Validators.required, Validators.min(1), Validators.max(100)]],
       isAc: [true],

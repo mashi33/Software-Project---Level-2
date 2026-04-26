@@ -250,34 +250,116 @@ export class VehicleDetailComponent implements OnInit {
   onRequestBooking() {
     this.isFormSubmitted = true;
 
-    // Check for required fields
+    // Check mandatory fields
     if (!this.startDate || !this.endDate || !this.customerName || !this.customerPhone || !this.pickupAddress || this.destinations.length === 0) {
-      Swal.fire('Incomplete', 'Please fill in all required fields marked with (*).', 'warning');
+      Swal.fire({
+        title: 'Form Incomplete',
+        text: 'Please fill in all mandatory fields (*). You must add at least one destination and valid travel dates.',
+        icon: 'warning',
+        confirmButtonColor: '#0c92f4'
+      });
       return;
     }
 
-    if (!this.isNameValid() || !this.isPhoneValid()) {
-      Swal.fire('Invalid Info', 'Please check your name and phone number format.', 'warning');
+    // Check custom validations
+    if (!this.isNameValid()) {
+      Swal.fire('Invalid Name', 'Please enter a valid full name (at least 3 letters, no numbers).', 'warning');
+      return;
+    }
+
+    if (!this.isPhoneValid()) {
+      Swal.fire('Invalid Phone', 'Please enter a valid phone number.', 'warning');
+      return;
+    }
+
+    if (!this.isPickupAddressValid()) {
+      Swal.fire('Invalid Pickup Location', 'Please enter a valid pickup address (at least 3 characters).', 'warning');
+      return;
+    }
+
+    if (!this.isEmailValid()) {
+      Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
+      return;
+    }
+
+    const start = new Date(this.startDate);
+    const end = new Date(this.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      Swal.fire('Invalid Date', 'Pickup date cannot be in the past.', 'warning');
+      return;
+    }
+    
+    if (end < start) {
+      Swal.fire('Invalid Date', 'Drop-off date cannot be earlier than the pickup date.', 'warning');
       return;
     }
 
     if (!this.vehicle) return;
 
-    // Show a summary of the booking request to the user
-    const subtotal = this.getEstimatedTotal();
+    const dailyTotal = this.vehicle.standardDailyRate * this.bookingDays;
+    const nightTotal = this.vehicle.driverNightOutFee * this.bookingNights;
+    const subtotal = dailyTotal + nightTotal;
+
     Swal.fire({
-      title: 'Confirm Booking Request',
+      title: 'Booking Request Summary',
       width: '700px',
-      html: `<div class="text-start">... (Summary HTML) ...</div>`, // Summarized for brevity
+      html: `
+        <div class="text-start" style="font-size: 0.9rem;">
+          <h6 class="mb-2 text-secondary fw-bold" style="font-size: 0.95rem;"><i class="bi bi-person-lines-fill me-2"></i>Passenger Details</h6>
+          <div class="bg-light p-2 rounded-2 mb-2 border text-dark">
+            <p class="mb-0"><strong>Name:</strong> ${this.customerName}</p>
+            <p class="mb-0"><strong>Phone:</strong> ${this.customerPhone}</p>
+            ${this.customerEmail ? `<p class="mb-0"><strong>Email:</strong> ${this.customerEmail}</p>` : ''}
+            ${this.specialRequests ? `<p class="mb-0 text-muted" style="font-size: 0.85rem;"><i class="bi bi-chat-text me-1"></i><i>"${this.specialRequests}"</i></p>` : ''}
+          </div>
+
+          <h6 class="mb-2 text-secondary fw-bold" style="font-size: 0.95rem;"><i class="bi bi-geo-alt-fill me-2"></i>Trip Itinerary</h6>
+          <div class="bg-light p-2 rounded-2 mb-3 border text-dark">
+            <p class="mb-0"><strong>Vehicle:</strong> ${this.vehicle.description}</p>
+            <p class="mb-0"><strong>Travel Dates:</strong> ${this.startDate} to ${this.endDate} (${this.bookingDays} Days)</p>
+            <p class="mb-0"><strong>Pickup:</strong> ${this.pickupAddress}</p>
+            <p class="mb-0"><strong>Route:</strong> ${this.destinations.join(' <i class="bi bi-arrow-right mx-1 text-secondary"></i> ')}</p>
+          </div>
+          
+          <h6 class="mb-2 text-secondary fw-bold" style="font-size: 0.95rem;"><i class="bi bi-receipt me-2"></i>Pricing Breakdown</h6>
+          <table class="table table-bordered table-dark table-sm text-start mb-2">
+            <tbody>
+              <tr>
+                <td class="py-1">Daily Rental (${this.vehicle.standardDailyRate} x ${this.bookingDays} Days)</td>
+                <td class="text-end text-light py-1">Rs. ${dailyTotal.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td class="py-1">Driver Night Fee (${this.vehicle.driverNightOutFee} x ${this.bookingNights} Nights)</td>
+                <td class="text-end text-light py-1">Rs. ${nightTotal.toLocaleString()}</td>
+              </tr>
+              <tr class="table-active">
+                <th class="py-1"><strong>Subtotal (Estimated)</strong></th>
+                <th class="text-end text-primary py-1" style="font-size: 1rem;"><strong>Rs. ${subtotal.toLocaleString()}</strong></th>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="alert alert-info mt-2 mb-2 p-2" style="font-size: 0.85rem;">
+            <i class="bi bi-info-circle-fill me-2"></i> Your request including the route and passenger details will be sent to <strong>${this.vehicle.providerProfile.name}</strong> for approval.
+          </div>
+
+          <div class="alert alert-warning mb-0 p-2" style="font-size: 0.85rem;">
+            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Disclaimer:</strong> This subtotal covers a minimum of ${this.vehicle.freeKMLimit || 150}km per day. Extra mileage will be charged based on the final route at Rs. ${this.vehicle.extraKMRate}/km.
+          </div>
+        </div>
+      `,
       showCancelButton: true,
-      confirmButtonText: 'Send Request',
-      confirmButtonColor: '#0c92f4'
+      confirmButtonText: '<i class="bi bi-send me-2"></i> Send Request to Provider',
+      confirmButtonColor: '#0c92f4',
+      cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Build the booking object and send to the service
         const newBooking: any = {
           vehicleId: this.vehicle?.id,
-          userId: 'u1',
+          userId: 'u1', // mock user ID
           providerId: this.vehicle?.providerId,
           startDate: this.startDate,
           endDate: this.endDate,
@@ -287,18 +369,37 @@ export class VehicleDetailComponent implements OnInit {
           status: 'Pending',
           pickupAddress: this.pickupAddress,
           destinations: this.destinations,
+          vehicleImage: this.vehicle?.exteriorPhoto,
+          providerName: this.vehicle?.providerProfile.name,
+          providerPhone: this.vehicle?.providerProfile.phone,
           userName: this.customerName,
-          contactNumber: this.customerPhone
-          // ... other fields
+          contactNumber: this.customerPhone,
+          pricingSummary: {
+            dailyRate: this.vehicle?.standardDailyRate || 0,
+            dailyRental: dailyTotal,
+            nightlyRate: this.vehicle?.driverNightOutFee || 0,
+            driverNightOut: nightTotal
+          }
         };
 
         this.transportBookingService.createBooking(newBooking).subscribe({
-          next: () => Swal.fire('Success!', 'Request sent to provider.', 'success'),
-          error: () => Swal.fire('Error', 'Failed to send request.', 'error')
+          next: () => {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Your booking request has been sent to the provider. They will contact you shortly.',
+              icon: 'success',
+              confirmButtonColor: '#000000'
+            });
+          },
+          error: (err) => {
+            console.error(err);
+            Swal.fire('Error', 'Failed to send booking request.', 'error');
+          }
         });
       }
     });
   }
+
 
   // --- REVIEW/RATING LOGIC ---
 
