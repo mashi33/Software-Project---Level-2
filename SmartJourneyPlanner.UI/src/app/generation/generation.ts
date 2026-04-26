@@ -340,11 +340,12 @@ export class GenerationComponent implements OnInit, OnChanges {
         doc.setTextColor(30, 30, 30);
         doc.text(`${i + 1}.  ${spot.name || 'Scenic Spot'}`, 20, vY + 7);
 
+        // ✅ Show real distance from route instead of coordinates
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
         doc.text(
-          `${spot.lat?.toFixed(4)}, ${spot.lng?.toFixed(4)}`,
+          spot.distanceFromRoute ? `${spot.distanceFromRoute} from route` : '',
           pageWidth - 20, vY + 7, { align: 'right' }
         );
 
