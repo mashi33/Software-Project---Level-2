@@ -4,25 +4,28 @@ using System.Collections.Generic;
 
 namespace SmartJourneyPlanner.Models
 {
+    /// <summary>
+    /// This class represents a Vehicle stored in the MongoDB database.
+    /// It contains technical specs, pricing, and owner information.
+    /// </summary>
     [BsonIgnoreExtraElements]
     public class TransportVehicle
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
+        public string? Id { get; set; } // Unique database ID
 
         [BsonElement("ProviderId")]
-        public string ProviderId { get; set; } = string.Empty;
+        public string ProviderId { get; set; } = string.Empty; // ID of the owner
 
-        // ✅ Nested Object Mapping
         [BsonElement("ProviderProfile")]
-        public TransportProviderProfile ProviderProfile { get; set; } = new();
+        public TransportProviderProfile ProviderProfile { get; set; } = new(); // Owner details
 
         [BsonElement("Type")]
-        public string Type { get; set; } = string.Empty; 
+        public string Type { get; set; } = string.Empty; // e.g. Budget/Luxury
 
         [BsonElement("VehicleClass")]
-        public string VehicleClass { get; set; } = string.Empty;
+        public string VehicleClass { get; set; } = string.Empty; // e.g. Car/Van/Bus
 
         [BsonElement("YearOfManufacture")]
         public int YearOfManufacture { get; set; }
@@ -34,14 +37,18 @@ namespace SmartJourneyPlanner.Models
         public bool IsAc { get; set; }
 
         [BsonElement("Transmission")]
-        public string Transmission { get; set; } = string.Empty;
+        public string Transmission { get; set; } = string.Empty; // Automatic/Manual
 
         [BsonElement("FuelType")]
         public string FuelType { get; set; } = string.Empty;
 
+        [BsonElement("ModelName")]
+        public string ModelName { get; set; } = string.Empty;
+
         [BsonElement("Description")]
         public string Description { get; set; } = string.Empty;
 
+        // Pricing logic
         [BsonElement("StandardDailyRate")]
         public decimal StandardDailyRate { get; set; }
 
@@ -54,13 +61,14 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("DriverNightOutFee")]
         public decimal DriverNightOutFee { get; set; }
 
-        // ✅ Photo & Document URLs (Mapped to exact Mongo Keys)
+        // Stored images (Base64 strings)
         [BsonElement("InteriorPhoto")]
         public string? InteriorPhoto { get; set; }
 
         [BsonElement("ExteriorPhoto")]
         public string? ExteriorPhoto { get; set; }
 
+        // Links to verification documents
         [BsonElement("DriverNicUrl")]
         public string? DriverNicUrl { get; set; }
 
@@ -86,21 +94,24 @@ namespace SmartJourneyPlanner.Models
         public string Status { get; set; } = "Pending";
 
         [BsonElement("Features")]
-        public TransportVehicleFeatures Features { get; set; } = new();
+        public TransportVehicleFeatures Features { get; set; } = new(); // Wi-Fi, Safety, etc.
 
         [BsonElement("Languages")]
-        public List<string> Languages { get; set; } = new();
+        public List<string> Languages { get; set; } = new(); // Driver languages
 
         [BsonElement("AvailableDates")]
         public List<string> AvailableDates { get; set; } = new();
 
         [BsonElement("BookedDates")]
-        public List<string> BookedDates { get; set; } = new();
+        public List<string> BookedDates { get; set; } = new(); // Calendar busy dates
 
         [BsonElement("Reviews")]
-        public List<TransportReview> Reviews { get; set; } = new();
+        public List<TransportReview> Reviews { get; set; } = new(); // Customer feedback
     }
 
+    /// <summary>
+    /// Details about the vehicle's owner.
+    /// </summary>
     public class TransportProviderProfile
     {
         [BsonElement("Name")]
@@ -109,10 +120,16 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("Phone")]
         public string Phone { get; set; } = string.Empty;
 
+        [BsonElement("Email")]
+        public string Email { get; set; } = string.Empty;
+
         [BsonElement("Location")]
         public string Location { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Extra features available inside the vehicle.
+    /// </summary>
     public class TransportVehicleFeatures
     {
         public bool? Wifi { get; set; }
@@ -126,12 +143,15 @@ namespace SmartJourneyPlanner.Models
         public bool? Tv { get; set; }
     }
 
+    /// <summary>
+    /// Feedback given by a traveler after a trip.
+    /// </summary>
     public class TransportReview
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string UserName { get; set; } = string.Empty;
         public string? UserAvatar { get; set; }
-        public int Rating { get; set; }
+        public int Rating { get; set; } // Stars (1-5)
         public string Comment { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
     }

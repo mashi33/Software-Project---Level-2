@@ -11,6 +11,10 @@ using System.Linq;
 
 namespace SmartJourneyPlanner.Controllers
 {
+    /// <summary>
+    /// This controller manages the API endpoints for transport vehicles.
+    /// It communicates between the Angular frontend and the MongoDB database.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TransportVehiclesController : ControllerBase
@@ -26,20 +30,24 @@ namespace SmartJourneyPlanner.Controllers
 
         // --- 🌍 PUBLIC VIEW (Travelers) ---
 
-        // GET: api/TransportVehicles
-        // Fetches only vehicles that have been vetted and approved by the Admin
+        /**
+         * GET: api/TransportVehicles
+         * Returns a list of all vehicles that have been approved by the Admin.
+         */
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
-            // This service method should filter by Status == "Approved"
             var approved = await _adminService.GetApprovedProvidersAsync();
             return Ok(approved);
         }
 
         // --- 🚐 PROVIDER ACTIONS ---
 
-        // POST: api/TransportVehicles
-        // Entry point for providers to list a new vehicle
+        /**
+         * POST: api/TransportVehicles
+         * Takes vehicle information from the frontend and saves it to the database.
+         * The vehicle starts with a "Pending" status until an Admin approves it.
+         */
         [HttpPost]
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
@@ -49,7 +57,6 @@ namespace SmartJourneyPlanner.Controllers
                 vehicleInfo.Status = "Pending";
                 vehicleInfo.IsVerified = false;
 
-                // Handle ID initialization for MongoDB
                 if (string.IsNullOrEmpty(vehicleInfo.Id)) vehicleInfo.Id = null;
 
                 await _vehicleService.CreateAsync(vehicleInfo);
@@ -61,14 +68,15 @@ namespace SmartJourneyPlanner.Controllers
             }
         }
 
-        // GET: api/TransportVehicles/my-vehicles/{providerId}
-        // Allows a provider to see their specific fleet and their approval status
+        /**
+         * GET: api/TransportVehicles/my-vehicles/{providerId}
+         * Allows a provider to see their specific fleet and their approval status.
+         */
         [HttpGet("my-vehicles/{providerId}")]
         public async Task<IActionResult> GetMyVehicles(string providerId)
         {
             try
             {
-                // This calls the service to filter by the logged-in user's ID
                 var myVehicles = await _vehicleService.GetByProviderIdAsync(providerId);
                 return Ok(myVehicles);
             }
@@ -80,6 +88,11 @@ namespace SmartJourneyPlanner.Controllers
 
         // --- 🛠️ MANAGEMENT & SEEDING ---
 
+        /**
+         * POST: api/TransportVehicles/seed
+         * Clears the current vehicles and inserts a list of pre-defined sample vehicles.
+         * Used for testing and demonstration.
+         */
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
@@ -98,7 +111,10 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
-        // DELETE: api/TransportVehicles/clear - Remove all vehicles from the system
+        /**
+         * DELETE: api/TransportVehicles/clear
+         * Deletes every single vehicle from the database.
+         */
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearAll()
         {
@@ -106,7 +122,10 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "All vehicles cleared successfully!" });
         }
 
-        // GET: api/TransportVehicles/{id} - Get details of one specific vehicle
+        /**
+         * GET: api/TransportVehicles/{id}
+         * Finds and returns the full details of a specific vehicle using its database ID.
+         */
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
         {
@@ -115,6 +134,10 @@ namespace SmartJourneyPlanner.Controllers
             return vehicle;
         }
 
+        /**
+         * DELETE: api/TransportVehicles/{id}
+         * Deletes one specific vehicle record from the database.
+         */
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -127,6 +150,10 @@ namespace SmartJourneyPlanner.Controllers
 
         // --- ⭐ REVIEWS ---
 
+        /**
+         * POST: api/TransportVehicles/{id}/reviews
+         * Receives a customer's review (stars and text) and adds it to the vehicle's history.
+         */
         [HttpPost("{id}/reviews")]
         public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
         {

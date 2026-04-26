@@ -8,7 +8,8 @@
           <label class="us-label">Start Date</label>
           <div class="input-with-icon">
             <i class="bi bi-calendar3"></i>
-            <input type="date" class="form-control us-input" [(ngModel)]="startDate" (change)="onDateChange()" [min]="todayStr">
+            <input type="date" class="form-control us-input" [(ngModel)]="startDate" (change)="onDateChange()" [min]="todayStr"
+              [class.is-invalid]="startDate < todayStr">
           </div>
         </div>
         <div class="col-md-3">
@@ -16,7 +17,7 @@
           <div class="input-with-icon">
             <i class="bi bi-calendar3"></i>
             <input type="date" class="form-control us-input" [(ngModel)]="endDate" (change)="onDateChange()"
-              [min]="startDate">
+              [min]="startDate" [class.is-invalid]="endDate < startDate">
           </div>
         </div>
         <div class="col-md-4">
@@ -41,8 +42,8 @@
           <label class="us-label">Passengers</label>
           <div class="input-with-icon">
             <i class="bi bi-people"></i>
-            <input type="number" class="form-control us-input" [(ngModel)]="passengerCount" (change)="applyFilters()"
-              min="1">
+            <input type="number" class="form-control us-input" [(ngModel)]="passengerCount" (change)="validatePassengerCount()"
+              min="1" max="60" [class.is-invalid]="passengerCount < 1 || passengerCount > 60">
           </div>
         </div>
       </div>
@@ -116,18 +117,46 @@
 
   <!-- Main Content Area -->
   <main class="us-main">
-    <div class="results-header mb-4">
+    <div class="results-header mb-4 d-flex justify-content-between align-items-center">
       <h2 class="fw-bold">Available Vehicles <span class="text-muted fs-5">({{filteredVehicles.length}})</span></h2>
+      <div *ngIf="isLoading" class="spinner-border text-primary spinner-border-sm" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+      <i class="bi bi-exclamation-octagon-fill me-2 fs-4"></i>
+      <div>
+        {{errorMessage}}
+        <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadAvailableVehicles()">Retry</button>
+      </div>
     </div>
 
     <!-- Results Grid -->
     <div class="us-grid">
       <!-- Empty State -->
-      <div *ngIf="filteredVehicles.length === 0" class="text-center w-100 py-5">
-        <i class="bi bi-car-front text-muted" style="font-size: 4rem;"></i>
-        <h4 class="text-light mt-3">No vehicles found</h4>
-        <p class="text-muted">Try adjusting your search filters.</p>
-        <button class="btn btn-us-outline-blue rounded-pill px-4 mt-2" (click)="ngOnInit()">Clear Filters</button>
+      <div *ngIf="filteredVehicles.length === 0 && !isLoading && !errorMessage" class="text-center w-100 py-5 empty-state-container">
+        <div class="empty-icon-wrapper mb-4">
+          <i class="bi bi-search-heart text-muted"></i>
+        </div>
+        <h3 class="text-light fw-bold">No vehicles found</h3>
+        <p class="text-muted mx-auto" style="max-width: 400px;">
+          We couldn't find any vehicles matching your current filters.
+        </p>
+        <div class="mt-4">
+          <button class="btn btn-find px-4 py-2" (click)="resetFilters()">
+            <i class="bi bi-arrow-counterclockwise me-2"></i> Reset Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State Skeleton (Optional but good for UX) -->
+      <div *ngIf="isLoading" class="text-center w-100 py-5">
+         <div class="spinner-grow text-primary" role="status" style="width: 3rem; height: 3rem;">
+           <span class="visually-hidden">Loading...</span>
+         </div>
+         <p class="text-muted mt-3">Finding the best rides for you...</p>
       </div>
 
       <!-- Vehicle Card -->
@@ -150,7 +179,7 @@
         <div class="vh-card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <h4 class="vh-title mb-1">{{v.description.split(' - ')[0]}}</h4>
+              <h4 class="vh-title mb-1">{{v.modelName || v.description}}</h4>
               <div class="vh-meta">
                 <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> {{getAverageRating(v)
                   | number:'1.1-1'}} ({{v.reviews.length || 0}})</span>
@@ -197,7 +226,7 @@
           <button type="button" class="btn-close btn-close-white" (click)="closeCalendar()"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted small mb-3">Vehicle: <strong>{{targetVehicleForCalendar?.description}}</strong></p>
+          <p class="text-muted small mb-3">Vehicle: <strong>{{targetVehicleForCalendar?.modelName || targetVehicleForCalendar?.description}}</strong></p>
 
           <!-- Calendar Controls -->
           <div class="d-flex justify-content-between align-items-center mb-3">

@@ -4,12 +4,18 @@ using SmartJourneyPlanner.Services;
 
 namespace SmartJourneyPlanner.Controllers
 {
+    /// <summary>
+    /// Helper object to receive status updates (like "Confirmed" or "Cancelled").
+    /// </summary>
     public class StatusUpdateDto 
     { 
         public string Status { get; set; } = string.Empty; 
     }
 
-    // This controller manages all transport booking requests
+    /// <summary>
+    /// This controller manages the API for Trip Bookings.
+    /// It handles requests from travelers and manages the status of trip reservations.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TransportBookingsController : ControllerBase
@@ -21,22 +27,34 @@ namespace SmartJourneyPlanner.Controllers
             _bookingService = bookingService;
         }
 
-        // GET: api/TransportBookings - Get every booking in the system
+        /**
+         * GET: api/TransportBookings
+         * Returns a list of every booking record ever made.
+         */
         [HttpGet]
         public async Task<List<TransportBooking>> Get() =>
             await _bookingService.GetAsync();
 
-        // GET: api/TransportBookings/user/{userId} - Find bookings made by a specific traveler
+        /**
+         * GET: api/TransportBookings/user/{userId}
+         * Finds and returns all trips booked by a specific traveler.
+         */
         [HttpGet("user/{userId}")]
         public async Task<List<TransportBooking>> GetByUser(string userId) =>
             await _bookingService.GetByUserAsync(userId);
 
-        // GET: api/TransportBookings/provider/{providerId} - Find bookings received by a transport provider
+        /**
+         * GET: api/TransportBookings/provider/{providerId}
+         * Finds and returns all booking requests received by a specific vehicle owner.
+         */
         [HttpGet("provider/{providerId}")]
         public async Task<List<TransportBooking>> GetByProvider(string providerId) =>
             await _bookingService.GetByProviderAsync(providerId);
 
-        // GET: api/TransportBookings/{id} - Get details for a single booking using its ID
+        /**
+         * GET: api/TransportBookings/{id}
+         * Returns the full details of a single booking using its unique ID.
+         */
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportBooking>> Get(string id)
         {
@@ -45,7 +63,10 @@ namespace SmartJourneyPlanner.Controllers
             return booking;
         }
 
-        // POST: api/TransportBookings - Create a new booking request when a user wants a vehicle
+        /**
+         * POST: api/TransportBookings
+         * Receives a new trip request from the frontend and saves it to the database.
+         */
         [HttpPost]
         public async Task<IActionResult> Post(TransportBooking newBooking)
         {
@@ -54,7 +75,10 @@ namespace SmartJourneyPlanner.Controllers
             return CreatedAtAction(nameof(Get), new { id = newBooking.Id }, newBooking);
         }
 
-        // PATCH: api/TransportBookings/{id}/status - Change the status (e.g., from Pending to Confirmed)
+        /**
+         * PATCH: api/TransportBookings/{id}/status
+         * Updates the status of a trip (e.g. mark it as "Confirmed" or "Rejected").
+         */
         [HttpPatch("{id:length(24)}/status")]
         public async Task<IActionResult> PatchStatus(string id, [FromBody] StatusUpdateDto dto)
         {
@@ -66,7 +90,10 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
-        // PATCH: api/TransportBookings/{id}/rated - Mark a trip as rated so the user cannot rate it again
+        /**
+         * PATCH: api/TransportBookings/{id}/rated
+         * Marks a trip as completed and rated so the user doesn't review it twice.
+         */
         [HttpPatch("{id}/rated")]
         public async Task<IActionResult> PatchRated(string id)
         {
@@ -78,7 +105,10 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
-        // PUT: api/TransportBookings/{id} - Update all details for a specific booking
+        /**
+         * PUT: api/TransportBookings/{id}
+         * Updates all the fields of a specific booking record.
+         */
         [HttpPut("{id:length(24)}")]
         public async Task<IActionResult> Update(string id, TransportBooking updatedBooking)
         {
@@ -90,7 +120,10 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
-        // DELETE: api/TransportBookings/{id} - Permanently delete a booking from history
+        /**
+         * DELETE: api/TransportBookings/{id}
+         * Permanently removes a booking from the database history.
+         */
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
