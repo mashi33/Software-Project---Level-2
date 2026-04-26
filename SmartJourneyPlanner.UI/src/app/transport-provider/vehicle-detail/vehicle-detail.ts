@@ -268,7 +268,39 @@ export class VehicleDetailComponent implements OnInit {
     Swal.fire({
       title: 'Confirm Booking Request',
       width: '700px',
-      html: `<div class="text-start">... (Summary HTML) ...</div>`, // Summarized for brevity
+      html: `
+        <div class="text-start">
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-person-badge me-2"></i>Customer Details</h6>
+            <div class="row small g-2">
+              <div class="col-6"><strong>Name:</strong> ${this.customerName}</div>
+              <div class="col-6"><strong>Phone:</strong> ${this.customerPhone}</div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-geo-alt me-2"></i>Trip Route</h6>
+            <div class="small">
+              <p class="mb-1 text-success"><strong>Pickup:</strong> ${this.pickupAddress}</p>
+              <p class="mb-0 text-danger"><strong>Stops:</strong> ${this.destinations.join(' → ')}</p>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-calendar-check me-2"></i>Schedule & Pricing</h6>
+            <table class="table table-sm small mb-0">
+              <tr><td>Dates</td><td class="text-end">${this.startDate} to ${this.endDate}</td></tr>
+              <tr><td>Duration</td><td class="text-end">${this.bookingDays} Days / ${this.bookingNights} Nights</td></tr>
+              <tr><td>Daily Rate</td><td class="text-end">Rs. ${this.vehicle.standardDailyRate.toLocaleString()}</td></tr>
+              <tr class="fw-bold text-primary" style="font-size: 1.1rem;">
+                <td>Estimated Total</td>
+                <td class="text-end">Rs. ${subtotal.toLocaleString()}</td>
+              </tr>
+            </table>
+            <div style="font-size: 0.75rem;" class="text-muted mt-2 italic">* Final price may vary based on actual KM and extra charges.</div>
+          </div>
+        </div>
+      `,
       showCancelButton: true,
       confirmButtonText: 'Send Request',
       confirmButtonColor: '#0c92f4'
