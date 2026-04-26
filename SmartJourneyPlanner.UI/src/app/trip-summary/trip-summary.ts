@@ -11,15 +11,19 @@ import { ActivatedRoute, RouterLink, Router } from '@angular/router';
   styleUrls: ['./trip-summary.css']
 })
 export class TripSummaryComponent implements OnInit {
-  // main details of the trip
+  // variable to hold the trip details fetched from the backend or temp storage
   tripDetails: any;
-  // array to hold the edit history of the trip, which can be displayed in the UI to show past changes and versions
+  // variable to hold the edit history
   editHistory: any[] = [];
   isDropdownOpen = false;
+  userRole: string = 'owner'; 
+ 
+
+  tripId: string = '';
+  // Filtered lists separated from savedPlaces array
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
-  userRole: string = 'owner';
-  tripId: string = '';
+  
 
   constructor(
     private tripService: TripService,
@@ -27,12 +31,8 @@ export class TripSummaryComponent implements OnInit {
     private router: Router,
   ) {}
 
-  toggleDropdown() {
-    this.isDropdownOpen = !this.isDropdownOpen;
-  }
-
-ngOnInit(): void {
-    // 1. URL එකෙන් Trip ID එක සහ User Role එක ගන්න
+  ngOnInit(): void {
+    // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
     const tripId = this.route.snapshot.paramMap.get('id');
 
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
@@ -45,10 +45,10 @@ ngOnInit(): void {
     if (tripId) {
       console.log('Fetching data for ID:', tripId);
       
-      // get deatails of the trip from database using the ID from URL
+      // 2. All data fetching logic is now in one place, with a fallback to temp data if the database call fails
       this.tripService.getTripById(tripId).subscribe({
         next: (data: any) => {
-          this.tripDetails = data;
+      this.tripDetails = data;
           console.log('Data received from database:', data);
 
           // FIX: Call filterSavedPlaces() after data is loaded
@@ -59,8 +59,10 @@ ngOnInit(): void {
             this.editHistory = data.editHistory;
             console.log('History loaded from main object:', this.editHistory);
           } else {
-            // if history is not included in the main trip data, then make a separate call to fetch it. This ensures that we still get the history data even if it's not included in the initial response.
+            
             this.loadHistory(tripId);
+            this.filterSavedPlaces();
+
           }
         },
         error: (err) => {
@@ -86,6 +88,15 @@ ngOnInit(): void {
     });
   }
 
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  /**
+   * Sample data to show when there's no data in the database or when there's an error fetching data.
+   * This helps in testing the UI and also provides a fallback for users.
+   * Filters savedPlaces array into hotels and restaurants separately.
+   */
   filterSavedPlaces() {
     const places = this.tripDetails?.savedPlaces || this.tripDetails?.SavedPlaces || [];
 

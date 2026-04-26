@@ -1,6 +1,6 @@
 <!-- Main container for the whole timeline page -->
 <div class="timeline-container">
-  <!-- Background layer showing the tea plantation image -->
+  <!-- Background layer showing the tea plantation image (defined in CSS) -->
   <div class="bg-image-layer"></div>
   
   <div class="content-wrapper">
@@ -10,12 +10,12 @@
         <div class="hero-section">
           <!-- Animated icons in the welcome section -->
           <div class="hero-icons-wrapper">
-            <!-- Main Route Icon -->
+            <!-- Main Route Icon (Big blue circle) -->
             <div class="main-icon-container">
               <span class="material-symbols-outlined main-route-icon">route</span>
             </div>
             
-            <!-- Small floating icons (hotel, food, explore) -->
+            <!-- Small floating icons around the main icon (hotel, food, explore) -->
             <div class="floating-icon icon-hotel wiggle-1">
               <span class="material-symbols-outlined">explore</span>
             </div>
@@ -31,8 +31,7 @@
           <div class="hero-content">
             <h2 class="hero-title">Bring your dream journey to life</h2>
             <p class="hero-description">
-              Map out your adventures, 
-              discover new places, and organize your itinerary with ease.
+              Map out your adventures, discover new places, and organize your itinerary with ease.
             </p>
             <div class="hero-actions">
               <!-- Clicking this button hides the welcome screen and shows the timeline -->
@@ -55,7 +54,7 @@
           <p class="header-subtitle">Your complete itinerary for exploring the pearl of the Indian Ocean</p>
         </div>
 
-        <!-- Statistics Card -->
+        <!-- Statistics Card showing summary counts -->
         <div class="stats-card">
           <div class="stats-grid">
             <div class="stat-item">
@@ -80,13 +79,13 @@
         </div>
       </header>
 
-      <!-- The list of days in the trip -->
+      <!-- The list of days in the trip itinerary -->
       @if (timeline().days.length > 0) {
         <div class="days-container">
           <!-- Loop through each day (Day 1, Day 2, etc.) -->
           @for (day of timeline().days; track day.id) {
             <div class="day-wrapper">
-              <!-- The blue circle with the day number -->
+              <!-- The blue circle with the day number (Day 1, 2, 3...) -->
               <div class="day-circle">
                 <span>{{ getDayIndex(day) }}</span>
               </div>
@@ -95,15 +94,15 @@
                 <div class="day-header">
                   <div class="day-title-area">
                     <h2>Day {{ getDayIndex(day) }}</h2>
-                    <!-- Clicking the date allows the user to change it using a calendar popup -->
+                    <!-- Clicking the date allows the user to change it using a browser date picker -->
                     <div class="day-date clickable" (click)="triggerDatePicker(day.id)">
                       <span class="material-symbols-outlined">calendar_today</span>
                       <span>{{ day.date }}</span>
-                      <input type="date" [id]="'date-picker-' + day.id" class="hidden-date-picker" (change)="onDateChange($event, day.id)">
+                      <input type="date" [id]="'date-picker-' + day.id" [min]="minDate" class="hidden-date-picker" (change)="onDateChange($event, day.id)">
                     </div>
                   </div>
                   
-                  <!-- Buttons to add events or delete the entire day -->
+                  <!-- Buttons to add new events or delete the entire day -->
                   <div class="day-actions">
                     <span class="completion-text">{{ completedCount(day) }}/{{ day.events.length }} completed ({{ completionPercentage(day) }}%)</span>
                     <button class="btn-add" (click)="openAddEventModal(day.id)">
@@ -115,7 +114,7 @@
                   </div>
                 </div>
                 
-                <!-- The list of activities for this day. Supports Drag and Drop. -->
+                <!-- The list of activities for this day. Supports dragging items to reorder. -->
                 <div class="event-list"
                     cdkDropList
                     [id]="day.id"
@@ -123,41 +122,43 @@
                     [cdkDropListConnectedTo]="connectedTo"
                     (cdkDropListDropped)="drop($event)">
                   
-                  <!-- Loop through each activity/event in the day -->
+                  <!-- Loop through each activity/event inside this specific day -->
                   @for (event of day.events; track event.id) {
                     <div class="event-card" [class.completed]="event.status === 'Completed'" cdkDrag>
                       
-                      <!-- Icon representing the activity type (e.g., taxi, hotel) -->
+                      <!-- Icon representing the activity type (e.g. Bed icon for Hotel, Fork for Food) -->
                       <div class="category-box" [ngClass]="getCategoryClass(event)">
                         <span class="material-symbols-outlined">{{ getCategoryIcon(event) }}</span>
                       </div>
       
-                      <!-- Details about the activity -->
+                      <!-- Text content about the activity -->
                       <div class="event-content">
                         <h3 class="event-title" [class.strike]="event.status === 'Completed'">{{ event.title }}</h3>
                         
                         <div class="event-meta">
+                          <!-- Time and Location info with icons -->
                           <span class="event-time"><span class="material-symbols-outlined timestamp-icon">schedule</span> {{ event.time }}</span>
                           <span class="event-location"><span class="material-symbols-outlined location-icon">location_on</span> {{ event.location }}</span>
                         </div>
                         
+                        <!-- Description (Note) for the event -->
                         <p class="event-description">{{ event.description }}</p>
                       </div>
       
-                      <!-- Buttons to Complete, Edit, or Delete the activity -->
+                      <!-- Buttons to Complete, Edit, or Delete this specific activity -->
                       <div class="event-actions">
-                        <!-- Mark as Done -->
+                        <!-- Mark as Done / Toggle Status -->
                         <button class="action-btn status-btn" 
                                 (click)="toggleStatus(day.id, event)" 
                                 [class.is-done]="event.status === 'Completed'"
                                 [title]="event.status === 'Completed' ? 'Mark Pending' : 'Mark Completed'">
                           <span class="material-symbols-outlined">{{ event.status === 'Completed' ? 'check_circle' : 'radio_button_unchecked' }}</span>
                         </button>
-                        <!-- Edit Button -->
+                        <!-- Edit Button - Opens the popup with existing data -->
                         <button class="action-btn edit-btn" (click)="openEditEventModal(day.id, event)" title="Edit Event">
                           <span class="material-symbols-outlined">edit</span>
                         </button>
-                        <!-- Delete Button -->
+                        <!-- Delete Button - Removes only this event -->
                         <button class="action-btn delete-btn" (click)="deleteEvent(day.id, event)" title="Delete Event">
                           <span class="material-symbols-outlined">delete_outline</span>
                         </button>
@@ -170,7 +171,7 @@
           }
         </div>
       
-        <!-- Button at the bottom to add another day to the trip -->
+        <!-- Big button at the bottom to add more days to the trip -->
         <div class="add-day-container">
           <button class="btn-add-day" (click)="addNewDay()">
             <span class="material-symbols-outlined">add</span> Add Another Day
@@ -178,7 +179,7 @@
         </div>
 
       } @else {
-        <!-- If no days exist yet, show a big button to add the first day -->
+        <!-- If the trip is empty, show a centered button to add the very first day -->
         <div class="add-day-container centered">
           <button class="btn-add-day" (click)="addNewDay()">
             <span class="material-symbols-outlined">add</span> Add First Day
@@ -190,22 +191,24 @@
 </div>
 
 <!-- The Popup (Modal) for adding or editing an activity -->
+<!-- This is only visible when isModalOpen is true -->
 <div class="modal-backdrop" *ngIf="isModalOpen">
   <div class="modal-content">
     <h2>{{ editingEventId ? 'Edit Event' : 'Add New Event' }}</h2>
     
     <form (submit)="onSubmit($event)">
-      <!-- Input for Activity Title -->
+      <!-- Input field for the Event Title -->
       <div class="form-group">
         <label>Title</label>
         <input type="text" [(ngModel)]="formData.title" name="title" required 
                [class.invalid]="formTouched.title && formErrors.title"
                (blur)="handleBlur('title')"
                placeholder="e.g. Visit Temple">
+        <!-- Error message shown if validation fails -->
         <span class="error-msg" *ngIf="formTouched.title && formErrors.title">{{ formErrors.title }}</span>
       </div>
       
-      <!-- Input for Activity Time -->
+      <!-- Input field for the Event Time -->
       <div class="form-group">
         <label>Time</label>
         <input type="time" [(ngModel)]="formData.time" name="time" required
@@ -215,7 +218,7 @@
       </div>
       
       <div class="form-row">
-        <!-- Input for Location -->
+        <!-- Input field for Location -->
         <div class="form-group half-width">
           <label>Location</label>
           <input type="text" [(ngModel)]="formData.location" name="location" required 
@@ -224,7 +227,7 @@
                  placeholder="Address or Name">
           <span class="error-msg" *ngIf="formTouched.location && formErrors.location">{{ formErrors.location }}</span>
         </div>
-        <!-- Selection for Category (Hotel, Food, etc.) -->
+        <!-- Dropdown menu to pick Category -->
         <div class="form-group half-width">
           <label>Category</label>
           <select [(ngModel)]="formData.category" name="category" required>
@@ -236,17 +239,22 @@
         </div>
       </div>
       
-      <!-- Optional Description area -->
+      <!-- Larger text box for Description (Optional) -->
       <div class="form-group">
         <label>Description</label>
-        <textarea [(ngModel)]="formData.description" name="description" rows="3" placeholder="Additional details..."></textarea>
+        <textarea [(ngModel)]="formData.description" name="description" rows="3" 
+                  [class.invalid]="formTouched.description && formErrors.description"
+                  (blur)="handleBlur('description')"
+                  placeholder="Additional details..."></textarea>
+        <span class="error-msg" *ngIf="formTouched.description && formErrors.description">{{ formErrors.description }}</span>
       </div>
       
-      <!-- Buttons to save or cancel -->
+      <!-- Buttons to confirm or close the popup -->
       <div class="modal-actions">
         <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+        <!-- Button is disabled if the form has validation errors -->
         <button type="submit" class="btn-save" [class.btn-disabled]="isFormInvalid">Save Event</button>
       </div>
     </form>
   </div>
-</div>
+</div>

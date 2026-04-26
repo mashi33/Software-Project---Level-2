@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router, RouterOutlet } from '@angular/router';
 // 1. Import the new components
 import { NavbarComponent } from './navbar/navbar';
 import { FooterComponent } from './footer/footer';
@@ -13,4 +13,6 @@ import { FooterComponent } from './footer/footer';
     templateUrl: './app.html',
     styleUrl: './app.css'
 })
-export class AppComponent { }
+export class AppComponent {
+  constructor(public router: Router) {}
+ }
