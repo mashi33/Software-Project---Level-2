@@ -5,10 +5,11 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-    selector: 'app-trip-create',
-    imports: [ReactiveFormsModule, CommonModule],
-    templateUrl: './trip-create.html',
-    styleUrls: ['./trip-create.css']
+  selector: 'app-trip-create',
+  standalone: true,
+  imports: [ReactiveFormsModule, CommonModule],
+  templateUrl: './trip-create.html',
+  styleUrls: ['./trip-create.css']
 })
 export class TripCreateComponent implements OnInit {
 
@@ -18,12 +19,10 @@ export class TripCreateComponent implements OnInit {
   tripId: string | null = null;
 
   constructor(
-    private tripService: TripService, 
+    private tripService: TripService, // ✅ Fixed: Only one instance here now
     private router: Router,
     private route: ActivatedRoute
   ) {
-
-    // Initializing the form with validation rules
     this.tripForm = new FormGroup({
       tripName: new FormControl('', Validators.required),
       departFrom: new FormControl('', Validators.required),
@@ -32,7 +31,7 @@ export class TripCreateComponent implements OnInit {
       endDate: new FormControl('', Validators.required),
       budgetLimit: new FormControl(''),
       description: new FormControl(''),
-      memberEmail: new FormControl(''),
+      memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
     });
   }
@@ -40,7 +39,6 @@ export class TripCreateComponent implements OnInit {
   ngOnInit() {
     console.log("Checking for trip data...");
 
-    //Check if there's an ID in the URL for editing an existing trip
     const idFromUrl = this.route.snapshot.paramMap.get('id');
 
     if (idFromUrl) {
@@ -57,7 +55,6 @@ export class TripCreateComponent implements OnInit {
         error: (err) => console.error("Error fetching trip for edit:", err)
       });
     } else {
-      // 2. Fallback to temporary data if ID is not in URL
       const savedData = this.tripService.getTempTripData();
       if (savedData) {
         this.isEditMode = true;
@@ -67,45 +64,36 @@ export class TripCreateComponent implements OnInit {
     }
   }
 
-  /**
-   * Populates the form fields with existing data.
-   * Handles both camelCase and PascalCase from the backend.
-   */
- fillForm(data: any) {
-  this.tripForm.patchValue({
-    tripName: data.tripName || data.TripName,
-    departFrom: data.departFrom || data.DepartFrom,
-    destination: data.destination || data.Destination,
-    startDate: this.formatDate(data.startDate || data.StartDate),
-    endDate: this.formatDate(data.endDate || data.EndDate),
-    budgetLimit: data.budgetLimit || data.BudgetLimit,
-    description: data.description || data.Description
-  });
+  fillForm(data: any) {
+    this.tripForm.patchValue({
+      tripName: data.tripName || data.TripName,
+      departFrom: data.departFrom || data.DepartFrom,
+      destination: data.destination || data.Destination,
+      startDate: this.formatDate(data.startDate || data.StartDate),
+      endDate: this.formatDate(data.endDate || data.EndDate),
+      budgetLimit: data.budgetLimit || data.BudgetLimit,
+      description: data.description || data.Description
+    });
 
-  const members = data.members || data.Members;
-  if (members) {
-    this.invitedMembers = members.map((m: any) => ({
-      email: m.email || m.Email,
-      role: m.role || m.Role
-    }));
+    const members = data.members || data.Members;
+    if (members) {
+      this.invitedMembers = members.map((m: any) => ({
+        email: m.email || m.Email,
+        role: m.role || m.Role
+      }));
+    }
   }
 
-  /**
-   * Formats ISO date strings to YYYY-MM-DD for HTML date inputs.
-   */
-  formatDate(date: any) {
+  formatDate(date: any): string {
     if (!date) return '';
     const d = new Date(date);
-    if (isNaN(d.getTime())) return ''; 
+    if (isNaN(d.getTime())) return '';
     const month = '' + (d.getMonth() + 1);
     const day = '' + d.getDate();
     const year = d.getFullYear();
     return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
   }
 
-  /**
-   * Adds an email and role to the local invited members list.
-   */
   onInvite() {
     const email = this.tripForm.get('memberEmail')?.value;
     const role = this.tripForm.get('memberRole')?.value;
@@ -118,19 +106,17 @@ export class TripCreateComponent implements OnInit {
     }
   }
 
-  /**
-   * Handles form submission for both Create and Update operations.
-   */
   onSubmit() {
-    if (this.tripForm.valid) { // Ensure form is valid before submission
     if (this.tripForm.valid) {
-
-      // FIX: JWT token එකෙන් email ලබාගෙන CreatedBy field එකට save කිරීම
       const token = localStorage.getItem('token');
       let createdBy = '';
       if (token) {
-        const decoded: any = JSON.parse(atob(token.split('.')[1]));
-        createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        try {
+          const decoded: any = JSON.parse(atob(token.split('.')[1]));
+          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        } catch (e) {
+          console.error("Token decoding failed", e);
+        }
       }
 
       const tripData = {
@@ -138,19 +124,17 @@ export class TripCreateComponent implements OnInit {
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
-        budgetLimit: this.tripForm.value.budgetLimit,
+        BudgetLimit: this.tripForm.value.budgetLimit,
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({
           Email: m.email,
           Role: m.role
         })),
-        // FIX: Trip create කළ user ගේ email save කිරීම
         CreatedBy: createdBy
       };
 
       if (this.isEditMode && this.tripId) {
-        //UPDATE EXISTING TRIP
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: (res: any) => {
             console.log("Update Success:", res);
@@ -164,9 +148,9 @@ export class TripCreateComponent implements OnInit {
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
             console.log("Backend Response:", res);
-            const newId = res.tripId || res.id; 
+            const newId = res.tripId || res.id;
 
-            if (newId) { // If backend returns the new trip ID, use it for redirection and temp storage
+            if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
               alert("Trip saved successfully!");
               this.router.navigate(['/trip-summary', newId]);
@@ -181,14 +165,12 @@ export class TripCreateComponent implements OnInit {
       alert("Form has errors. Please check again.");
     }
   }
-  
-  // Debugging function to log the selected budget value
+
   onAddBudget() {
-  const budget = this.tripForm.get('budgetLimit')?.value;
-  console.log("Selected Budget:", budget);
+    const budget = this.tripForm.get('budgetLimit')?.value;
+    console.log("Selected Budget:", budget);
   }
-  
-  // Function to remove an invited member from the list
+
   removeMember(index: number) {
     this.invitedMembers.splice(index, 1);
   }

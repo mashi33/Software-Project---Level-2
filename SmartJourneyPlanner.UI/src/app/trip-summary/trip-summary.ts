@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute,Router, RouterLink } from '@angular/router';
-import Swal from 'sweetalert2';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 
 @Component({
   selector: 'app-trip-summary',
@@ -24,18 +23,20 @@ export class TripSummaryComponent implements OnInit {
   // Filtered lists separated from savedPlaces array
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
+  
 
   constructor(
     private tripService: TripService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
     const tripId = this.route.snapshot.paramMap.get('id');
-    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
 
+    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+    this.tripId = this.route.snapshot.paramMap.get('id') || '';
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);
@@ -47,10 +48,10 @@ export class TripSummaryComponent implements OnInit {
       // 2. All data fetching logic is now in one place, with a fallback to temp data if the database call fails
       this.tripService.getTripById(tripId).subscribe({
         next: (data: any) => {
-          this.tripDetails = data;
+      this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // Get data directly from the main object if available, otherwise make a separate call to get history
+          //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
             console.log('History loaded from main object:', this.editHistory);
@@ -63,7 +64,7 @@ export class TripSummaryComponent implements OnInit {
         },
         error: (err) => {
           console.error('Data load error:', err);
-          this.loadFromTemp(); // Show temp data if there's an error fetching from the database
+          this.loadFromTemp(); // If there's an error fetching from the database, load from temporary storage or show sample data. This provides a fallback to ensure the user still sees something instead of a blank page.
         }
       });
     } else {
@@ -71,7 +72,7 @@ export class TripSummaryComponent implements OnInit {
     }
   }
 
-  // Backup function to load edit history if it's not included in the main trip details response
+  // Method to load the edit history of the trip by making a call to the TripService. This is used to populate the edit history section in the UI, allowing users to see past changes and versions of the trip details.
   loadHistory(id: string) {
     this.tripService.getTripHistory(id).subscribe({
       next: (data) => {
@@ -112,9 +113,6 @@ export class TripSummaryComponent implements OnInit {
     console.log('Filtered Restaurants:', this.savedRestaurants);
   }
 
-  /**
-   * Loads trip data from the temporary service storage or shows sample data
-   */
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
     if (!this.tripDetails) {
@@ -132,10 +130,10 @@ export class TripSummaryComponent implements OnInit {
   }
 
   navigateToChat() {
-  if (this.tripId) {
-    this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
-  } else {
-    Swal.fire('Error', 'Trip ID not found!', 'error');
+    if (this.tripId) {
+      this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+    } else {
+      alert('Trip ID not found!');
+    }
   }
-}
 }
