@@ -108,6 +108,21 @@ export class UserSearch implements OnInit {
     this.endDate = tomorrow.toISOString().split('T')[0];
   }
 
+  /**
+   * Listen for clicks on the entire document.
+   * If the user clicks outside of a dropdown, we close it.
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    
+    // If the click is not inside a 'custom-dropdown', close both dropdowns
+    if (!target.closest('.custom-dropdown')) {
+      this.showLanguageDropdown = false;
+      this.showCityDropdown = false;
+    }
+  }
+
   // Lifecycle hook: loads data when component starts
   ngOnInit() {
     this.loadAvailableVehicles();
@@ -151,6 +166,13 @@ export class UserSearch implements OnInit {
 
     this.calculateDays();
     this.applyFilters();
+  }
+
+  /**
+   * Returns a list of languages that are currently selected in the filter.
+   */
+  getSelectedLangs(): string[] {
+    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
   }
 
   /**
@@ -267,11 +289,11 @@ export class UserSearch implements OnInit {
     this.applyFilters();
   }
 
-  /**
-   * Toggles the driver language filter dropdown visibility.
-   */
   toggleLanguageDropdown() {
     this.showLanguageDropdown = !this.showLanguageDropdown;
+    if (this.showLanguageDropdown) {
+      this.showCityDropdown = false;
+    }
   }
 
   /**
@@ -287,9 +309,10 @@ export class UserSearch implements OnInit {
    */
   filterCities() {
     this.showCityDropdown = true;
+    this.showLanguageDropdown = false;
     const query = this.pickupArea.toLowerCase().trim();
     if (query === '') {
-      this.filteredCities = this.sriLankanCities.slice(0, 8); // Show default top cities
+      this.filteredCities = this.sriLankanCities.slice(0, 8);
     } else {
       this.filteredCities = this.sriLankanCities.filter(city => 
         city.toLowerCase().includes(query)
@@ -419,12 +442,7 @@ export class UserSearch implements OnInit {
     this.generateCalendar();
   }
 
-  /**
-   * Returns a list of languages that are currently selected in the filter.
-   */
-  getSelectedLangs(): string[] {
-    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
-  }
+
 
   /**
    * Handles clicking a day in the calendar.

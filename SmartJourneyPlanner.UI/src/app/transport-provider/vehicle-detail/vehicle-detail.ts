@@ -191,6 +191,7 @@ export class VehicleDetailComponent implements OnInit {
     this.isReviewsExpanded = !this.isReviewsExpanded;
   }
 
+
   // --- ROUTE/STOP LOGIC ---
 
   /**
