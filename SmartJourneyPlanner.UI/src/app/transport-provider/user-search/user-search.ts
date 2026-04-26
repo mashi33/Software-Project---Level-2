@@ -127,15 +127,19 @@ export class UserSearch implements OnInit {
   ) {
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
     const today = new Date();
-    // Use local date string (YYYY-MM-DD) instead of UTC toISOString()
-    const offset = today.getTimezoneOffset();
-    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-    this.todayStr = localToday.toISOString().split('T')[0];
+    // More robust local date calculation
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    this.todayStr = `${year}-${month}-${day}`;
     
     this.startDate = this.todayStr;
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    this.endDate = tomorrow.toISOString().split('T')[0];
+    const ty = tomorrow.getFullYear();
+    const tm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const td = String(tomorrow.getDate()).padStart(2, '0');
+    this.endDate = `${ty}-${tm}-${td}`;
   }
 
   ngOnInit() {

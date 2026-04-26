@@ -65,10 +65,11 @@ export class VehicleDetailComponent implements OnInit {
     public calcService: TransportCalculationService
   ) {
     const today = new Date();
-    // Use local date string (YYYY-MM-DD) instead of UTC toISOString()
-    const offset = today.getTimezoneOffset();
-    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-    this.minDate = localToday.toISOString().split('T')[0];
+    // More robust local date calculation
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    this.minDate = `${year}-${month}-${day}`;
   }
 
   ngOnInit() {
@@ -109,9 +110,12 @@ export class VehicleDetailComponent implements OnInit {
       // Auto fill from Find Transport, or default to today/tomorrow
       if (!start || !end) {
         start = this.minDate;
-        const tomorrowDate = new Date(this.minDate);
+        const tomorrowDate = new Date(today);
         tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-        end = tomorrowDate.toISOString().split('T')[0];
+        const ty = tomorrowDate.getFullYear();
+        const tm = String(tomorrowDate.getMonth() + 1).padStart(2, '0');
+        const td = String(tomorrowDate.getDate()).padStart(2, '0');
+        end = `${ty}-${tm}-${td}`;
       }
 
       if (start && end) {
