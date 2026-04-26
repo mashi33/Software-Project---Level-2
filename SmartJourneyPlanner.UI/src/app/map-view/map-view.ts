@@ -8,7 +8,7 @@ declare var google: any;
 
 @Component({
   selector: 'app-map-view',
-  standalone: true, // standalone true බව තහවුරු කරගන්න
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './map-view.html',
   styleUrl: './map-view.css'
@@ -43,19 +43,24 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadGoogleMapsScript(): Promise<void> {
     return new Promise((resolve) => {
+
+      // ✅ Fix 1: Already fully loaded - resolve වහාම
       if (typeof google !== 'undefined' && google.maps) {
         resolve();
         return;
       }
 
-      if (document.getElementById('google-maps-script')) {
-        (window as any)['onGoogleMapsReady'] = () => resolve();
+      // ✅ Fix 2: Script tag exist නමුත් තවම load වෙමින් පවතී
+      // load event listen කරන්න, නැවත script add නොකරන්න
+      const existingScript = document.getElementById('google-maps-script');
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve());
         return;
       }
 
+      // ✅ Fix 3: Script නැත - නව script එකක් add කරන්න
       const script = document.createElement('script');
       script.id = 'google-maps-script';
-      // වැදගත්: libraries=places එකතු කළා (Autocomplete සඳහා අත්‍යවශ්‍යයි)
       script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&callback=onGoogleMapsReady`;
       script.async = true;
       script.defer = true;
@@ -67,12 +72,12 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   initMap() {
     const mapElement = document.getElementById('hotelMap');
+
     if (mapElement && !this.map) {
       const mapOptions = {
-        center: { lat: 7.8731, lng: 80.7718 }, 
+        center: { lat: 7.8731, lng: 80.7718 },
         zoom: 8,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
-        // සිතියම වඩාත් පිරිසිදුව පෙනීමට UI settings කිහිපයක්
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false
@@ -95,14 +100,13 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
           position: { lat: p.latitude, lng: p.longitude },
           map: this.map,
           title: p.name,
-          animation: google.maps.Animation.DROP // වැටෙන ස්වභාවයක් ලබා දීමට
+          animation: google.maps.Animation.DROP
         });
 
-        // අලංකාර Custom Popup Content එක මෙතැනට
         const content = `
           <div class="custom-popup" style="width:200px; font-family: sans-serif;">
-            ${p.photoReference ? 
-              `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photoReference}&key=${this.googleMapsApiKey}" 
+            ${p.photoReference ?
+              `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${p.photoReference}&key=${this.googleMapsApiKey}"
                     style="width:100%; height:100px; object-fit:cover; border-radius:8px;" />` : ''
             }
             <div style="padding:10px 0 5px 0;">
@@ -113,15 +117,11 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
           </div>
         `;
 
-        const infoWindow = new google.maps.InfoWindow({
-          content: content
-        });
+        const infoWindow = new google.maps.InfoWindow({ content });
 
         marker.addListener('click', () => {
-          // කලින් විවෘත කර ඇති info windows වසා දැමීමට (විකල්ප)
           infoWindow.open(this.map, marker);
-          
-          this.placesService.selectPlace(p.id); 
+          this.placesService.selectPlace(p.id);
           this.animateMarker(marker);
         });
 

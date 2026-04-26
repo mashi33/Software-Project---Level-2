@@ -51,6 +51,9 @@ export class TripSummaryComponent implements OnInit {
       this.tripDetails = data;
           console.log('Data received from database:', data);
 
+          // FIX: Call filterSavedPlaces() after data is loaded
+          this.filterSavedPlaces();
+
           //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
@@ -136,4 +139,25 @@ export class TripSummaryComponent implements OnInit {
       alert('Trip ID not found!');
     }
   }
+
+  navigateToRouteOptimization() {
+  this.router.navigate(['/explore/route-optimization'], {
+    //Autofill on route optimization page using query parameters to pass 
+    // the departure and destination locations from the current trip details. 
+    queryParams: {
+      start: this.tripDetails.departFrom, 
+      end: this.tripDetails.destination   
+    }
+  });
+}
+
+navigateToHotels() {
+  this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+    // Autofill on hotel finder page using query parameters
+    //  to pass the destination location from the current trip details.
+    queryParams: { 
+      city: this.tripDetails.destination 
+    } 
+  });
+}
 }

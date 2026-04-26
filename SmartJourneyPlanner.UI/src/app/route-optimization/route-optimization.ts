@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router,RouterLink } from '@angular/router';
+import { Router,RouterLink,ActivatedRoute  } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { RouteService } from '../services/route.service';
@@ -25,6 +25,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   endSuggestions: any[] = [];
   results: any = null;
   currentPath: any[] = [];
+  isLoading = false;
   apiLoaded = false;
 
   showTraffic = false;
@@ -45,7 +46,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   private searchSubject = new Subject<{ input: string, type: 'start' | 'end' }>();
   private searchSubscription?: Subscription;
 
-  constructor(private routeService: RouteService, private router: Router) {
+  constructor(private routeService: RouteService, private router: Router, private route: ActivatedRoute) {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged(
@@ -57,6 +58,23 @@ export class RouteOptimization implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadGoogleApi();
+    this.route.queryParams.subscribe(params => {
+    if (params['start']) {
+      this.start = params['start'];
+      this.getCoords(this.start, 'start'); 
+    }
+    if (params['end']) {
+      this.end = params['end'];
+      this.getCoords(this.end, 'end');
+    }
+
+    if (this.start && this.end) {
+      setTimeout(() => {
+        this.calculate();
+      }, 1500);
+    }
+  });
+    
   }
 
   ngOnDestroy() {
@@ -130,6 +148,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   }
 
   calculate() {
+    this.isLoading = true;
     this.routeService.getOptimizedRoutes(this.start, this.end).subscribe({
       next: (res: any) => {
         this.results = res;
@@ -139,6 +158,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
           this.drawPath(res.fastest.polyline);
           this.autoFitMap();
           this.updateRouteDetails('fastest', res.fastest);
+          this.isLoading = false;
         }
 
         // FIX 6: Pre-compute distances after BOTH path and viewpoints are loaded
@@ -151,6 +171,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
+        this.isLoading = false;
         if (err.status === 404) {
           Swal.fire({
             icon: 'info',
@@ -167,7 +188,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   }
 
   drawPath(encodedPoly: string) {
-    if (encodedPoly) {
+    if (encodedPoly && window['google'] && google.maps.geometry) {
       const decodedPath = google.maps.geometry.encoding.decodePath(encodedPoly);
       this.currentPath = decodedPath.map(pos => ({
         lat: pos.lat(),
@@ -182,6 +203,8 @@ export class RouteOptimization implements OnInit, OnDestroy {
       if (this.results?.scenicViewpoints?.length > 0 && this.apiLoaded) {
         this.preComputeDistances(this.results.scenicViewpoints);
       }
+    } else {
+      console.warn("Google Maps Geometry library not loaded yet.");
     }
   }
 
@@ -282,8 +305,12 @@ export class RouteOptimization implements OnInit, OnDestroy {
                     `${this.startCoords?.lng}&markers=color:red|label:E|` +
                     `${this.endCoords?.lat},${this.endCoords?.lng}`,
 
-      stops: this.results?.scenicViewpoints || [],
-
+      // ✅ Calculate real distance from route for each spot
+    stops: (this.results?.scenicViewpoints || []).map((spot: any) => ({
+      ...spot,
+      distanceFromRoute: this.calculateDistanceFromRoute(spot.lat, spot.lng)
+    })),
+    
       // ✅ All 3 routes for comparison table
       allRoutes: {
         fastest: this.results?.fastest ? {

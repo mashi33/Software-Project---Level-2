@@ -6,29 +6,23 @@ import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
+import Swal from 'sweetalert2';
 
 @Component({
-    selector: 'app-place-card',
-    imports: [CommonModule],
-    templateUrl: './place-card.html',
-    styleUrl: './place-card.css'
+  selector: 'app-place-card',
+  imports: [CommonModule],
+  templateUrl: './place-card.html',
+  styleUrl: './place-card.css'
 })
 export class PlaceCardListComponent implements OnInit, OnDestroy {
+
   googleMapsApiKey: string = environment.googleMapsApiKey;
   places: any[] | null = null;
   selectedPlaceId: string | null = null;
   addedPlaceIds: Set<string> = new Set();
-  toastVisible = false;
-  private toastTimer: any;
+
   private placesSubscription: Subscription | undefined;
   private selectionSubscription: Subscription | undefined;
-
-  // Modal සඳහා නව variables
-  showTripModal = false;
-  userTrips: any[] = [];
-  selectedPlace: any = null;
-  isLoadingTrips = false;
-  toastMessage = '';
 
   constructor(
     private placesService: PlacesService,
@@ -64,98 +58,165 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
     return this.addedPlaceIds.has(placeId);
   }
 
-  // "+ Add to Trip" button click කළ විට modal එක open කිරීම
-  addToTrip(place: any) {
+  async addToTrip(place: any) {
     if (this.isAdded(place.placeId)) return;
 
-    this.selectedPlace = place;
-    this.isLoadingTrips = true;
-    this.showTripModal = true;
-
-    // JWT token එකෙන් email ලබාගැනීම
     const token = this.authService.getToken();
     if (!token) {
-      this.isLoadingTrips = false;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'Please log in to add places to a trip.',
+      });
       return;
     }
 
     const decoded: any = jwtDecode(token);
-    // නිවැරදි .NET claim name එක භාවිතා කිරීම
     const email = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
                   decoded['email'];
 
-    console.log('[PlaceCard] Email from token:', email);
+    Swal.fire({
+      title: 'Loading your trips...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
 
-    // User ගේ email මගින් trips ලබාගැනීම
     this.http.get<any[]>(`http://localhost:5233/api/trips/by-email/${email}`)
       .subscribe({
-        next: (trips) => {
-          this.userTrips = trips;
-          this.isLoadingTrips = false;
-          console.log('[PlaceCard] Trips loaded:', trips);
+        next: async (trips) => {
+
+          if (trips.length === 0) {
+            Swal.fire({
+              icon: 'info',
+              title: 'No Trips Found',
+              text: 'Please create a trip first!',
+            });
+            return;
+          }
+
+          const tripOptions: Record<string, string> = {};
+          trips.forEach(trip => {
+            const start = new Date(trip.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const end = new Date(trip.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            tripOptions[trip.id] = `${trip.tripName} — 📍${trip.destination} | 🗓️ ${start} – ${end}`;
+          });
+
+          // ← එකම වෙනස: didOpen CSS inject කිරීම add කළා
+          const { value: selectedTripId } = await Swal.fire({
+            title: 'Select a Trip',
+            input: 'radio',
+            inputOptions: tripOptions,
+            inputValidator: (value) => {
+              if (!value) return 'Please select a trip!';
+              return null;
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Add to Trip',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#4A90D9',
+            customClass: {
+              input: 'swal-trip-radio-group'
+            },
+            didOpen: () => {
+              const style = document.createElement('style');
+              style.textContent = `
+                .swal-trip-radio-group {
+                  display: flex !important;
+                  flex-direction: column !important;
+                  gap: 10px !important;
+                  text-align: left !important;
+                  width: 100% !important;
+                }
+                .swal2-radio {
+                  display: flex !important;
+                  flex-direction: column !important;
+                  gap: 10px !important;
+                  width: 100% !important;
+                }
+                .swal2-radio label {
+                  display: flex !important;
+                  align-items: flex-start !important;
+                  gap: 10px !important;
+                  padding: 10px 14px !important;
+                  border: 1px solid #e0e0e0 !important;
+                  border-radius: 8px !important;
+                  cursor: pointer !important;
+                  font-size: 14px !important;
+                  transition: background 0.2s !important;
+                }
+                .swal2-radio label:hover {
+                  background: #f0f7ff !important;
+                  border-color: #4A90D9 !important;
+                }
+                .swal2-radio input[type="radio"]:checked + span {
+                  font-weight: 600 !important;
+                  color: #4A90D9 !important;
+                }
+              `;
+              document.head.appendChild(style);
+            }
+          });
+
+          if (selectedTripId) {
+            const selectedTrip = trips.find(t => t.id == selectedTripId);
+            this.selectTrip(place, selectedTrip);
+          }
         },
-        error: (err) => {
-          console.error('[PlaceCard] Failed to load trips:', err);
-          this.userTrips = [];
-          this.isLoadingTrips = false;
+        error: () => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load trips. Try again.',
+          });
         }
       });
   }
 
-  // User trip එකක් select කළ විට place එක save කිරීම
-  selectTrip(trip: any) {
-    if (!this.selectedPlace) return;
-
+  selectTrip(place: any, trip: any) {
     const placeToSave = {
-      placeId:        this.selectedPlace.placeId ?? '',
-      // FIX: name null විය හැකි නිසා fallback add කිරීම
-      name:           this.selectedPlace.name ?? this.selectedPlace.Name ?? 'Unknown',
-      address:        this.selectedPlace.address ?? this.selectedPlace.Address ?? '',
-      rating:         this.selectedPlace.rating ?? 0,
-      category:       this.selectedPlace.category ?? '',
-      photoReference: this.selectedPlace.photoReference ?? null
+      placeId:        place.placeId ?? '',
+      name:           place.name ?? place.Name ?? 'Unknown',
+      address:        place.address ?? place.Address ?? '',
+      rating:         place.rating ?? 0,
+      category:       place.category ?? '',
+      photoReference: place.photoReference ?? null
     };
 
     this.http.post(`http://localhost:5233/api/trips/${trip.id}/add-place`, placeToSave)
       .subscribe({
         next: () => {
-          // LocalStorage update කිරීම
           const stored = localStorage.getItem('tripPlaces');
           const tripPlaces: any[] = stored ? JSON.parse(stored) : [];
           tripPlaces.push(placeToSave);
           localStorage.setItem('tripPlaces', JSON.stringify(tripPlaces));
-          this.addedPlaceIds.add(this.selectedPlace.placeId);
 
-          this.closeModal();
-          this.showToast(`✅ "${placeToSave.name}" added to "${trip.tripName}"!`);
+          this.addedPlaceIds.add(place.placeId);
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `"${placeToSave.name}" added to "${trip.tripName}"!`,
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true,
+          });
         },
         error: () => {
-          this.showToast('❌ Failed to add place. Try again.');
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Failed to add place. Try again.',
+            showConfirmButton: false,
+            timer: 2500,
+          });
         }
       });
-  }
-
-  closeModal() {
-    this.showTripModal = false;
-    // FIX: setTimeout — Angular flicker වළක්වා ගැනීමට
-    setTimeout(() => {
-      this.userTrips = [];
-      this.selectedPlace = null;
-    }, 200);
-  }
-
-  showToast(message: string) {
-    this.toastMessage = message;
-    this.toastVisible = true;
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => {
-      this.toastVisible = false;
-    }, 2500);
   }
 
   ngOnDestroy() {
     if (this.placesSubscription) this.placesSubscription.unsubscribe();
     if (this.selectionSubscription) this.selectionSubscription.unsubscribe();
-    clearTimeout(this.toastTimer);
   }
 }

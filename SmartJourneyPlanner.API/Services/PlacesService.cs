@@ -10,7 +10,7 @@ namespace SmartJourneyPlanner.Services
     private readonly HttpClient _httpClient = httpClient;
     private readonly string _apiKey = configuration.GetSection("GoogleApi")["ApiKey"] ?? "";
 
-    // නගරයේ නම → lat/lon බවට පරිවර්තනය කිරීම
+    // Converts a city name into geographic coordinates (latitude and longitude) using the Google Geocoding API
     public async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
     {
       string url = $"https://maps.googleapis.com/maps/api/geocode/json" +
@@ -41,7 +41,7 @@ namespace SmartJourneyPlanner.Services
       }
     }
 
-    // Haversine සූත්‍රය — ලක්ෂ්‍ය දෙකක් අතර කිලෝමීටර් දූරස්ථ ගණනය කිරීම
+    // Haversine formula to calculate the distance in kilometers between two geographic coordinates
     public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
       const double EarthRadiusKm = 6371.0;
@@ -60,7 +60,7 @@ namespace SmartJourneyPlanner.Services
 
     private static double ToRadians(double degrees) => degrees * (Math.PI / 180.0);
 
-    // Google Nearby Search API මගින් ආසන්නතම ස්ථාන ලබාගැනීම
+    // Get nearby places from Google Places API
     public async Task<List<Place>> GetPlacesFromGoogle(double lat, double lon, string category, string? token)
     {
       string type = string.Equals(category, "hotel", StringComparison.OrdinalIgnoreCase)
@@ -69,7 +69,6 @@ namespace SmartJourneyPlanner.Services
 
       string sessionTokenParam = string.IsNullOrEmpty(token) ? "" : $"&sessiontoken={token}";
 
-      // FIX: rankby=prominence ඉවත් කරන ලදී — radius සමඟ භාවිතා කළ නොහැකි
       string url = $"https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
                    $"?location={lat},{lon}" +
                    $"&radius=5000" +
@@ -81,7 +80,6 @@ namespace SmartJourneyPlanner.Services
 
       try
       {
-        // FIX: double-read bug වළක්වා ගැනීමට එකම request එකෙන් raw string ලබාගැනීම
         var raw = await _httpClient.GetStringAsync(url);
         Console.WriteLine($"[Google Raw Response]: {raw}");
 
