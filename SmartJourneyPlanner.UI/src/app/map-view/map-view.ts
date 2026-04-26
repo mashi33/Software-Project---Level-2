@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 
+// Tell TypeScript that the global `google` variable will be injected at runtime
 declare var google: any;
 
 @Component({
@@ -15,16 +16,21 @@ declare var google: any;
 })
 export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;
-  map: any;
-  markers: any[] = [];
+
+  map: any;           
+  markers: any[] = []; 
+
+  // Stored separately so we can clean it up in ngOnDestroy and avoid memory leaks
   private placesSubscription: Subscription | undefined;
 
   constructor(private placesService: PlacesService) {}
 
   ngOnInit() {
+    // React to new place search results emitted by the service
     this.placesSubscription = this.placesService.currentPlaces.subscribe((result: PlacesResult | null) => {
       if (!result) return;
 
+      // Re-center the map around the new search area only if the map is ready
       if (this.map) {
         const center = { lat: result.centerLat, lng: result.centerLon };
         this.map.setCenter(center);
@@ -36,6 +42,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    // Wait until the DOM is ready before loading Maps, so the map container element exists
     this.loadGoogleMapsScript().then(() => {
       this.initMap();
     });
@@ -44,27 +51,29 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   loadGoogleMapsScript(): Promise<void> {
     return new Promise((resolve) => {
 
-      // ✅ Fix 1: Already fully loaded - resolve වහාම
+      // Google Maps is already loaded — nothing to do
       if (typeof google !== 'undefined' && google.maps) {
         resolve();
         return;
       }
 
-      // ✅ Fix 2: Script tag exist නමුත් තවම load වෙමින් පවතී
-      // load event listen කරන්න, නැවත script add නොකරන්න
+      // Script tag exists but hasn't finished loading yet — wait for it instead of adding a duplicate
       const existingScript = document.getElementById('google-maps-script');
       if (existingScript) {
         existingScript.addEventListener('load', () => resolve());
         return;
       }
 
-      // ✅ Fix 3: Script නැත - නව script එකක් add කරන්න
+      // First load — create the script tag and inject it into the page
       const script = document.createElement('script');
       script.id = 'google-maps-script';
+
+      // The `callback` param tells Google Maps to call this function when it's ready
       script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&callback=onGoogleMapsReady`;
       script.async = true;
       script.defer = true;
 
+      // Expose the resolver as a global so Google Maps can trigger it via the callback URL param
       (window as any)['onGoogleMapsReady'] = () => resolve();
       document.head.appendChild(script);
     });
@@ -73,11 +82,14 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   initMap() {
     const mapElement = document.getElementById('hotelMap');
 
+    // Guard against re-initialization if the map was already created
     if (mapElement && !this.map) {
       const mapOptions = {
-        center: { lat: 7.8731, lng: 80.7718 },
+        center: { lat: 7.8731, lng: 80.7718 }, // Default center: Sri Lanka
         zoom: 8,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
+
+        // Hide controls we don't need to keep the UI clean
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false
@@ -89,20 +101,23 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   renderMapMarkers(places: any[]) {
     if (!this.map) return;
 
+    // Remove all existing markers before drawing a fresh set
     this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
 
     if (!places || places.length === 0) return;
 
     places.forEach(p => {
+      // Skip places with missing coordinates — they can't be plotted
       if (p.latitude && p.longitude) {
         const marker = new google.maps.Marker({
           position: { lat: p.latitude, lng: p.longitude },
           map: this.map,
           title: p.name,
-          animation: google.maps.Animation.DROP
+          animation: google.maps.Animation.DROP // Animate markers in for visual feedback
         });
 
+        // Build the popup HTML; skip the photo if no reference is available
         const content = `
           <div class="custom-popup" style="width:200px; font-family: sans-serif;">
             ${p.photoReference ?
@@ -119,6 +134,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const infoWindow = new google.maps.InfoWindow({ content });
 
+        // On click: show the popup, notify the service which place is selected, and bounce the marker
         marker.addListener('click', () => {
           infoWindow.open(this.map, marker);
           this.placesService.selectPlace(p.id);
@@ -130,12 +146,14 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // Bounce the marker briefly to confirm the user's click visually
   animateMarker(marker: any) {
     marker.setAnimation(google.maps.Animation.BOUNCE);
-    setTimeout(() => marker.setAnimation(null), 1500);
+    setTimeout(() => marker.setAnimation(null), 1500); // Stop after 1.5s to avoid distraction
   }
 
   ngOnDestroy() {
+    // Unsubscribe to prevent the observable from running after this component is gone
     if (this.placesSubscription) {
       this.placesSubscription.unsubscribe();
     }
