@@ -164,12 +164,31 @@ export class VehicleDetailComponent implements OnInit {
     return re.test(this.pickupAddress.trim());
   }
 
+  isDestinationValid(dest: string): boolean {
+    if (!dest) return false;
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
+    return re.test(dest.trim());
+  }
+
   // --- GALLERY LOGIC ---
 
   setMainView(view: 'exterior' | 'interior') {
     if (!this.vehicle) return;
     this.currentView = view;
     this.mainImage = (view === 'exterior' ? this.vehicle.exteriorPhoto : this.vehicle.interiorPhoto) || '';
+  }
+
+  toggleGalleryView() {
+    this.currentView = this.currentView === 'exterior' ? 'interior' : 'exterior';
+    this.setMainView(this.currentView);
+  }
+
+  getTotalReviews(): number {
+    return this.vehicle?.reviews?.length || 0;
+  }
+
+  toggleReviewsAccordion() {
+    this.isReviewsExpanded = !this.isReviewsExpanded;
   }
 
   // --- ROUTE/STOP LOGIC ---

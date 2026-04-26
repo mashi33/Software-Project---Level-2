@@ -268,6 +268,52 @@ export class UserSearch implements OnInit {
   }
 
   /**
+   * Toggles the driver language filter dropdown visibility.
+   */
+  toggleLanguageDropdown() {
+    this.showLanguageDropdown = !this.showLanguageDropdown;
+  }
+
+  /**
+   * Toggles a specific language on or off in the search filter.
+   */
+  toggleLanguage(langName: string) {
+    this.selectedLanguages[langName] = !this.selectedLanguages[langName];
+    this.applyFilters();
+  }
+
+  /**
+   * Filters the list of Sri Lankan cities based on what the user is typing.
+   */
+  filterCities() {
+    this.showCityDropdown = true;
+    const query = this.pickupArea.toLowerCase().trim();
+    if (query === '') {
+      this.filteredCities = this.sriLankanCities.slice(0, 8); // Show default top cities
+    } else {
+      this.filteredCities = this.sriLankanCities.filter(city => 
+        city.toLowerCase().includes(query)
+      );
+    }
+  }
+
+  /**
+   * Sets the pickup area filter when a city is selected from the dropdown.
+   */
+  selectCity(city: string) {
+    this.pickupArea = city;
+    this.showCityDropdown = false;
+    this.applyFilters();
+  }
+
+  /**
+   * Triggers the search logic manually when the 'Find' button is clicked.
+   */
+  onSearch() {
+    this.applyFilters();
+  }
+
+  /**
    * Helper to calculate the star rating average for a vehicle.
    */
   getAverageRating(vehicle: Vehicle): number {
@@ -374,6 +420,13 @@ export class UserSearch implements OnInit {
   }
 
   /**
+   * Returns a list of languages that are currently selected in the filter.
+   */
+  getSelectedLangs(): string[] {
+    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
+  }
+
+  /**
    * Handles clicking a day in the calendar.
    * Logic: First click selects START, second click selects END.
    */
@@ -402,6 +455,18 @@ export class UserSearch implements OnInit {
           this.tempStart = d.date;
         }
       }
+    }
+    this.generateCalendar();
+  }
+
+  /**
+   * Highlights the range in the calendar while the user is choosing an end date.
+   */
+  onDayHover(d: CalendarDay) {
+    if (d.isBlank || d.isPast || d.isBooked) {
+      this.hoveredDate = null;
+    } else {
+      this.hoveredDate = d.date;
     }
     this.generateCalendar();
   }
