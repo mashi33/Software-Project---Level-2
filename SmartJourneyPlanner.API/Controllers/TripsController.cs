@@ -56,7 +56,22 @@ namespace SmartJourneyPlanner.API.Controllers
                    return NotFound(new { message = "Trip not found in database!" });
                 }
 
-                return Ok(trip);
+                var history = await _historyCollection.Find(h => h.TripId == id)
+                                              .SortByDescending(h => h.EditedAt)
+                                              .ToListAsync();
+
+                return Ok(new {
+            trip.Id,
+            trip.TripName,
+            trip.DepartFrom,
+            trip.Destination,
+            trip.StartDate,
+            trip.EndDate,
+            trip.BudgetLimit,
+            trip.Description,
+            trip.Members,
+            EditHistory = history 
+        });
            }
             catch (Exception ex)
             {

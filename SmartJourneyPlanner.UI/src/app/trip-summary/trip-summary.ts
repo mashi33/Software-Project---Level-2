@@ -10,17 +10,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
   templateUrl: './trip-summary.html',
   styleUrls: ['./trip-summary.css']
 })
-
 export class TripSummaryComponent implements OnInit {
-  // To hold the trip details fetched from the database or temporary storage
+  // Trip එකේ මූලික විස්තර තියාගන්න
   tripDetails: any;
+  // ඉතිහාසය (Edit History) තියාගන්න Array එක
   editHistory: any[] = [];
   isDropdownOpen = false;
-
-  toggleDropdown() {
-    this.isDropdownOpen = !this.isDropdownOpen;
-  }
-  // To store the current user's role (e.g., 'owner' or 'viewer')
   userRole: string = 'owner'; 
 
   constructor(
@@ -29,44 +24,49 @@ export class TripSummaryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    /**
-     * 1. Extract the Trip ID from the route path parameter (/trip-summary/:id)
-     * 2. Extract the User Role from query parameters (/trip-summary/:id?role=viewer)
-     */
+    // 1. URL එකෙන් Trip ID එක සහ User Role එක ගන්න
     const tripId = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
 
-    // Set userRole if provided in URL, otherwise defaults to 'owner'
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);
     }
 
     if (tripId) {
-      console.log('Fetching database data for ID:', tripId);
-      // Fetch the latest trip data from the database using the service
+      console.log('Fetching data for ID:', tripId);
+      
+      // 2. Backend එකෙන් Trip එකේ සියලුම විස්තර (History එකත් එක්කම) ගන්න
       this.tripService.getTripById(tripId).subscribe({
-        next: (data) => {
+        next: (data: any) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
-          this.loadHistory(tripId);
+
+          // Backend එකෙන් 'editHistory' කියන නමින් data ආවොත් ඒක කෙලින්ම ගන්න
+          if (data.editHistory && data.editHistory.length > 0) {
+            this.editHistory = data.editHistory;
+            console.log('History loaded from main object:', this.editHistory);
+          } else {
+            // බැරිවෙලාවත් main object එකේ නැත්නම් විතරක් වෙනම call එකක් කරන්න
+            this.loadHistory(tripId);
+          }
         },
         error: (err) => {
           console.error('Data load error:', err);
-          // Fallback to temporary storage if database fetch fails
-          this.loadFromTemp();
+          this.loadFromTemp(); // Database error එකක් ආවොත් temp data පෙන්වන්න
         }
       });
     } else {
-      // If no ID is present in the URL, try loading from temporary storage
       this.loadFromTemp();
     }
   }
+
+  // Edit History එක වෙනම ලබාගන්නා backup function එක
   loadHistory(id: string) {
     this.tripService.getTripHistory(id).subscribe({
       next: (data) => {
         this.editHistory = data;
-        console.log('Edit history loaded:', this.editHistory);
+        console.log('Edit history loaded manually:', this.editHistory);
       },
       error: (err) => {
         console.error('History load error:', err);
@@ -74,19 +74,24 @@ export class TripSummaryComponent implements OnInit {
     });
   }
 
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
   /**
-   * Loads trip data from the temporary service storage or shows sample data
+   * Database එකේ දත්ත නැති අවස්ථාවක පෙන්වීමට Sample දත්ත
    */
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
     if (!this.tripDetails) {
-      console.warn('No data found in temp storage! Showing sample data.');
+      console.warn('No data found! Showing sample data.');
       this.tripDetails = {
+        tripName: 'Nuwara Eliya Trip',
         destination: 'Nuwara Eliya',
         departFrom: 'Colombo',
         startDate: '2026-05-10',
         endDate: '2026-05-15',
-        description: 'Sample data description (Fallback)'
+        description: 'Enjoying the cold weather and tea estates.'
       };
     }
   }
