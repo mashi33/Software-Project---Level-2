@@ -136,9 +136,14 @@ export class MyBookings implements OnInit {
       return;
     }
 
-    // Validation: Ensure a comment is provided
-    if (!this.tempComment || this.tempComment.trim().length < 5) {
-      Swal.fire('Comment Required', 'Please write a short review (at least 5 characters).', 'warning');
+    // Validation: Ensure a comment is provided with meaningful length
+    if (!this.tempComment || this.tempComment.trim().length < 10) {
+      Swal.fire('Comment Too Short', 'Please write a review of at least 10 characters to help others.', 'warning');
+      return;
+    }
+
+    if (this.tempComment.length > 500) {
+      Swal.fire('Comment Too Long', 'Please keep your review under 500 characters.', 'warning');
       return;
     }
 
