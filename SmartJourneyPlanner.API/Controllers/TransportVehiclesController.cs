@@ -7,6 +7,10 @@ using MongoDB.Bson;
 
 namespace SmartJourneyPlanner.Controllers
 {
+    /// <summary>
+    /// This controller manages the API endpoints for transport vehicles.
+    /// It communicates between the Angular frontend and the MongoDB database.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TransportVehiclesController : ControllerBase
@@ -20,7 +24,10 @@ namespace SmartJourneyPlanner.Controllers
             _vehicleService = vehicleService;
         }
 
-        // GET: api/TransportVehicles - Get all vehicles that admin has approved
+        /**
+         * GET: api/TransportVehicles
+         * Returns a list of all vehicles that have been approved by the Admin.
+         */
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
@@ -28,7 +35,11 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(approved);
         }
 
-        // POST: api/TransportVehicles - Register a new vehicle and wait for admin approval
+        /**
+         * POST: api/TransportVehicles
+         * Takes vehicle information from the frontend and saves it to the database.
+         * The vehicle starts with a "Pending" status until an Admin approves it.
+         */
         [HttpPost]
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
@@ -46,7 +57,11 @@ namespace SmartJourneyPlanner.Controllers
             }
         }
 
-        // POST: api/TransportVehicles/seed - Fill the database with sample vehicle data
+        /**
+         * POST: api/TransportVehicles/seed
+         * Clears the current vehicles and inserts a list of pre-defined sample vehicles.
+         * Used for testing and demonstration.
+         */
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
@@ -64,7 +79,10 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
-        // DELETE: api/TransportVehicles/clear - Remove all vehicles from the system
+        /**
+         * DELETE: api/TransportVehicles/clear
+         * Deletes every single vehicle from the database.
+         */
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearAll()
         {
@@ -72,7 +90,10 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "All vehicles cleared successfully!" });
         }
 
-        // GET: api/TransportVehicles/{id} - Get details of one specific vehicle
+        /**
+         * GET: api/TransportVehicles/{id}
+         * Finds and returns the full details of a specific vehicle using its database ID.
+         */
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
         {
@@ -81,7 +102,10 @@ namespace SmartJourneyPlanner.Controllers
             return vehicle;
         }
 
-        // DELETE: api/TransportVehicles/{id} - Remove a vehicle from the system
+        /**
+         * DELETE: api/TransportVehicles/{id}
+         * Deletes one specific vehicle record from the database.
+         */
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -92,7 +116,10 @@ namespace SmartJourneyPlanner.Controllers
             return NoContent();
         }
 
-        // POST: api/TransportVehicles/{id}/reviews - Add a new customer rating and comment
+        /**
+         * POST: api/TransportVehicles/{id}/reviews
+         * Receives a customer's review (stars and text) and adds it to the vehicle's history.
+         */
         [HttpPost("{id}/reviews")]
         public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
         {
@@ -102,13 +129,11 @@ namespace SmartJourneyPlanner.Controllers
                 return NotFound(new { message = $"Vehicle with ID {id} not found." });
             }
 
-            // Set current date if it is not provided
             if (string.IsNullOrEmpty(review.Date))
             {
                 review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
             }
 
-            // Save the review to the database
             await _vehicleService.AddReviewAsync(id, review);
             return Ok(new { message = "Review added successfully" });
         }

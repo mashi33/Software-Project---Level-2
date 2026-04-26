@@ -13,16 +13,26 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
   templateUrl: './provider-form.html',
   styleUrl: './provider-form.css'
 })
+/**
+ * This component handles the form for transport providers to list their vehicles.
+ * It includes validation, image uploading, and city autocomplete.
+ */
 export class ProviderForm implements OnInit {
+  // Form and helper variables
   vehicleForm!: FormGroup;
-  todayStr: string = '';
-  vehicleTypes = Object.values(VehicleType);
+  todayStr: string = ''; // Used to restrict date selection to future only
+  vehicleTypes = Object.values(VehicleType); // Enum values for vehicle types
+  
+  // List of categories shown in the dropdown
   categoryList = [
     { type: VehicleType.Budget, label: 'Budget (Alto, Axio)' },
     { type: VehicleType.Luxury, label: 'Luxury (Mercedes, BMW)' },
     { type: VehicleType.Group, label: 'Group (Van, Bus)' }
   ];
+  
   vehicleClasses: VehicleClass[] = ['Car', 'Van', 'Bus'];
+  
+  // List of languages available for selection
   languagesList = [
     { name: 'Sinhala', code: 'LK' },
     { name: 'English', code: 'GB' },
@@ -37,13 +47,15 @@ export class ProviderForm implements OnInit {
     { name: 'Arabic', code: 'AE' },
     { name: 'Korean', code: 'KR' }
   ];
+
+  // UI state for various dropdowns
   isLanguageDropdownOpen = false;
   isCategoryDropdownOpen = false;
   isVehicleClassDropdownOpen = false;
   isFuelTypeDropdownOpen = false;
   isTransmissionDropdownOpen = false;
 
-  // City Autocomplete
+  // List of major Sri Lankan cities for the location autocomplete
   sriLankanCities = [
     'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Dehiwala-Mount Lavinia',
     'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi',
@@ -51,19 +63,20 @@ export class ProviderForm implements OnInit {
     'Negombo', 'Nuwara Eliya', 'Panadura', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
     'Sri Jayawardenepura Kotte', 'Trincomalee', 'Vavuniya', 'Wattala'
   ];
-  filteredCities: string[] = [];
+  filteredCities: string[] = []; // Cities filtered based on user input
   isCityDropdownOpen = false;
 
-  // Image previews
+  // Stores base64 strings of uploaded images for preview and submission
   interiorPreview: string | ArrayBuffer | null = null;
   exteriorPreview: string | ArrayBuffer | null = null;
   nicPreview: string | ArrayBuffer | null = null;
   licensePreview: string | ArrayBuffer | null = null;
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
-  isSubmitting = false;
   
-  // File validation state
+  isSubmitting = false; // Prevents multiple clicks on the submit button
+  
+  // Stores error messages for each file upload
   fileErrors: { [key: string]: string | null } = {
     interior: null,
     exterior: null,
@@ -72,7 +85,7 @@ export class ProviderForm implements OnInit {
     insurance: null,
     revenue: null
   };
-  submitted = false;
+  submitted = false; // Tracks if the user has tried to submit the form
 
   constructor(
     private fb: FormBuilder, 
@@ -80,7 +93,9 @@ export class ProviderForm implements OnInit {
     private transportVehicleService: TransportVehicleService
   ) {}
 
+  // Runs when the component loads
   ngOnInit() {
+    // Set today's date string for HTML date input 'min' attribute
     const today = new Date();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -90,35 +105,42 @@ export class ProviderForm implements OnInit {
     this.initForm();
   }
 
+  /**
+   * Initializes the Reactive Form with all controls and validation rules.
+   */
   initForm() {
     const currentYear = new Date().getFullYear();
-    // Support international formats and common separators (spaces, hyphens, brackets)
-    const phoneRegex = /^\+?[0-9\s\-\(\)]{7,20}$/;
-    // Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
-    const nameRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/;
-    // Location: Must contain at least 2 letters, and ONLY letters, spaces, dots or hyphens. No numbers.
-    const locationRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
-    // Vehicle Model: Must contain at least one letter, allows numbers and common separators.
-    const modelRegex = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s\.\-]{2,50}$/;
+    
+    // Regular expressions for text pattern validation
+    const phoneRegex = /^\+?[0-9\s\-\(\)]{7,20}$/; // Standard phone format
+    const nameRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/; // No numbers, min 3 chars
+    const locationRegex = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/; // Address format
+    const modelRegex = /^(?=.*[a-zA-Z])[a-zA-Z0-9\s\.\-]{2,50}$/; // Car model name
 
     this.vehicleForm = this.fb.group({
+      // Personal details of the transport owner
       providerProfile: this.fb.group({
         name: ['', [Validators.required, Validators.pattern(nameRegex), this.repeatedCharValidator]],
         phone: ['', [Validators.required, Validators.pattern(phoneRegex), this.repeatedPhoneValidator]],
         email: ['', [Validators.required, this.emailValidator]],
         location: ['', [Validators.required, Validators.pattern(locationRegex), this.repeatedCharValidator]]
       }),
+      
+      // Basic vehicle details
       type: [VehicleType.Budget, Validators.required],
       vehicleClass: ['Car', Validators.required],
       modelName: ['', [Validators.required, Validators.pattern(modelRegex)]],
       yearOfManufacture: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 1)]],
       seatCount: [4, [Validators.required, Validators.min(1), Validators.max(100)]],
       isAc: [true],
+      
+      // Pricing details
       standardDailyRate: [2000, [Validators.required, Validators.min(500), Validators.max(500000)]],
       freeKMLimit: [100, [Validators.required, Validators.min(10)]],
       extraKMRate: [50, [Validators.required, Validators.min(1), Validators.max(2000)]],
       driverNightOutFee: [1000, [Validators.required, Validators.min(0), Validators.max(50000)]],
       
+      // Safety and comfort features
       features: this.fb.group({
         luggage: [2, [Validators.required, Validators.min(1), Validators.max(50)]],
         safety: [false],
@@ -131,18 +153,21 @@ export class ProviderForm implements OnInit {
         usbCharging: [false]
       }),
       
-      languages: [[], Validators.required],
+      languages: [[], Validators.required], // Languages the driver can speak
       
       transmission: ['Automatic', Validators.required],
       fuelType: ['Petrol', Validators.required],
-      termsAccepted: [false, Validators.requiredTrue],
+      termsAccepted: [false, Validators.requiredTrue], // User must agree to terms
       
       insuranceExpiry: ['', Validators.required],
       revenueLicenseExpiry: ['', Validators.required]
-    }, { validators: this.vehicleClassSeatValidator });
+    }, { validators: this.vehicleClassSeatValidator }); // Add cross-field validation
   }
 
-  // Cross-field validator: Vehicle Class vs Seat Count
+  /**
+   * Validates that the seat count makes sense for the selected vehicle class.
+   * e.g., A car shouldn't have 50 seats.
+   */
   vehicleClassSeatValidator(group: FormGroup) {
     const vClass = group.get('vehicleClass')?.value;
     const seats = group.get('seatCount')?.value;
@@ -154,7 +179,9 @@ export class ProviderForm implements OnInit {
     return null;
   }
 
-  // Prevent non-numeric characters in numeric fields
+  /**
+   * Restricts user input to numbers only for numeric fields.
+   */
   onNumericKeyDown(event: KeyboardEvent) {
     const allowedKeys = ['Backspace', 'Tab', 'End', 'Home', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'];
     if (allowedKeys.includes(event.key)) return;
@@ -163,12 +190,15 @@ export class ProviderForm implements OnInit {
     }
   }
 
-  // Custom Validator to prevent repeated characters and numbers
+  /**
+   * Custom validator to catch names that are just repeated characters like "aaaaa"
+   * and to prevent numbers in name fields.
+   */
   repeatedCharValidator(control: any) {
     if (!control.value) return null;
     const val = control.value;
     
-    // Check for numbers (Commonly not expected in City/Area name)
+    // Check for numbers (not allowed in names)
     if (/[0-9]/.test(val)) {
       return { hasNumbers: true };
     }
@@ -181,18 +211,19 @@ export class ProviderForm implements OnInit {
     return null;
   }
 
-  // Custom Email Validator for fake detection
+  /**
+   * Custom email validator to check format and block common "test" emails.
+   */
   emailValidator(control: any) {
     if (!control.value) return null;
     const email = control.value.toLowerCase();
     
-    // Basic regex for better format check
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
       return { invalidFormat: true };
     }
     
-    // Block common fake emails
+    // Block obviously fake emails
     const fakeEmails = ['test@test.com', 'abc@abc.com', 'a@a.com', 'aaa@aaa.com'];
     if (fakeEmails.includes(email)) {
       return { isFake: true };
@@ -201,19 +232,20 @@ export class ProviderForm implements OnInit {
     return null;
   }
 
-  // Custom Validator for repeated digits in phone
+  /**
+   * Custom phone validator: checks for Sri Lankan format and repeated digits.
+   */
   repeatedPhoneValidator(control: any) {
     if (!control.value) return null;
     const val = control.value;
     
-    // Check for letters
     if (/[a-zA-Z]/.test(val)) {
       return { hasLetters: true };
     }
 
     const digitsOnly = val.replace(/\D/g, '');
     
-    // Sri Lankan specific check
+    // Specific check for Sri Lankan mobile/landline patterns
     const isSL = /^(?:0|94|\+94)?7[01245678]\d{7}$/.test(val.replace(/\s/g, ''));
     if (!isSL) {
       return { invalidSL: true };
@@ -226,18 +258,25 @@ export class ProviderForm implements OnInit {
     return null;
   }
 
+  /**
+   * Helper to check if a specific field has an error and should be highlighted.
+   */
   isFieldInvalid(path: string): boolean {
     const control = this.vehicleForm.get(path);
     if (!control) return false;
     return !!(control.invalid && (control.touched || control.dirty));
   }
 
+  /**
+   * Handles file selection for images and documents.
+   * Includes validation for file type (PNG/JPG/PDF) and size (5MB).
+   */
   onFileSelected(event: any, type: 'interior' | 'exterior' | 'nic' | 'license' | 'insurance' | 'revenue') {
     const file = event.target.files[0];
-    this.fileErrors[type] = null; // Reset error
+    this.fileErrors[type] = null; // Clear previous error
 
     if (file) {
-      // 1. File Type Validation (.jpg, .png, .pdf)
+      // Check file extension
       const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
         this.fileErrors[type] = 'Only .jpg, .png, and .pdf files are allowed.';
@@ -245,14 +284,15 @@ export class ProviderForm implements OnInit {
         return;
       }
 
-      // 2. File Size Validation (Max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      // Check file size (Max 5MB)
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         this.fileErrors[type] = 'File size must be less than 5MB.';
         this.clearPreview(type);
         return;
       }
 
+      // Read file and generate a base64 string for preview
       const reader = new FileReader();
       reader.onload = e => {
         const result = reader.result;
@@ -269,6 +309,9 @@ export class ProviderForm implements OnInit {
     }
   }
 
+  /**
+   * Clears an image preview when a file is removed or invalid.
+   */
   private clearPreview(type: string) {
     switch (type) {
       case 'interior': this.interiorPreview = null; break;
@@ -280,11 +323,17 @@ export class ProviderForm implements OnInit {
     }
   }
 
+  /**
+   * Checks if a required file is missing after the user tries to submit.
+   */
   isFileMissing(type: string): boolean {
     const preview = (this as any)[`${type}Preview`];
     return this.submitted && !preview && !this.fileErrors[type];
   }
 
+  /**
+   * Updates the 'languages' control when a language checkbox is clicked.
+   */
   onLanguageChange(lang: string, event: any) {
     const checked = event.target.checked;
     const currentLanguages = this.vehicleForm.get('languages')?.value as string[] || [];
@@ -302,11 +351,13 @@ export class ProviderForm implements OnInit {
     return (this.vehicleForm.get('languages')?.value as string[] || []).includes(lang);
   }
 
+  // Toggles the custom dropdown for languages
   toggleLanguageDropdown() {
     this.isLanguageDropdownOpen = !this.isLanguageDropdownOpen;
     if (this.isLanguageDropdownOpen) this.closeAllDropdownsExcept('language');
   }
 
+  // Returns a readable string of selected languages for display
   getSelectedLanguagesDisplay(): string {
     const selected = this.vehicleForm.get('languages')?.value as string[] || [];
     if (selected.length === 0) return 'Select all languages you can speak';
@@ -359,6 +410,7 @@ export class ProviderForm implements OnInit {
     this.isTransmissionDropdownOpen = false;
   }
 
+  // Closes all other open dropdowns to keep the UI clean
   private closeAllDropdownsExcept(except: string) {
     this.isLanguageDropdownOpen = except === 'language';
     this.isCategoryDropdownOpen = except === 'category';
@@ -368,6 +420,9 @@ export class ProviderForm implements OnInit {
     this.isCityDropdownOpen = except === 'city';
   }
 
+  /**
+   * Filters the list of cities as the user types in the location field.
+   */
   filterCities(event: any) {
     const value = event.target.value.toLowerCase();
     if (value) {
@@ -379,16 +434,21 @@ export class ProviderForm implements OnInit {
     }
   }
 
+  /**
+   * Sets the selected city into the form and closes the autocomplete.
+   */
   selectCity(city: string) {
     this.vehicleForm.get('providerProfile.location')?.setValue(city);
     this.isCityDropdownOpen = false;
   }
 
+  /**
+   * Listens for clicks anywhere on the document to close dropdowns when clicking outside.
+   */
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
     const targetElement = event.target as HTMLElement;
 
-    // If click is outside of any pf-dropdown, close them all
     if (!targetElement.closest('.pf-dropdown')) {
       this.isLanguageDropdownOpen = false;
       this.isCategoryDropdownOpen = false;
@@ -397,34 +457,40 @@ export class ProviderForm implements OnInit {
       this.isTransmissionDropdownOpen = false;
     }
 
-    // Close city autocomplete if click is outside the location input and its dropdown
     const isCityAutocompleteClick = targetElement.closest('input[formControlName="location"]') || targetElement.closest('.pf-dropdown-menu');
     if (!isCityAutocompleteClick) {
       this.isCityDropdownOpen = false;
     }
   }
 
+  /**
+   * The main submission function. Validates everything before sending to the backend.
+   */
   submitForm() {
-    if (this.isSubmitting) return;
+    if (this.isSubmitting) return; // Prevent double submission
     this.submitted = true;
+    
+    // Step 1: Check basic form validation
     if (this.vehicleForm.invalid) {
       this.vehicleForm.markAllAsTouched();
       Swal.fire('Error', 'Please fill all required fields correctly.', 'error');
       return;
     }
 
+    // Step 2: Check for file validation errors (size/type)
     const hasFileErrors = Object.values(this.fileErrors).some(err => err !== null);
     if (hasFileErrors) {
       Swal.fire('Invalid Files', 'Please fix the errors in your uploaded files.', 'error');
       return;
     }
 
+    // Step 3: Ensure all required files are uploaded
     if (!this.exteriorPreview || !this.interiorPreview || !this.nicPreview || !this.licensePreview || !this.insurancePreview || !this.revenuePreview) {
       Swal.fire('Missing Documents', 'Please upload all required photos and verification documents.', 'warning');
       return;
     }
 
-    // Trimming logic to remove extra whitespace
+    // Step 4: Clean the data (remove extra spaces, lowercase emails)
     const rawValue = this.vehicleForm.value;
     const cleanValue = {
       ...rawValue,
@@ -437,9 +503,10 @@ export class ProviderForm implements OnInit {
       modelName: rawValue.modelName.trim()
     };
 
+    // Step 5: Build the final object to be sent to the API
     const formData: Vehicle = {
       ...cleanValue,
-      providerId: 'p1', // mock provider ID
+      providerId: 'p1', // In a real app, this would be the logged-in user ID
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,
       driverNicUrl: this.nicPreview as string,
@@ -454,6 +521,7 @@ export class ProviderForm implements OnInit {
       bookedDates: []
     };
 
+    // Step 6: Send request to server
     this.isSubmitting = true;
     this.transportVehicleService.createVehicle(formData).subscribe({
       next: () => {
@@ -474,6 +542,9 @@ export class ProviderForm implements OnInit {
     });
   }
 
+  /**
+   * Resets the form and previews to their original state.
+   */
   resetForm() {
     this.submitted = false;
     this.vehicleForm.reset({
@@ -494,6 +565,7 @@ export class ProviderForm implements OnInit {
       fuelType: 'Petrol',
       termsAccepted: false
     });
+    // Clear image previews
     this.interiorPreview = null;
     this.exteriorPreview = null;
     this.nicPreview = null;
