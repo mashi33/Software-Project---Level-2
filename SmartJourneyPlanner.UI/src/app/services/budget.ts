@@ -6,34 +6,37 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class BudgetService {
-  // ✅ FIXED: Now pointing to your actual running .NET server port!
+  // ✅ Points to your running .NET server
   private apiUrl = 'http://localhost:5233/api/Budget';
 
   constructor(private http: HttpClient) { }
 
-  // 1. Get Budget Data
+  /**
+   * GET: Fetches budget data for a specific trip.
+   * Our updated backend now automatically creates a budget if it's missing.
+   */
   getBudget(tripId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${tripId}`);
+    return this.http.get<any>(`${this.apiUrl}/trip/${tripId}`);
   }
 
-  // 2. Add a new Expense
+  /**
+   * POST: Adds a new expense to a trip's budget container.
+   */
   addExpense(tripId: string, expense: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/add-expense/${tripId}`, expense, { responseType: 'text' });
+    return this.http.post(`${this.apiUrl}/add-expense/${tripId}`, expense);
   }
 
-  // 3. DELETE Expense
-  deleteExpense(tripId: string, expenseName: string): Observable<any> {
-    const safeName = encodeURIComponent(expenseName);
-    return this.http.delete(`${this.apiUrl}/delete-expense/${tripId}/${safeName}`, { responseType: 'text' });
+  /**
+   * DELETE: Removes an expense by its unique ID.
+   */
+  deleteExpense(tripId: string, expenseId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/delete-expense/${tripId}/${expenseId}`);
   }
 
-  // 4. UPDATE Expense 
-  updateExpense(tripId: string, oldName: string, updatedExpense: any): Observable<any> {
-    const safeOldName = encodeURIComponent(oldName);
-    return this.http.put(
-      `${this.apiUrl}/update-expense/${tripId}/${safeOldName}`,
-      updatedExpense,
-      { responseType: 'text' }
-    );
+  /**
+   * PUT: Updates an existing expense using its unique ID.
+   */
+  updateExpense(tripId: string, expenseId: string, updatedExpense: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/update-expense/${tripId}/${expenseId}`, updatedExpense);
   }
 }

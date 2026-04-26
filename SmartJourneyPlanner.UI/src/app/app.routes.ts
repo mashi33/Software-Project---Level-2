@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard'; 
 import { ExpenseForm } from './expense-form/expense-form'; 
 import { MemoriesMapComponent } from './memories-map/memories-map';
+import { CommunityMapComponent } from './community-map/community-map';
 import { LoginComponent } from './login/login';
 import { Signup } from './signup/signup'; 
 import { RouteOptimization } from './route-optimization/route-optimization';
@@ -12,11 +13,11 @@ import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
-//import { MyBookingsComponent } from './my-bookings/my-bookings'; 
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
+import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
 
 export const routes: Routes = [
@@ -26,6 +27,8 @@ export const routes: Routes = [
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
+  { path: 'createTrip', component: TripCreateComponent },
+  { path: 'signup', component: Signup },
 
   // 3. Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
@@ -33,18 +36,17 @@ export const routes: Routes = [
 
   // 4. Map & Transport Provider Routes
   { path: 'memories', component: MemoriesMapComponent },
+  { path: 'community', component: CommunityMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
-  //{ path: 'booking-details/:id', component: MyBookingsComponent },
+  { path: 'booking-details/:id', component: MyBookings },
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
    { 
     path: 'explore', 
     children: [
-
       { path: '', component: ExploreWelcome },
       { path: 'route-optimization', component: RouteOptimization },
- 
       { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
     ]
   },

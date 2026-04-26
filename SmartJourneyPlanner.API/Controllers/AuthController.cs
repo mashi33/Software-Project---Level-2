@@ -104,6 +104,7 @@ namespace SmartJourneyPlanner.API.Controllers
         new Claim(ClaimTypes.Email, user.Email),
         new Claim(ClaimTypes.Role, user.UserType),
         new Claim("userId", user.Id.ToString()),
+        new Claim(ClaimTypes.Role, user.UserType ?? "Traveler")
     };
             // Generate a symmetric security key using the secret key from configuration
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

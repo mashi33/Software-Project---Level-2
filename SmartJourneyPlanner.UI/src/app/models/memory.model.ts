@@ -4,8 +4,9 @@ export interface TripMemory {
     locationName: string;
     imageUrl: string;
     description: string;
-    latitude: number;  // Add this
-    longitude: number; // Add this
+    latitude: number;  
+    longitude: number; 
     startDate: Date;
     endDate: Date;
+    isPublic: boolean;
 }

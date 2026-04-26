@@ -111,3 +111,48 @@
 .hide-caret::after {
   display: none !important;
 }
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  color: #E3F2FD !important;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 8px 12px !important;
+}
+
+.dropdown-menu {
+  display: none; 
+  position: absolute;
+  top: 100%; /* Position right below the toggle */
+  left: 0;
+  background-color: #ffffff;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 1000; /* Ensure it stays above other content */
+  padding: 8px 0;
+}
+
+.dropdown-menu.show {
+  display: block; 
+}
+
+.dropdown-menu a {
+  color: #333;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-menu a:hover {
+  background-color: #f8f9fa;
+  color: #0D47A1 ;
+  font-weight: 500;
+}

@@ -8,7 +8,7 @@
           <label class="us-label">Start Date</label>
           <div class="input-with-icon">
             <i class="bi bi-calendar3"></i>
-            <input type="date" class="form-control us-input" [(ngModel)]="startDate" (change)="onDateChange()">
+            <input type="date" class="form-control us-input" [(ngModel)]="startDate" (change)="onDateChange()" [min]="todayStr">
           </div>
         </div>
         <div class="col-md-3">
@@ -153,7 +153,7 @@
               <h4 class="vh-title mb-1">{{v.description.split(' - ')[0]}}</h4>
               <div class="vh-meta">
                 <span class="text-dark fw-bold"><i class="bi bi-star-fill text-warning me-1"></i> {{getAverageRating(v)
-                  | number:'1.1-1'}} ({{v.reviews?.length || 0}})</span>
+                  | number:'1.1-1'}} ({{v.reviews.length || 0}})</span>
               </div>
             </div>
           </div>

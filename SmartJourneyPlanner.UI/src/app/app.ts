@@ -7,12 +7,11 @@ import { NavbarComponent } from './navbar/navbar';
 import { FooterComponent } from './footer/footer';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  // 2. Add them to the imports list
-  imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+    selector: 'app-root',
+    // 2. Add them to the imports list
+    imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent],
+    templateUrl: './app.html',
+    styleUrl: './app.css'
 })
 export class AppComponent {
   constructor(public router: Router) {}

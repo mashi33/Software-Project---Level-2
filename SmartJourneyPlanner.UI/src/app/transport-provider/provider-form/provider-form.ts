@@ -7,14 +7,14 @@ import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 
 @Component({
-  selector: 'app-provider-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './provider-form.html',
-  styleUrl: './provider-form.css'
+    selector: 'app-provider-form',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    templateUrl: './provider-form.html',
+    styleUrl: './provider-form.css'
 })
 export class ProviderForm implements OnInit {
   vehicleForm!: FormGroup;
+  todayStr: string = new Date().toISOString().split('T')[0];
   vehicleTypes = Object.values(VehicleType);
   categoryList = [
     { type: VehicleType.Budget, label: 'Budget (Alto, Axio)' },
@@ -42,6 +42,17 @@ export class ProviderForm implements OnInit {
   isFuelTypeDropdownOpen = false;
   isTransmissionDropdownOpen = false;
 
+  // City Autocomplete
+  sriLankanCities = [
+    'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Dehiwala-Mount Lavinia',
+    'Galle', 'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi',
+    'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala', 'Moratuwa', 'Mullaitivu',
+    'Negombo', 'Nuwara Eliya', 'Panadura', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
+    'Sri Jayawardenepura Kotte', 'Trincomalee', 'Vavuniya', 'Wattala'
+  ];
+  filteredCities: string[] = [];
+  isCityDropdownOpen = false;
+
   // Image previews
   interiorPreview: string | ArrayBuffer | null = null;
   exteriorPreview: string | ArrayBuffer | null = null;
@@ -61,25 +72,28 @@ export class ProviderForm implements OnInit {
   }
 
   initForm() {
+    const currentYear = new Date().getFullYear();
+    const phoneRegex = /^(?:0|94|\+94)?7(0|1|2|4|5|6|7|8)\d{7}$/;
+
     this.vehicleForm = this.fb.group({
       providerProfile: this.fb.group({
-        name: ['', Validators.required],
-        phone: ['', Validators.required],
+        name: ['', [Validators.required, Validators.minLength(3)]],
+        phone: ['', [Validators.required, Validators.pattern(phoneRegex)]],
         location: ['', Validators.required]
       }),
       type: [VehicleType.Budget, Validators.required],
       vehicleClass: ['Car', Validators.required],
-      yearOfManufacture: [new Date().getFullYear(), [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear() + 1)]],
-      seatCount: [4, [Validators.required, Validators.min(1)]],
-      description: ['', Validators.required],
+      yearOfManufacture: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 1)]],
+      seatCount: [4, [Validators.required, Validators.min(1), Validators.max(100)]],
+      description: ['', [Validators.required, Validators.minLength(10)]],
       isAc: [true],
-      standardDailyRate: [0, [Validators.required, Validators.min(1)]],
-      freeKMLimit: [100, [Validators.required, Validators.min(1)]],
-      extraKMRate: [0, [Validators.required, Validators.min(0)]],
-      driverNightOutFee: [0, [Validators.required, Validators.min(0)]],
+      standardDailyRate: [2000, [Validators.required, Validators.min(500)]],
+      freeKMLimit: [100, [Validators.required, Validators.min(10)]],
+      extraKMRate: [50, [Validators.required, Validators.min(1)]],
+      driverNightOutFee: [1000, [Validators.required, Validators.min(0)]],
       
       features: this.fb.group({
-        luggage: [2, [Validators.required, Validators.min(0)]],
+        luggage: [2, [Validators.required, Validators.min(1)]],
         safety: [false],
         childSeats: [false],
         entertainment: [false],
@@ -145,6 +159,7 @@ export class ProviderForm implements OnInit {
 
   toggleLanguageDropdown() {
     this.isLanguageDropdownOpen = !this.isLanguageDropdownOpen;
+    if (this.isLanguageDropdownOpen) this.closeAllDropdownsExcept('language');
   }
 
   getSelectedLanguagesDisplay(): string {
@@ -156,7 +171,7 @@ export class ProviderForm implements OnInit {
 
   toggleCategoryDropdown() {
     this.isCategoryDropdownOpen = !this.isCategoryDropdownOpen;
-    if (this.isCategoryDropdownOpen) this.isLanguageDropdownOpen = false;
+    if (this.isCategoryDropdownOpen) this.closeAllDropdownsExcept('category');
   }
 
   selectCategory(type: VehicleType) {
@@ -205,16 +220,42 @@ export class ProviderForm implements OnInit {
     this.isVehicleClassDropdownOpen = except === 'vehicleClass';
     this.isFuelTypeDropdownOpen = except === 'fuelType';
     this.isTransmissionDropdownOpen = except === 'transmission';
+    this.isCityDropdownOpen = except === 'city';
+  }
+
+  filterCities(event: any) {
+    const value = event.target.value.toLowerCase();
+    if (value) {
+      this.filteredCities = this.sriLankanCities.filter(city => city.toLowerCase().includes(value));
+      this.isCityDropdownOpen = this.filteredCities.length > 0;
+    } else {
+      this.filteredCities = [];
+      this.isCityDropdownOpen = false;
+    }
+  }
+
+  selectCity(city: string) {
+    this.vehicleForm.get('providerProfile.location')?.setValue(city);
+    this.isCityDropdownOpen = false;
   }
 
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target)) {
+    const targetElement = event.target as HTMLElement;
+
+    // If click is outside of any pf-dropdown, close them all
+    if (!targetElement.closest('.pf-dropdown')) {
       this.isLanguageDropdownOpen = false;
       this.isCategoryDropdownOpen = false;
       this.isVehicleClassDropdownOpen = false;
       this.isFuelTypeDropdownOpen = false;
       this.isTransmissionDropdownOpen = false;
+    }
+
+    // Close city autocomplete if click is outside the location input and its dropdown
+    const isCityAutocompleteClick = targetElement.closest('input[formControlName="location"]') || targetElement.closest('.pf-dropdown-menu');
+    if (!isCityAutocompleteClick) {
+      this.isCityDropdownOpen = false;
     }
   }
 
@@ -230,8 +271,20 @@ export class ProviderForm implements OnInit {
       return;
     }
 
+    // Trimming logic to remove extra whitespace
+    const rawValue = this.vehicleForm.value;
+    const cleanValue = {
+      ...rawValue,
+      providerProfile: {
+        ...rawValue.providerProfile,
+        name: rawValue.providerProfile.name.trim(),
+        location: rawValue.providerProfile.location.trim()
+      },
+      description: rawValue.description.trim()
+    };
+
     const formData: Vehicle = {
-      ...this.vehicleForm.value,
+      ...cleanValue,
       providerId: 'p1', // mock provider ID
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,

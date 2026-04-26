@@ -5,12 +5,10 @@ import { AuthService } from '../services/auth.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true,
-  // This imports property is what was missing:
-  imports: [CommonModule, RouterModule],
-  templateUrl: './navbar.html',
-  styleUrl: './navbar.css',
+    selector: 'app-navbar',
+    imports: [CommonModule, RouterModule],
+    templateUrl: './navbar.html',
+    styleUrl: './navbar.css'
 })
 
 export class NavbarComponent {
@@ -48,4 +46,17 @@ export class NavbarComponent {
   console.log('User logged out successfully');
 
   } 
+  
+  isMemoryDropdownOpen = false;
+  dropdownLabel = 'Memory';
+
+  toggleDropdown(menu: string) {
+    if (menu === 'memory') {
+      this.isMemoryDropdownOpen = !this.isMemoryDropdownOpen;
+    }
+  }
+  selectOption(option: string) {
+    this.dropdownLabel = option; 
+    this.isMemoryDropdownOpen = false; 
+  }
 }

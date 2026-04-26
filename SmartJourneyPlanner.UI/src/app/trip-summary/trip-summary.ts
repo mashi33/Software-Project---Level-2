@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute,Router, RouterLink } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-trip-summary',
@@ -17,10 +18,17 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
+ 
+
+  tripId: string = '';
+  // Filtered lists separated from savedPlaces array
+  savedHotels: any[] = [];
+  savedRestaurants: any[] = [];
 
   constructor(
     private tripService: TripService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -49,6 +57,8 @@ export class TripSummaryComponent implements OnInit {
           } else {
             
             this.loadHistory(tripId);
+            this.filterSavedPlaces();
+
           }
         },
         error: (err) => {
@@ -81,6 +91,29 @@ export class TripSummaryComponent implements OnInit {
   /**
    * Sample data to show when there's no data in the database or when there's an error fetching data.
    * This helps in testing the UI and also provides a fallback for users.
+   * Filters savedPlaces array into hotels and restaurants separately.
+   */
+  filterSavedPlaces() {
+    const places = this.tripDetails?.savedPlaces || this.tripDetails?.SavedPlaces || [];
+
+    console.log('All saved places:', places);
+
+    this.savedHotels = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('hotel') || cat.includes('lodging');
+    });
+
+    this.savedRestaurants = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('restaurant') || cat.includes('food') || cat.includes('dining');
+    });
+
+    console.log('Filtered Hotels:', this.savedHotels);
+    console.log('Filtered Restaurants:', this.savedRestaurants);
+  }
+
+  /**
+   * Loads trip data from the temporary service storage or shows sample data
    */
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
@@ -95,5 +128,14 @@ export class TripSummaryComponent implements OnInit {
         description: 'Enjoying the cold weather and tea estates.'
       };
     }
+    this.filterSavedPlaces();
   }
+
+  navigateToChat() {
+  if (this.tripId) {
+    this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+  } else {
+    Swal.fire('Error', 'Trip ID not found!', 'error');
+  }
+}
 }
