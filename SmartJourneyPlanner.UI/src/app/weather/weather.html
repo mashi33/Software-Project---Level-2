@@ -1,0 +1,50 @@
+<div class="weather-page-wrapper">
+  <aside class="left-panel">
+    <h2>Plan with the Past</h2>
+    <div class="input-group">
+      <input [(ngModel)]="city" placeholder="Search City">
+    </div>
+    <div class="input-group">
+      <input type="date" [(ngModel)]="selectedDate">
+    </div>
+    <button class="btn-fetch" (click)="searchWeather()" [disabled]="loading">
+      {{ loading ? 'Loading...' : 'Fetch Weather' }}
+    </button>
+  </aside>
+
+  <main class="right-panel" *ngIf="weatherData">
+    <div class="weather-header">
+      <h1>{{ city | titlecase }}</h1>
+      <p>Date: {{ selectedDate | date:'longDate' }}</p>
+    </div>
+    
+    <div class="weather-details">
+      <div class="weather-icon">
+        {{ weatherCategory === 'Sunny' ? '☀️' : (weatherCategory === 'Cloudy' ? '☁️' : '🌧️') }}
+      </div>
+      <div>
+        <h2>{{ weatherCategory }}</h2>
+        <p>Avg Temp: {{ weatherData.temp }}°C</p>
+        <p>Humidity: {{ weatherData.humidity }}%</p> 
+      </div>
+    </div>
+
+    <section class="suggestions-card" *ngIf="suggestionResult">
+  <h3>Suggestions for {{ weatherCategory }} Weather</h3>
+  <div class="suggestions-grid">
+    <div class="col">
+      <h4>Packing List</h4>
+      <ul><li *ngFor="let item of suggestionResult.packing">{{ item }}</li></ul>
+    </div>
+    <div class="col">
+      <h4>Outfit</h4>
+      <ul><li *ngFor="let item of suggestionResult.outfit">{{ item }}</li></ul>
+    </div>
+    <div class="col">
+      <h4>Activity</h4>
+      <ul><li *ngFor="let item of suggestionResult.activity">{{ item }}</li></ul>
+    </div>
+  </div>
+</section>
+  </main>
+</div>
