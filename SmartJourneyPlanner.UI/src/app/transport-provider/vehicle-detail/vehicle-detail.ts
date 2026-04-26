@@ -173,6 +173,25 @@ export class VehicleDetailComponent implements OnInit {
     this.mainImage = (view === 'exterior' ? this.vehicle.exteriorPhoto : this.vehicle.interiorPhoto) || '';
   }
 
+  toggleGalleryView() {
+    this.currentView = this.currentView === 'exterior' ? 'interior' : 'exterior';
+    this.setMainView(this.currentView);
+  }
+
+  getTotalReviews(): number {
+    return this.vehicle?.reviews?.length || 0;
+  }
+
+  toggleReviewsAccordion() {
+    this.isReviewsExpanded = !this.isReviewsExpanded;
+  }
+
+  isDestinationValid(dest: string): boolean {
+    if (!dest) return false;
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\,\-\/]{3,}$/;
+    return re.test(dest.trim());
+  }
+
   // --- ROUTE/STOP LOGIC ---
 
   /**

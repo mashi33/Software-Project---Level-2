@@ -109,6 +109,21 @@ export class UserSearch implements OnInit {
     this.endDate = tomorrow.toISOString().split('T')[0];
   }
 
+  /**
+   * Listen for clicks on the entire document.
+   * If the user clicks outside of a dropdown, we close it.
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    
+    // If the click is not inside a 'custom-dropdown', close both dropdowns
+    if (!target.closest('.custom-dropdown')) {
+      this.showLanguageDropdown = false;
+      this.showCityDropdown = false;
+    }
+  }
+
   // Lifecycle hook: loads data when component starts
   ngOnInit() {
     this.loadAvailableVehicles();
@@ -152,6 +167,13 @@ export class UserSearch implements OnInit {
 
     this.calculateDays();
     this.applyFilters();
+  }
+
+  /**
+   * Returns a list of languages that are currently selected in the filter.
+   */
+  getSelectedLangs(): string[] {
+    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
   }
 
   /**
@@ -265,6 +287,56 @@ export class UserSearch implements OnInit {
     this.featureFilters = { luggage: false, safety: false, entertainment: false, wifi: false, airbags: false };
 
     this.calculateDays();
+    this.applyFilters();
+  }
+
+  /**
+   * Toggles the driver language filter dropdown visibility.
+   */
+  toggleLanguageDropdown() {
+    this.showLanguageDropdown = !this.showLanguageDropdown;
+    if (this.showLanguageDropdown) {
+      this.showCityDropdown = false;
+    }
+  }
+
+  /**
+   * Toggles a specific language on or off in the search filter.
+   */
+  toggleLanguage(langName: string) {
+    this.selectedLanguages[langName] = !this.selectedLanguages[langName];
+    this.applyFilters();
+  }
+
+  /**
+   * Filters the list of Sri Lankan cities based on what the user is typing.
+   */
+  filterCities() {
+    this.showCityDropdown = true;
+    this.showLanguageDropdown = false;
+    const query = this.pickupArea.toLowerCase().trim();
+    if (query === '') {
+      this.filteredCities = this.sriLankanCities.slice(0, 8);
+    } else {
+      this.filteredCities = this.sriLankanCities.filter(city => 
+        city.toLowerCase().includes(query)
+      );
+    }
+  }
+
+  /**
+   * Sets the pickup area filter when a city is selected from the dropdown.
+   */
+  selectCity(city: string) {
+    this.pickupArea = city;
+    this.showCityDropdown = false;
+    this.applyFilters();
+  }
+
+  /**
+   * Triggers the search logic manually when the 'Find' button is clicked.
+   */
+  onSearch() {
     this.applyFilters();
   }
 
@@ -403,6 +475,18 @@ export class UserSearch implements OnInit {
           this.tempStart = d.date;
         }
       }
+    }
+    this.generateCalendar();
+  }
+
+  /**
+   * Highlights the range in the calendar while the user is choosing an end date.
+   */
+  onDayHover(d: CalendarDay) {
+    if (d.isBlank || d.isPast || d.isBooked) {
+      this.hoveredDate = null;
+    } else {
+      this.hoveredDate = d.date;
     }
     this.generateCalendar();
   }

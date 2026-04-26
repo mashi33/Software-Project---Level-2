@@ -58,7 +58,7 @@
         
         <div class="col-md-3">
           <label class="us-label">Driver Languages</label>
-          <div class="custom-dropdown" (clickOutside)="showLanguageDropdown = false">
+          <div class="custom-dropdown">
             <div class="us-input d-flex justify-content-between align-items-center" (click)="toggleLanguageDropdown()">
               <span class="text-truncate">
                 {{ getSelectedLangs().length > 0 ? getSelectedLangs().join(', ') : 'Select Languages' }}
@@ -80,7 +80,7 @@
         </div>
         <div class="col-md-3">
           <label class="us-label">Pickup Area</label>
-          <div class="custom-dropdown" (clickOutside)="showCityDropdown = false">
+          <div class="custom-dropdown">
             <div class="input-with-icon">
               <i class="bi bi-geo-alt"></i>
               <input type="text" class="form-control us-input" placeholder="e.g., Colombo" [(ngModel)]="pickupArea"
@@ -107,11 +107,16 @@
 
         <div class="col-md-2 text-end">
           <label class="us-label">&nbsp;</label>
-          <button class="btn btn-find w-100" (click)="onSearch()" (click)="$event.stopPropagation()">
+          <button class="btn btn-find w-100 shadow-sm" (click)="onSearch()" type="button">
             <i class="bi bi-search me-2"></i> Find
           </button>
         </div>
       </div>
+
+      <!-- Corner Reset Button -->
+      <button class="filter-reset-corner" (click)="resetFilters()" title="Reset All Filters" type="button">
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
     </div>
   </section>
 
