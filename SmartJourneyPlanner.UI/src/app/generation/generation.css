@@ -1,8 +1,6 @@
 
-
-/* පරිශීලකයාට පෙනෙන Download බොත්තම */
 .btn-download {
-  width: 100%; /* Sidebar එකේ පළලට ගැලපීමට */
+  width: 100%;
   margin-top: 20px;
   padding: 12px 20px;
   background-color: #007bff;
@@ -24,7 +22,7 @@
   opacity: 0.7;
 }
 
-/* HTML එකේ පවතින අනෙකුත් content තාවකාලිකව සැඟවීමට */
+
 .pdf-container-hidden {
   position: absolute;
   left: -9999px;

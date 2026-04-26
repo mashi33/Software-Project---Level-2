@@ -1,6 +1,11 @@
 /* ==========================================================================
    1. GLOBAL LAYOUT & SPLIT SCREEN
    ========================================================================== */
+
+:host {
+  background: transparent !important;
+}
+
 :root {
     --glass-bg: rgba(255, 255, 255, 0.2);
     --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
@@ -123,16 +128,16 @@
    2. GLASS CARDS & CREATION UI
    ========================================================================== */
 .glass-card {
-    background: var(--glass-panel-bg);
-    backdrop-filter: var(--glass-panel-blur);
-    -webkit-backdrop-filter: var(--glass-panel-blur);
+    background: var(--glass-panel-bg) !important;
+    backdrop-filter: var(--glass-panel-blur) !important;
+    -webkit-backdrop-filter: var(--glass-panel-blur) !important;
     border-radius: 20px;
     padding: 20px;
     margin-bottom: 20px;
-    border: 1px solid var(--glass-border);
-    border-top-color: var(--glass-border-top);
-    border-left-color: var(--glass-border-left);
-    box-shadow: var(--card-shadow);
+    border: 1px solid var(--glass-border) !important;
+    border-top-color: var(--glass-border-top)!important;
+    border-left-color: var(--glass-border-left)!important;
+    box-shadow: var(--card-shadow)!important;
 }
 
 .creation-box {

@@ -13,11 +13,11 @@ export interface PlacesResult {
 export class PlacesService {
   private apiUrl = 'http://localhost:5233/api/places/search';
 
-  // සෙවුම් ප්‍රතිඵල (Places List) සඳහා
+  // Search results as list
   private placesSource = new BehaviorSubject<PlacesResult | null>(null);
   currentPlaces = this.placesSource.asObservable();
 
-  // තෝරාගත් ස්ථානය (Selected Place ID) සඳහා
+  // For selecting a place to highlight in both map and card components
   private selectedPlaceSource = new BehaviorSubject<string | null>(null);
   selectedPlaceId = this.selectedPlaceSource.asObservable();
 
@@ -31,7 +31,6 @@ export class PlacesService {
 
     if (filters.budget) params = params.set('budget', filters.budget);
     if (filters.rating) params = params.set('rating', filters.rating);
-    // FIX: maxDistance filter backend එකට නිවැරදිව යැවීම
     if (filters.maxDistance) params = params.set('maxDistance', filters.maxDistance);
 
     this.http.get<any>(this.apiUrl, { params })
@@ -50,7 +49,7 @@ export class PlacesService {
       });
   }
 
-  // සිතියමේ Marker එකක් click කළ විට Card එකට දැනුම් දීම
+  // When click marker or card, set the selected place ID to highlight in both components
   selectPlace(id: string | null) {
     this.selectedPlaceSource.next(id);
   }
