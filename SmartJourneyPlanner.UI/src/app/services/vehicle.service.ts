@@ -8,11 +8,11 @@ import { Observable, of } from 'rxjs';
 export class VehicleService {
   private allVehicles: Vehicle[] = [
     {
-      id: '1', providerId: 'p1', type: VehicleType.Luxury, vehicleClass: 'Car', yearOfManufacture: 2022,
+      id: '1', providerId: 'p1', type: VehicleType.Luxury, vehicleClass: 'Car', modelName: 'Mercedes Benz E-Class', yearOfManufacture: 2022,
       seatCount: 4, isAc: true, transmission: 'Automatic', fuelType: 'Petrol',
       description: 'Mercedes Benz E-Class - Ultimate premium travel experience.',
       standardDailyRate: 25000, freeKMLimit: 100, extraKMRate: 150, driverNightOutFee: 5000,
-      providerProfile: { name: 'Rohan Fernando', phone: '+94 77 123 4567', location: 'Colombo' },
+      providerProfile: { name: 'Rohan Fernando', phone: '+94 77 123 4567', email: 'rohan@example.com', location: 'Colombo' },
       isVerified: true, status: 'Approved', languages: ['English', 'Sinhala', 'German'],
       features: { luggage: 3, safety: true, entertainment: true, wifi: true, airbags: true, tv: true, bluetooth: true, childSeats: true },
       availableDates: [], bookedDates: ['2026-03-29', '2026-03-30'],
@@ -25,11 +25,11 @@ export class VehicleService {
       ]
     },
     {
-      id: '2', providerId: 'p1', type: VehicleType.Budget, vehicleClass: 'Car', yearOfManufacture: 2020,
+      id: '2', providerId: 'p1', type: VehicleType.Budget, vehicleClass: 'Car', modelName: 'Toyota Prius', yearOfManufacture: 2020,
       seatCount: 4, isAc: true, transmission: 'Automatic', fuelType: 'Hybrid',
       description: 'Toyota Prius Hybrid - Reliable and cost-effective city travel.',
       standardDailyRate: 9500, freeKMLimit: 100, extraKMRate: 55, driverNightOutFee: 2000,
-      providerProfile: { name: 'City Rides LK', phone: '+94 71 987 6543', location: 'Kandy' },
+      providerProfile: { name: 'City Rides LK', phone: '+94 71 987 6543', email: 'cityrides@example.com', location: 'Kandy' },
       isVerified: true, status: 'Approved', languages: ['Sinhala', 'English', 'Tamil'],
       features: { luggage: 2, safety: true, entertainment: true, wifi: false, airbags: true },
       availableDates: [], bookedDates: [],
@@ -41,11 +41,11 @@ export class VehicleService {
       ]
     },
     {
-      id: '3', providerId: 'p3', type: VehicleType.Luxury, vehicleClass: 'Car', yearOfManufacture: 2021,
+      id: '3', providerId: 'p3', type: VehicleType.Luxury, vehicleClass: 'Car', modelName: 'BMW 5 Series', yearOfManufacture: 2021,
       seatCount: 5, isAc: true, transmission: 'Automatic', fuelType: 'Petrol',
       description: 'BMW 5 Series - Performance meets luxury for your long journeys.',
       standardDailyRate: 28000, freeKMLimit: 100, extraKMRate: 160, driverNightOutFee: 5000,
-      providerProfile: { name: 'Elite Travels', phone: '+94 77 555 4444', location: 'Galle' },
+      providerProfile: { name: 'Elite Travels', phone: '+94 77 555 4444', email: 'elite@example.com', location: 'Galle' },
       isVerified: true, status: 'Approved', languages: ['English', 'Sinhala'],
       features: { luggage: 3, safety: true, entertainment: true, wifi: true, airbags: true },
       availableDates: [], bookedDates: [],
@@ -57,11 +57,11 @@ export class VehicleService {
       ]
     },
     {
-      id: '4', providerId: 'p1', type: VehicleType.Group, vehicleClass: 'Van', yearOfManufacture: 2019,
+      id: '4', providerId: 'p1', type: VehicleType.Group, vehicleClass: 'Van', modelName: 'Toyota KDH Commuter', yearOfManufacture: 2019,
       seatCount: 12, isAc: true, transmission: 'Manual', fuelType: 'Diesel',
       description: 'Toyota Commuter KDH - Spacious and comfortable for team tours.',
       standardDailyRate: 15000, freeKMLimit: 150, extraKMRate: 80, driverNightOutFee: 3000,
-      providerProfile: { name: 'Group Tours LK', phone: '+94 72 456 7890', location: 'Negombo' },
+      providerProfile: { name: 'Group Tours LK', phone: '+94 72 456 7890', email: 'grouptours@example.com', location: 'Negombo' },
       isVerified: true, status: 'Approved', languages: ['Sinhala', 'Tamil'],
       features: { luggage: 10, safety: true, entertainment: true, wifi: false, airbags: true, tv: true },
       availableDates: [], bookedDates: [],
@@ -73,11 +73,11 @@ export class VehicleService {
       ]
     },
     {
-      id: '5', providerId: 'p4', type: VehicleType.Budget, vehicleClass: 'Car', yearOfManufacture: 2018,
+      id: '5', providerId: 'p4', type: VehicleType.Budget, vehicleClass: 'Car', modelName: 'Suzuki Alto', yearOfManufacture: 2018,
       seatCount: 4, isAc: true, transmission: 'Manual', fuelType: 'Petrol',
       description: 'Suzuki Alto - Most economical option for quick city hops.',
       standardDailyRate: 6500, freeKMLimit: 100, extraKMRate: 40, driverNightOutFee: 1500,
-      providerProfile: { name: 'Budget Rent A Car', phone: '+94 77 000 1111', location: 'Colombo' },
+      providerProfile: { name: 'Budget Rent A Car', phone: '+94 77 000 1111', email: 'budget@example.com', location: 'Colombo' },
       isVerified: true, status: 'Approved', languages: ['Sinhala', 'English'],
       features: { luggage: 1, safety: true, entertainment: false, wifi: false, airbags: false },
       availableDates: [], bookedDates: [],
@@ -89,11 +89,11 @@ export class VehicleService {
       ]
     },
     {
-      id: '6', providerId: 'p2', type: VehicleType.Luxury, vehicleClass: 'Van', yearOfManufacture: 2021,
+      id: '6', providerId: 'p2', type: VehicleType.Luxury, vehicleClass: 'Van', modelName: 'Toyota KDH Luxury', yearOfManufacture: 2021,
       seatCount: 9, isAc: true, transmission: 'Automatic', fuelType: 'Diesel',
       description: 'Toyota KDH Luxury - Premium group travel with reclining seats.',
       standardDailyRate: 18000, freeKMLimit: 150, extraKMRate: 90, driverNightOutFee: 4000,
-      providerProfile: { name: 'Premium Shuttles', phone: '+94 77 999 8888', location: 'Colombo' },
+      providerProfile: { name: 'Premium Shuttles', phone: '+94 77 999 8888', email: 'premium@example.com', location: 'Colombo' },
       isVerified: true, status: 'Approved', languages: ['English', 'Sinhala', 'Tamil'],
       features: { luggage: 8, safety: true, entertainment: true, wifi: true, airbags: true, tv: true },
       availableDates: [], bookedDates: [],
