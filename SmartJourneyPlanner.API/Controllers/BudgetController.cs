@@ -15,15 +15,14 @@ namespace SmartJourneyPlanner.API.Controllers
             _budgetService = budgetService;
         }
 
-        // --- 1. GET DATA (The Connector) ---
-        // This is what Angular calls to load the budget page for a specific trip
+        // The connector-Angular calls to load the budget page for a specific trip
         [HttpGet("trip/{tripId}")]
         public async Task<IActionResult> GetByTrip(string tripId)
         {
             var budget = await _budgetService.GetBudgetByTripIdAsync(tripId);
             
-            // If no budget exists yet, we return an empty container instead of a 404
-            // so the frontend can still show a "Total: 0" dashboard
+            // If no budget exists yet,return an empty container instead of a 404
+            // the frontend can still show a "Total: 0" dashboard
             if (budget == null) 
             {
                 return Ok(new TripBudget { TripId = tripId, Expenses = new List<Expense>() });
@@ -32,25 +31,27 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok(budget);
         }
 
-        // --- 2. ADD EXPENSE (POST api/budget/add-expense/{tripId}) ---
+        // ADD EXPENSE
         [HttpPost("add-expense/{tripId}")]
         public async Task<IActionResult> AddExpense(string tripId, [FromBody] Expense expense)
         {
+            //Validation check here to catch empty payloads before hitting the service.
             if (expense == null) return BadRequest("Expense data is missing.");
             
             await _budgetService.AddExpenseAsync(tripId, expense);
             return Ok(new { message = "Expense added and total updated!" });
         }
 
-        // --- 3. DELETE EXPENSE (Using ID for precision) ---
+        // DELETE EXPENSE
         [HttpDelete("delete-expense/{tripId}/{expenseId}")]
         public async Task<IActionResult> DeleteExpense(string tripId, string expenseId)
         {
+            //passing both IDs to ensure we are deleting the right expense
             await _budgetService.DeleteExpenseAsync(tripId, expenseId);
             return Ok(new { message = "Expense removed successfully." });
         }
 
-        // --- 4. UPDATE EXPENSE ---
+        // UPDATE EXPENSE
         [HttpPut("update-expense/{tripId}/{expenseId}")]
         public async Task<IActionResult> UpdateExpense(string tripId, string expenseId, [FromBody] Expense updatedExpense)
         {
@@ -74,10 +75,11 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok(new { message = "Expense updated successfully." });
         }
 
-        // --- 5. INITIAL CREATE (Optional) ---
+        // INITIAL CREATE
         [HttpPost]
         public async Task<IActionResult> Create(TripBudget newBudget)
         {
+            //Mandatory TripId check
             if (string.IsNullOrEmpty(newBudget.TripId)) return BadRequest("TripId is required.");
             
             await _budgetService.CreateBudgetAsync(newBudget);

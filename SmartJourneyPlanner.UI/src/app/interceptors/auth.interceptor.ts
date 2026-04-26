@@ -1,5 +1,8 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
+/* This interceptor acts as a global "middleware" for all HTTP calls.
+ Instead of manually adding the JWT to every service, this function 
+ handles it automatically in one central place */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Retrieve the token from localStorage
   const token = localStorage.getItem('token'); 

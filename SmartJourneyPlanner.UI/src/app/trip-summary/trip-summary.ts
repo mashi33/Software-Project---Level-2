@@ -31,16 +31,9 @@ export class TripSummaryComponent implements OnInit {
     private router: Router,
   ) {}
 
-  toggleDropdown() {
-    this.isDropdownOpen = !this.isDropdownOpen;
-  }
-
-  ngOnInit(): void {
-    const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
   ngOnInit(): void {
     // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
-    const tripId = this.route.snapshot.paramMap.get('id');
-
+    const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
     this.tripId = tripIdFromUrl || '';
@@ -50,6 +43,8 @@ export class TripSummaryComponent implements OnInit {
     }
 
     if (this.tripId) {
+      console.log('Fetching data for ID:', this.tripId);
+
       this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
       this.tripDetails = data;
@@ -63,12 +58,8 @@ export class TripSummaryComponent implements OnInit {
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
           } else {
-            
-            this.loadHistory(tripId);
-            this.filterSavedPlaces();
-
+            this.loadHistory(this.tripId);
           }
-          this.filterSavedPlaces();
         },
         error: (err) => {
           console.error('Data load error:', err);
@@ -101,6 +92,10 @@ export class TripSummaryComponent implements OnInit {
         console.error('History load error:', err);
       }
     });
+  }
+
+  toggleDropdown(): void {
+    this.isDropdownOpen = !this.isDropdownOpen;
   }
 
   filterSavedPlaces() {

@@ -15,6 +15,8 @@ namespace SmartJourneyPlanner.API.Services
 
         public AdminService(IOptions<MongoDBSettings> settings)
         {
+            // if change the connection string in appsettings.json, 
+            // the service picks it up automatically without me touching this code.
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
 
@@ -22,7 +24,8 @@ namespace SmartJourneyPlanner.API.Services
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // ✅ Fixed the CS1061 error: Added back the approved providers method
+        // Even though the dashboard focuses on 'Pending', we need this for the 
+        // 'Approved' list view so the Admin can see who is currently active
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -48,6 +51,8 @@ namespace SmartJourneyPlanner.API.Services
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
+
+            //a dual-field update here
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.Status, newStatus)
                 .Set(v => v.IsVerified, newStatus == "Approved");
@@ -57,6 +62,8 @@ namespace SmartJourneyPlanner.API.Services
 
         public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
         {
+            // Useful for when we want to see all vehicles 
+            // owned by a specific person, rather than just filtering by status.
             return await _vehiclesCollection
                 .Find(v => v.ProviderId == providerId)
                 .ToListAsync();
