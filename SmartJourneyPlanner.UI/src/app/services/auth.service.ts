@@ -88,17 +88,19 @@ export class AuthService {
     if (!token) return 'Guest'; 
 
     try {
-      // Using the library instead of manual splitting/atob
       const decoded: any = jwtDecode(token);
       
-      // Standard .NET role claims
-      return decoded['role'] || 
-             decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-             'User';
+      // .NET Core often uses the full schema URI for role claims.
+      // We check both the short name and the long schema name.
+      const role = decoded['role'] || 
+                   decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      
+      return role || 'User';
       
     } catch (error) {
       console.error('Token decoding failed', error);
-      return 'User';
+      // Fallback to localStorage if decoding fails, or default to 'User'
+      return localStorage.getItem('userRole') || 'User';
     }
   }
   
@@ -109,5 +111,6 @@ export class AuthService {
     localStorage.removeItem('userName');
     localStorage.removeItem('userType');
     this.userNameSubject.next('User');
+    localStorage.removeItem('userRole'); // Clean up both
   }
 }

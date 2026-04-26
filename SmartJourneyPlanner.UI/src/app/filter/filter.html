@@ -4,44 +4,52 @@
     <button [class.active]="activeCategory === 'Restaurant'" (click)="changeCategory('Restaurant')">Dining</button>
   </div>
 
-  <div class="search-box">
-    <input
-      type="text"
-      [formControl]="searchControl"
-      placeholder="Enter city or town (e.g. Negombo, Kandy)..."
-    />
+  <div class="search-container">
+    <div class="search-box">
+      <input
+        #cityInput
+        type="text"
+        [formControl]="searchControl"
+        placeholder="Enter city or town (e.g. Negombo, Kandy)..."
+      />
+    </div>
+    
+    <button class="search-btn" (click)="performSearch()">
+      <span class="search-icon">🔍</span> Search
+    </button>
   </div>
 
-  <div class="budget-filter">
-    <label>Budget:</label>
-    <select [formControl]="budgetControl">
-      <option value="1">$</option>
-      <option value="2">$$</option>
-      <option value="3">$$$</option>
-      <option value="4">$$$$</option>
-    </select>
-  </div>
+  <div class="filters-row">
+    <div class="budget-filter">
+      <label>Budget:</label>
+      <select [formControl]="budgetControl">
+        <option value="1">$</option>
+        <option value="2">$$</option>
+        <option value="3">$$$</option>
+        <option value="4">$$$$</option>
+      </select>
+    </div>
 
-  <div class="rating-filter">
-    <label>Min Rating:</label>
-    <select [formControl]="ratingControl">
-      <option value="0">Any</option>
-      <option value="3">3+</option>
-      <option value="3.5">3.5+</option>
-      <option value="4">4+</option>
-      <option value="4.5">4.5+</option>
-    </select>
-  </div>
+    <div class="rating-filter">
+      <label>Min Rating:</label>
+      <select [formControl]="ratingControl">
+        <option value="0">Any</option>
+        <option value="3">3+</option>
+        <option value="3.5">3.5+</option>
+        <option value="4">4+</option>
+        <option value="4.5">4.5+</option>
+      </select>
+    </div>
 
-  <!-- NEW: Distance filter -->
-  <div class="distance-filter">
-    <label>Distance:</label>
-    <select [formControl]="distanceControl">
-      <option value="">Any</option>
-      <option value="1">Within 1 km</option>
-      <option value="2">Within 2 km</option>
-      <option value="5">Within 5 km</option>
-      <option value="10">Within 10 km</option>
-    </select>
+    <div class="distance-filter">
+      <label>Distance:</label>
+      <select [formControl]="distanceControl">
+        <option value="">Any</option>
+        <option value="1">Within 1 km</option>
+        <option value="2">Within 2 km</option>
+        <option value="5">Within 5 km</option>
+        <option value="10">Within 10 km</option>
+      </select>
+    </div>
   </div>
 </div>

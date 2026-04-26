@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common'; // Required for [src], *ngIf, et
 import { RouterModule } from '@angular/router'; // Required for routerLink
 
 @Component({
-  selector: 'app-footer',
-  standalone: true,
-  // This imports property is what was missing:
-  imports: [CommonModule, RouterModule],
-  templateUrl: './footer.html',
-  styleUrl: './footer.css'
+    selector: 'app-footer',
+    // This imports property is what was missing:
+    imports: [CommonModule, RouterModule],
+    templateUrl: './footer.html',
+    styleUrl: './footer.css'
 })
 export class FooterComponent {
   // This variable will always get the current year automatically

@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -17,6 +16,12 @@ export class TripService {
   constructor(private http: HttpClient) { }
 
   // Sends a POST request to create a new trip with the provided data.
+  // ✅ NEW METHOD: Fetches all trips for the Budget Dropdown
+  getAllTrips(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
+  }
+
+  // Trip create function
   createTrip(tripData: any): Observable<any> {
     return this.http.post<any>(this.apiUrl, tripData);
   }

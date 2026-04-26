@@ -5,11 +5,10 @@ import { environment } from '../../environments/environment';
 import jsPDF from 'jspdf';
 
 @Component({
-  selector: 'app-generation',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './generation.html',
-  styleUrls: ['./generation.css']
+    selector: 'app-generation',
+    imports: [CommonModule],
+    templateUrl: './generation.html',
+    styleUrls: ['./generation.css']
 })
 export class GenerationComponent implements OnInit, OnChanges {
   @Input() routeData: any;

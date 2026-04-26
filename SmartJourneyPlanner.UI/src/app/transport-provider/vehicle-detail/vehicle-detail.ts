@@ -9,11 +9,10 @@ import { TransportCalculationService } from '../../services/transport-calculatio
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-vehicle-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './vehicle-detail.html',
-  styleUrl: './vehicle-detail.css'
+    selector: 'app-vehicle-detail',
+    imports: [CommonModule, RouterLink, FormsModule],
+    templateUrl: './vehicle-detail.html',
+    styleUrl: './vehicle-detail.css'
 })
 export class VehicleDetailComponent implements OnInit {
   vehicle: Vehicle | undefined;
@@ -25,6 +24,7 @@ export class VehicleDetailComponent implements OnInit {
   // Form fields
   startDate: string = '';
   endDate: string = '';
+  minDate: string = '';
   customerName: string = '';
   customerPhone: string = '';
   customerEmail: string = '';
@@ -57,7 +57,10 @@ export class VehicleDetailComponent implements OnInit {
     private transportVehicleService: TransportVehicleService,
     private transportBookingService: TransportBookingService,
     public calcService: TransportCalculationService
-  ) {}
+  ) {
+    const today = new Date();
+    this.minDate = today.toISOString().split('T')[0];
+  }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -187,6 +190,21 @@ export class VehicleDetailComponent implements OnInit {
       return;
     }
 
+    const start = new Date(this.startDate);
+    const end = new Date(this.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      Swal.fire('Invalid Date', 'Pickup date cannot be in the past.', 'warning');
+      return;
+    }
+    
+    if (end < start) {
+      Swal.fire('Invalid Date', 'Drop-off date cannot be earlier than the pickup date.', 'warning');
+      return;
+    }
+
     if (!this.vehicle) return;
 
     const dailyTotal = this.vehicle.standardDailyRate * this.bookingDays;
@@ -261,7 +279,9 @@ export class VehicleDetailComponent implements OnInit {
           destinations: this.destinations,
           vehicleImage: this.vehicle?.exteriorPhoto,
           providerName: this.vehicle?.providerProfile.name,
+          providerPhone: this.vehicle?.providerProfile.phone,
           userName: this.customerName,
+          contactNumber: this.customerPhone,
           pricingSummary: {
             dailyRate: this.vehicle?.standardDailyRate || 0,
             dailyRental: dailyTotal,

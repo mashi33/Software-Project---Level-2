@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartJourney.Api.Services;
+using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.Services;
 using System.Threading.Tasks;
 
-namespace SmartJourney.Api.Controllers
+namespace SmartJourneyPlanner.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -35,7 +36,7 @@ namespace SmartJourney.Api.Controllers
         [HttpPut("vehicles/{id}/availability")]
         public async Task<IActionResult> UpdateAvailability(string id, [FromBody] bool available)
         {
-            await _dashboardService.UpdateVehicleAvailability(id, available);
+            await _dashboardService.UpdateVehicleAvailability(id, "Available");
             return Ok();
         }
 

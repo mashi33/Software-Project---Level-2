@@ -5,11 +5,10 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-trip-create',
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
-  templateUrl: './trip-create.html',
-  styleUrls: ['./trip-create.css']
+    selector: 'app-trip-create',
+    imports: [ReactiveFormsModule, CommonModule],
+    templateUrl: './trip-create.html',
+    styleUrls: ['./trip-create.css']
 })
 export class TripCreateComponent implements OnInit {
 
@@ -21,7 +20,7 @@ export class TripCreateComponent implements OnInit {
   constructor(
     private tripService: TripService, 
     private router: Router,
-    private route: ActivatedRoute 
+    private route: ActivatedRoute
   ) {
 
     // Initializing the form with validation rules
@@ -48,7 +47,6 @@ export class TripCreateComponent implements OnInit {
       this.tripId = idFromUrl;
       this.isEditMode = true;
 
-      // Database එකෙන් අලුත්ම දත්ත ගන්නවා
       this.tripService.getTripById(idFromUrl).subscribe({
         next: (data) => {
           if (data) {
@@ -91,7 +89,6 @@ export class TripCreateComponent implements OnInit {
       role: m.role || m.Role
     }));
   }
-}
 
   /**
    * Formats ISO date strings to YYYY-MM-DD for HTML date inputs.
@@ -126,6 +123,16 @@ export class TripCreateComponent implements OnInit {
    */
   onSubmit() {
     if (this.tripForm.valid) { // Ensure form is valid before submission
+    if (this.tripForm.valid) {
+
+      // FIX: JWT token එකෙන් email ලබාගෙන CreatedBy field එකට save කිරීම
+      const token = localStorage.getItem('token');
+      let createdBy = '';
+      if (token) {
+        const decoded: any = JSON.parse(atob(token.split('.')[1]));
+        createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+      }
+
       const tripData = {
         TripName: this.tripForm.value.tripName,
         Destination: this.tripForm.value.destination,
@@ -137,7 +144,9 @@ export class TripCreateComponent implements OnInit {
         Members: this.invitedMembers.map(m => ({
           Email: m.email,
           Role: m.role
-        }))
+        })),
+        // FIX: Trip create කළ user ගේ email save කිරීම
+        CreatedBy: createdBy
       };
 
       if (this.isEditMode && this.tripId) {
@@ -152,7 +161,6 @@ export class TripCreateComponent implements OnInit {
           error: (err) => alert("Error updating trip")
         });
       } else {
-        // CREATE NEW TRIP
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
             console.log("Backend Response:", res);

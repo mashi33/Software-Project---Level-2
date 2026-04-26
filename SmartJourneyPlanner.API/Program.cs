@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Email Settings Configuration
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddHttpClient<PlacesService>();
 
 // ==========================================================
 // DATABASE CONFIG
@@ -69,13 +70,15 @@ builder.Services.AddSignalR(options =>
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
+// Find this section in your Program.cs
 builder.Services.AddControllers()
-.AddJsonOptions(options =>
-{
-  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-});
-
+    .AddJsonOptions(options =>
+    {
+        // This forces the API to send 'fullName' instead of 'FullName'
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // This makes the API more flexible when receiving data back from Angular
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 // ==========================================================
 // CORS
 // ==========================================================
@@ -106,6 +109,8 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
+builder.Services.AddHttpClient<PlacesService>();
+builder.Services.AddSingleton<MemoryService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE
