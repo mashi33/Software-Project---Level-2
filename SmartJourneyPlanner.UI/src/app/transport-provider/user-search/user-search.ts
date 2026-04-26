@@ -127,7 +127,10 @@ export class UserSearch implements OnInit {
   ) {
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
     const today = new Date();
-    this.todayStr = today.toISOString().split('T')[0];
+    // Use local date string (YYYY-MM-DD) instead of UTC toISOString()
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+    this.todayStr = localToday.toISOString().split('T')[0];
     
     this.startDate = this.todayStr;
     const tomorrow = new Date(today);

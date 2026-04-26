@@ -1,6 +1,25 @@
-<div class="vd-container" *ngIf="vehicle">
+<div class="vd-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="vd-loader-overlay">
+    <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <h5 class="mt-3 text-navy fw-bold">Fetching Vehicle Details...</h5>
+  </div>
 
-  <main class="vd-main container py-4">
+  <!-- Error State -->
+  <div *ngIf="errorMessage && !isLoading" class="container py-5 text-center">
+    <div class="error-card p-5 shadow-sm rounded-4 bg-white">
+      <i class="bi bi-exclamation-triangle-fill text-warning display-1 mb-4"></i>
+      <h2 class="text-navy fw-bold mb-3">Oops! Something went wrong</h2>
+      <p class="text-muted mb-4 fs-5">{{errorMessage}}</p>
+      <button class="btn btn-primary btn-lg rounded-pill px-5" routerLink="/transport">
+        <i class="bi bi-arrow-left me-2"></i> Back to Search
+      </button>
+    </div>
+  </div>
+
+  <main class="vd-main container py-4" *ngIf="vehicle && !isLoading">
     <!-- Back Navigation -->
     <div class="back-nav mb-4">
       <a routerLink="/transport" class="back-link">
@@ -253,30 +272,59 @@
               </div>
             </div>
 
+            <div class="pricing-breakdown-card mb-4 bg-danger-subtle border-danger" *ngIf="bookingDays <= 0 && startDate && endDate">
+                <div class="p-3 text-center text-danger fw-bold">
+                    <i class="bi bi-calendar-x me-2"></i> Invalid Date Range
+                </div>
+            </div>
+
             <h3 class="form-section-title mb-3">Request Booking</h3>
             
             <div class="row g-2 mb-3">
               <div class="col-md-6">
                 <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" [(ngModel)]="startDate" (change)="onDateChange()" [min]="minDate">
+                <input type="date" class="form-control" [(ngModel)]="startDate" (change)="onDateChange()" [min]="minDate"
+                    [class.is-invalid]="startDate && startDate < minDate">
+                <div class="invalid-msg" *ngIf="startDate && startDate < minDate">
+                    Pickup date cannot be in the past.
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Drop-off Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" [(ngModel)]="endDate" (change)="onDateChange()" [min]="startDate">
+                <input type="date" class="form-control" [(ngModel)]="endDate" (change)="onDateChange()" [min]="startDate"
+                    [class.is-invalid]="startDate && endDate && endDate < startDate">
+                <div class="invalid-msg" *ngIf="startDate && endDate && endDate < startDate">
+                    Cannot be before pickup date.
+                </div>
               </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label">Full Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" placeholder="Enter your name" [(ngModel)]="customerName">
+              <input type="text" class="form-control" placeholder="Enter your name" [(ngModel)]="customerName"
+                [class.is-invalid]="(customerName !== '' && !isNameValid()) || (isFormSubmitted && !isNameValid())">
+              <div class="invalid-msg" *ngIf="(customerName !== '' || isFormSubmitted) && !isNameValid()">
+                Please enter a valid name (at least 3 characters, no numbers).
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-              <input type="tel" class="form-control" placeholder="+94 77 XXX XXXX" [(ngModel)]="customerPhone">
+              <input type="tel" class="form-control" placeholder="+94 77 XXX XXXX" [(ngModel)]="customerPhone"
+                [class.is-invalid]="(customerPhone !== '' && !isPhoneValid()) || (isFormSubmitted && customerPhone === '')">
+              <div class="invalid-msg" *ngIf="customerPhone !== '' && !isPhoneValid()">
+                Invalid format. Use international format (e.g. +94771234567).
+              </div>
+              <div class="invalid-msg" *ngIf="isFormSubmitted && customerPhone === ''">
+                Phone number is required.
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label">Email Address</label>
-              <input type="email" class="form-control" placeholder="name@example.com" [(ngModel)]="customerEmail">
+              <input type="email" class="form-control" placeholder="name@example.com" [(ngModel)]="customerEmail"
+                [class.is-invalid]="customerEmail !== '' && !isEmailValid()">
+              <div class="invalid-msg" *ngIf="customerEmail !== '' && !isEmailValid()">
+                Please enter a valid email address.
+              </div>
             </div>
             
             <div class="row g-2 mb-3">
@@ -284,7 +332,11 @@
                 <label class="form-label">Pickup Location <span class="text-danger">*</span></label>
                 <div class="position-relative">
                   <input type="text" class="form-control" placeholder="Pickup Location" 
-                         [(ngModel)]="pickupAddress" (input)="onLocationInput('pickup')" (click)="$event.stopPropagation()">
+                         [(ngModel)]="pickupAddress" (input)="onLocationInput('pickup')" (click)="$event.stopPropagation()"
+                         [class.is-invalid]="(pickupAddress !== '' && !isPickupAddressValid()) || (isFormSubmitted && !isPickupAddressValid())">
+                  <div class="invalid-msg" *ngIf="(pickupAddress !== '' || isFormSubmitted) && !isPickupAddressValid()">
+                    Please provide a valid pickup location.
+                  </div>
                   
                   <!-- Suggestions Dropdown -->
                   <div class="suggestions-dropdown shadow-sm" *ngIf="filteredPickupSuggestions.length > 0">
@@ -304,7 +356,11 @@
                            [(ngModel)]="newDestination" 
                            (input)="onLocationInput('dest')"
                            (click)="$event.stopPropagation()"
-                           (keyup.enter)="addDestination()">
+                           (keyup.enter)="addDestination()"
+                           [class.is-invalid]="newDestination !== '' && !isDestinationValid(newDestination)">
+                    <div class="invalid-msg" *ngIf="newDestination !== '' && !isDestinationValid(newDestination)">
+                        Invalid destination name.
+                    </div>
                     <i class="bi bi-geo-alt position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
                     
                     <!-- Suggestions Dropdown -->
@@ -327,6 +383,9 @@
                     </div>
                     <i class="bi bi-x fs-4 text-dark cursor-pointer fw-bold" (click)="removeDestination(i)"></i>
                   </div>
+                </div>
+                <div *ngIf="isFormSubmitted && destinations.length === 0" class="invalid-msg">
+                    <i class="bi bi-exclamation-circle me-1"></i> At least one destination is required.
                 </div>
               </div>
             </div>

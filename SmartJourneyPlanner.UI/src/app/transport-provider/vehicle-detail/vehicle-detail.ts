@@ -37,6 +37,11 @@ export class VehicleDetailComponent implements OnInit {
   passengerCount: number | null = null;
   luggageCount: number | null = null;
   
+  // State Variables
+  isLoading: boolean = false;
+  errorMessage: string | null = null;
+  isFormSubmitted: boolean = false;
+  
   // Auto-suggestion data
   sriLankanLocations: string[] = [
     'Colombo', 'Kandy', 'Galle', 'Negombo', 'Anuradhapura', 'Jaffna', 'Nuwara Eliya', 
@@ -60,21 +65,37 @@ export class VehicleDetailComponent implements OnInit {
     public calcService: TransportCalculationService
   ) {
     const today = new Date();
-    this.minDate = today.toISOString().split('T')[0];
+    // Use local date string (YYYY-MM-DD) instead of UTC toISOString()
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+    this.minDate = localToday.toISOString().split('T')[0];
   }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
       const id = params['id'];
       if (id) {
-        this.transportVehicleService.getVehicleById(id).subscribe(v => {
-          if (v && v.languages) {
-            v.languages = Array.from(new Set(v.languages));
-          }
-          this.vehicle = v;
-          if (v) {
-            this.mainImage = v.exteriorPhoto || '';
-            this.currentView = 'exterior';
+        this.isLoading = true;
+        this.errorMessage = null;
+        
+        this.transportVehicleService.getVehicleById(id).subscribe({
+          next: (v) => {
+            if (v && v.languages) {
+              v.languages = Array.from(new Set(v.languages));
+            }
+            this.vehicle = v;
+            if (v) {
+              this.mainImage = v.exteriorPhoto || '';
+              this.currentView = 'exterior';
+            } else {
+              this.errorMessage = 'Vehicle not found. It may have been removed or the ID is incorrect.';
+            }
+            this.isLoading = false;
+          },
+          error: (err) => {
+            console.error('Error fetching vehicle:', err);
+            this.errorMessage = 'Failed to load vehicle details. Please check your connection.';
+            this.isLoading = false;
           }
         });
       }
@@ -87,11 +108,10 @@ export class VehicleDetailComponent implements OnInit {
       
       // Auto fill from Find Transport, or default to today/tomorrow
       if (!start || !end) {
-        const today = new Date();
-        start = today.toISOString().split('T')[0];
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        end = tomorrow.toISOString().split('T')[0];
+        start = this.minDate;
+        const tomorrowDate = new Date(this.minDate);
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        end = tomorrowDate.toISOString().split('T')[0];
       }
 
       if (start && end) {
@@ -115,9 +135,83 @@ export class VehicleDetailComponent implements OnInit {
   }
 
   onDateChange() {
+    const today = new Date(this.minDate);
+    
+    // 1. Prevent selection of past dates for Start Date
+    if (this.startDate && this.startDate < this.minDate) {
+      setTimeout(() => {
+        this.startDate = this.minDate;
+        this.onDateChange();
+      }, 1500);
+    }
+
+    // 2. Ensure End Date is at least the same as Start Date
+    if (this.startDate && this.endDate && this.endDate < this.startDate) {
+      setTimeout(() => {
+        this.endDate = this.startDate;
+        this.onDateChange();
+      }, 1500);
+    }
+
     if (this.startDate && this.endDate) {
       this.calculateDuration(this.startDate, this.endDate);
     }
+  }
+
+  isEmailValid(): boolean {
+    if (!this.customerEmail) return true; // Optional field
+    // Enhanced regex for email validation
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(this.customerEmail.trim());
+  }
+
+  isNameValid(): boolean {
+    if (!this.customerName) return false;
+    const name = this.customerName.trim();
+    // Must contain at least 2 letters and overall be at least 3 chars long.
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z\s\.\-]{3,}$/;
+    if (!re.test(name)) return false;
+
+    // Check if all characters are the same (e.g., "aaa")
+    const cleaned = name.replace(/[\s\.\-]/g, '').toLowerCase();
+    const allSame = cleaned.split('').every(char => char === cleaned[0]);
+    if (allSame) return false;
+
+    return true;
+  }
+
+  isPhoneValid(): boolean {
+    if (!this.customerPhone) return false;
+    const phone = this.customerPhone.trim();
+    
+    // Clean all non-numeric characters except +
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    
+    // Standard international regex: starts with optional +, then 7-15 digits
+    const re = /^\+?[0-9]{7,15}$/;
+    if (!re.test(cleaned)) return false;
+
+    // Additional check: Ensure it's not all the same digits (e.g., 000000000)
+    const digitsOnly = cleaned.replace('+', '');
+    const allSame = digitsOnly.split('').every(char => char === digitsOnly[0]);
+    if (allSame && digitsOnly.length > 5) return false;
+
+    return true;
+  }
+
+  isPickupAddressValid(): boolean {
+    if (!this.pickupAddress) return false;
+    const addr = this.pickupAddress.trim();
+    // Must contain at least 2 letters and overall be at least 3 chars long.
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z0-9\s\.\,\-\/]{3,}$/;
+    if (!re.test(addr)) return false;
+
+    // Check if all letters are the same (e.g., "aaa")
+    const lettersOnly = addr.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    const allSame = lettersOnly.split('').every(char => char === lettersOnly[0]);
+    if (allSame) return false;
+
+    return true;
   }
 
   setMainView(view: 'exterior' | 'interior') {
@@ -130,10 +224,37 @@ export class VehicleDetailComponent implements OnInit {
     this.setMainView(this.currentView === 'exterior' ? 'interior' : 'exterior');
   }
 
+  isDestinationValid(dest: string): boolean {
+    if (!dest) return false;
+    const d = dest.trim();
+    // Must contain at least 2 letters and overall be at least 3 chars long.
+    const re = /^(?=.*[a-zA-Z].*[a-zA-Z])[a-zA-Z0-9\s\.\,\-\/]{3,}$/;
+    if (!re.test(d)) return false;
+
+    // Check if all letters are the same (e.g., "aaa")
+    const lettersOnly = d.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    const allSame = lettersOnly.split('').every(char => char === lettersOnly[0]);
+    if (allSame) return false;
+
+    return true;
+  }
+
   addDestination() {
-    if (this.newDestination.trim()) {
-      this.destinations.push(this.newDestination.trim());
-      this.newDestination = '';
+    if (this.newDestination && this.newDestination.trim() !== '') {
+      if (this.isDestinationValid(this.newDestination)) {
+        this.destinations.push(this.newDestination.trim());
+        this.newDestination = '';
+      } else {
+        Swal.fire({
+          title: 'Invalid Destination',
+          text: 'Please enter a valid destination (no numbers only or repeated characters).',
+          icon: 'warning',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      }
     }
   }
 
@@ -186,8 +307,37 @@ export class VehicleDetailComponent implements OnInit {
   }
 
   onRequestBooking() {
-    if (!this.startDate || !this.endDate || !this.customerName || !this.customerPhone || !this.customerEmail || !this.pickupAddress || this.destinations.length === 0) {
-      Swal.fire('Missing Information', 'Please fill in all mandatory fields (*). You must add at least one destination and travel dates.', 'warning');
+    this.isFormSubmitted = true;
+
+    // Check mandatory fields
+    if (!this.startDate || !this.endDate || !this.customerName || !this.customerPhone || !this.pickupAddress || this.destinations.length === 0) {
+      Swal.fire({
+        title: 'Form Incomplete',
+        text: 'Please fill in all mandatory fields (*). You must add at least one destination and valid travel dates.',
+        icon: 'warning',
+        confirmButtonColor: '#0c92f4'
+      });
+      return;
+    }
+
+    // Check custom validations
+    if (!this.isNameValid()) {
+      Swal.fire('Invalid Name', 'Please enter a valid full name (at least 3 letters, no numbers).', 'warning');
+      return;
+    }
+
+    if (!this.isPhoneValid()) {
+      Swal.fire('Invalid Phone', 'Please enter a valid phone number.', 'warning');
+      return;
+    }
+
+    if (!this.isPickupAddressValid()) {
+      Swal.fire('Invalid Pickup Location', 'Please enter a valid pickup address (at least 3 characters).', 'warning');
+      return;
+    }
+
+    if (!this.isEmailValid()) {
+      Swal.fire('Invalid Email', 'Please enter a valid email address.', 'warning');
       return;
     }
 
