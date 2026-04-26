@@ -8,7 +8,6 @@ import { FooterComponent } from './footer/footer';
 
 @Component({
     selector: 'app-root',
-    // 2. Add them to the imports list
     imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent],
     templateUrl: './app.html',
     styleUrl: './app.css'

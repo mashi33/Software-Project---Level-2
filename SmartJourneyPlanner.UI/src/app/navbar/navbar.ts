@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Required for [src], *ngIf, etc.
-import { RouterModule } from '@angular/router'; // Required for routerLink
+import { CommonModule } from '@angular/common'; 
+import { RouterModule } from '@angular/router'; 
 import { AuthService } from '../services/auth.service';
 import { Subscription } from 'rxjs';
 
@@ -24,18 +24,14 @@ export class NavbarComponent implements OnInit {
 
   constructor(private authService: AuthService) {}
 
-  /**
-   * Lifecycle hook that initializes the component.
-   */
+  
+  //Lifecycle hook that initializes the component.
+   
   ngOnInit(): void {
     const savedName = localStorage.getItem('userName');
     this.userName = savedName ? savedName : 'User';
   }
 
-  /**
-   * ✅ FIX: Added '?' to make menu optional.
-   * This allows (click)="toggleDropdown()" to work without errors.
-   */
   toggleDropdown(menu?: string) {
     if (menu === 'memory') {
       this.isMemoryDropdownOpen = !this.isMemoryDropdownOpen;
@@ -51,9 +47,8 @@ export class NavbarComponent implements OnInit {
     this.isMemoryDropdownOpen = false;
   }
 
-  /**
-   * Handles user logout
-   */
+  // Handles user logout
+  
   onLogout(): void {
     localStorage.clear();
     console.log('User logged out successfully');

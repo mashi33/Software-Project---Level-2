@@ -16,16 +16,17 @@ namespace SmartJourneyPlanner.API.Services
 
         public async Task CreateAsync(TripMemory newMemory)
         {
-    // 1. Validation check
+    
             if (newMemory == null)
             {
                 throw new ArgumentNullException(nameof(newMemory), "Memory object cannot be null.");
             }
             Console.WriteLine($"Saving Memory: {newMemory.Title}, IsPublic: {newMemory.IsPublic}");
-    // 2. Insert to Database
+   
             await _memoriesCollection.InsertOneAsync(newMemory);
         }
         public async Task<List<TripMemory>> GetAsync() =>
+        // Returns all documents; filtering is intentionally handled at controller/service level if needed
             await _memoriesCollection.Find(_ => true).ToListAsync();
 
         public async Task<bool> DeleteAsync(string id)
@@ -33,6 +34,7 @@ namespace SmartJourneyPlanner.API.Services
               var filter = Builders<TripMemory>.Filter.Eq(memory => memory.Id, id);
               var result = await _memoriesCollection.DeleteOneAsync(filter);
     
+        // Returns success flag instead of throwing to allow controller to decide HTTP response type
               return result.DeletedCount > 0;
            }    
     }

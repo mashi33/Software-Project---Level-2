@@ -20,6 +20,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     Leaflet.latLng(10.5, 83.5)
   );
 
+   // Centralized endpoint so backend URL changes don't affect multiple places
   private apiUrl = 'http://localhost:5233/api/memories'; 
 
   searchQuery: string = '';
@@ -75,7 +76,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.showMax = (this.showMax === 3) ? this.filteredMemories.length : 3;
   }
 
-  // Required by your HTML: trackBy: trackByFn
+  // Helps Angular reuse DOM elements efficiently instead of re-rendering entire lists
   trackByFn(index: number, item: any) {
     return item.id || index;
   }
@@ -89,10 +90,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         memory.locationName.toLowerCase().includes(query)
       );
     }
+    // Ensures map markers reflect filtered results instead of original dataset
     this.refreshMapMarkers(this.filteredMemories);
   }
 
   refreshMapMarkers(memories: any[]) {
+    // Clearing prevents duplicate markers when filtering or reloading
     this.markersLayer.clearLayers();
     memories.forEach((memory) => {
       const marker = Leaflet.marker([memory.latitude, memory.longitude]);

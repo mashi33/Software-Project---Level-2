@@ -16,6 +16,7 @@ export class MemoryService {
   }
 
 getPublicMemories(): Observable<TripMemory[]> {
+  // Query parameter used to let backend handle filtering instead of frontend processing
     const params = new HttpParams().set('publicOnly', 'true');
     
     return this.http.get<TripMemory[]>(this.apiUrl, { params }).pipe(
