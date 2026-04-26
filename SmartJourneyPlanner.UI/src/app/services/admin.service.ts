@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core'; // ✅ Fixed: Import from @angular/core
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment.development';
@@ -8,44 +8,42 @@ import { environment } from '../../environments/environment.development';
 })
 export class AdminService {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiUrl; 
+  private baseUrl = environment.apiUrl;
 
   constructor() { }
 
-  // --- 1. DASHBOARD HOME & REFRESH ---
-  // (Uses methods below to show counts on the home cards)
-
-  // --- 2. MANAGE PROVIDERS ---
+  // --- 🚐 Provider Methods ---
   getPendingProviders(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/Admin/pending-providers`);
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
 
   getProviderById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/Admin/provider-detail/${id}`);
+    return this.http.get<any>(`${this.baseUrl}/Admin/provider-detail/${id}`);
   }
 
   updateProviderStatus(id: string, status: string): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.put(`${this.apiUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
+    return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // --- 3. USER MANAGEMENT ---
+  // --- 👥 User Management Methods ---
   getAllUsers(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/Admin/all-users`);
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
 
+  updateUserRole(userId: string, newRole: string): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    const body = JSON.stringify(newRole);
+    return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
+  }
+
+  // Added this specifically for the block button
   toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.put(`${this.apiUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });
+    return this.http.put(`${this.baseUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });
   }
 
   deleteUser(userId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/Admin/delete-user/${userId}`);
-  }
-
-  // --- 4. ROLE PROMOTION ---
-  updateUserRole(userId: string, newRole: string): Observable<any> {
-    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.put(`${this.apiUrl}/Admin/promote-user/${userId}`, JSON.stringify(newRole), { headers });
+    return this.http.delete(`${this.baseUrl}/Admin/delete-user/${userId}`);
   }
 }

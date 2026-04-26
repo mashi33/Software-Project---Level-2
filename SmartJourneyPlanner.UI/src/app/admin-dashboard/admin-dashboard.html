@@ -4,9 +4,15 @@
       <h2>⚙️ Admin Panel</h2>
     </div>
     <ul>
-      <li [class.active]="view === 'stats'" (click)="view = 'stats'">📊 Dashboard Home</li>
-      <li [class.active]="view === 'providers'" (click)="view = 'providers'">🚐 Manage Providers ({{pendingProviders.length}})</li>
-      <li [class.active]="view === 'users'" (click)="view = 'users'">👥 User Management</li>
+      <li [class.active]="view === 'stats'" (click)="view = 'stats'">
+        📊 Dashboard Home
+      </li>
+      <li [class.active]="view === 'providers'" (click)="onReviewNow()">
+        🚐 Manage Providers ({{pendingProviders.length}})
+      </li>
+      <li [class.active]="view === 'users'" (click)="onManageLogins()">
+        👥 User Management
+      </li>
     </ul>
   </aside>
 
@@ -16,14 +22,58 @@
         <h1>Smart Journey Control Center</h1>
         <p class="date-text">System Overview — {{ currentDate | date:'fullDate' }}</p>
       </div>
-      <button (click)="refreshDashboard()" class="btn-refresh-fancy">🔄 Refresh Dashboard</button>
+      <button (click)="refreshDashboard()" class="btn-refresh-fancy">
+        <span>🔄</span> Refresh Dashboard
+      </button>
     </header>
 
     <div *ngIf="view === 'stats'" class="dashboard-cards">
+      <div class="card warning-card">
+        <div class="card-icon">🚐</div>
+        <div class="card-data">
+          <h3>Pending Providers</h3>
+          <h1>{{ pendingProviders.length }}</h1>
+        </div>
+        <button class="btn-action-primary" (click)="onReviewNow()">Review Now</button>
       </div>
 
-    <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
+      <div class="card success-card">
+        <div class="card-icon">👥</div>
+        <div class="card-data">
+          <h3>Platform Users</h3>
+          <h1>{{ allUsers.length }}</h1>
+        </div>
+        <button class="btn-action-success" (click)="onManageLogins()">Manage Logins</button>
       </div>
+    </div>
+
+    <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
+      <div class="section-header">
+        <h2>📋 Pending Vehicle Approvals</h2>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Owner</th>
+            <th>Vehicle Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pendingProviders" class="table-row">
+            <td class="font-bold">{{ p.providerProfile?.name || p.fullName || 'No Name' }}</td>
+            <td>{{ p.type || p.vehicleClass }}</td>
+            <td><span class="badge-pending">Pending Approval</span></td>
+            <td>
+              <button class="btn-icon view" (click)="viewDetails(p)" title="View Details">🔍</button>
+              <button class="btn-icon approve" (click)="updateProviderStatus(p, 'Approved')" title="Approve">✅</button>
+              <button class="btn-icon reject" (click)="updateProviderStatus(p, 'Rejected')" title="Reject">❌</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="verification-section shadow-sm" *ngIf="view === 'users'">
       <div class="section-header">
@@ -43,7 +93,8 @@
           <tr *ngFor="let u of allUsers" class="table-row">
             <td>
               <div class="d-flex align-items-center">
-                <div class="avatar-sm me-2 bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                <div class="avatar-sm me-2 bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 30px; height: 30px; font-size: 0.8rem;">
                   {{ u.fullName?.charAt(0) || u.name?.charAt(0) }}
                 </div>
                 <span>{{ u.fullName || u.name }}</span>
@@ -52,19 +103,16 @@
             <td>{{ u.email }}</td>
             <td><span class="role-badge" [ngClass]="u.role">{{ u.role }}</span></td>
             <td>
-              <span class="badge" [ngClass]="u.isBlocked ? 'bg-danger' : 'bg-success'" style="padding: 5px 10px; border-radius: 12px; font-size: 0.7rem; color: white;">
+              <span class="badge" [ngClass]="u.isBlocked ? 'bg-danger' : 'bg-success'" 
+                    style="padding: 5px 10px; border-radius: 12px; font-size: 0.7rem; color: white;">
                 {{ u.isBlocked ? 'Blocked' : 'Active' }}
               </span>
             </td>
             <td>
-              
-              
-              <button class="btn-icon" 
-                      [title]="u.isBlocked ? 'Unblock User' : 'Block User'"
-                      (click)="toggleBlock(u)">
+              <button *ngIf="u.role !== 'Admin'" (click)="changeRole(u.id || u._id, 'Admin')" class="btn-promote">Promote</button>
+              <button class="btn-icon" [title]="u.isBlocked ? 'Unblock User' : 'Block User'" (click)="toggleBlock(u)">
                 {{ u.isBlocked ? '✅' : '🚫' }}
               </button>
-              
               <button class="btn-icon reject" (click)="deleteUser(u.id || u._id)" title="Delete User">🗑️</button>
             </td>
           </tr>
@@ -72,4 +120,75 @@
       </table>
     </div>
   </main>
+
+  <div class="modal-overlay" *ngIf="selectedProvider" (click)="selectedProvider = null">
+    <div class="modal-card shadow-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="tag">{{ selectedProvider.type }}</span>
+          <h2>Reviewing: {{ selectedProvider.vehicleClass }}</h2>
+        </div>
+        <button class="close-pill" (click)="selectedProvider = null">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-grid-layout">
+          <div class="modal-col specs-container">
+            <div class="section-title">
+              <span class="icon">📋</span>
+              <h3>Specifications</h3>
+            </div>
+            <div class="specs-list">
+              <div class="spec-row"><span class="label">Owner</span><span class="val">{{ selectedProvider.providerProfile?.name }}</span></div>
+              <div class="spec-row"><span class="label">Phone</span><span class="val">{{ selectedProvider.providerProfile?.phone }}</span></div>
+              <div class="spec-row"><span class="label">Daily Rate</span><span class="val highlight">Rs. {{ selectedProvider.standardDailyRate }}</span></div>
+              <div class="spec-row"><span class="label">Seats</span><span class="val">{{ selectedProvider.seatCount }}</span></div>
+              <div class="spec-row"><span class="label">Transmission</span><span class="val">{{ selectedProvider.transmission }}</span></div>
+            </div>
+          </div>
+
+          <div class="modal-col docs-container">
+            <div class="section-title">
+              <span class="icon">🆔</span>
+              <h3>Verification Documents</h3>
+            </div>
+            <div class="docs-stack">
+              <div class="doc-card" (click)="openImage(selectedProvider.driverLicenseUrl)">
+                <div class="d-icon license">📄</div>
+                <div class="d-content">
+                  <span class="d-title">Driver License</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+              <div class="doc-card" (click)="openImage(selectedProvider.driverNicUrl)">
+                <div class="d-icon nic">🪪</div>
+                <div class="d-content">
+                  <span class="d-title">NIC / Identity Card</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+              <div class="doc-card" (click)="openImage(selectedProvider.revenueLicenseUrl)">
+                <div class="d-icon revenue">📝</div>
+                <div class="d-content">
+                  <span class="d-title">Revenue License</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="selectedProvider = null">Cancel</button>
+        <div class="action-group">
+          <button class="btn-reject-main" (click)="updateProviderStatus(selectedProvider, 'Rejected')">Reject</button>
+          <button class="btn-approve-main" (click)="updateProviderStatus(selectedProvider, 'Approved')">Approve Provider</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

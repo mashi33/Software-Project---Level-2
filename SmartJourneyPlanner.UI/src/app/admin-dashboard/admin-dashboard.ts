@@ -16,41 +16,68 @@ export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
 
+  // System Data
   currentDate = new Date();
+  
+  // View Switcher
   view: 'stats' | 'providers' | 'users' = 'stats';
 
+  // Data Lists
   pendingProviders: any[] = [];
   allUsers: any[] = [];
   selectedProvider: any = null;
+  
+  // States
   errorMessage: string = '';
 
   ngOnInit() {
     this.refreshDashboard();
   }
 
-  // --- VIEW HANDLERS ---
+  // --- 1. DASHBOARD HOME & VIEW HANDLERS ---
 
   onReviewNow() {
-    this.view = 'providers'; 
+    this.view = 'providers';
     this.fetchPendingProviders();
   }
 
   onManageLogins() {
-    this.view = 'users'; 
+    this.view = 'users';
     this.fetchAllUsers();
   }
 
+  /**
+   * ✅ DEDICATED REFRESH LOGIC
+   * Updates all counts and lists simultaneously.
+   */
   refreshDashboard() {
+    this.errorMessage = '';
     this.fetchPendingProviders();
     this.fetchAllUsers();
+    
+    // Optional toast notification
+    Swal.fire({
+      title: 'Dashboard Refreshed',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      icon: 'success'
+    });
   }
 
-  // --- DATA FETCHING ---
+  // --- 2. DATA FETCHING ---
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
-      next: (data: any[]) => this.pendingProviders = data,
-      error: (err: any) => console.error("Fetch error:", err)
+      next: (data: any[]) => {
+        this.pendingProviders = data;
+        this.errorMessage = '';
+      },
+      error: (err: any) => {
+        console.error("Fetch error:", err);
+        this.errorMessage = "Failed to load providers.";
+      }
     });
   }
 
@@ -61,46 +88,105 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- ACTIONS ---
+  // --- 3. MANAGE PROVIDERS ACTIONS ---
 
-  // ✅ FIXED: Added the missing deleteUser method
-  deleteUser(userId: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
+  /**
+   * Approves or Rejects a transport provider.
+   */
+  updateProviderStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
+
+    if (!id) {
+      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
       return;
     }
 
     Swal.fire({
-      title: 'Are you sure?',
-      text: "This user will be permanently removed from the system!",
-      icon: 'warning',
+      title: `Confirm ${status}?`,
+      text: `Are you sure you want to set this provider to ${status}?`,
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete!',
-      heightAuto: false
+      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
+      confirmButtonText: 'Yes, proceed',
+      cancelButtonText: 'No, cancel',
+      heightAuto: false,
+      focusConfirm: true,
+      returnFocus: true
     }).then((result) => {
       if (result.isConfirmed) {
-        this.adminService.deleteUser(userId).subscribe({
+        this.adminService.updateProviderStatus(id, status).subscribe({
           next: () => {
-            // Remove user from the local list so the UI updates immediately
-            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
+            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
+            this.selectedProvider = null; // Automatically close the detail modal
             Swal.fire({
-              title: 'Deleted!',
-              text: 'User has been removed.',
+              title: 'Success',
+              text: `Provider has been ${status}`,
               icon: 'success',
               heightAuto: false
             });
           },
-          error: (err) => {
-            console.error("Delete failed:", err);
-            Swal.fire('Error', 'Failed to delete user.', 'error');
+          error: (err: any) => {
+            console.error("Update failed", err);
+            Swal.fire({
+              title: 'Error',
+              text: 'Update failed. Backend might be down.',
+              icon: 'error',
+              heightAuto: false
+            });
           }
         });
       }
     });
   }
 
+  /**
+   * Opens the detail modal for a specific provider and fetches full data.
+   */
+  viewDetails(provider: any) {
+    const id = provider._id || provider.id;
+    this.adminService.getProviderById(id).subscribe({
+      next: (fullData: any) => {
+        this.selectedProvider = fullData;
+      },
+      error: (err: any) => {
+        console.error("Could not fetch details", err);
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to load vehicle documents.',
+          icon: 'error',
+          heightAuto: false
+        });
+      }
+    });
+  }
+
+  // --- 4. USER MANAGEMENT ACTIONS ---
+
+  /**
+   * Promotes a regular user to an Admin role.
+   */
+  changeRole(userId: string, newRole: string) {
+    if (!userId) {
+      Swal.fire('Error', 'User ID is missing!', 'error');
+      return;
+    }
+
+    this.adminService.updateUserRole(userId, newRole).subscribe({
+      next: (res: any) => {
+        const user = this.allUsers.find(u => (u._id || u.id) === userId);
+        if (user) user.role = newRole;
+        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
+      },
+      error: (err: any) => {
+        console.error("Server error:", err);
+        Swal.fire('Error', 'Role update failed.', 'error');
+      }
+    });
+  }
+
+  /**
+   * ✅ FIXED: Toggle Block status for users.
+   */
   toggleBlock(user: any) {
     const userId = user.id || user._id;
     const newBlockStatus = !user.isBlocked;
@@ -121,43 +207,66 @@ export class AdminDashboardComponent implements OnInit {
             user.isBlocked = newBlockStatus;
             Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
           },
-          error: (err) => console.error(err)
+          error: (err) => console.error("Block/Unblock failed:", err)
         });
       }
     });
   }
 
-  /*changeRole(userId: string, newRole: string) {
-    this.adminService.updateUserRole(userId, newRole).subscribe({
-      next: () => {
-        const user = this.allUsers.find(u => (u._id || u.id) === userId);
-        if (user) user.role = newRole;
-        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-      }
-    });
-  }*/
+  /**
+   * ✅ FIXED: Permanently deletes a user.
+   */
+  deleteUser(userId: string) {
+    if (!userId) {
+      Swal.fire('Error', 'User ID is missing!', 'error');
+      return;
+    }
 
-  updateProviderStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
-    this.adminService.updateProviderStatus(id, status).subscribe({
-      next: () => {
-        this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-        this.selectedProvider = null;
-        Swal.fire('Success', `Provider ${status}`, 'success');
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "This user will be permanently removed from the system!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete!',
+      heightAuto: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.deleteUser(userId).subscribe({
+          next: () => {
+            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
+            Swal.fire({
+              title: 'Deleted!',
+              text: 'User has been removed.',
+              icon: 'success',
+              heightAuto: false
+            });
+          },
+          error: (err) => {
+            console.error("Delete failed:", err);
+            Swal.fire('Error', 'Failed to delete user.', 'error');
+          }
+        });
       }
     });
   }
 
-  /*viewDetails(provider: any) {
-    const id = provider._id || provider.id;
-    this.adminService.getProviderById(id).subscribe({
-      next: (fullData: any) => this.selectedProvider = fullData
-    });
-  }*/
+  // --- DOCUMENT UTILITIES ---
 
   openImage(base64Data: string | undefined) {
-    if (!base64Data) return;
+    if (!base64Data) {
+      Swal.fire({ title: 'Error', text: 'No document found.', icon: 'error', heightAuto: false });
+      return;
+    }
     const newWindow = window.open();
-    newWindow?.document.write(`<img src="${base64Data}" style="max-width:100%;">`);
+    if (newWindow) {
+      newWindow.document.write(`
+        <title>Document Viewer</title>
+        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
+          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+        </body>
+      `);
+    }
   }
 }

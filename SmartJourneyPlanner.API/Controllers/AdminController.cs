@@ -1,14 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
-using SmartJourneyPlanner.Models; 
-using SmartJourneyPlanner.API.Models; 
-using SmartJourneyPlanner.API.Services; 
+using SmartJourneyPlanner.Models;
+using SmartJourneyPlanner.API.Models;
+using SmartJourneyPlanner.API.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
+    [AllowAnonymous]
     [ApiController]
     [Route("api/[controller]")]
     public class AdminController : ControllerBase
@@ -23,9 +25,8 @@ namespace SmartJourneyPlanner.API.Controllers
             _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // --- 1. & 3. User Management & Stats ---
+        // --- 1. & 3. DASHBOARD HOME & USERS ---
         [HttpGet("all-users")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userCollection.Find(_ => true).ToListAsync();
@@ -33,37 +34,37 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpPut("promote-user/{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> PromoteUser(string id, [FromBody] string newRole)
         {
+            if (string.IsNullOrEmpty(newRole))
+                return BadRequest(new { message = "Role is required" });
+
             var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            var update = Builders<User>.Update.Set(u => u.UserType, newRole); 
-            await _userCollection.UpdateOneAsync(filter, update);
-            return Ok(new { message = "User role updated successfully" });
+            var update = Builders<User>.Update.Set(u => u.UserType, newRole);
+            
+            var result = await _userCollection.UpdateOneAsync(filter, update);
+            return result.MatchedCount == 0 ? NotFound() : Ok(new { message = "Role updated" });
         }
 
         [HttpPut("toggle-block/{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> ToggleBlock(string id, [FromBody] BlockRequest request)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, id);
             var update = Builders<User>.Update.Set(u => u.IsBlocked, request.IsBlocked);
+            
             await _userCollection.UpdateOneAsync(filter, update);
-            return Ok(new { message = "User status updated successfully" });
+            return Ok(new { message = "Status updated" });
         }
 
         [HttpDelete("delete-user/{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> DeleteUser(string id)
         {
             var result = await _userCollection.DeleteOneAsync(u => u.Id == id);
-            if (result.DeletedCount == 0) return NotFound();
-            return Ok(new { message = "User removed successfully" });
+            return result.DeletedCount == 0 ? NotFound() : Ok(new { message = "User deleted" });
         }
 
-        // --- 2. Manage Providers ---
+        // --- 2. MANAGE PROVIDERS ---
         [HttpGet("pending-providers")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetPendingProviders()
         {
             var pending = await _vehicleCollection.Find(v => v.Status == "Pending").ToListAsync();
@@ -71,18 +72,27 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpGet("provider-detail/{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetProviderDetail(string id)
         {
             var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
-            if (vehicle == null) return NotFound();
-            return Ok(vehicle);
+            return vehicle == null ? NotFound() : Ok(vehicle);
+        }
+
+        [HttpPut("update-status/{id}")]
+        public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
+        {
+            var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
+            var update = Builders<TransportVehicle>.Update
+                .Set(v => v.Status, newStatus)
+                .Set(v => v.IsVerified, newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase));
+            
+            await _vehicleCollection.UpdateOneAsync(filter, update);
+            return Ok(new { message = "Status updated" });
         }
     }
 
-    // This class must be here for the ToggleBlock to work
-    public class BlockRequest
-    {
-        public bool IsBlocked { get; set; }
+    public class BlockRequest 
+    { 
+        public bool IsBlocked { get; set; } 
     }
 }
