@@ -16,7 +16,7 @@ namespace SmartJourneyPlanner.Hubs
             _discussionsService = discussionsService;
         }
 
-        /// <summary>
+        
         /// Adds a user to a specific Trip Group based on the trip ID.
         /// Should be called from the frontend when a user selects or changes a trip.
         
@@ -29,10 +29,8 @@ namespace SmartJourneyPlanner.Hubs
             }
         }
 
-        /// <summary>
         /// Broadcasts a message to all connected clients.
         /// Note: While this broadcasts globally, it can be modified to target specific groups.
-        /// </summary>
         public async Task SendMessage(object comment)
         {
             try
@@ -50,9 +48,7 @@ namespace SmartJourneyPlanner.Hubs
             }
         }
 
-        /// <summary>
         /// Broadcasts vote updates to all connected clients.
-        /// </summary>
         public async Task BroadcastVoteUpdate(object updatedDiscussion)
         {
             try

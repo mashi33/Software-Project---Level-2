@@ -50,20 +50,29 @@ input, textarea, select {
   border: none;
   outline: none;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 textarea {
   height: 80px;
+  resize: none;
 }
 
 /* Row (2 inputs side by side) */
 .row {
   display: flex;
   gap: 10px;
+  width: 100%;
+  margin:0; 
 }
 
 .row input {
   flex: 1; 
+  min-width: 0;
+}
+
+.budget-section {
+  width: 100%;
 }
 
 /* Buttons */

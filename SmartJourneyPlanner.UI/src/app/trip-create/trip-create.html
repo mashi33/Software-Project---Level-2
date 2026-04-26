@@ -15,43 +15,30 @@
       <div class="form-container">
 
         <div class="left-form">
-          <input type="text" formControlName="tripName" placeholder="Trip name" />
+             <input type="text" formControlName="tripName" placeholder="Trip name" />
 
-          <div class="row">
-            <input type="text" formControlName="departFrom" placeholder="Depart from" />
-            <input type="text" formControlName="destination" placeholder="Destination" />
-          </div>
+                     <div class="row">
+                         <input type="text" formControlName="departFrom" placeholder="Depart from" />
+                         <input type="text" formControlName="destination" placeholder="Destination" />
+                     </div>
 
-          <div class="row">
-            <input type="date" formControlName="startDate" />
-            <input type="date" formControlName="endDate" />
-          </div>
+                    <div class="row">
+                         <input type="date" formControlName="startDate" />
+                         <input type="date" formControlName="endDate" />
+                     </div>
 
-          <button type="button" class="action-btn" routerLink="/transport">
-            Select Transport
-          </button>
+                     <div class="budget-section">
+                           <select class="form-select" formControlName="budgetLimit">
+                           <option value="" disabled selected>Select budget limit</option>
+                           <option value="5000-10000">5000 - 10000</option>
+                           <option value="10000-20000">10000 - 20000</option>
+                           <option value="20000-30000">20000 - 30000</option>
+                           <option value="30000-40000">30000 - 40000</option>
+                           <option value="above 50000">Above 50000</option>
+                          </select>
+                       </div>
 
-          <div class="row mb-3">
-            <div class="col-12">
-              <div class="input-group">
-                <select class="form-select" id="budgetLimit"
-                        formControlName="budgetLimit">
-                  <option value="" disabled selected>Select budget limit</option>
-                  <option value="5000-10000">5000 - 10000</option>
-                  <option value="10000-20000">10000 - 20000</option>
-                  <option value="20000-30000">20000 - 30000</option>
-                  <option value="20000-40000">20000 - 40000</option>
-                  <option value="above 50000">Above 50000</option>
-                </select>
-
-                <button class="btn btn-outline-secondary" type="button" (click)="onAddBudget()">
-                  Add Budget
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <textarea formControlName="description" placeholder="Trip description..."></textarea>
+                 <textarea formControlName="description" placeholder="Trip description..."></textarea>
         </div>
         
         <!-- Right side for member invitations -->

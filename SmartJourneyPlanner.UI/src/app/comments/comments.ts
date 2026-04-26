@@ -18,7 +18,7 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   @ViewChild('chatWrapper') chatWrapperRef!: ElementRef;
   
-  // Discussion Component එකෙන් Trip ID එක ලබා ගැනීම සඳහා
+  // Trip Id from parent component (Discussion) to load comments for the selected trip
   @Input() selectedTripId: string = '';
 
   allComments:       CommentItem[]    = [];
@@ -51,10 +51,10 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnInit(): void {
     this.setupSignalRListeners();
-    // මුලින්ම loadInitialData මෙතනදී අවශ්‍ය නොවේ, මන්ද ngOnChanges මගින් එය සිදු කරන බැවිනි.
+    
   }
 
-  // Trip එක මාරු වන විට හඳුනා ගැනීමට
+  // Identify when switched to a different trip in the parent component and load comments for that trip
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedTripId'] && !changes['selectedTripId'].firstChange) {
       this.loadInitialData();
@@ -77,9 +77,8 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
     if (!this.selectedTripId) return;
 
     this.isLoading = true;
-    this.allComments = []; // පරණ දත්ත ඉවත් කරන්න
+    this.allComments = []; 
 
-    // Backend එකේ අප සෑදූ getCommentsByTrip(tripId) මෙතඩ් එක භාවිතා කරන්න
     this.commentsService.getCommentsByTrip(this.selectedTripId).subscribe({
       next: (comments) => {
         this.zone.run(() => {
@@ -103,7 +102,8 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
       this.zone.run(() => {
         const nTripId = comment.tripId || comment.TripId;
 
-        // දැනට තෝරාගෙන ඇති Trip එකට අදාළ පණිවිඩයක් නම් පමණක් UI එකට එක් කරන්න
+        // Filter incoming comments to only add those that belong to the currently selected trip.
+        //  This ensures that users only see real-time updates relevant to the trip they are viewing.
         if (nTripId === this.selectedTripId) {
           const newMsg: CommentItem = {
             id:          comment.id          || comment.Id,
@@ -162,7 +162,7 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
       });
     } else {
       const comment: CommentItem = {
-        tripId:    this.selectedTripId, // Trip ID එක ඇතුළත් කිරීම අනිවාර්යයි
+        tripId:    this.selectedTripId,
         user:      this.currentUser,
         text,
         createdAt: new Date()
@@ -189,7 +189,7 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
     this.isUploading    = true;
     this.uploadProgress = 0;
 
-    // මෙහිදී TripId එකත් සමඟ PDF එක upload කළ යුතුය
+    // Upload the PDF using trip id
     this.commentsService.uploadPdf(file, this.currentUser, this.selectedTripId).subscribe({
       next: (httpEvent) => {
         if (httpEvent.type === HttpEventType.UploadProgress && httpEvent.total) {
