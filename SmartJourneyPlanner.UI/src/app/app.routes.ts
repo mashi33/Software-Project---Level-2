@@ -16,6 +16,7 @@ import { ExploreWelcome } from './explore-welcome/explore-welcome';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
+import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
 
@@ -29,11 +30,6 @@ export const routes: Routes = [
   { path: 'createTrip', component: TripCreateComponent },
   { path: 'signup', component: Signup },
 
-  { path: 'createTrip', component: TripCreateComponent },
-  { path: 'editTrip/:id', component: TripCreateComponent },
-  { path: 'trip-summary/:id', component: TripSummaryComponent },
-  { path: 'trip-summary', component: TripSummaryComponent },
-  
   // 3. Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
   { path: 'add-expense', component: ExpenseForm },
@@ -69,5 +65,14 @@ export const routes: Routes = [
     loadComponent: () => import('./transport-provider/vehicle-detail/vehicle-detail')
       .then(m => m.VehicleDetailComponent) 
   },
-  { path: 'register-vehicle', component: RegisterVehicleComponent }
+  { path: 'register-vehicle', component: RegisterVehicleComponent },
+
+  //7. Trip creation and invite
+  { path: 'createTrip', component: TripCreateComponent },
+  { path: 'editTrip/:id', component: TripCreateComponent },
+  { path: 'trip-summary/:id', component: TripSummaryComponent },
+  { path: 'trip-summary', component: TripSummaryComponent },
+  
+  //8.Use Profile
+  { path: 'profile', component: ProfileComponent }
 ];

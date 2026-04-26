@@ -11,9 +11,19 @@ import Swal from 'sweetalert2';
   templateUrl: './trip-summary.html',
   styleUrls: ['./trip-summary.css']
 })
+
 export class TripSummaryComponent implements OnInit {
+  // To hold the trip details fetched from the database or temporary storage
   tripDetails: any;
-  userRole: string = 'owner';
+  editHistory: any[] = [];
+  isDropdownOpen = false;
+
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+  // To store the current user's role (e.g., 'owner' or 'viewer')
+  userRole: string = 'owner'; 
+ 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -47,6 +57,7 @@ export class TripSummaryComponent implements OnInit {
         next: (data) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
+          this.loadHistory(tripId);
           this.filterSavedPlaces();
         },
         error: (err) => {
@@ -57,6 +68,17 @@ export class TripSummaryComponent implements OnInit {
     } else {
       this.loadFromTemp();
     }
+  }
+  loadHistory(id: string) {
+    this.tripService.getTripHistory(id).subscribe({
+      next: (data) => {
+        this.editHistory = data;
+        console.log('Edit history loaded:', this.editHistory);
+      },
+      error: (err) => {
+        console.error('History load error:', err);
+      }
+    });
   }
 
   /**

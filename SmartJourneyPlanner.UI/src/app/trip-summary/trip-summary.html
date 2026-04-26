@@ -1,186 +1,230 @@
-<div class="container mt-4 mb-5" *ngIf="tripDetails">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold m-0">Trip Summary</h2>
-    <div class="d-flex gap-2">
-      <div class="dropdown">
-        <button class="btn btn-header-outline dropdown-toggle shadow-sm" type="button">
-          Edited History
-        </button>
-      </div>
-      <div class="dropdown">
-        <button class="btn btn-header-outline shadow-sm" type="button"
-          data-bs-toggle="modal" data-bs-target="#membersModal">
+<div class="summary-container">
+  <div class="container mt-3 mb-5 px-md-5" *ngIf="tripDetails">
+   
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="fw-bold m-0 text-dark">{{ tripDetails?.tripName || 'Trip Summary' }}</h2>
+      
+      <div class="d-flex gap-2 align-items-center">
+
+        <div class="dropdown">
+            <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2" 
+                    type="button" 
+                    (click)="toggleDropdown()">
+                <i class="bi bi-clock-history"></i> 
+                Edited History 
+                <span class="badge rounded-pill bg-danger">{{ editHistory?.length }}</span>
+            </button>
+
+          <ul class="dropdown-menu shadow-lg border-0 p-0 show" 
+             *ngIf="isDropdownOpen"
+             style="display: block; position: absolute; right: 0; min-width: 320px; max-height: 400px; overflow-y: auto; z-index: 1050; border-radius: 12px;">
+      
+             <li class="dropdown-header border-bottom p-3 bg-light" style="border-radius: 12px 12px 0 0;">
+             <h6 class="mb-0 text-dark fw-bold">Modification Log</h6>
+             </li>
+
+             <li *ngIf="editHistory?.length === 0" class="p-4 text-center">
+             <i class="bi bi-info-circle text-muted d-block mb-2" style="font-size: 1.5rem;"></i>
+             <span class="text-muted small">No changes recorded for this trip.</span>
+             </li>
+            
+            <li *ngFor="let history of editHistory">
+            <div class="dropdown-item p-3 border-bottom whitespace-normal" style="white-space: normal; cursor: default;">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                    {{ history.editedBy?.charAt(0) || 'U' }}
+                  </div>
+                    <span class="fw-bold text-primary small">{{ history.editedBy }}</span>
+                </div>
+                <small class="text-muted" style="font-size: 0.75rem;">
+                 <i class="bi bi-calendar3 me-1"></i>{{ history.editedAt | date:'MMM d, h:mm a' }}
+                </small>
+              </div>
+          
+             <div class="bg-light rounded p-2 border-start border-4 border-primary">
+              <p class="mb-0 small text-dark fw-medium">
+                <i class="bi bi-pencil-square me-1 text-secondary"></i>
+                {{ history.changes }}
+              </p>
+            </div>
+          </div>
+        </li>
+
+         <li class="p-2 text-center bg-light" style="border-radius: 0 0 12px 12px;" *ngIf="editHistory && editHistory.length > 0">
+             <small class="text-muted font-monospace" style="font-size: 0.65rem;">End of history</small>
+         </li>
+        </ul>
+       </div>
+        
+       <button class="btn btn-header-outline btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#membersModal">
           View members
         </button>
-      </div>
-      <button *ngIf="userRole === 'owner'" class="btn btn-primary rounded-pill px-4 shadow-sm">
-        Delete Trip
-      </button>
-    </div>
-  </div>
-
-  <div *ngIf="userRole === 'viewer'" class="alert alert-info border-0 shadow-sm mb-4 rounded-pill py-2">
-    <i class="bi bi-info-circle-fill me-2"></i> You are viewing this trip in <strong>Read-Only</strong> mode.
-  </div>
-
-  <div class="row g-4">
-    <div class="col-md-5">
-      <div class="p-4 shadow-sm detail-card h-100">
-
-        <div class="mb-4">
-          <label class="text-muted small d-block">Destination</label>
-          <span class="fs-5 fw-semibold">{{ tripDetails.Destination || tripDetails.destination }}</span>
-        </div>
-
-        <div class="mb-4">
-          <label class="text-muted small d-block">Depart From</label>
-          <span class="fs-5 fw-semibold">{{ tripDetails.DepartFrom || tripDetails.departFrom }}</span>
-        </div>
-
-        <div class="mb-4">
-          <label class="text-muted small d-block">Date Range</label>
-          <span class="fs-5 fw-semibold">
-            {{ (tripDetails.StartDate || tripDetails.startDate) | date:'mediumDate' }} -
-            {{ (tripDetails.EndDate || tripDetails.endDate) | date:'mediumDate' }}
-          </span>
-        </div>
-
-        <div class="mb-4">
-          <label class="text-muted small d-block">Description</label>
-          <span class="fs-5 fw-semibold">{{ tripDetails.Description || tripDetails.description }}</span>
-        </div>
-
-        <div class="mb-4">
-          <label class="text-muted small d-block">Budget (LKR)</label>
-          <span class="fs-5 fw-semibold">{{ tripDetails.Budget || tripDetails.budget }}</span>
-        </div>
-
-        <div class="mb-2">
-          <label class="text-muted small d-block">Transport Mode</label>
-          <span class="fs-5 fw-semibold">{{ tripDetails.transportMode }}</span>
-        </div>
-
-        <!-- Hotels Dropdown: filtered from savedPlaces where category = 'hotel' or 'lodging' -->
-        <div class="mb-3 d-flex justify-content-between align-items-center">
-          <label class="text-muted small">Hotels</label>
-          <select class="form-select form-select-sm summary-dropdown">
-            <!-- Show count badge next to label if hotels exist -->
-            <option selected disabled>
-              View Hotels List {{ savedHotels.length > 0 ? '(' + savedHotels.length + ')' : '' }}
-            </option>
-            <!-- Loop through hotels filtered from savedPlaces -->
-            <option *ngFor="let hotel of savedHotels" [value]="hotel.placeId || hotel.PlaceId">
-              {{ hotel.name || hotel.Name }}
-            </option>
-            <!-- Fallback if no hotels added to this trip yet -->
-            <option *ngIf="savedHotels.length === 0" disabled>
-              No hotels added yet
-            </option>
-          </select>
-        </div>
-
-        <!-- Restaurants Dropdown: filtered from savedPlaces where category = 'restaurant' or 'food' -->
-        <div class="mb-3 d-flex justify-content-between align-items-center">
-          <label class="text-muted small">Restaurants</label>
-          <select class="form-select form-select-sm summary-dropdown">
-            <!-- Show count badge next to label if restaurants exist -->
-            <option selected disabled>
-              View Restaurants List {{ savedRestaurants.length > 0 ? '(' + savedRestaurants.length + ')' : '' }}
-            </option>
-            <!-- Loop through restaurants filtered from savedPlaces -->
-            <option *ngFor="let restaurant of savedRestaurants" [value]="restaurant.placeId || restaurant.PlaceId">
-              {{ restaurant.name || restaurant.Name }}
-            </option>
-            <!-- Fallback if no restaurants added to this trip yet -->
-            <option *ngIf="savedRestaurants.length === 0" disabled>
-              No restaurants added yet
-            </option>
-          </select>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="col-md-7">
-      <p class="text-muted mb-3">Explore more options for your trip:</p>
-      <div class="row g-3">
-        <div class="col-6">
-          <div class="suggestion-box">
-            <i class="bi bi-house-door fs-3 mb-2"></i>
-            <span>Hotels</span>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="suggestion-box">
-            <i class="bi bi-calendar3 fs-3 mb-2"></i>
-            <span>Trip Timeline</span>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="suggestion-box">
-            <i class="bi bi-geo-alt fs-3 mb-2"></i>
-            <span>Places to Visit</span>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="suggestion-box" (click)="navigateToChat()" style="cursor: pointer;">
-            <i class="bi bi-chat-left-text fs-3 mb-2"></i>
-            <span>View Chat</span>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="suggestion-box">
-            <i class="bi bi-briefcase fs-3 mb-2"></i>
-            <span>View Budget Chart</span>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="suggestion-box">
-            <i class="bi bi-cloud-sun fs-3 mb-2"></i>
-            <span>Weather Forecast</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm"
-          [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
-          Back to Edit Trip
-        </button>
-        <button class="btn btn-primary px-4 py-2 flex-grow-1 shadow-sm">
-          Confirm & Save Trip
+        <button *ngIf="userRole === 'owner'" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm border-0">
+          Delete Trip
         </button>
       </div>
-    </div>
-  </div>
-</div>
+    </div>  
 
-<!-- Members Modal -->
-<div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-4 border-0 shadow">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="fw-bold">Invited Members</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <ul class="list-group list-group-flush">
-          <li *ngFor="let member of (tripDetails?.members || tripDetails?.Members || [])"
-            class="list-group-item d-flex justify-content-between align-items-center px-0">
-            <div>
-              <p class="mb-0 fw-medium">{{ member.email || member.Email }}</p>
-              <small class="text-muted">{{ member.role || member.Role }}</small>
-            </div>
-            <span class="badge bg-light text-primary rounded-pill border border-primary-subtle">
-              Invited
+    <hr class="opacity-10 mb-4">
+    
+    <div *ngIf="userRole === 'viewer'" class="alert alert-info border-0 shadow-sm mb-4 rounded-pill py-2">
+      <i class="bi bi-info-circle-fill me-2"></i> You are viewing this trip in <strong>Read-Only</strong> mode.
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-5">
+        <div class="p-4 shadow-sm detail-card h-100 border-0">
+          <div class="detail-item">
+            <label>Destination</label>
+            <span>{{ tripDetails.Destination || tripDetails.destination }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Depart From</label>
+            <span>{{ tripDetails.DepartFrom || tripDetails.departFrom }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Date Range</label>
+            <span class="date-range">
+              {{ (tripDetails.StartDate || tripDetails.startDate) | date:'mediumDate' }} - 
+              {{ (tripDetails.EndDate || tripDetails.endDate) | date:'mediumDate' }}
             </span>
-          </li>
-          <li *ngIf="!(tripDetails?.members || tripDetails?.Members)?.length"
-            class="list-group-item text-center py-4 border-0">
-            <i class="bi bi-people text-muted fs-1 d-block mb-2"></i>
-            <p class="text-muted">No members invited yet.</p>
-          </li>
-        </ul>
+          </div>
+
+          <div class="detail-item">
+            <label>Description</label>
+            <span class="text-capitalize">{{ tripDetails.Description || tripDetails.description }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Budget (LKR)</label>
+            <span class="budget-text">{{ tripDetails.Budget || tripDetails.budget }}</span>
+          </div>
+
+          <div class="detail-item">
+            <label>Transport Mode</label>
+            <span class="badge bg-white text-dark border px-3 py-2 rounded-pill fw-normal">{{ tripDetails.transportMode }}</span>
+          </div>
+          
+          <div class="mt-4 pt-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <label class="text-muted small m-0">Hotels</label>
+              <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                <option selected disabled>
+                    View Hotels List {{ (savedHotels && savedHotels.length > 0) ? '(' + savedHotels.length + ')' : '' }}
+                </option>
+                <option *ngFor="let hotel of savedHotels" [value]="hotel.placeId || hotel.PlaceId">
+                  {{ hotel.name || hotel.Name }}
+                </option>
+                <option *ngIf="savedHotels?.length === 0" disabled>No hotels added yet</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <label class="text-muted small m-0">Restaurants</label>
+              <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                <option selected disabled>
+                  View Restaurants List {{ (savedRestaurants && savedRestaurants.length > 0) ? '(' + savedRestaurants.length + ')' : '' }}
+                </option>
+                <option *ngFor="let restaurant of savedRestaurants" [value]="restaurant.placeId || restaurant.PlaceId">
+                  {{ restaurant.name || restaurant.Name }}
+                </option>
+                <option *ngIf="savedRestaurants?.length === 0" disabled>No restaurants added yet</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="text-muted small m-0">Places</label>
+              <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                <option selected disabled>View Places List</option>
+                <option *ngFor="let place of tripDetails.places">{{ place }}</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-md-7">
+        <h2 class="text-muted small mb-3">Explore more options for your trip:</h2>
+        <div class="row g-3">
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm">
+              <i class="bi bi-house-door fs-4 mb-2"></i>
+              <span>Hotels</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm">
+              <i class="bi bi-calendar3 fs-4 mb-2"></i>
+              <span>Timeline</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm">
+              <i class="bi bi-geo-alt fs-4 mb-2"></i>
+              <span>Places</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm" (click)="navigateToChat()" style="cursor: pointer;">
+              <i class="bi bi-chat-left-text fs-4 mb-2"></i>
+              <span>View Chat</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm">
+              <i class="bi bi-briefcase fs-4 mb-2"></i>
+              <span>Budget</span>
+            </div>
+          </div>
+          <div class="col-6 col-lg-4">
+            <div class="suggestion-box shadow-sm">
+              <i class="bi bi-cloud-sun fs-4 mb-2"></i>
+              <span>Weather</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
+          <button class="btn btn-outline-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
+            Back to Edit Trip
+          </button>
+          <button class="btn btn-primary px-4 py-2 flex-grow-1 shadow-sm">Confirm & Save Trip</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="fw-bold">Invited Members</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-group list-group-flush">
+            <li *ngFor="let member of (tripDetails?.members || tripDetails?.Members || [])" 
+                class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+              <div>
+                <p class="mb-0 fw-bold small text-dark">{{ member.email || member.Email }}</p>
+                <small class="text-muted">{{ member.role || member.Role }}</small>
+              </div>
+              <span class="badge bg-light text-primary rounded-pill border border-primary-subtle">
+                Invited
+              </span>
+            </li>
+            <li *ngIf="!(tripDetails?.members || tripDetails?.Members)?.length" class="list-group-item text-center py-5 border-0">
+              <i class="bi bi-people text-muted fs-1 d-block mb-2 opacity-50"></i>
+              <p class="text-muted small">No members invited yet.</p>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

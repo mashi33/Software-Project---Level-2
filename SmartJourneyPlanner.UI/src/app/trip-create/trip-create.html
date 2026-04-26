@@ -1,9 +1,16 @@
 <div class="page-container">
-
+  
   <div class="trip-card">
-    <h1>Create your Trip</h1>
-
-    <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+   <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-dark mb-2">Plan Your Next Adventure</h1>
+    
+    <p class="text-muted fs-5">Fill in the details and let the magic begin. Your dream vacation is just a few clicks away.</p>
+    
+    <div class="mx-auto bg-primary opacity-50" style="width: 50px; height: 3px; border-radius: 2px;"></div>
+   </div>
+    
+   <!-- Form starts here -->
+   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
       
       <div class="form-container">
 
@@ -24,39 +31,59 @@
             Select Transport
           </button>
 
-          <button type="button" class="action-btn" routerLink="/budget">
-            Add Budget
-          </button>
+          <div class="row mb-3">
+            <div class="col-12">
+              <div class="input-group">
+                <select class="form-select" id="budgetLimit"
+                        formControlName="budgetLimit">
+                  <option value="" disabled selected>Select budget limit</option>
+                  <option value="5000-10000">5000 - 10000</option>
+                  <option value="10000-20000">10000 - 20000</option>
+                  <option value="20000-30000">20000 - 30000</option>
+                  <option value="20000-40000">20000 - 40000</option>
+                  <option value="above 50000">Above 50000</option>
+                </select>
+
+                <button class="btn btn-outline-secondary" type="button" (click)="onAddBudget()">
+                  Add Budget
+                </button>
+              </div>
+            </div>
+          </div>
 
           <textarea formControlName="description" placeholder="Trip description..."></textarea>
         </div>
-
-        <div class="right-form">
-          <div class="upload-box">
-            Upload cover photo
-          </div>
-
-          <div class="members-box">
-            <h3>Add Members</h3>
-           <input type="email" formControlName="memberEmail" placeholder="Enter email" />
-            <select formControlName="memberRole">
-  <option value="Editor">Editor</option>
-  <option value="Viewer">Viewer</option>
-</select>
-            <button type="button" class="invite-btn" (click)="onInvite()">Invite</button>
-          </div>
+        
+        <!-- Right side for member invitations -->
+        <div class="members-box">
+          <h3>Add Members</h3>
+          <input type="email" formControlName="memberEmail" placeholder="Enter email" />
+          <select formControlName="memberRole">
+            <option value="Editor">Editor</option>
+            <option value="Viewer">Viewer</option>
+          </select>
+          <button type="button" class="invite-btn" (click)="onInvite()">Invite</button>
         </div>
 
-      </div>
+      </div> <!-- form-container CLOSE -->
+      
+      <!-- Invited Members Section -->
+      <div *ngIf="invitedMembers.length > 0" class="invited-members-section mt-4">
+        <h4 class="fw-bold mb-3">Invited Members</h4>
+    
+       <div class="d-flex flex-wrap gap-2">
+         <div *ngFor="let m of invitedMembers; let i = index" class="member-chip">
+            <i class="bi bi-person-fill me-2 text-primary"></i>
+            
+            <span class="member-text">
+                {{ m.email }} <span class="badge-role">{{ m.role }}</span>
+            </span>
 
-      <div *ngIf="invitedMembers.length > 0" class="invited-list">
-          <h4>Invited Members</h4>
-          <ul>
-          <li *ngFor="let m of invitedMembers; let i = index">
-           {{ m.email }} ({{ m.role }}) 
-          <button type="button" (click)="removeMember(i)">Remove</button>
-           </li>
-          </ul>
+            <span class="remove-btn" (click)="removeMember(i)" title="Remove member">
+                <i class="bi bi-x"></i>
+            </span>
+          </div>
+        </div>
       </div>
 
       <div class="bottom-buttons">
@@ -64,5 +91,8 @@
         <button type="submit" class="submit-btn">Submit</button>
       </div>
 
-    </form> </div>
-</div>
+    </form>
+
+  </div> <!-- trip-card CLOSE -->
+
+</div> <!-- page-container CLOSE -->

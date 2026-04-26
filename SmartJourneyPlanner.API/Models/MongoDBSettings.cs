@@ -6,5 +6,6 @@ namespace SmartJourneyPlanner.API.Models
         public string DatabaseName { get; set; } = null!;
         public string CollectionName { get; set; } = null!;
         public string TimelineCollectionName { get; set; } = null!;
+        public string HistoryCollectionName { get; set; } = null!;
     }
 }
