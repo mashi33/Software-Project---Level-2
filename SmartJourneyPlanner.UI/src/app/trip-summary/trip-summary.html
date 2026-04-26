@@ -12,7 +12,7 @@
                     (click)="toggleDropdown()">
                 <i class="bi bi-clock-history"></i> 
                 Edited History 
-                <span class="badge rounded-pill bg-danger">{{ editHistory?.length }}</span>
+                <span class="badge rounded-pill bg-danger">{{ editHistory.length }}</span>
             </button>
 
           <ul class="dropdown-menu shadow-lg border-0 p-0 show" 
@@ -23,7 +23,7 @@
              <h6 class="mb-0 text-dark fw-bold">Modification Log</h6>
              </li>
 
-             <li *ngIf="editHistory?.length === 0" class="p-4 text-center">
+             <li *ngIf="editHistory.length === 0" class="p-4 text-center">
              <i class="bi bi-info-circle text-muted d-block mb-2" style="font-size: 1.5rem;"></i>
              <span class="text-muted small">No changes recorded for this trip.</span>
              </li>

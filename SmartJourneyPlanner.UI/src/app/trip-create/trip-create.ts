@@ -5,10 +5,11 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-    selector: 'app-trip-create',
-    imports: [ReactiveFormsModule, CommonModule],
-    templateUrl: './trip-create.html',
-    styleUrls: ['./trip-create.css']
+  selector: 'app-trip-create',
+  standalone: true,
+  imports: [ReactiveFormsModule, CommonModule],
+  templateUrl: './trip-create.html',
+  styleUrls: ['./trip-create.css']
 })
 export class TripCreateComponent implements OnInit {
 
@@ -18,7 +19,7 @@ export class TripCreateComponent implements OnInit {
   tripId: string | null = null;
 
   constructor(
-    private tripService: TripService,
+    private tripService: TripService, // ✅ Fixed: Only one instance here now
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -30,7 +31,7 @@ export class TripCreateComponent implements OnInit {
       endDate: new FormControl('', Validators.required),
       budgetLimit: new FormControl(''),
       description: new FormControl(''),
-      memberEmail: new FormControl(''),
+      memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
     });
   }
@@ -110,8 +111,12 @@ export class TripCreateComponent implements OnInit {
       const token = localStorage.getItem('token');
       let createdBy = '';
       if (token) {
-        const decoded: any = JSON.parse(atob(token.split('.')[1]));
-        createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        try {
+          const decoded: any = JSON.parse(atob(token.split('.')[1]));
+          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        } catch (e) {
+          console.error("Token decoding failed", e);
+        }
       }
 
       const tripData = {
@@ -119,7 +124,7 @@ export class TripCreateComponent implements OnInit {
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
-        budgetLimit: this.tripForm.value.budgetLimit,
+        BudgetLimit: this.tripForm.value.budgetLimit,
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({
