@@ -19,15 +19,12 @@ import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
-
 export const routes: Routes = [
   // 1. Default Route
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   
   // 2. Auth Routes
   { path: 'login', component: LoginComponent },
-  { path: 'signup', component: Signup },
-  { path: 'createTrip', component: TripCreateComponent },
   { path: 'signup', component: Signup },
 
   // 3. Budget & Expense Routes
@@ -42,7 +39,7 @@ export const routes: Routes = [
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
-   { 
+  { 
     path: 'explore', 
     children: [
       { path: '', component: ExploreWelcome },
@@ -53,12 +50,13 @@ export const routes: Routes = [
   { path: 'timeline', component: TripTimelineComponent },
 
   // 6. Admin Control Center
-  // ✅ canActivate removed so you can access it directly during testing
+  // ✅ Path updated to 'admin-dashboard' to match your LoginComponent navigation
   { 
-    path: 'admin', 
+    path: 'admin-dashboard', 
     component: AdminDashboardComponent 
   },
 
+  // 7. Transport & Vehicle Routes
   { path: 'transport', component: TransportProvider },
   { 
     path: 'vehicle/:id', 
@@ -67,12 +65,12 @@ export const routes: Routes = [
   },
   { path: 'register-vehicle', component: RegisterVehicleComponent },
 
-  //7. Trip creation and invite
+  // 8. Trip creation and invite
   { path: 'createTrip', component: TripCreateComponent },
   { path: 'editTrip/:id', component: TripCreateComponent },
   { path: 'trip-summary/:id', component: TripSummaryComponent },
   { path: 'trip-summary', component: TripSummaryComponent },
   
-  //8.Use Profile
+  // 9. User Profile
   { path: 'profile', component: ProfileComponent }
 ];

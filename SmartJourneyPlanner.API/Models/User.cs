@@ -44,7 +44,11 @@ namespace SmartJourneyPlanner.API.Models
         [BsonIgnore]
         public string Role { get => UserType; set => UserType = value; }
 
+        // ✅ User Status for Admin Management
         public string Status { get; set; } = "Approved"; 
+
+        // ✅ FIXED: New property for Admin Block/Unblock functionality
+        public bool IsBlocked { get; set; } = false;
 
         // --- Vehicle Details (Optional for Providers) ---
         [BsonIgnoreIfNull]

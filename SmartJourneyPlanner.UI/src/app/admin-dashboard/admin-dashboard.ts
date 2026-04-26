@@ -16,20 +16,13 @@ export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
 
-  // System Data
   currentDate = new Date();
-
-  // View Switcher
   view: 'stats' | 'providers' | 'users' = 'stats';
 
-  // Data Lists
   pendingProviders: any[] = [];
   allUsers: any[] = [];
   selectedProvider: any = null;
-  
-  // States
   errorMessage: string = '';
-  searchEmail: string = '';
 
   ngOnInit() {
     this.refreshDashboard();
@@ -47,35 +40,17 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchAllUsers();
   }
 
-  // ✅ DEDICATED REFRESH LOGIC
   refreshDashboard() {
-    this.errorMessage = '';
     this.fetchPendingProviders();
     this.fetchAllUsers();
-    
-    // Optional toast notification
-    Swal.fire({
-      title: 'Dashboard Refreshed',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      icon: 'success'
-    });
   }
 
   // --- DATA FETCHING ---
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
-      next: (data: any[]) => {
-        this.pendingProviders = data;
-        this.errorMessage = '';
-      },
-      error: (err: any) => {
-        console.error("Fetch error:", err);
-        this.errorMessage = "Failed to load providers.";
-      }
+      next: (data: any[]) => this.pendingProviders = data,
+      error: (err: any) => console.error("Fetch error:", err)
     });
   }
 
@@ -88,134 +63,101 @@ export class AdminDashboardComponent implements OnInit {
 
   // --- ACTIONS ---
 
-  /**
-   * ✅ UPDATED: Approves or Rejects a transport provider.
-   * Fixed navigation issues by disabling heightAuto and forcing focus on Confirm.
-   */
-  updateProviderStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
-
-    if (!id) {
-      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
+  // ✅ FIXED: Added the missing deleteUser method
+  deleteUser(userId: string) {
+    if (!userId) {
+      Swal.fire('Error', 'User ID is missing!', 'error');
       return;
     }
 
     Swal.fire({
-      title: `Confirm ${status}?`,
-      text: `Are you sure you want to set this provider to ${status}?`,
-      icon: 'question',
+      title: 'Are you sure?',
+      text: "This user will be permanently removed from the system!",
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
-      confirmButtonText: 'Yes, proceed',
-      cancelButtonText: 'No, cancel',
-      heightAuto: false,     // 🛠️ Prevents page jumping/navigation issues
-      focusConfirm: true,    // 🛠️ Ensures you can hit 'Enter' to approve
-      returnFocus: true      // 🛠️ Puts focus back on dashboard after close
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete!',
+      heightAuto: false
     }).then((result) => {
       if (result.isConfirmed) {
-        this.adminService.updateProviderStatus(id, status).subscribe({
-          next: (response: any) => {
-            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-            this.selectedProvider = null; // Automatically close the detail modal
+        this.adminService.deleteUser(userId).subscribe({
+          next: () => {
+            // Remove user from the local list so the UI updates immediately
+            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
             Swal.fire({
-              title: 'Success',
-              text: `Provider has been ${status}`,
+              title: 'Deleted!',
+              text: 'User has been removed.',
               icon: 'success',
               heightAuto: false
             });
           },
-          error: (err: any) => {
-            console.error("Update failed", err);
-            Swal.fire({
-              title: 'Error',
-              text: 'Update failed. Backend might be down.',
-              icon: 'error',
-              heightAuto: false
-            });
+          error: (err) => {
+            console.error("Delete failed:", err);
+            Swal.fire('Error', 'Failed to delete user.', 'error');
           }
         });
       }
     });
   }
 
-  /**
-   * ✅ UPDATED: Promotes a regular user to an Admin role.
-   * Added explicit types to resolve TS compiler errors.
-   */
- changeRole(userId: string, newRole: string) {
-  console.log("Button clicked! Target User ID:", userId); // This should appear in Console
+  toggleBlock(user: any) {
+    const userId = user.id || user._id;
+    const newBlockStatus = !user.isBlocked;
+    const action = newBlockStatus ? 'block' : 'unblock';
 
-  if (!userId) {
-    Swal.fire('Error', 'User ID is missing!', 'error');
-    return;
-  }
-
-  this.adminService.updateUserRole(userId, newRole).subscribe({
-    next: (res: any) => {
-      console.log("Success from server:", res);
-      const user = this.allUsers.find(u => (u._id || u.id) === userId);
-      if (user) user.role = newRole;
-      Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-    },
-    error: (err: any) => {
-      console.error("Server returned an error:", err);
-      Swal.fire('Error', 'Role update failed.', 'error');
-    }
-  });
-}
-
-  /**
-   * Opens the detail modal for a specific provider.
-   * Fetches full data (including heavy Base64 images) on-demand.
-   */
-  viewDetails(provider: any) {
-    const id = provider._id || provider.id;
-    
-    this.adminService.getProviderById(id).subscribe({
-      next: (fullData: any) => {
-        this.selectedProvider = fullData;
-      },
-      error: (err: any) => {
-        console.error("Could not fetch details", err);
-        Swal.fire({
-          title: 'Error',
-          text: 'Failed to load vehicle documents.',
-          icon: 'error',
-          heightAuto: false
+    Swal.fire({
+      title: `Confirm ${action}?`,
+      text: `Do you want to ${action} ${user.fullName || user.name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: newBlockStatus ? '#ef4444' : '#10b981',
+      confirmButtonText: `Yes, ${action}`,
+      heightAuto: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.toggleBlockUser(userId, newBlockStatus).subscribe({
+          next: () => {
+            user.isBlocked = newBlockStatus;
+            Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
+          },
+          error: (err) => console.error(err)
         });
       }
     });
   }
 
-  /**
-   * Opens Base64 document images in a new window.
-   */
-  openImage(base64Data: string | undefined) {
-    if (!base64Data) {
-      Swal.fire({
-        title: 'Error',
-        text: 'No document image found.',
-        icon: 'error',
-        heightAuto: false
-      });
-      return;
-    }
+  /*changeRole(userId: string, newRole: string) {
+    this.adminService.updateUserRole(userId, newRole).subscribe({
+      next: () => {
+        const user = this.allUsers.find(u => (u._id || u.id) === userId);
+        if (user) user.role = newRole;
+        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
+      }
+    });
+  }*/
 
+  updateProviderStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
+    this.adminService.updateProviderStatus(id, status).subscribe({
+      next: () => {
+        this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
+        this.selectedProvider = null;
+        Swal.fire('Success', `Provider ${status}`, 'success');
+      }
+    });
+  }
+
+  /*viewDetails(provider: any) {
+    const id = provider._id || provider.id;
+    this.adminService.getProviderById(id).subscribe({
+      next: (fullData: any) => this.selectedProvider = fullData
+    });
+  }*/
+
+  openImage(base64Data: string | undefined) {
+    if (!base64Data) return;
     const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(`
-        <title>Document Viewer</title>
-        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
-          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
-        </body>
-      `);
-    } else {
-      Swal.fire({
-        title: 'Pop-up Blocked',
-        text: 'Please allow pop-ups to view documents.',
-        icon: 'warning',
-        heightAuto: false
-      });
-    }
+    newWindow?.document.write(`<img src="${base64Data}" style="max-width:100%;">`);
   }
 }

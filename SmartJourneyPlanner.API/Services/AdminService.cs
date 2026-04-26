@@ -8,7 +8,6 @@ using System;
 
 namespace SmartJourneyPlanner.API.Services
 {
-    // This service handles all the database logic for the Administrator's dashboard
     public class AdminService
     {
         private readonly IMongoCollection<User> _usersCollection;
@@ -16,7 +15,6 @@ namespace SmartJourneyPlanner.API.Services
 
         public AdminService(IOptions<MongoDBSettings> settings)
         {
-            // Connect to MongoDB using the configured settings
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
 
@@ -24,26 +22,7 @@ namespace SmartJourneyPlanner.API.Services
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // --- ✅ FIX FOR CS1061 ERROR ---
-        // Finds all vehicles belonging to a specific provider ID
-        public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
-        {
-            return await _vehiclesCollection
-                .Find(v => v.ProviderId == providerId)
-                .ToListAsync();
-        }
-
-        // --- 🚐 TRANSPORT PROVIDER LOGIC ---
-
-        // Get a list of all transport providers waiting for admin approval
-        public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
-        {
-            return await _vehiclesCollection
-                .Find(v => v.Status == "Pending")
-                .ToListAsync();
-        }
-
-        // Get a list of all transport providers that have already been approved
+        // ✅ Fixed the CS1061 error: Added back the approved providers method
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -51,12 +30,24 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        // Change the status of a vehicle and sync the 'IsVerified' flag
+        public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
+        {
+            return await _vehiclesCollection
+                .Find(v => v.Status == "Pending")
+                .ToListAsync();
+        }
+
+        public async Task<bool> PromoteToAdmin(string userId)
+        {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<User>.Update.Set(u => u.UserType, "Admin");
+            var result = await _usersCollection.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
+
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
-            
-            // If approved, set IsVerified to true; otherwise, keep it false
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.Status, newStatus)
                 .Set(v => v.IsVerified, newStatus == "Approved");
@@ -64,19 +55,11 @@ namespace SmartJourneyPlanner.API.Services
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
-        // --- 👥 USER MANAGEMENT LOGIC ---
-
-        // Update a specific User document (used for role promotions or profile changes)
-        public async Task UpdateUserVehicleAsync(string id, User updatedUser)
+        public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
         {
-            var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            await _usersCollection.ReplaceOneAsync(filter, updatedUser);
-        }
-
-        // Add a brand new user record to the system
-        public async Task CreateProviderAsync(User newUser)
-        {
-            await _usersCollection.InsertOneAsync(newUser);
+            return await _vehiclesCollection
+                .Find(v => v.ProviderId == providerId)
+                .ToListAsync();
         }
     }
 }
