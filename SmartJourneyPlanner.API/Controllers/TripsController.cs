@@ -13,10 +13,10 @@ namespace SmartJourneyPlanner.API.Controllers
     [Route("api/trips")]
     public class TripsController : ControllerBase
     {
-        private readonly IMongoCollection<Trip> _tripsCollection; //Inject Trip collection
+        private readonly IMongoCollection<Trip> _tripsCollection;
+        private readonly IMongoCollection<TripHistory> _historyCollection;
 
-        private readonly IMongoCollection<TripHistory> _historyCollection; //Inject TripHistory collection
-
+        // Constructor to initialize MongoDB collections
         public TripsController(IMongoClient mongoClient)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
@@ -24,7 +24,7 @@ namespace SmartJourneyPlanner.API.Controllers
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
         }
 
-        //For fetching all trips (mainly for admin purposes)
+        // Fetch all trips available in the database
         [HttpGet]
         public async Task<ActionResult<List<Trip>>> GetAllTrips()
         {
@@ -39,7 +39,7 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
-        //For fetching a specific trip by its ID (used when user clicks on a trip card to view details)
+        // Get detailed information of a specific trip including its edit history
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTrip(string id)
         {
@@ -47,15 +47,33 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
                 if (trip == null) return NotFound(new { message = "Trip not found in database!" });
-                return Ok(trip);
+
+                var history = await _historyCollection.Find(h => h.TripId == id)
+                                                      .SortByDescending(h => h.EditedAt)
+                                                      .ToListAsync();
+
+                // Returning trip details combined with its edit history
+                return Ok(new {
+                    trip.Id,
+                    trip.TripName,
+                    trip.DepartFrom,
+                    trip.Destination,
+                    trip.StartDate,
+                    trip.EndDate,
+                    trip.BudgetLimit,
+                    trip.Description,
+                    trip.Members,
+                    trip.SavedPlaces,
+                    EditHistory = history
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Error: " + ex.Message });
+                return BadRequest(new { message = "Error fetching trip: " + ex.Message });
             }
         }
 
-        //For fetching trips associated with a specific email (used for user-specific trip views)
+        // Fetch trips where the user is either the creator or a member
         [HttpGet("by-email/{email}")]
         public async Task<ActionResult<List<Trip>>> GetTripsByEmail(string email)
         {
@@ -70,11 +88,11 @@ namespace SmartJourneyPlanner.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Error: " + ex.Message });
+                return BadRequest(new { message = "Error fetching trips: " + ex.Message });
             }
         }
 
-        //For creating a new trip and sending invites to members
+        // Create a new trip and send invitation emails to all members
         [HttpPost]
         public async Task<IActionResult> CreateTrip([FromBody] Trip newTrip)
         {
@@ -85,7 +103,6 @@ namespace SmartJourneyPlanner.API.Controllers
                 {
                     foreach (var member in newTrip.Members)
                     {
-                        // call the mothod of send 
                         await SendInviteEmail(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
                     }
                 }
@@ -93,11 +110,11 @@ namespace SmartJourneyPlanner.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Error: " + ex.Message });
+                return BadRequest(new { message = "Error creating trip: " + ex.Message });
             }
         }
 
-        //For adding a new place to an existing trip's saved places list
+        // Add a new place to an existing trip's saved places list
         [HttpPost("{tripId}/add-place")]
         public async Task<IActionResult> AddPlaceToTrip(string tripId, [FromBody] TripPlace place)
         {
@@ -110,30 +127,15 @@ namespace SmartJourneyPlanner.API.Controllers
                 if (result.MatchedCount == 0)
                     return NotFound(new { message = "Trip not found" });
 
-                var history = await _historyCollection.Find(h => h.TripId == id)
-                                              .SortByDescending(h => h.EditedAt)
-                                              .ToListAsync();
-
-                return Ok(new {
-            trip.Id,
-            trip.TripName,
-            trip.DepartFrom,
-            trip.Destination,
-            trip.StartDate,
-            trip.EndDate,
-            trip.BudgetLimit,
-            trip.Description,
-            trip.Members,
-            EditHistory = history 
-        });
-           }
+                return Ok(new { message = "Place added successfully!" });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Error: " + ex.Message });
+                return BadRequest(new { message = "Error adding place: " + ex.Message });
             }
         }
 
-        //For updating an existing trip's details and logging the changes in the trip history
+        // Update existing trip details and log the changes in history
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTrip(string id, [FromBody] Trip updatedTrip)
         {
@@ -176,7 +178,7 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
-        //For fetching the edit history of a specific trip (used in the trip details view to show change logs)
+        // Separate endpoint to get only the history of a specific trip
         [HttpGet("{id}/history")]
         public async Task<IActionResult> GetTripHistory(string id)
         {
@@ -193,7 +195,7 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
         
-        // Helper method to send invitation emails to trip members
+        // Helper method to send invitation emails with full HTML styling
         private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
         {
             try
@@ -204,6 +206,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 message.Subject = "Trip Invitation - Smart Journey";
 
                 string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
+
+                // Your original HTML design maintained 100%
                 message.Body = new TextPart("html")
                 {
                     Text = $@"
@@ -227,7 +231,7 @@ namespace SmartJourneyPlanner.API.Controllers
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
                 }
-                Console.WriteLine($"✅ Email sent to {receiverEmail}");
+                Console.WriteLine($"✅ Email sent successfully to {receiverEmail}");
             }
             catch (Exception ex)
             {
