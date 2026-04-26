@@ -1,23 +1,25 @@
 *{
   margin:0;
-  padding:0;
+  padding:50;
   box-sizing:border-box;
   font-family: Arial, Helvetica, sans-serif;
 }
 
-body{
+.body{
   height:100vh;
+  width: 100%;
   display:flex;
   justify-content:center;
   align-items:center;
   background:#a7d6e5;
+  
 }
 
 .container{
   display:flex;
   width:850px;
   height:500px;
-  background:white;
+  background:#a7d6e5;
   border-radius:15px;
   overflow:hidden;
 }
@@ -78,12 +80,12 @@ button:hover{
 
 /* RIGHT PANEL */
 .image-panel{
-  width:55%;
+  width:57%;
   background:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center/cover;
   position:relative;
   display:flex;
   align-items:flex-end;
-  padding:30px;
+  padding:0px;
   color:white;
 }
 

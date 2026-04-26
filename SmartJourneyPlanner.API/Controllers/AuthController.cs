@@ -6,15 +6,15 @@ using System.Security.Claims;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using SmartJourneyPlanner.API.Models; // User සහ MongoDbSettings තියෙන්නේ මෙතන නම්
+using SmartJourneyPlanner.API.Models; 
 using SmartJourneyPlanner.API.DTOs;
 using BCryptNet = BCrypt.Net.BCrypt;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
-    [ApiController]
+    [ApiController] // This attribute indicates that this class is an API controller, which provides automatic model validation and other features.
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : ControllerBase // This sets the base route for all actions in this controller to "api/auth" (since the controller is named AuthController)
     {
         private readonly IMongoCollection<User> _users;
         private readonly IConfiguration _configuration;
@@ -31,7 +31,7 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto model)
         {
-            // hash the password
+            // hash the password using BCrypt before saving to the database
             string passwordHash = BCryptNet.HashPassword(model.Password);
 
             var newUser = new User
@@ -49,18 +49,19 @@ namespace SmartJourneyPlanner.API.Controllers
         return Ok(new { 
             message = "User registered and verified in DB!", 
             savedEmail = checkUser.Email,
-            databaseName = _users.Database.DatabaseNamespace.DatabaseName, // මෙතනින් DB එකේ නම පේනවා
-            collectionName = _users.CollectionNamespace.CollectionName     // මෙතනින් Collection නම පේනවා
+            databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
+            collectionName = _users.CollectionNamespace.CollectionName     
         });
     }
 
              return BadRequest(new { message = "Data was sent but could not be verified in Database." });
         }
-
+        
+        // This method handles user login, verifies credentials, and returns a JWT token if successful
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto request)
         {
-            // 1. select user by email
+            //  select user by email
             var user = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
 
             if (user == null)
@@ -68,18 +69,23 @@ namespace SmartJourneyPlanner.API.Controllers
                 return BadRequest("User not found.");
             }
 
-            // 2. check the password is correct(using Bcrypt)
+            // check the password is correct(using Bcrypt)
            if (!BCryptNet.Verify(request.Password, user.PasswordHash))
            {
                     return BadRequest("Wrong password.");
                  }
 
             
-            var token = CreateToken(user);
+            var token = CreateToken(user); // Generate a JWT token for the authenticated user
             
-            return Ok(new { token = token, message = "Login successful!", userType = user.UserType });
+            return Ok(new { token = token,
+                            message = "Login successful!", 
+                            userType = user.UserType,
+                            userId = user.Id ,
+                            username = user.FullName});
         }
-
+        
+        // This method handles user registration, hashes the password, and saves the user to the database
         [HttpPost("signup")]
         public async Task<IActionResult> Signup([FromBody] User user)
         {
@@ -90,18 +96,22 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok(new { message = "User saved successfully!" });
         }
 
-        private string CreateToken(User user)
+        private string CreateToken(User user) // This method creates a JWT token for the authenticated user, including their claims and signing credentials
         {
             var claims = new List<Claim>
     {
-        new Claim(ClaimTypes.Name, user.FullName),
+        new Claim(ClaimTypes.Name, user.FullName), 
         new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.UserType),
+        new Claim("userId", user.Id.ToString()),
         new Claim(ClaimTypes.Role, user.UserType ?? "Traveler")
     };
-
+            // Generate a symmetric security key using the secret key from configuration
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            // Create signing credentials using the secret key and HMAC SHA256 algorithm
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
+            
+            // Create the JWT token with issuer, audience, claims, expiration time, and signing credentials
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],

@@ -5,10 +5,11 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-    selector: 'app-trip-create',
-    imports: [ReactiveFormsModule, CommonModule],
-    templateUrl: './trip-create.html',
-    styleUrls: ['./trip-create.css']
+  selector: 'app-trip-create',
+  standalone: true,
+  imports: [ReactiveFormsModule, CommonModule],
+  templateUrl: './trip-create.html',
+  styleUrls: ['./trip-create.css']
 })
 export class TripCreateComponent implements OnInit {
 
@@ -18,7 +19,7 @@ export class TripCreateComponent implements OnInit {
   tripId: string | null = null;
 
   constructor(
-    private tripService: TripService, 
+    private tripService: TripService, // ✅ Fixed: Only one instance here now
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -28,8 +29,9 @@ export class TripCreateComponent implements OnInit {
       destination: new FormControl('', Validators.required),
       startDate: new FormControl('', Validators.required),
       endDate: new FormControl('', Validators.required),
+      budgetLimit: new FormControl(''),
       description: new FormControl(''),
-      memberEmail: new FormControl(''),
+      memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
     });
   }
@@ -69,6 +71,7 @@ export class TripCreateComponent implements OnInit {
       destination: data.destination || data.Destination,
       startDate: this.formatDate(data.startDate || data.StartDate),
       endDate: this.formatDate(data.endDate || data.EndDate),
+      budgetLimit: data.budgetLimit || data.BudgetLimit,
       description: data.description || data.Description
     });
 
@@ -81,10 +84,10 @@ export class TripCreateComponent implements OnInit {
     }
   }
 
-  formatDate(date: any) {
+  formatDate(date: any): string {
     if (!date) return '';
     const d = new Date(date);
-    if (isNaN(d.getTime())) return ''; 
+    if (isNaN(d.getTime())) return '';
     const month = '' + (d.getMonth() + 1);
     const day = '' + d.getDate();
     const year = d.getFullYear();
@@ -105,13 +108,15 @@ export class TripCreateComponent implements OnInit {
 
   onSubmit() {
     if (this.tripForm.valid) {
-
-      // FIX: JWT token එකෙන් email ලබාගෙන CreatedBy field එකට save කිරීම
       const token = localStorage.getItem('token');
       let createdBy = '';
       if (token) {
-        const decoded: any = JSON.parse(atob(token.split('.')[1]));
-        createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        try {
+          const decoded: any = JSON.parse(atob(token.split('.')[1]));
+          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+        } catch (e) {
+          console.error("Token decoding failed", e);
+        }
       }
 
       const tripData = {
@@ -119,13 +124,13 @@ export class TripCreateComponent implements OnInit {
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
+        BudgetLimit: this.tripForm.value.budgetLimit,
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({
           Email: m.email,
           Role: m.role
         })),
-        // FIX: Trip create කළ user ගේ email save කිරීම
         CreatedBy: createdBy
       };
 
@@ -144,6 +149,7 @@ export class TripCreateComponent implements OnInit {
           next: (res: any) => {
             console.log("Backend Response:", res);
             const newId = res.tripId || res.id;
+
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
               alert("Trip saved successfully!");
@@ -158,6 +164,11 @@ export class TripCreateComponent implements OnInit {
     } else {
       alert("Form has errors. Please check again.");
     }
+  }
+
+  onAddBudget() {
+    const budget = this.tripForm.get('budgetLimit')?.value;
+    console.log("Selected Budget:", budget);
   }
 
   removeMember(index: number) {

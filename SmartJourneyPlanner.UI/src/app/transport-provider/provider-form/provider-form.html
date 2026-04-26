@@ -17,11 +17,12 @@
       <div class="row g-4">
         <div class="col-md-6 text-start">
           <label class="form-label fw-bold">Full Name</label>
-          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera">
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera" maxlength="100">
           <div *ngIf="isFieldInvalid('providerProfile.name')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['required']">Full name is required</span>
-            <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['minlength']">Name must be at least 3 characters</span>
+            <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['hasNumbers']">Name cannot contain numbers</span>
+            <span *ngIf="!vehicleForm.get('providerProfile.name')?.errors?.['hasNumbers'] && (vehicleForm.get('providerProfile.name')?.errors?.['pattern'] || vehicleForm.get('providerProfile.name')?.errors?.['repeatedChars'])">Invalid name format (letters only, min 2 letters)</span>
           </div>
         </div>
         <div class="col-md-6 text-start">
@@ -30,14 +31,30 @@
           <div *ngIf="isFieldInvalid('providerProfile.phone')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['required']">Phone number is required</span>
-            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['pattern']">Use format: +94771234567 or 0771234567</span>
+            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['hasLetters']">Phone number cannot contain letters</span>
+            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['invalidSL']">Please enter a valid Sri Lankan phone number (e.g., 0771234567)</span>
+            <span *ngIf="vehicleForm.get('providerProfile.phone')?.errors?.['repeatedDigits']">Invalid phone format or fake number</span>
+            <span *ngIf="!vehicleForm.get('providerProfile.phone')?.errors?.['hasLetters'] && !vehicleForm.get('providerProfile.phone')?.errors?.['invalidSL'] && !vehicleForm.get('providerProfile.phone')?.errors?.['repeatedDigits'] && vehicleForm.get('providerProfile.phone')?.errors?.['pattern']">Invalid phone format</span>
           </div>
         </div>
-        <div class="col-md-12 text-start mt-3 position-relative">
+        <div class="col-md-6 text-start mt-3">
+          <label class="form-label fw-bold">Email Address</label>
+          <input type="email" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.email')" formControlName="email" placeholder="kamal@example.com">
+          <div *ngIf="isFieldInvalid('providerProfile.email')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('providerProfile.email')?.errors?.['required']">Email address is required</span>
+            <span *ngIf="vehicleForm.get('providerProfile.email')?.errors?.['invalidFormat']">Please enter a valid email address (e.g., name@example.com)</span>
+            <span *ngIf="vehicleForm.get('providerProfile.email')?.errors?.['isFake']">This email address is not allowed</span>
+          </div>
+        </div>
+        <div class="col-md-6 text-start mt-3 position-relative">
           <label class="form-label fw-bold">Residential Area</label>
           <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.location')" formControlName="location" placeholder="e.g., Colombo, Kandy, Galle" (input)="filterCities($event)" (focus)="filterCities($event)" autocomplete="off">
           <div *ngIf="isFieldInvalid('providerProfile.location')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Residential area is required
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('providerProfile.location')?.errors?.['required']">Residential area is required</span>
+            <span *ngIf="vehicleForm.get('providerProfile.location')?.errors?.['hasNumbers']">Area name cannot contain numbers</span>
+            <span *ngIf="!vehicleForm.get('providerProfile.location')?.errors?.['hasNumbers'] && (vehicleForm.get('providerProfile.location')?.errors?.['pattern'] || vehicleForm.get('providerProfile.location')?.errors?.['repeatedChars'])">Please provide a valid location name (at least 2 letters)</span>
           </div>
           
           <!-- City Autocomplete Dropdown -->
@@ -102,18 +119,24 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Year of Manufacture</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="yearOfManufacture">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('yearOfManufacture')" formControlName="yearOfManufacture" (keydown)="onNumericKeyDown($event)">
+          <div *ngIf="isFieldInvalid('yearOfManufacture')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('yearOfManufacture')?.errors?.['required']">Year is required</span>
+            <span *ngIf="vehicleForm.get('yearOfManufacture')?.errors?.['min']">Year must be after 1950</span>
+            <span *ngIf="vehicleForm.get('yearOfManufacture')?.errors?.['max']">Invalid future year</span>
+          </div>
         </div>
       </div>
 
       <div class="row g-4 mt-2">
         <div class="col-md-6">
           <label class="form-label fw-bold">Vehicle Model</label>
-          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('description')" formControlName="description" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
-          <div *ngIf="isFieldInvalid('description')" class="pf-error-text">
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('modelName')" formControlName="modelName" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class" maxlength="100">
+          <div *ngIf="isFieldInvalid('modelName')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
-            <span *ngIf="vehicleForm.get('description')?.errors?.['required']">Vehicle model/description is required</span>
-            <span *ngIf="vehicleForm.get('description')?.errors?.['minlength']">Please provide more detail (min 10 chars)</span>
+            <span *ngIf="vehicleForm.get('modelName')?.errors?.['required']">Vehicle model is required</span>
+            <span *ngIf="vehicleForm.get('modelName')?.errors?.['pattern']">Invalid model format (letters required, min 2 chars)</span>
           </div>
         </div>
         <div class="col-md-3">
@@ -156,6 +179,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -169,16 +193,31 @@
           <div class="row mb-4 g-3">
             <div class="col-md-4">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-people text-primary"></i> Seats</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('seatCount')" formControlName="seatCount" min="1">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('seatCount') || (submitted && vehicleForm.errors?.['invalidSeatsForCar']) || (submitted && vehicleForm.errors?.['invalidSeatsForVan']) || (submitted && vehicleForm.errors?.['invalidSeatsForBus'])" formControlName="seatCount" min="1" step="1" (keydown)="onNumericKeyDown($event)">
               <div *ngIf="isFieldInvalid('seatCount')" class="pf-error-text">
-                <i class="bi bi-exclamation-circle"></i> Min 1 seat
+                <i class="bi bi-exclamation-circle"></i> 
+                <span *ngIf="vehicleForm.get('seatCount')?.errors?.['required']">Seat count is required</span>
+                <span *ngIf="vehicleForm.get('seatCount')?.errors?.['min']">Minimum 1 seat required</span>
+                <span *ngIf="vehicleForm.get('seatCount')?.errors?.['max']">Maximum 100 seats allowed</span>
+              </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForCar']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Cars usually have 1-9 seats
+              </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForVan']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Vans usually have 6-20 seats
+              </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForBus']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Buses usually have at least 15 seats
               </div>
             </div>
             <div class="col-md-4" formGroupName="features">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-luggage text-primary"></i> Luggage</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('features.luggage')" formControlName="luggage" min="1">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('features.luggage')" formControlName="luggage" min="1" step="1" (keydown)="onNumericKeyDown($event)">
               <div *ngIf="isFieldInvalid('features.luggage')" class="pf-error-text">
-                <i class="bi bi-exclamation-circle"></i> Min 1 luggage
+                <i class="bi bi-exclamation-circle"></i> 
+                <span *ngIf="vehicleForm.get('features.luggage')?.errors?.['required']">Luggage count is required</span>
+                <span *ngIf="vehicleForm.get('features.luggage')?.errors?.['min']">Minimum 1 luggage required</span>
+                <span *ngIf="vehicleForm.get('features.luggage')?.errors?.['max']">Maximum 50 luggage allowed</span>
               </div>
             </div>
           </div>
@@ -262,9 +301,12 @@
       <div class="row g-4">
         <div class="col-md-6">
           <label class="form-label fw-bold">Standard Daily Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate" min="500">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate" min="500" step="1" (keydown)="onNumericKeyDown($event)">
           <div *ngIf="isFieldInvalid('standardDailyRate')" class="pf-error-text">
-            <i class="bi bi-exclamation-circle"></i> Valid daily rate is required
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('standardDailyRate')?.errors?.['required']">Daily rate is required</span>
+            <span *ngIf="vehicleForm.get('standardDailyRate')?.errors?.['min']">Minimum rate is LKR 500</span>
+            <span *ngIf="vehicleForm.get('standardDailyRate')?.errors?.['max']">Rate exceeds reasonable limit (LKR 500,000)</span>
           </div>
         </div>
         <div class="col-md-6">
@@ -276,11 +318,23 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Extra KM Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="extraKMRate" min="1">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('extraKMRate')" formControlName="extraKMRate" min="1" step="1" (keydown)="onNumericKeyDown($event)">
+          <div *ngIf="isFieldInvalid('extraKMRate')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('extraKMRate')?.errors?.['required']">Extra KM rate is required</span>
+            <span *ngIf="vehicleForm.get('extraKMRate')?.errors?.['min']">Minimum rate is LKR 1</span>
+            <span *ngIf="vehicleForm.get('extraKMRate')?.errors?.['max']">Rate exceeds reasonable limit (LKR 2,000)</span>
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Driver Night Out Fee (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" formControlName="driverNightOutFee" min="0">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('driverNightOutFee')" formControlName="driverNightOutFee" min="0" step="1" (keydown)="onNumericKeyDown($event)">
+          <div *ngIf="isFieldInvalid('driverNightOutFee')" class="pf-error-text">
+            <i class="bi bi-exclamation-circle"></i> 
+            <span *ngIf="vehicleForm.get('driverNightOutFee')?.errors?.['required']">Night out fee is required</span>
+            <span *ngIf="vehicleForm.get('driverNightOutFee')?.errors?.['min']">Minimum fee is LKR 0</span>
+            <span *ngIf="vehicleForm.get('driverNightOutFee')?.errors?.['max']">Fee exceeds reasonable limit (LKR 50,000)</span>
+          </div>
         </div>
       </div>
     </div>
@@ -295,8 +349,11 @@
       <div class="row g-4">
         <!-- Exterior -->
         <div class="col-md-6">
-          <div class="pf-upload-box" [class.has-image]="exteriorPreview">
-            <input type="file" (change)="onFileSelected($event, 'exterior')" accept="image/*" id="up_ext">
+          <div class="pf-upload-box" 
+               [class.success]="exteriorPreview && !fileErrors['exterior']"
+               [class.error]="fileErrors['exterior']"
+               [class.missing]="isFileMissing('exterior')">
+            <input type="file" (change)="onFileSelected($event, 'exterior')" accept="image/jpeg,image/png,application/pdf" id="up_ext">
             <label for="up_ext">
               <img *ngIf="exteriorPreview" [src]="exteriorPreview" alt="Exterior">
               <div *ngIf="!exteriorPreview" class="upload-content">
@@ -305,12 +362,17 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['exterior']" class="pf-error-text">{{fileErrors['exterior']}}</div>
+          <div *ngIf="isFileMissing('exterior')" class="pf-error-text">Exterior photo is required</div>
         </div>
         
         <!-- Interior -->
         <div class="col-md-6">
-          <div class="pf-upload-box" [class.has-image]="interiorPreview">
-            <input type="file" (change)="onFileSelected($event, 'interior')" accept="image/*" id="up_int">
+          <div class="pf-upload-box" 
+               [class.success]="interiorPreview && !fileErrors['interior']"
+               [class.error]="fileErrors['interior']"
+               [class.missing]="isFileMissing('interior')">
+            <input type="file" (change)="onFileSelected($event, 'interior')" accept="image/jpeg,image/png,application/pdf" id="up_int">
             <label for="up_int">
               <img *ngIf="interiorPreview" [src]="interiorPreview" alt="Interior">
               <div *ngIf="!interiorPreview" class="upload-content">
@@ -319,12 +381,17 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['interior']" class="pf-error-text">{{fileErrors['interior']}}</div>
+          <div *ngIf="isFileMissing('interior')" class="pf-error-text">Interior photo is required</div>
         </div>
 
         <!-- NIC -->
         <div class="col-md-6">
-          <div class="pf-upload-box verification" [class.has-image]="nicPreview">
-            <input type="file" (change)="onFileSelected($event, 'nic')" accept="image/*" id="up_nic">
+          <div class="pf-upload-box verification" 
+               [class.success]="nicPreview && !fileErrors['nic']"
+               [class.error]="fileErrors['nic']"
+               [class.missing]="isFileMissing('nic')">
+            <input type="file" (change)="onFileSelected($event, 'nic')" accept="image/jpeg,image/png,application/pdf" id="up_nic">
             <label for="up_nic">
               <img *ngIf="nicPreview" [src]="nicPreview" alt="NIC">
               <div *ngIf="!nicPreview" class="upload-content">
@@ -333,12 +400,17 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['nic']" class="pf-error-text">{{fileErrors['nic']}}</div>
+          <div *ngIf="isFileMissing('nic')" class="pf-error-text">NIC photo is required</div>
         </div>
 
         <!-- License -->
         <div class="col-md-6">
-          <div class="pf-upload-box verification" [class.has-image]="licensePreview">
-            <input type="file" (change)="onFileSelected($event, 'license')" accept="image/*" id="up_lic">
+          <div class="pf-upload-box verification" 
+               [class.success]="licensePreview && !fileErrors['license']"
+               [class.error]="fileErrors['license']"
+               [class.missing]="isFileMissing('license')">
+            <input type="file" (change)="onFileSelected($event, 'license')" accept="image/jpeg,image/png,application/pdf" id="up_lic">
             <label for="up_lic">
               <img *ngIf="licensePreview" [src]="licensePreview" alt="License">
               <div *ngIf="!licensePreview" class="upload-content">
@@ -348,12 +420,17 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['license']" class="pf-error-text">{{fileErrors['license']}}</div>
+          <div *ngIf="isFileMissing('license')" class="pf-error-text">License photo is required</div>
         </div>
 
         <!-- Insurance -->
         <div class="col-md-6">
-          <div class="pf-upload-box verification" [class.has-image]="insurancePreview">
-            <input type="file" (change)="onFileSelected($event, 'insurance')" accept="image/*" id="up_ins">
+          <div class="pf-upload-box verification" 
+               [class.success]="insurancePreview && !fileErrors['insurance']"
+               [class.error]="fileErrors['insurance']"
+               [class.missing]="isFileMissing('insurance')">
+            <input type="file" (change)="onFileSelected($event, 'insurance')" accept="image/jpeg,image/png,application/pdf" id="up_ins">
             <label for="up_ins">
               <img *ngIf="insurancePreview" [src]="insurancePreview" alt="Insurance">
               <div *ngIf="!insurancePreview" class="upload-content">
@@ -362,19 +439,26 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['insurance']" class="pf-error-text">{{fileErrors['insurance']}}</div>
+          <div *ngIf="isFileMissing('insurance')" class="pf-error-text">Insurance document is required</div>
           <div class="mt-2">
             <label class="form-label small mb-1">Insurance Expiry Date</label>
             <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry" [min]="todayStr">
             <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text">
-              <i class="bi bi-exclamation-circle"></i> Expiry date required
+              <i class="bi bi-exclamation-circle"></i> 
+              <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['required']">Insurance expiry date is required</span>
+              <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['min']">Expiry date cannot be in the past</span>
             </div>
           </div>
         </div>
 
         <!-- Revenue License -->
         <div class="col-md-6">
-          <div class="pf-upload-box verification" [class.has-image]="revenuePreview">
-            <input type="file" (change)="onFileSelected($event, 'revenue')" accept="image/*" id="up_rev">
+          <div class="pf-upload-box verification" 
+               [class.success]="revenuePreview && !fileErrors['revenue']"
+               [class.error]="fileErrors['revenue']"
+               [class.missing]="isFileMissing('revenue')">
+            <input type="file" (change)="onFileSelected($event, 'revenue')" accept="image/jpeg,image/png,application/pdf" id="up_rev">
             <label for="up_rev">
               <img *ngIf="revenuePreview" [src]="revenuePreview" alt="Revenue License">
               <div *ngIf="!revenuePreview" class="upload-content">
@@ -383,11 +467,15 @@
               </div>
             </label>
           </div>
+          <div *ngIf="fileErrors['revenue']" class="pf-error-text">{{fileErrors['revenue']}}</div>
+          <div *ngIf="isFileMissing('revenue')" class="pf-error-text">Revenue license is required</div>
           <div class="mt-2">
             <label class="form-label small mb-1">Revenue License Expiry</label>
             <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry" [min]="todayStr">
             <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text">
-              <i class="bi bi-exclamation-circle"></i> Expiry date required
+              <i class="bi bi-exclamation-circle"></i> 
+              <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['required']">Revenue license expiry is required</span>
+              <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['min']">Expiry date cannot be in the past</span>
             </div>
           </div>
         </div>
@@ -407,8 +495,9 @@
     </div>
 
     <div class="text-center mt-4 mb-3">
-      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid">
-        <i class="bi bi-check2-circle me-2"></i> Submit Listing
+      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid || isSubmitting">
+        <span *ngIf="!isSubmitting"><i class="bi bi-check2-circle me-2"></i> Submit Listing</span>
+        <span *ngIf="isSubmitting"><span class="spinner-border spinner-border-sm me-2"></span> Submitting...</span>
       </button>
       <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
         Please complete all required fields and agree to the terms.

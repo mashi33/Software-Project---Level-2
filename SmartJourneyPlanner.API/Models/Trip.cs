@@ -11,22 +11,31 @@ namespace SmartJourneyPlanner.API.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
+        // Unique identifier for the trip
         public string? Id { get; set; }
 
         public string TripName { get; set; } = null!;
-        public string Destination { get; set; } = null!;
 
-        // Using Nullable DateTime (DateTime?) is safer in case some
-        // documents in your database have missing or null dates.
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-
-        public string? Description { get; set; }
+        // ✅ FIXED: Removed the duplicate definition of DepartFrom below
         public string DepartFrom { get; set; } = null!;
 
+        public string Destination { get; set; } = null!;
+
+        // Using DateTime (Ensure your Angular frontend sends ISO strings)
+        public DateTime StartDate { get; set; }  
+        
+        public DateTime EndDate { get; set; }    
+
+        public string BudgetLimit { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+        
         // Invite many members to the trip
         public List<TripMember> Members { get; set; } = new List<TripMember>();
+
         public List<TripPlace> SavedPlaces { get; set; } = new List<TripPlace>();
+
+        // Tracks which user created the trip
         public string? CreatedBy { get; set; }
     }
 
@@ -35,10 +44,11 @@ namespace SmartJourneyPlanner.API.Models
     public class TripMember
     {
         public string Email { get; set; } = null!;
-        public string Role { get; set; } = "Viewer"; // Editor or Viewer
+        public string Role { get; set; } = "Viewer"; // "Editor" or "Viewer"
     }
 
     // Represents a specific location saved within a trip
+    [BsonIgnoreExtraElements]
     public class TripPlace
     {
         public string PlaceId { get; set; } = null!;

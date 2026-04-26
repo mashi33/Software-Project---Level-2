@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute,Router, RouterLink } from '@angular/router';
-import Swal from 'sweetalert2';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 
 @Component({
   selector: 'app-trip-summary',
@@ -12,46 +11,58 @@ import Swal from 'sweetalert2';
   styleUrls: ['./trip-summary.css']
 })
 export class TripSummaryComponent implements OnInit {
+  // main details of the trip
   tripDetails: any;
-  userRole: string = 'owner';
-
-  tripId: string = '';
-  // Filtered lists separated from savedPlaces array
+  // array to hold the edit history of the trip, which can be displayed in the UI to show past changes and versions
+  editHistory: any[] = [];
+  isDropdownOpen = false;
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
+  userRole: string = 'owner';
+  tripId: string = '';
 
   constructor(
     private tripService: TripService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
   ) {}
 
-  ngOnInit(): void {
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
 
-    this.tripId = this.route.snapshot.paramMap.get('id') || '';
-    /**
-     * 1. Extract the Trip ID from the route path parameter (/trip-summary/:id)
-     * 2. Extract the User Role from query parameters (/trip-summary/:id?role=viewer)
-     */
+ngOnInit(): void {
+    // 1. URL එකෙන් Trip ID එක සහ User Role එක ගන්න
     const tripId = this.route.snapshot.paramMap.get('id');
-    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
 
+    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+    this.tripId = this.route.snapshot.paramMap.get('id') || '';
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);
     }
 
     if (tripId) {
-      console.log('Fetching database data for ID:', tripId);
+      console.log('Fetching data for ID:', tripId);
+      
+      // get deatails of the trip from database using the ID from URL
       this.tripService.getTripById(tripId).subscribe({
-        next: (data) => {
+        next: (data: any) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
-          this.filterSavedPlaces();
+
+          //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
+          if (data.editHistory && data.editHistory.length > 0) {
+            this.editHistory = data.editHistory;
+            console.log('History loaded from main object:', this.editHistory);
+          } else {
+            // if history is not included in the main trip data, then make a separate call to fetch it. This ensures that we still get the history data even if it's not included in the initial response.
+            this.loadHistory(tripId);
+          }
         },
         error: (err) => {
           console.error('Data load error:', err);
-          this.loadFromTemp();
+          this.loadFromTemp(); // If there's an error fetching from the database, load from temporary storage or show sample data. This provides a fallback to ensure the user still sees something instead of a blank page.
         }
       });
     } else {
@@ -59,9 +70,19 @@ export class TripSummaryComponent implements OnInit {
     }
   }
 
-  /**
-   * Filters savedPlaces array into hotels and restaurants separately.
-   */
+  // Method to load the edit history of the trip by making a call to the TripService. This is used to populate the edit history section in the UI, allowing users to see past changes and versions of the trip details.
+  loadHistory(id: string) {
+    this.tripService.getTripHistory(id).subscribe({
+      next: (data) => {
+        this.editHistory = data;
+        console.log('Edit history loaded manually:', this.editHistory);
+      },
+      error: (err) => {
+        console.error('History load error:', err);
+      }
+    });
+  }
+
   filterSavedPlaces() {
     const places = this.tripDetails?.savedPlaces || this.tripDetails?.SavedPlaces || [];
 
@@ -81,29 +102,27 @@ export class TripSummaryComponent implements OnInit {
     console.log('Filtered Restaurants:', this.savedRestaurants);
   }
 
-  /**
-   * Loads trip data from the temporary service storage or shows sample data
-   */
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
     if (!this.tripDetails) {
-      console.warn('No data found in temp storage! Showing sample data.');
+      console.warn('No data found! Showing sample data.');
       this.tripDetails = {
+        tripName: 'Nuwara Eliya Trip',
         destination: 'Nuwara Eliya',
         departFrom: 'Colombo',
         startDate: '2026-05-10',
         endDate: '2026-05-15',
-        description: 'Sample data description (Fallback)'
+        description: 'Enjoying the cold weather and tea estates.'
       };
     }
     this.filterSavedPlaces();
   }
 
   navigateToChat() {
-  if (this.tripId) {
-    this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
-  } else {
-    Swal.fire('Error', 'Trip ID not found!', 'error');
+    if (this.tripId) {
+      this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+    } else {
+      alert('Trip ID not found!');
+    }
   }
-}
 }

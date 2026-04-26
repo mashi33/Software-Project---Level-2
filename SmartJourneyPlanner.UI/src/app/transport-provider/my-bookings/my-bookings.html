@@ -183,7 +183,10 @@
             <label class="form-label small fw-bold text-navy">Share your feedback</label>
             <textarea class="form-control rounded-3" rows="3" 
                       placeholder="Tell us about the vehicle and the driver's service..."
-                      [(ngModel)]="tempComment"></textarea>
+                      [(ngModel)]="tempComment" maxlength="500"></textarea>
+            <div class="text-end mt-1">
+              <small class="text-muted">{{tempComment.length}}/500</small>
+            </div>
           </div>
 
           <div class="d-flex gap-3">

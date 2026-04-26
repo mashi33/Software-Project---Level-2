@@ -15,24 +15,22 @@ namespace SmartJourneyPlanner.API.Services
         }
 
         public async Task CreateAsync(TripMemory newMemory)
-{
+        {
     // 1. Validation check
-    if (newMemory == null)
-    {
-        throw new ArgumentNullException(nameof(newMemory), "Memory object cannot be null.");
-    }
-
-    Console.WriteLine($"Saving Memory: {newMemory.Title}, IsPublic: {newMemory.IsPublic}");
-
+            if (newMemory == null)
+            {
+                throw new ArgumentNullException(nameof(newMemory), "Memory object cannot be null.");
+            }
+            Console.WriteLine($"Saving Memory: {newMemory.Title}, IsPublic: {newMemory.IsPublic}");
     // 2. Insert to Database
-    await _memoriesCollection.InsertOneAsync(newMemory);
-}
+            await _memoriesCollection.InsertOneAsync(newMemory);
+        }
         public async Task<List<TripMemory>> GetAsync() =>
             await _memoriesCollection.Find(_ => true).ToListAsync();
 
         public async Task<bool> DeleteAsync(string id)
            {
-              var filter = Builders<TripMemory>.Filter.Eq(m => m.Id, id);
+              var filter = Builders<TripMemory>.Filter.Eq(memory => memory.Id, id);
               var result = await _memoriesCollection.DeleteOneAsync(filter);
     
               return result.DeletedCount > 0;
