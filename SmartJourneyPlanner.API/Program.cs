@@ -21,7 +21,7 @@ builder.Services.AddHttpClient<PlacesService>();
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
+var connectionString = "mongodb+srv://kjh51:SmartJourneyPlanner17@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
 var databaseName = "SmartJourneyDb"; 
 
 // 3. Register the Client and Database globally
