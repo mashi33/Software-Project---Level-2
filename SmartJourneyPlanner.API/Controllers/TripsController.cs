@@ -137,12 +137,12 @@ namespace SmartJourneyPlanner.API.Controllers
            }
 
              return Ok(new { message = "Trip updated successfully!" });
-       }
-       catch (Exception ex)
-      {
-       // Handle any errors that occur during the update process
-         return BadRequest(new { message = "Update error: " + ex.Message });
-      }
+         }
+          catch (Exception ex)
+         {
+             // Handle any errors that occur during the update process
+              return BadRequest(new { message = "Update error: " + ex.Message });
+        }
         
         }
 

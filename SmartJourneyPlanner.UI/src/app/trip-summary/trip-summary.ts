@@ -11,9 +11,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
   styleUrls: ['./trip-summary.css']
 })
 export class TripSummaryComponent implements OnInit {
-  // Trip එකේ මූලික විස්තර තියාගන්න
+  // variable to hold the trip details fetched from the backend or temp storage
   tripDetails: any;
-  // ඉතිහාසය (Edit History) තියාගන්න Array එක
+  // variable to hold the edit history
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
@@ -24,7 +24,7 @@ export class TripSummaryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // 1. URL එකෙන් Trip ID එක සහ User Role එක ගන්න
+    // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
     const tripId = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
 
@@ -36,24 +36,24 @@ export class TripSummaryComponent implements OnInit {
     if (tripId) {
       console.log('Fetching data for ID:', tripId);
       
-      // 2. Backend එකෙන් Trip එකේ සියලුම විස්තර (History එකත් එක්කම) ගන්න
+      // 2. All data fetching logic is now in one place, with a fallback to temp data if the database call fails
       this.tripService.getTripById(tripId).subscribe({
         next: (data: any) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // Backend එකෙන් 'editHistory' කියන නමින් data ආවොත් ඒක කෙලින්ම ගන්න
+          // Get data directly from the main object if available, otherwise make a separate call to get history
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
             console.log('History loaded from main object:', this.editHistory);
           } else {
-            // බැරිවෙලාවත් main object එකේ නැත්නම් විතරක් වෙනම call එකක් කරන්න
+            
             this.loadHistory(tripId);
           }
         },
         error: (err) => {
           console.error('Data load error:', err);
-          this.loadFromTemp(); // Database error එකක් ආවොත් temp data පෙන්වන්න
+          this.loadFromTemp(); // Show temp data if there's an error fetching from the database
         }
       });
     } else {
@@ -61,7 +61,7 @@ export class TripSummaryComponent implements OnInit {
     }
   }
 
-  // Edit History එක වෙනම ලබාගන්නා backup function එක
+  // Backup function to load edit history if it's not included in the main trip details response
   loadHistory(id: string) {
     this.tripService.getTripHistory(id).subscribe({
       next: (data) => {
@@ -79,7 +79,8 @@ export class TripSummaryComponent implements OnInit {
   }
 
   /**
-   * Database එකේ දත්ත නැති අවස්ථාවක පෙන්වීමට Sample දත්ත
+   * Sample data to show when there's no data in the database or when there's an error fetching data.
+   * This helps in testing the UI and also provides a fallback for users.
    */
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
