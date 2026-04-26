@@ -5,7 +5,7 @@
       <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
         <h2 style="margin: 0; color: #0A4087; font-size: 1.5rem; font-weight: bold;">Budget Planner for</h2>
         <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="loadBudget()">
-          <option value="" disabled selected>Select a Trip</option>
+          <option value="" disabled>Select a Trip</option>
           <option *ngFor="let t of allTrips" [value]="t._id || t.id">
             {{ t.tripName }}
           </option>

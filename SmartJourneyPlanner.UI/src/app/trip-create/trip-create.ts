@@ -19,7 +19,7 @@ export class TripCreateComponent implements OnInit {
   tripId: string | null = null;
 
   constructor(
-    private tripService: TripService, // ✅ Fixed: Only one instance here now
+    private tripService: TripService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -37,22 +37,13 @@ export class TripCreateComponent implements OnInit {
   }
 
   ngOnInit() {
-    console.log("Checking for trip data...");
-
     const idFromUrl = this.route.snapshot.paramMap.get('id');
-
     if (idFromUrl) {
       this.tripId = idFromUrl;
       this.isEditMode = true;
-
       this.tripService.getTripById(idFromUrl).subscribe({
-        next: (data) => {
-          if (data) {
-            console.log("Loading data from DB:", data);
-            this.fillForm(data);
-          }
-        },
-        error: (err) => console.error("Error fetching trip for edit:", err)
+        next: (data) => { if (data) this.fillForm(data); },
+        error: (err) => console.error("Error fetching trip:", err)
       });
     } else {
       const savedData = this.tripService.getTempTripData();
@@ -74,7 +65,6 @@ export class TripCreateComponent implements OnInit {
       budgetLimit: data.budgetLimit || data.BudgetLimit,
       description: data.description || data.Description
     });
-
     const members = data.members || data.Members;
     if (members) {
       this.invitedMembers = members.map((m: any) => ({
@@ -98,11 +88,9 @@ export class TripCreateComponent implements OnInit {
     const email = this.tripForm.get('memberEmail')?.value;
     const role = this.tripForm.get('memberRole')?.value;
     if (email && this.tripForm.get('memberEmail')?.valid) {
-      this.invitedMembers.push({ email: email, role: role });
+      this.invitedMembers.push({ email, role });
       this.tripForm.get('memberEmail')?.reset();
       this.tripForm.patchValue({ memberRole: 'Viewer' });
-    } else {
-      alert("Please enter a valid email address.");
     }
   }
 
@@ -114,9 +102,7 @@ export class TripCreateComponent implements OnInit {
         try {
           const decoded: any = JSON.parse(atob(token.split('.')[1]));
           createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
-        } catch (e) {
-          console.error("Token decoding failed", e);
-        }
+        } catch (e) { console.error(e); }
       }
 
       const tripData = {
@@ -124,54 +110,33 @@ export class TripCreateComponent implements OnInit {
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
-        BudgetLimit: this.tripForm.value.budgetLimit,
+        BudgetLimit: this.tripForm.value.budgetLimit, 
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
-        Members: this.invitedMembers.map(m => ({
-          Email: m.email,
-          Role: m.role
-        })),
+        Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
         CreatedBy: createdBy
       };
 
-      if (this.isEditMode && this.tripId) {
-        this.tripService.updateTrip(this.tripId, tripData).subscribe({
-          next: (res: any) => {
-            console.log("Update Success:", res);
-            this.tripService.setTempTripData({ ...tripData, Id: this.tripId });
-            alert("Trip updated successfully!");
-            this.router.navigate(['/trip-summary', this.tripId]);
-          },
-          error: (err) => alert("Error updating trip")
-        });
-      } else {
-        this.tripService.createTrip(tripData).subscribe({
-          next: (res: any) => {
-            console.log("Backend Response:", res);
-            const newId = res.tripId || res.id;
+      const request = (this.isEditMode && this.tripId) 
+        ? this.tripService.updateTrip(this.tripId, tripData)
+        : this.tripService.createTrip(tripData);
 
-            if (newId) {
-              this.tripService.setTempTripData({ ...tripData, Id: newId });
-              alert("Trip saved successfully!");
-              this.router.navigate(['/trip-summary', newId]);
-            } else {
-              this.router.navigate(['/trip-summary']);
-            }
-          },
-          error: (err) => alert("Error saving trip")
-        });
-      }
-    } else {
-      alert("Form has errors. Please check again.");
+      request.subscribe({
+        next: (res: any) => {
+          const id = this.tripId || res.tripId || res.id;
+          this.tripService.setTempTripData({ ...tripData, Id: id });
+          alert("Trip saved successfully!");
+          this.router.navigate(['/trip-summary', id]);
+        },
+        error: () => alert("Error saving trip")
+      });
     }
   }
 
   onAddBudget() {
     const budget = this.tripForm.get('budgetLimit')?.value;
-    console.log("Selected Budget:", budget);
+    console.log("Selected Budget Limit:", budget);
   }
 
-  removeMember(index: number) {
-    this.invitedMembers.splice(index, 1);
-  }
+  removeMember(index: number) { this.invitedMembers.splice(index, 1); }
 }
