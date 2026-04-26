@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 import { PlacesService } from '../services/places.service';
 import { environment } from '../../environments/environment'; // environment file එකෙන් key එක ගනී
 import { v4 as uuidv4 } from 'uuid';
@@ -26,9 +27,21 @@ export class FilterComponent implements OnInit, AfterViewInit {
   activeCategory = 'Hotel';
   hasSearched    = false;
 
-  constructor(private placesService: PlacesService) {}
+  constructor(private placesService: PlacesService, private route: ActivatedRoute) {}
 
   ngOnInit() {
+    //check url for city query param and perform search if present. 
+    this.route.queryParams.subscribe(params => {
+      const cityFromUrl = params['city']; 
+      
+      if (cityFromUrl) {
+        this.searchControl.setValue(cityFromUrl);
+        setTimeout(() => {
+          this.performSearch(); 
+        }, 1200); 
+      }
+    });
+
     // Debouncing and distinctUntilChanged for search input to reduce API calls and improve performance
     this.searchControl.valueChanges.pipe(
       debounceTime(500), 
@@ -36,6 +49,8 @@ export class FilterComponent implements OnInit, AfterViewInit {
     ).subscribe(value => {
       
     });
+
+    // Three filter controls (budget, rating, distance) 
 
     this.budgetControl.valueChanges.subscribe(() => {
       if (this.hasSearched) this.performSearch();

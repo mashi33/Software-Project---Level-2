@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router,RouterLink } from '@angular/router';
+import { Router,RouterLink,ActivatedRoute  } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { RouteService } from '../services/route.service';
@@ -46,7 +46,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   private searchSubject = new Subject<{ input: string, type: 'start' | 'end' }>();
   private searchSubscription?: Subscription;
 
-  constructor(private routeService: RouteService, private router: Router) {
+  constructor(private routeService: RouteService, private router: Router, private route: ActivatedRoute) {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged(
@@ -58,6 +58,23 @@ export class RouteOptimization implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadGoogleApi();
+    this.route.queryParams.subscribe(params => {
+    if (params['start']) {
+      this.start = params['start'];
+      this.getCoords(this.start, 'start'); 
+    }
+    if (params['end']) {
+      this.end = params['end'];
+      this.getCoords(this.end, 'end');
+    }
+
+    if (this.start && this.end) {
+      setTimeout(() => {
+        this.calculate();
+      }, 1500);
+    }
+  });
+    
   }
 
   ngOnDestroy() {
