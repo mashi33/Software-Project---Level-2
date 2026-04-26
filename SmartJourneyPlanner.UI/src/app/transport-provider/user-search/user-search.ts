@@ -442,12 +442,7 @@ export class UserSearch implements OnInit {
     this.generateCalendar();
   }
 
-  /**
-   * Returns a list of languages that are currently selected in the filter.
-   */
-  getSelectedLangs(): string[] {
-    return Object.keys(this.selectedLanguages).filter(l => this.selectedLanguages[l]);
-  }
+
 
   /**
    * Handles clicking a day in the calendar.
