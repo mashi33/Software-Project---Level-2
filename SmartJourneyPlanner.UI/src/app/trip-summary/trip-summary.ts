@@ -11,8 +11,9 @@ import { ActivatedRoute, RouterLink, Router } from '@angular/router';
   styleUrls: ['./trip-summary.css']
 })
 export class TripSummaryComponent implements OnInit {
-
+  // main details of the trip
   tripDetails: any;
+  // array to hold the edit history of the trip, which can be displayed in the UI to show past changes and versions
   editHistory: any[] = [];
   isDropdownOpen = false;
   savedHotels: any[] = [];
@@ -30,27 +31,38 @@ export class TripSummaryComponent implements OnInit {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
-  ngOnInit(): void {
-    this.tripId = this.route.snapshot.paramMap.get('id') || '';
-    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+ngOnInit(): void {
+    // 1. URL එකෙන් Trip ID එක සහ User Role එක ගන්න
+    const tripId = this.route.snapshot.paramMap.get('id');
 
+    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+    this.tripId = this.route.snapshot.paramMap.get('id') || '';
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);
     }
 
-    if (this.tripId) {
-      console.log('Fetching database data for ID:', this.tripId);
-      this.tripService.getTripById(this.tripId).subscribe({
-        next: (data) => {
+    if (tripId) {
+      console.log('Fetching data for ID:', tripId);
+      
+      // get deatails of the trip from database using the ID from URL
+      this.tripService.getTripById(tripId).subscribe({
+        next: (data: any) => {
           this.tripDetails = data;
           console.log('Data received from database:', data);
-          this.loadHistory(this.tripId);
-          this.filterSavedPlaces();
+
+          //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
+          if (data.editHistory && data.editHistory.length > 0) {
+            this.editHistory = data.editHistory;
+            console.log('History loaded from main object:', this.editHistory);
+          } else {
+            // if history is not included in the main trip data, then make a separate call to fetch it. This ensures that we still get the history data even if it's not included in the initial response.
+            this.loadHistory(tripId);
+          }
         },
         error: (err) => {
           console.error('Data load error:', err);
-          this.loadFromTemp();
+          this.loadFromTemp(); // If there's an error fetching from the database, load from temporary storage or show sample data. This provides a fallback to ensure the user still sees something instead of a blank page.
         }
       });
     } else {
@@ -58,11 +70,12 @@ export class TripSummaryComponent implements OnInit {
     }
   }
 
+  // Method to load the edit history of the trip by making a call to the TripService. This is used to populate the edit history section in the UI, allowing users to see past changes and versions of the trip details.
   loadHistory(id: string) {
     this.tripService.getTripHistory(id).subscribe({
       next: (data) => {
         this.editHistory = data;
-        console.log('Edit history loaded:', this.editHistory);
+        console.log('Edit history loaded manually:', this.editHistory);
       },
       error: (err) => {
         console.error('History load error:', err);
@@ -92,13 +105,14 @@ export class TripSummaryComponent implements OnInit {
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
     if (!this.tripDetails) {
-      console.warn('No data found in temp storage! Showing sample data.');
+      console.warn('No data found! Showing sample data.');
       this.tripDetails = {
+        tripName: 'Nuwara Eliya Trip',
         destination: 'Nuwara Eliya',
         departFrom: 'Colombo',
         startDate: '2026-05-10',
         endDate: '2026-05-15',
-        description: 'Sample data description (Fallback)'
+        description: 'Enjoying the cold weather and tea estates.'
       };
     }
     this.filterSavedPlaces();

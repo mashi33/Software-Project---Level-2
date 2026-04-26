@@ -110,8 +110,23 @@ namespace SmartJourneyPlanner.API.Controllers
                 if (result.MatchedCount == 0)
                     return NotFound(new { message = "Trip not found" });
 
-                return Ok(new { message = "Place added to trip successfully!" });
-            }
+                var history = await _historyCollection.Find(h => h.TripId == id)
+                                              .SortByDescending(h => h.EditedAt)
+                                              .ToListAsync();
+
+                return Ok(new {
+            trip.Id,
+            trip.TripName,
+            trip.DepartFrom,
+            trip.Destination,
+            trip.StartDate,
+            trip.EndDate,
+            trip.BudgetLimit,
+            trip.Description,
+            trip.Members,
+            EditHistory = history 
+        });
+           }
             catch (Exception ex)
             {
                 return BadRequest(new { message = "Error: " + ex.Message });
