@@ -111,7 +111,8 @@ builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
-
+builder.Services.AddScoped<WeatherSuggestionService>();
+builder.Services.AddScoped<SmartJourneyPlanner.Services.ProviderDashboardService>();
 // ==========================================================
 // BUILD & MIDDLEWARE
 // ==========================================================
