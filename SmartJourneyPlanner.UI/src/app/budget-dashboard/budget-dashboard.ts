@@ -29,11 +29,9 @@ export class BudgetDashboard implements OnInit {
   totalAllowedBudget: number = 50000; 
   budgetPercentage: number = 0;
 
-  // UI State for Sorting
   sortColumn: string = '';
   sortAscending: boolean = true;
 
-  // Chart UI Variables
   public doughnutChartType: ChartType = 'pie';
   public chartColors: string[] = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#1A535C', '#88D49E', '#FF9F1C'];
   public doughnutChartLabels: string[] = [];
@@ -49,14 +47,22 @@ export class BudgetDashboard implements OnInit {
   ) { }
 
   ngOnInit() {
+    // 1. Load all trips first
     this.tripService.getAllTrips().subscribe({ 
       next: (res: any[]) => {
-        // ✅ FIX: Filter out duplicates based on ID to fix the "Multiple Sigiriya" issue
+        // Filter duplicates
         this.allTrips = Array.from(new Map(res.map(trip => [trip._id || trip.id, trip])).values());
 
+        // 2. ✅ Catch the tripId from the URL Bridge
         this.route.queryParams.subscribe(params => {
-          this.tripId = params['tripId'] || (this.allTrips.length > 0 ? (this.allTrips[0]._id || this.allTrips[0].id) : '');
-          if (this.tripId) this.loadBudget();
+          if (params['tripId']) {
+            this.tripId = params['tripId'];
+            this.loadBudget(); // Automatically load the summary-linked trip
+          } else {
+            // Default to first trip if no ID in URL
+            this.tripId = (this.allTrips.length > 0 ? (this.allTrips[0]._id || this.allTrips[0].id) : '');
+            if (this.tripId) this.loadBudget();
+          }
         });
       },
       error: (err) => console.error("Trips failed to load", err)
@@ -68,7 +74,7 @@ export class BudgetDashboard implements OnInit {
     
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
-      // ✅ Bridge: Parse the limit from the selected Trip dropdown value
+      // ✅ Bridge: Parse the limit from the selected Trip
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
       this.membersCount = selectedTrip.members?.length || 1;
     }
@@ -101,7 +107,6 @@ export class BudgetDashboard implements OnInit {
     }
   }
 
-  // ✅ ADDED: sortTable logic to fix the TS2339 error
   sortTable(column: string) {
     if (this.sortColumn === column) {
       this.sortAscending = !this.sortAscending;
@@ -159,19 +164,49 @@ export class BudgetDashboard implements OnInit {
   }
 
   exportToPDF() {
-    const doc = new jsPDF();
-    doc.text('Trip Budget Report', 14, 22);
-    autoTable(doc, {
-      startY: 30,
-      head: [['Category', 'Amount', 'Date', 'Description']],
-      body: this.expenses.map(e => [
-        e.category, 
-        'Rs. ' + Number(e.amount).toFixed(2), 
-        new Date(e.date).toLocaleDateString(), 
-        e.description
-      ]),
-      theme: 'grid'
-    });
-    doc.save(`Budget_Report_${this.tripId}.pdf`);
+  const doc = new jsPDF();
+  
+  // 1. Add Title
+  doc.setFontSize(18);
+  doc.text('Trip Budget Report', 14, 22);
+  
+  // 2. Add Trip Name (Optional but helpful)
+  const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
+
+  // 3. Prepare the data rows
+  const tableData = this.expenses.map(e => [
+    e.category, 
+    'Rs. ' + Number(e.amount).toFixed(2), 
+    new Date(e.date).toLocaleDateString(), 
+    e.description
+  ]);
+
+  // ✅ 4. Add the Total Spent row at the bottom of the data array
+  if (this.budget) {
+    tableData.push([
+      { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+      { content: 'Rs. ' + Number(this.budget.totalSpent).toFixed(2), styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+      '',
+      ''
+    ]);
   }
+
+  // 5. Generate the table
+  autoTable(doc, {
+    startY: 35,
+    head: [['Category', 'Amount', 'Date', 'Description']],
+    body: tableData,
+    theme: 'grid',
+    headStyles: { fillColor: [0, 131, 143] }, // Matches your teal/blue theme
+    columnStyles: {
+      1: { halign: 'right' }, // Align amounts to the right
+    }
+  });
+
+  // 6. Save
+  doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
+}
 }
