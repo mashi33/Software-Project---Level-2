@@ -1,0 +1,47 @@
+<div class="explore-wrapper">
+  <main class="map-section">
+    <div id="map"></div>
+  </main>
+
+  <aside class="sidebar-section">
+    <div class="search-container">
+      <input type="text" [(ngModel)]="searchQuery" (input)="filterMemories()" 
+             placeholder="Search by city (e.g., Kandy)..."class="search-input">   
+      <button class="search-btn">Find</button>
+    </div>
+
+    <section class="community-card">
+  <header class="gallery-header">
+    <h5 class="gallery-title">Community Gallery</h5>
+    <span class="gallery-count" *ngIf="filteredMemories">{{filteredMemories.length}}</span>
+  </header>
+
+  <div class="gallery-grid">
+    <div class="gallery-item" *ngFor="let memory of filteredMemories | slice:0:showMax; trackBy: trackByFn">
+      <div class="thumb-card" (click)="selectedMemory = memory" [class.active]="selectedMemory === memory">
+        <div class="img-container">
+          <img *ngIf="memory?.imageUrl" [src]="memory?.imageUrl" class="thumb-img" [alt]="memory?.title">
+        </div>
+
+        <div class="thumb-info">
+          <p class="thumb-text">{{ memory?.title || 'Untitled' }}</p>
+          <div class="thumb-dates" *ngIf="memory?.startDate || memory?.endDate">
+            <span class="date-range">
+              {{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <p class="empty-state" *ngIf="filteredMemories?.length === 0">No memories found for this location.</p>
+  </div> 
+
+  <div class="see-more-container" *ngIf="filteredMemories.length > 3">
+    <button class="btn-see-more" (click)="toggleSeeMore()">
+      {{ showMax === 3 ? 'See More (' + (filteredMemories.length - 3) + ')' : 'Show Less' }}
+    </button>
+  </div>
+</section>
+  </aside>
+</div>

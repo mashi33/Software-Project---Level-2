@@ -21,9 +21,15 @@
 
       <div class="input-group">
         <label>What did you spend on?</label>
-        <input type="text" [(ngModel)]="expense.name" name="name" placeholder="e.g. Morning Coffee" autocomplete="off" required>
+        <input type="text" 
+               [(ngModel)]="expense.description" 
+               name="description" 
+               placeholder="e.g. Morning Coffee" 
+               autocomplete="off" 
+               required>
         
-        <div *ngIf="expense.name && !isNoteValid(expense.name)" style="color: #ff6b6b; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
+        <div *ngIf="expense.description && !isNoteValid(expense.description)" 
+             style="color: #ff6b6b; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
           ⚠ Please enter a valid description (must contain letters).
         </div>
       </div>
@@ -36,7 +42,9 @@
       <div class="buttons">
         <button type="button" class="btn-cancel" (click)="cancel()">Cancel</button>
         
-        <button type="submit" class="btn-save" [disabled]="expense.name && !isNoteValid(expense.name)">
+        <button type="submit" 
+                class="btn-save" 
+                [disabled]="expense.description && !isNoteValid(expense.description)">
           {{ isEditMode ? '💾 Update Expense' : '✅ Save Expense' }}
         </button>
       </div>

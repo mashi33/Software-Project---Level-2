@@ -50,4 +50,9 @@ public class TripMemory
     [JsonPropertyName("createdAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("isPublic")]
+    [JsonPropertyName("isPublic")]
+    [BsonRequired] 
+    public bool IsPublic { get; set; }
 }

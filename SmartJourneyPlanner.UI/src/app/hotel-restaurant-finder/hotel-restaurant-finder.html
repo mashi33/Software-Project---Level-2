@@ -6,9 +6,13 @@
   <div class="main-layout">
     <div class="map-section">
       <app-map-view></app-map-view>
+      <div class="floating-buttons">
+        <button class="nav-btn back-btn" (click)="goBack()">Back</button>
+        <button class="nav-btn route-btn" (click)="viewRoute()">View Route</button>
+      </div>
     </div>
     <div class="list-section">
       <app-place-card></app-place-card>
     </div>
   </div>
-</div>
+</div>  

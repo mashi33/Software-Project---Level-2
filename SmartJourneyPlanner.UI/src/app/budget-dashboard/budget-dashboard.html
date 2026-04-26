@@ -4,61 +4,49 @@
     <div class="header-section glass-header">
       <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
         <h2 style="margin: 0; color: #0A4087; font-size: 1.5rem; font-weight: bold;">Budget Planner for</h2>
-        
         <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="loadBudget()">
-          <option value="trip_test_01">Exploring Ella</option>
-          <option value="trip_test_02">Trip to Nuwara Eliya</option>
+          <option value="" disabled selected>Select a Trip</option>
+          <option *ngFor="let t of allTrips" [value]="t._id || t.id">
+            {{ t.tripName }}
+          </option>
         </select>
-        
       </div>
     </div>
 
     <div class="content-grid">
-      
       <div class="card table-card">
         <div class="card-header-blue">
           <h3>Current Trip Expenses</h3>
         </div>
 
         <div class="table-container">
-          
-          <div *ngIf="expenses.length > 0">
+          <div *ngIf="expenses && expenses.length > 0">
             <table class="custom-table">
-              
               <thead>
                 <tr class="table-header-row">
-                  <th (click)="sortTable('category')" style="cursor: pointer;" title="Sort by Category">
-                    Category <span *ngIf="sortColumn === 'category'">{{ sortAscending ? '▲' : '▼' }}</span>
-                  </th>
-                  <th (click)="sortTable('amount')" style="cursor: pointer;" title="Sort by Amount">
-                    Amount <span *ngIf="sortColumn === 'amount'">{{ sortAscending ? '▲' : '▼' }}</span>
-                  </th>
-                  <th (click)="sortTable('date')" style="cursor: pointer;" title="Sort by Date">
-                    Date <span *ngIf="sortColumn === 'date'">{{ sortAscending ? '▲' : '▼' }}</span>
-                  </th>
-                  <th (click)="sortTable('name')" style="cursor: pointer;" title="Sort alphabetically">
-                    Note <span *ngIf="sortColumn === 'name'">{{ sortAscending ? '▲' : '▼' }}</span>
-                  </th>
+                  <th (click)="sortTable('category')" style="cursor: pointer;">Category</th>
+                  <th (click)="sortTable('amount')" style="cursor: pointer;">Amount</th>
+                  <th (click)="sortTable('date')" style="cursor: pointer;">Date</th>
+                  <th (click)="sortTable('description')" style="cursor: pointer;">Note</th>
                   <th>Action</th>
                 </tr>
               </thead>
-
               <tbody>
                 <tr *ngFor="let item of expenses">
                   <td><span class="category-pill">{{ item.category }}</span></td>
-                  <td style="font-weight: bold;">{{ (item.amount) | number:'1.2-2' }}</td>
-                  <td>{{ (item.date) | date:'MMM d, y' }}</td>
-                  <td style="color: #555;">{{ item.name }}</td>
-                  
+                  <td style="font-weight: bold;">Rs. {{ item.amount | number:'1.2-2' }}</td>
+                  <td>{{ item.date | date:'MMM d, y' }}</td>
+                  <td style="color: #555;">{{ item.description }}</td>
                   <td>
                     <button class="btn-edit" (click)="editExpense(item)">✏️</button>
-                    <button class="btn-delete" (click)="deleteExpense(item)">🗑️</button>
+                    <button class="btn-delete" (click)="deleteExpense(item.id)">🗑️</button>
                   </td>
                 </tr>
-                
                 <tr class="total-row" *ngIf="budget">
                   <td>Total</td>
-                  <td style="font-size: 1.1rem;">{{ budget?.totalSpent | number:'1.2-2' }}</td>
+                  <td style="font-size: 1.1rem; color: #d32f2f; font-weight: bold;">
+                    Rs. {{ budget.totalSpent | number:'1.2-2' }}
+                  </td>
                   <td colspan="3"></td>
                 </tr>
               </tbody>
@@ -67,26 +55,32 @@
 
           <div *ngIf="expenses.length === 0" class="empty-state">
             <div class="empty-icon">🚀</div>
-            <h3>Start Your Journey!</h3>
-            <p>No expenses yet.</p>
+            <h3>Ready to start?</h3>
+            <p>{{ tripId ? 'Add your first expense for this trip!' : 'Select a trip above to manage your budget.' }}</p>
           </div>
 
-          <div class="add-btn-wrapper" style="display: flex; justify-content: flex-end; gap: 15px;">
-            <button class="btn-export-pdf" (click)="exportToPDF()" *ngIf="expenses.length > 0">
-              📄 Export to PDF
-            </button>
+          <div class="add-btn-wrapper" style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+            <button class="btn-export-pdf" (click)="exportToPDF()" *ngIf="expenses.length > 0">📄 Export to PDF</button>
             <a [routerLink]="['/add-expense']" [queryParams]="{ tripId: tripId }" class="btn-add-teal">+ Add New Expense</a>
           </div>
-
         </div>
       </div>
 
       <div class="card chart-card">
-        <div class="card-header-white"><h3>Summary</h3></div>
+        <div class="card-header-white"><h3>Financial Summary</h3></div>
         <div class="chart-content-wrapper">
           
-          <div *ngIf="expenses.length > 0" style="text-align: center; margin-bottom: 25px; padding-top: 10px; width: 100%;">
+          <div *ngIf="expenses && expenses.length > 0" style="text-align: center; margin-bottom: 25px; padding-top: 10px; width: 100%;">
             
+            <div class="warning-container" style="margin-bottom: 15px; padding: 0 15px;">
+              <div *ngIf="budgetPercentage >= 100" class="alert-box danger-alert fade-in">
+                <span>⚠️ <strong>Overbudget!</strong> Exceeded by Rs. {{ (budget.totalSpent - totalAllowedBudget) | number:'1.0-0' }}</span>
+              </div>
+              <div *ngIf="budgetPercentage >= 80 && budgetPercentage < 100" class="alert-box warning-alert fade-in">
+                <span>🔔 <strong>Warning:</strong> You have used {{ budgetPercentage | number:'1.0-0' }}% of budget.</span>
+              </div>
+            </div>
+
             <div class="budget-tracker">
               <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 5px;">
                 <span>Spent: Rs. {{ budget?.totalSpent | number:'1.0-0' }}</span>
@@ -94,8 +88,8 @@
               </div>
               <div class="progress-bar-bg">
                 <div class="progress-bar-fill" 
-                     [style.width.%]="budgetPercentage"
-                     [ngClass]="{'danger': budgetPercentage > 90, 'warning': budgetPercentage > 75}">
+                     [style.width.%]="budgetPercentage > 100 ? 100 : budgetPercentage"
+                     [ngClass]="{'danger': budgetPercentage >= 100, 'warning': budgetPercentage >= 80}">
                 </div>
               </div>
             </div>
@@ -109,27 +103,21 @@
               <span style="color: #00838F; font-weight: bold;">Per Person: Rs. {{ costPerPerson | number:'1.2-2' }}</span>
               <div class="member-input-wrapper">
                 <label style="font-size: 0.8rem; color: #666;">Split between</label>
-                <input type="number" min="1" max="20" class="member-input" [(ngModel)]="membersCount" (change)="calculateTotal()">
+                <input type="number" min="1" class="member-input" [(ngModel)]="membersCount" (change)="calculateTotal()">
                 <label style="font-size: 0.8rem; color: #666;">members</label>
               </div>
             </div>
-
           </div>
 
-          <div class="chart-container" *ngIf="expenses.length > 0">
-            <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
+          <div class="chart-container" *ngIf="expenses && expenses.length > 0">
+             <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
           </div>
 
-          <div class="custom-legend" *ngIf="expenses.length > 0">
-            <div *ngFor="let label of doughnutChartLabels" class="legend-item">
-              <span class="color-dot" [style.background-color]="getColorForCategory(label)"></span>
-              <span class="legend-label">{{ label }}</span>
-            </div>
+          <div *ngIf="!tripId || expenses.length === 0" style="text-align: center; color: #999; margin-top: 50px;">
+             <p>{{ tripId ? 'Add expenses to see the financial chart' : 'Please select a trip to view summary' }}</p>
           </div>
-          
         </div>
       </div>
-      
     </div>
   </div>
 </div>

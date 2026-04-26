@@ -5,7 +5,7 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-body{
+.body{
   height:100vh;
   display:flex;
   justify-content:center;
@@ -14,10 +14,10 @@ body{
 }
 
 .container{
-  width:900px;
-  height:560px;
+  width:920px;
+  height:640px;
   display:flex;
-  background:white;
+  background:#a7d6e5;
   border-radius:20px;
   overflow:hidden;
 }

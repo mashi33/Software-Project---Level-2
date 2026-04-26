@@ -12,24 +12,33 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
-
+    
+    <!-- Navbar links -->
     <div class="collapse navbar-collapse" id="navbarNav">
 
       <div class="navbar-nav mx-auto nav-links-group">
         <a class="nav-link" routerLink="/home" routerLinkActive="active">Home</a>
-        <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
         <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
         <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
         <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-        <a class="nav-link" routerLink="/memories" routerLinkActive="active">My Memories</a>
+
+        <div class="dropdown" [class.show]="isMemoryDropdownOpen">
+           <a class="dropdown-toggle" (click)="toggleDropdown('memory')">{{ dropdownLabel }}</a>
+         <div class="dropdown-menu" [class.show]="isMemoryDropdownOpen">
+           <a routerLink="/memories" routerLinkActive="active" (click)="selectOption('My Memories')">My Memories</a>
+           <a routerLink="/community" routerLinkActive="active" (click)="selectOption('Community Map')">Community Map</a>
+         </div>
+        </div>
+
         <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
         <a class="nav-link" routerLink="/timeline" routerLinkActive="active">Timeline</a>
         <a class="nav-link" routerLink="/groupChat" routerLinkActive="active">Group Chat</a>
-        <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
       </div>
 
       <div class="user-actions">
-
+        
+        <!-- Notification dropdown -->
         <div class="dropdown notification-dropdown">
           <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-bell"></i>
@@ -44,16 +53,24 @@
           </ul>
         </div>
 
-        <div class="dropdown profile-dropdown">
-          <a class="dropdown-toggle profile-trigger" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <img [src]="profilePic" alt="user" class="profile-img">
+        <!-- Profile dropdown -->
+        <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
+          <a class="dropdown-toggle profile-trigger" 
+             id="profileDropdown" 
+             style="cursor: pointer;"
+             (click)="toggleDropdown()"> 
+             <img [src]="profilePic" alt="user" class="profile-img">
             <span class="profile-name">{{ userName }}</span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
-            <li><a class="dropdown-item" routerLink="/profile">Profile</a></li>
-            <li><a class="dropdown-item" routerLink="/settings">Settings</a></li>
+          
+          <!-- Profile dropdown menu -->
+          <ul class="dropdown-menu dropdown-menu-end shadow" 
+              [class.show]="isDropdownOpen" 
+              aria-labelledby="profileDropdown">
+            <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">Profile</a></li>
+            <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">Settings</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" routerLink="/login">Sign out</a></li>
+            <li><a class="dropdown-item text-danger" routerLink="/login" (click)="onLogout()">Sign out</a></li>
           </ul>
         </div>
 

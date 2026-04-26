@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
@@ -11,133 +11,146 @@ using System.Threading.Tasks;
 
 namespace SmartJourneyPlanner.Controllers
 {
-    // Swagger ගැටලුව විසඳීමට අවශ්‍ය DTO (Data Transfer Object) පන්තිය
-    public class FileUploadDto
+  // DTO used to receive file upload data from the client (fixes Swagger multipart form issue)
+  public class FileUploadDto
+  {
+    public IFormFile File { get; set; } = null!;               // The uploaded file
+    public string User { get; set; } = "Guest User";           // The user who uploaded the file
+    public string TripId { get; set; } = string.Empty;         // The trip this file belongs to
+  }
+
+  // Handles all API requests related to file uploads and downloads (PDF files only)
+  [Route("api/[controller]")]
+  [ApiController]
+  public class FileController : ControllerBase
+  {
+    private readonly FileStorageService _fileStorage;      // Handles storing and retrieving files in GridFS
+    private readonly CommentsService _commentsService;     // Saves file messages as comment records
+    private readonly IHubContext<ChatHub> _hubContext;     // Sends real-time notifications to connected clients
+
+    private const long MaxFileSize = 20 * 1024 * 1024;    // Maximum allowed file size: 20 MB
+
+    // Injects the required services via dependency injection
+    public FileController(
+        FileStorageService fileStorage,
+        CommentsService commentsService,
+        IHubContext<ChatHub> hubContext)
     {
-        public IFormFile File { get; set; } = null!;
-        public string User { get; set; } = "Guest User";
+      _fileStorage = fileStorage;
+      _commentsService = commentsService;
+      _hubContext = hubContext;
     }
 
-    [Route("api/[controller]")]
-    [ApiController]
-    public class FileController : ControllerBase
+    // POST api/file/upload
+    // Validates and uploads a PDF file, saves a message record, and notifies the trip group in real time
+    [HttpPost("upload")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Upload([FromForm] FileUploadDto dto)
     {
-        private readonly FileStorageService _fileStorage;
-        private readonly CommentsService _commentsService;
-        private readonly IHubContext<ChatHub> _hubContext;
+      // Reject the request if no file was provided
+      if (dto.File == null || dto.File.Length == 0)
+        return BadRequest("No file provided.");
 
-        private const long MaxFileSize = 20 * 1024 * 1024; // 20 MB
+      // Only PDF files are accepted
+      if (dto.File.ContentType != "application/pdf")
+        return BadRequest("Only PDF files are allowed.");
 
-        public FileController(
-            FileStorageService fileStorage,
-            CommentsService commentsService,
-            IHubContext<ChatHub> hubContext)
+      // Reject files larger than 20 MB
+      if (dto.File.Length > MaxFileSize)
+        return BadRequest("File size must not exceed 20 MB.");
+
+      // Trip ID is required to route the file message to the correct group
+      if (string.IsNullOrEmpty(dto.TripId))
+        return BadRequest("Trip ID is required.");
+
+      try
+      {
+        // 1. Store file in GridFS
+        using var stream = dto.File.OpenReadStream();
+        var fileId = await _fileStorage.UploadAsync(stream, dto.File.FileName);
+
+        // 2. Save message record to MongoDB
+        var comment = new CommentItem
         {
-            _fileStorage = fileStorage;
-            _commentsService = commentsService;
-            _hubContext = hubContext;
-        }
+          TripId = dto.TripId,
+          User = dto.User,
+          Text = string.Empty,
+          MessageType = "pdf",
+          FileId = fileId,
+          FileName = dto.File.FileName,
+          FileSize = dto.File.Length,
+          CreatedAt = DateTime.UtcNow
+        };
 
-        // POST api/file/upload
-        [HttpPost("upload")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Upload([FromForm] FileUploadDto dto) // ✅ DTO භාවිතා කර Swagger ගැටලුව විසඳා ඇත
-        {
-            if (dto.File == null || dto.File.Length == 0)
-                return BadRequest("No file provided.");
+        await _commentsService.CreateAsync(comment);
 
-            if (dto.File.ContentType != "application/pdf")
-                return BadRequest("Only PDF files are allowed.");
+        // 3. Broadcast to specific Trip Group via SignalR (not to all clients)
+        await _hubContext.Clients.Group(dto.TripId).SendAsync("ReceiveComment", comment);
 
-            if (dto.File.Length > MaxFileSize)
-                return BadRequest("File size must not exceed 20 MB.");
-
-            try
-            {
-                // 1. Store file in GridFS
-                using var stream = dto.File.OpenReadStream();
-                var fileId = await _fileStorage.UploadAsync(stream, dto.File.FileName);
-
-                // 2. Save message record to MongoDB
-                var comment = new CommentItem
-                {
-                    User = dto.User,
-                    Text = string.Empty,
-                    MessageType = "pdf",
-                    FileId = fileId,
-                    FileName = dto.File.FileName,
-                    FileSize = dto.File.Length,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _commentsService.CreateAsync(comment);
-
-                // 3. Broadcast to all clients via SignalR
-                await _hubContext.Clients.All.SendAsync("ReceiveComment", comment);
-
-                return Ok(new { fileId, messageId = comment.Id });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FileController] Upload error: {ex.Message}");
-                return StatusCode(500, "File upload failed.");
-            }
-        }
-
-        // GET api/file/download/{fileId}
-        [HttpGet("download/{fileId}")]
-        public async Task<IActionResult> Download(string fileId)
-        {
-            try
-            {
-                // check the object ID
-                if (!ObjectId.TryParse(fileId, out var objectId))
-                {
-                    return BadRequest("Invalid file ID format.");
-                }
-                // var භාවිතා කිරීමෙන් compiler එක නිවැරදි වර්ගය තෝරා ගනී
-                var stream = await _fileStorage.DownloadAsync(fileId);
-
-                if (stream == null)
-                {
-                    return NotFound("File stream is null.");
-                }
-
-                // GridFS stream එකක් නම් පමණක් Filename එක ලබා ගැනීමට උත්සාහ කරන්න
-                string fileName = "download.pdf";
-                if (stream is GridFSDownloadStream<ObjectId> gridStream)
-                {
-                    fileName = gridStream.FileInfo.Filename;
-                }
-
-                return File(stream, "application/pdf", fileName);
-            }
-            catch (GridFSFileNotFoundException)
-            {
-                return NotFound("File not found in MongoDB GridFS.");
-            }
-            catch (Exception)
-            {
-                return NotFound("File not found.");
-            }
-        }
-
-        // GET api/file/view/{fileId}
-        [HttpGet("view/{fileId}")]
-        public async Task<IActionResult> ViewFile(string fileId)
-        {
-            try
-            {
-                if (!ObjectId.TryParse(fileId, out _)) return BadRequest("Invalid ID");
-
-                var stream = await _fileStorage.DownloadAsync(fileId);
-                if (stream == null) return NotFound();
-
-                // මෙහි 3 වැනි parameter එක (filename) ලබා නොදෙන්න. 
-                // එවිට header එක Content-Disposition: inline ලෙස සැකසේ.
-                return File(stream, "application/pdf");
-            }
-            catch (Exception) { return NotFound(); }
-        }
+        return Ok(new { fileId, messageId = comment.Id });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[FileController] Upload error: {ex.Message}");
+        return StatusCode(500, "File upload failed.");
+      }
     }
+
+    // GET api/file/download/{fileId}
+    // Downloads a PDF file from GridFS by its file ID as an attachment
+    [HttpGet("download/{fileId}")]
+    public async Task<IActionResult> Download(string fileId)
+    {
+      try
+      {
+        // Validate that the provided ID is a valid MongoDB ObjectId
+        if (!ObjectId.TryParse(fileId, out var objectId))
+        {
+          return BadRequest("Invalid file ID format.");
+        }
+
+        var stream = await _fileStorage.DownloadAsync(fileId);
+
+        if (stream == null)
+        {
+          return NotFound("File stream is null.");
+        }
+
+        // Try to get the original filename from the GridFS stream metadata
+        string fileName = "download.pdf";
+        if (stream is GridFSDownloadStream<ObjectId> gridStream)
+        {
+          fileName = gridStream.FileInfo.Filename;
+        }
+
+        return File(stream, "application/pdf", fileName);
+      }
+      catch (GridFSFileNotFoundException)
+      {
+        return NotFound("File not found in MongoDB GridFS.");
+      }
+      catch (Exception)
+      {
+        return NotFound("File not found.");
+      }
+    }
+
+    // GET api/file/view/{fileId}
+    // Streams a PDF file from GridFS for inline viewing in the browser (no download prompt)
+    [HttpGet("view/{fileId}")]
+    public async Task<IActionResult> ViewFile(string fileId)
+    {
+      try
+      {
+        // Validate the file ID format before attempting to fetch
+        if (!ObjectId.TryParse(fileId, out _)) return BadRequest("Invalid ID");
+
+        var stream = await _fileStorage.DownloadAsync(fileId);
+        if (stream == null) return NotFound();
+
+        return File(stream, "application/pdf");
+      }
+      catch (Exception) { return NotFound(); }
+    }
+  }
 }

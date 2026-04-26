@@ -1,18 +1,67 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common'; // Required for [src], *ngIf, etc.
 import { RouterModule } from '@angular/router'; // Required for routerLink
-
+import { AuthService } from '../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
-  // This imports property is what was missing:
+  standalone: true, // Ensuring compatibility with modern Angular versions
   imports: [CommonModule, RouterModule],
   templateUrl: './navbar.html',
-  styleUrl: './navbar.css',
+  styleUrls: ['./navbar.css']
 })
-export class NavbarComponent {
-  userName: string = 'Krishan Karunarathna';
+export class NavbarComponent implements OnInit {
+  // User profile details
+  userName: string = 'User';
   profilePic: string = '/profilePic.jpg';
+
+  // UI State management
+  isDropdownOpen: boolean = false;
+  isMemoryDropdownOpen: boolean = false;
   notificationCount: number = 5;
+  dropdownLabel: string = 'Memory';
+
+  constructor(private authService: AuthService) {}
+
+  /**
+   * Lifecycle hook that initializes the component.
+   */
+  ngOnInit(): void {
+    const savedName = localStorage.getItem('userName');
+    this.userName = savedName ? savedName : 'User';
+  }
+
+  /**
+   * ✅ FIX: Added '?' to make menu optional.
+   * This allows (click)="toggleDropdown()" to work without errors.
+   */
+  toggleDropdown(menu?: string) {
+    if (menu === 'memory') {
+      this.isMemoryDropdownOpen = !this.isMemoryDropdownOpen;
+    } else {
+      // Logic for general dropdown if no menu name is provided
+      this.isDropdownOpen = !this.isDropdownOpen;
+    }
+  }
+
+  // close dropdown when clicking outside
+  closeDropdown() {
+    this.isDropdownOpen = false;
+    this.isMemoryDropdownOpen = false;
+  }
+
+  /**
+   * Handles user logout
+   */
+  onLogout(): void {
+    localStorage.clear();
+    console.log('User logged out successfully');
+    // You might want to add: this.router.navigate(['/login']);
+  }
+
+  selectOption(option: string) {
+    this.dropdownLabel = option;
+    this.isMemoryDropdownOpen = false;
+  }
 }

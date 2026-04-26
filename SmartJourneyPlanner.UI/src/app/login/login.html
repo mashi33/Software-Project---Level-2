@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Login Page</title>
-  
-</head>
-<body>
+<div class="body">
 
 <div class="container">
   
@@ -36,7 +29,10 @@
 
     <p class="signup">
       Don't have an account? 
-      <a routerLink="/signup">Sign up</a>
+      <a [routerLink]="['/signup']" 
+     [queryParams]="{ tripId: route.snapshot.queryParamMap.get('tripId'), role: route.snapshot.queryParamMap.get('role') }">
+     Sign Up
+  </a>
     </p>
   </div>
 
@@ -50,6 +46,5 @@
 
 </div>
 
-</body>
-</html>
+</div>
 

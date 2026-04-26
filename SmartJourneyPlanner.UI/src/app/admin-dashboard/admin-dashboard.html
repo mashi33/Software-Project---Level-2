@@ -1,86 +1,173 @@
 <div class="admin-layout">
   <aside class="sidebar">
-    <h2>⚙️ Admin Panel</h2>
+    <div class="sidebar-header">
+      <h2>⚙️ Admin Panel</h2>
+    </div>
     <ul>
-      <li class="active">Dashboard Home</li>
-      <li>Manage Providers</li>
-      <li>Manage Users</li>
-      <li>Platform Settings</li>
+      <li [class.active]="view === 'stats'" (click)="view = 'stats'">📊 Dashboard Home</li>
+      <li [class.active]="view === 'providers'" (click)="onReviewNow()">🚐 Manage Providers ({{pendingProviders.length}})</li>
+      <li [class.active]="view === 'users'" (click)="onManageLogins()">👥 User Management</li>
     </ul>
   </aside>
 
   <main class="content">
-    <header>
-      <h1>⚙️ Smart Journey Planner - Admin Control Center</h1>
+    <header class="main-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>Smart Journey Control Center</h1>
+        <p class="date-text">System Overview — {{ currentDate | date:'fullDate' }}</p>
+      </div>
+      
+      <button (click)="refreshDashboard()" class="btn-refresh-fancy">
+  <span>🔄</span> Refresh Dashboard
+</button>
     </header>
 
-    <div class="dashboard-cards">
-      <div class="card warning">
-        <h3>Pending Transport Providers</h3>
-        <h1>{{ pendingProviders.length }}</h1>
-        <p>Providers waiting for approval.</p>
-        <button class="btn-primary">Review Providers</button>
+    <div *ngIf="view === 'stats'" class="dashboard-cards">
+      <div class="card warning-card">
+        <div class="card-icon">🚐</div>
+        <div class="card-data">
+          <h3>Pending Providers</h3>
+          <h1>{{ pendingProviders.length }}</h1>
+        </div>
+        <button class="btn-action-primary" (click)="onReviewNow()">Review Now</button>
       </div>
 
-      <div class="card success">
-        <h3>Platform Statistics</h3>
-        <p><strong>Total Users:</strong> 150</p>
-        <p><strong>Active Trips:</strong> 42</p>
+      <div class="card success-card">
+        <div class="card-icon">👥</div>
+        <div class="card-data">
+          <h3>Platform Users</h3>
+          <h1>{{ allUsers.length }}</h1>
+        </div>
+        <button class="btn-action-success" (click)="onManageLogins()">Manage Logins</button>
       </div>
     </div>
 
-    <div class="verification-section">
-      <h2>📋 Pending Approvals</h2>
+    <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
+      <div class="section-header">
+        <h2>📋 Pending Vehicle Approvals</h2>
+      </div>
       <table class="admin-table">
         <thead>
           <tr>
             <th>Owner</th>
-            <th>Vehicle</th>
-            <th>Type</th>
+            <th>Vehicle Type</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let p of pendingProviders">
-            <td>{{ p.fullName }}</td>
-            <td>{{ p.vehicleModel }}</td>
-            <td>{{ p.vehicleType }}</td>
-            <td><span class="badge warning">{{ p.status }}</span></td>
+          <tr *ngFor="let p of pendingProviders" class="table-row">
+            <td class="font-bold">{{ p.providerProfile?.name || p.fullName || 'No Name' }}</td>
+            <td>{{ p.type || p.vehicleClass }}</td>
+            <td><span class="badge-pending">Pending Approval</span></td>
             <td>
-              <button class="btn-view" (click)="viewDetails(p)">🔍 View Docs</button>
-              <button class="btn-approve" (click)="updateProviderStatus(p.id, 'Approved')">✅</button>
-              <button class="btn-reject" (click)="updateProviderStatus(p.id, 'Rejected')">❌</button>
+              <button class="btn-icon view" (click)="viewDetails(p)" title="View Details">🔍</button>
+              <button class="btn-icon approve" (click)="updateProviderStatus(p, 'Approved')" title="Approve">✅</button>
+              <button class="btn-icon reject" (click)="updateProviderStatus(p, 'Rejected')" title="Reject">❌</button>
             </td>
           </tr>
         </tbody>
       </table>
-      
-      <p *ngIf="errorMessage" class="error-text">{{ errorMessage }}</p>
+    </div>
+
+    <div class="verification-section shadow-sm" *ngIf="view === 'users'">
+      <div class="section-header">
+        <h2>👥 User Login & Role Control</h2>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>Current Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of allUsers" class="table-row">
+            <td>{{ u.fullName }}</td>
+            <td>{{ u.email }}</td>
+            <td><span class="role-badge" [ngClass]="u.role">{{ u.role }}</span></td>
+            <td>
+              <button (click)="changeRole(u.id || u._id, 'Admin')" class="btn-promote">Promote</button>
+              <button class="btn-icon reject" title="Deactivate">🚫</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </main>
 
-  <div class="modal" *ngIf="selectedProvider">
-    <div class="modal-content">
-      <span class="close" (click)="selectedProvider = null">&times;</span>
-      
-      <h2>Documents for {{ selectedProvider.fullName }}</h2>
-      <hr>
-      
-      <div class="doc-images">
-        <div class="img-box">
-          <p><strong>Driver License</strong></p>
-          <img [src]="selectedProvider.licenseUrl" alt="Driver License" onerror="this.src='assets/no-image.png'">
+  <div class="modal-overlay" *ngIf="selectedProvider" (click)="selectedProvider = null">
+    <div class="modal-card shadow-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="tag">{{ selectedProvider.type }}</span>
+          <h2>Reviewing: {{ selectedProvider.vehicleClass }}</h2>
         </div>
-        
-        <div class="img-box">
-          <p><strong>NIC Front</strong></p>
-          <img [src]="selectedProvider.nicUrl" alt="NIC Front" onerror="this.src='assets/no-image.png'">
+        <button class="close-pill" (click)="selectedProvider = null">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-grid-layout">
+          
+          <div class="modal-col specs-container">
+            <div class="section-title">
+              <span class="icon">📋</span>
+              <h3>Specifications</h3>
+            </div>
+            <div class="specs-list">
+              <div class="spec-row"><span class="label">Owner</span><span class="val">{{ selectedProvider.providerProfile?.name }}</span></div>
+              <div class="spec-row"><span class="label">Phone</span><span class="val">{{ selectedProvider.providerProfile?.phone }}</span></div>
+              <div class="spec-row"><span class="label">Daily Rate</span><span class="val highlight">Rs. {{ selectedProvider.standardDailyRate }}</span></div>
+              <div class="spec-row"><span class="label">Seats</span><span class="val">{{ selectedProvider.seatCount }}</span></div>
+              <div class="spec-row"><span class="label">Transmission</span><span class="val">{{ selectedProvider.transmission }}</span></div>
+            </div>
+          </div>
+
+          <div class="modal-col docs-container">
+            <div class="section-title">
+              <span class="icon">🆔</span>
+              <h3>Verification Documents</h3>
+            </div>
+            <div class="docs-stack">
+              <div class="doc-card" (click)="openImage(selectedProvider.driverLicenseUrl)">
+                <div class="d-icon license">📄</div>
+                <div class="d-content">
+                  <span class="d-title">Driver License</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+
+              <div class="doc-card" (click)="openImage(selectedProvider.driverNicUrl)">
+                <div class="d-icon nic">🪪</div>
+                <div class="d-content">
+                  <span class="d-title">NIC / Identity Card</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+
+              <div class="doc-card" (click)="openImage(selectedProvider.revenueLicenseUrl)">
+                <div class="d-icon revenue">📝</div>
+                <div class="d-content">
+                  <span class="d-title">Revenue License</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      
-      <div class="modal-actions">
-          <button class="btn-primary" (click)="selectedProvider = null">Close Review</button>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="selectedProvider = null">Cancel</button>
+        <div class="action-group">
+          <button class="btn-reject-main" (click)="updateProviderStatus(selectedProvider, 'Rejected')">Reject</button>
+          <button class="btn-approve-main" (click)="updateProviderStatus(selectedProvider, 'Approved')">Approve Provider</button>
+        </div>
       </div>
     </div>
   </div>

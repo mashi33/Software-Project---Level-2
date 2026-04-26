@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router,RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { RouteService } from '../services/route.service';
@@ -11,11 +11,10 @@ import Swal from 'sweetalert2';
 import { GenerationComponent } from '../generation/generation';
 
 @Component({
-  selector: 'app-route-optimization',
-  standalone: true,
-  imports: [CommonModule, FormsModule,RouterLink, GoogleMapsModule, GenerationComponent],
-  templateUrl: './route-optimization.html',
-  styleUrl: './route-optimization.css',
+    selector: 'app-route-optimization',
+    imports: [CommonModule, FormsModule, RouterLink, GoogleMapsModule, GenerationComponent],
+    templateUrl: './route-optimization.html',
+    styleUrl: './route-optimization.css'
 })
 export class RouteOptimization implements OnInit, OnDestroy {
   @ViewChild(GoogleMap, { static: false }) map!: GoogleMap;
@@ -46,7 +45,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   private searchSubject = new Subject<{ input: string, type: 'start' | 'end' }>();
   private searchSubscription?: Subscription;
 
-  constructor(private routeService: RouteService) {
+  constructor(private routeService: RouteService, private router: Router) {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged(
@@ -64,6 +63,10 @@ export class RouteOptimization implements OnInit, OnDestroy {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
     }
+  }
+
+   goToExplore() {
+    this.router.navigate(['/explore']);
   }
 
   loadGoogleApi() {

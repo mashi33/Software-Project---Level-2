@@ -1,6 +1,3 @@
-// This is the main logic file for the Trip Timeline page.
-// It handles showing the trip days, adding events, and dragging items around.
-
 import { Component, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,36 +6,36 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
+// Importing our own services and models
 import { TimelineService } from '../services/timeline.service';
 import { TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
 import { CalendarSyncUtil } from '../utils/calendar-sync.util';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'; // For nice popup alerts
 
 @Component({
   selector: 'app-trip-timeline',
   standalone: true,
   imports: [CommonModule, DragDropModule, MatButtonModule, MatIconModule, FormsModule],
-
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
 })
 export class TripTimelineComponent {
-  // We use this service to talk to the database and manage our trip data
+  // Accessing the shared TimelineService to manage data
   private timelineService = inject(TimelineService);
   
-  // This gets the current list of days and events from the service
+  // The current timeline data (linked to the service)
   timeline = this.timelineService.timeline;
   
-  // If true, we show the welcome screen. If false, we show the actual timeline.
+  // Controls if we show the "Welcome" screen or the actual timeline
   showHero = true;
 
-  // This tells us if the "Add Event" popup (modal) is currently open or closed
+  // Controls if the "Add/Edit Event" popup is visible
   isModalOpen = false;
   
-  // If we are editing an old event, we keep its ID here. If it's a new event, this is null.
+  // Stores the ID of the event we are currently editing (null if adding new)
   editingEventId: string | null = null; 
 
-  // This object holds the text the user types into the Add/Edit form
+  // Object to store data from the Add/Edit form
   formData = {
     title: '',
     time: '',
@@ -48,85 +45,246 @@ export class TripTimelineComponent {
     status: 'Pending' as 'Pending' | 'Completed'
   };
   
-  // Remembers which day we are adding an event to (e.g., Day 1 or Day 2)
+  // Stores which day we are currently adding an event to
   selectedDayId: string = ''; 
-
-  constructor() {
-    // We don't auto-hide the hero anymore, let the user click the button
+  
+  // Calculates today's date so users can't pick past dates in the calendar
+  get minDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   }
-  // --- Validation State ---
-  // These help us track if a user has clicked on a field and if there are any errors (like empty fields)
+
+  constructor() {}
+
+  // Tracking which form fields have been clicked/touched
   formTouched = {
     title: false,
     time: false,
-    location: false
+    location: false,
+    description: false
   };
 
+  // Stores error messages to show the user
   formErrors = {
     title: '',
     time: '',
-    location: ''
+    location: '',
+    description: ''
   };
 
+  // Runs when the page loads
   ngOnInit() {
-    // If we already have data loaded, don't show the welcome hero
+    // If there is already data, skip the welcome screen
     if (this.timeline().days.length > 0) {
       this.showHero = false;
     }
   }
 
+  // --- Validation Logic ---
   // Checks if the form is filled out correctly before saving
   validateForm(): boolean {
     let isValid = true;
     
-    // Check if Title is empty
+    const hasLetter = /[a-zA-Z]/.test(this.formData.title);
+
+    // Title validation: Required, must have letters, and length between 3-50
     if (!this.formData.title || this.formData.title.trim() === '') {
       this.formErrors.title = 'Title is required';
+      isValid = false;
+    } else if (!hasLetter) {
+      this.formErrors.title = 'Invalid title (must contain letters)';
+      isValid = false;
+    } else if (this.formData.title.trim().length < 3) {
+      this.formErrors.title = 'Title must be at least 3 characters';
+      isValid = false;
+    } else if (this.formData.title.trim().length > 50) {
+      this.formErrors.title = 'Title is too long (max 50 chars)';
       isValid = false;
     } else {
       this.formErrors.title = '';
     }
 
-    // Check if Time is empty
+    // Time validation: Required, cannot be duplicate, and must be in future for today
     if (!this.formData.time) {
       this.formErrors.time = 'Time is required';
       isValid = false;
     } else {
-      this.formErrors.time = '';
+      const day = this.timeline().days.find(d => d.id === this.selectedDayId);
+      if (day) {
+        // Check if another event already has this exact time
+        const isTimeTaken = day.events.some(e => {
+          if (this.editingEventId && e.id === this.editingEventId) return false;
+          return e.time === this.formData.time;
+        });
+
+        if (isTimeTaken) {
+          this.formErrors.time = 'An event already exists at this time';
+          isValid = false;
+        } else {
+          // If the day is "Today", check if the chosen time has already passed
+          const dDate = new Date(day.date);
+          const now = new Date();
+          
+          if (dDate.getFullYear() === now.getFullYear() && 
+              dDate.getMonth() === now.getMonth() && 
+              dDate.getDate() === now.getDate()) {
+            
+            const [h, m] = this.formData.time.split(':').map(Number);
+            const eventTime = new Date();
+            eventTime.setHours(h, m, 0, 0);
+
+            if (eventTime < now) {
+              this.formErrors.time = 'Time must be in the future';
+              isValid = false;
+            } else {
+              this.formErrors.time = '';
+            }
+          } else {
+            this.formErrors.time = '';
+          }
+        }
+      } else {
+        this.formErrors.time = '';
+      }
     }
 
-    // Check if Location is empty
+    // Location validation: Required, must have letters, length 3-100
+    const hasLetterLoc = /[a-zA-Z]/.test(this.formData.location);
     if (!this.formData.location || this.formData.location.trim() === '') {
       this.formErrors.location = 'Location is required';
+      isValid = false;
+    } else if (!hasLetterLoc) {
+      this.formErrors.location = 'Invalid location (must contain letters)';
+      isValid = false;
+    } else if (this.formData.location.trim().length < 3) {
+      this.formErrors.location = 'Location must be at least 3 characters';
+      isValid = false;
+    } else if (this.formData.location.trim().length > 100) {
+      this.formErrors.location = 'Location is too long (max 100 chars)';
       isValid = false;
     } else {
       this.formErrors.location = '';
     }
 
+    // Description validation: Optional, but if typed, must have letters and be < 200 chars
+    if (this.formData.description && this.formData.description.trim().length > 0) {
+      const hasLetterDesc = /[a-zA-Z]/.test(this.formData.description);
+      if (!hasLetterDesc) {
+        this.formErrors.description = 'Invalid description (must contain letters)';
+        isValid = false;
+      } else if (this.formData.description.length > 200) {
+        this.formErrors.description = 'Description is too long (max 200 chars)';
+        isValid = false;
+      } else {
+        this.formErrors.description = '';
+      }
+    } else {
+      this.formErrors.description = '';
+    }
+
     return isValid;
   }
 
-  // Runs when user leaves a text box, to check for errors immediately
-  handleBlur(field: 'title' | 'time' | 'location') {
+  // Marks a field as "visited" so we can show error messages
+  handleBlur(field: 'title' | 'time' | 'location' | 'description') {
     this.formTouched[field] = true;
     this.validateForm();
   }
 
-  // A quick way to check if the Save button should be disabled
+  // Helper to disable the "Save" button if there are errors
   get isFormInvalid(): boolean {
-    return !this.formData.title || !this.formData.time || !this.formData.location;
+    const title = this.formData.title ? this.formData.title.trim() : '';
+    const hasLetterTitle = /[a-zA-Z]/.test(title);
+    
+    const location = this.formData.location ? this.formData.location.trim() : '';
+    const hasLetterLoc = /[a-zA-Z]/.test(location);
+
+    const description = this.formData.description ? this.formData.description.trim() : '';
+    const hasLetterDesc = description.length > 0 ? /[a-zA-Z]/.test(description) : true;
+
+    if (!title || !hasLetterTitle || title.length < 3 || title.length > 50) return true;
+    if (!location || !hasLetterLoc || location.length < 3 || location.length > 100) return true;
+    if (description.length > 0 && (!hasLetterDesc || description.length > 200)) return true;
+    if (!this.formData.time) return true;
+
+    const day = this.timeline().days.find(d => d.id === this.selectedDayId);
+    if (day) {
+      const isTimeTaken = day.events.some(e => {
+        if (this.editingEventId && e.id === this.editingEventId) return false;
+        return e.time === this.formData.time;
+      });
+      if (isTimeTaken) return true;
+
+      const dDate = new Date(day.date);
+      const now = new Date();
+      if (dDate.getFullYear() === now.getFullYear() && 
+          dDate.getMonth() === now.getMonth() && 
+          dDate.getDate() === now.getDate()) {
+        const [h, m] = this.formData.time.split(':').map(Number);
+        const eventTime = new Date();
+        eventTime.setHours(h, m, 0, 0);
+        if (eventTime < now) return true;
+      }
+    }
+
+    return false;
   }
 
   // --- Date Picker Logic ---
-  // Updates the date of a specific day when the user picks a new date
+  // Runs when a user picks a new date for a day
   onDateChange(event: any, dayId: string) {
-    const newDate = event.target.value;
-    if (newDate) {
-      this.timelineService.updateDayDate(dayId, newDate);
+    const newDateStr = event.target.value; 
+    if (!newDateStr) return;
+
+    const [y, m, d] = newDateStr.split('-').map(Number);
+    const newDate = new Date(y, m - 1, d); 
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Validation: Don't allow past dates
+    if (newDate < today) {
+      Swal.fire({
+        title: 'Invalid Date',
+        text: 'You cannot select a date in the past.',
+        icon: 'error',
+        confirmButtonColor: '#007BFF'
+      });
+      event.target.value = ''; 
+      return;
     }
+
+    // Validation: Don't allow same date for multiple days
+    const [year, month, day] = newDateStr.split('-').map(Number);
+    const existingDays = this.timeline().days;
+    
+    const isDateTaken = existingDays.some(d => {
+      if (d.id === dayId) return false; 
+      
+      const dDate = new Date(d.date);
+      if (isNaN(dDate.getTime())) return false;
+      
+      return dDate.getFullYear() === year && 
+             dDate.getMonth() === (month - 1) && 
+             dDate.getDate() === day;
+    });
+
+    if (isDateTaken) {
+      Swal.fire({
+        title: 'Date Already Taken',
+        text: 'This date is already assigned to another day in your itinerary.',
+        icon: 'warning',
+        confirmButtonColor: '#007BFF'
+      });
+      event.target.value = ''; 
+      return;
+    }
+
+    // Update the date in our database/service
+    this.timelineService.updateDayDate(dayId, newDateStr);
   }
 
-  // Opens the browser's built-in date picker when the calendar icon is clicked
+  // Opens the browser's native date picker when clicking our custom date UI
   triggerDatePicker(dayId: string) {
     const picker = document.getElementById('date-picker-' + dayId) as HTMLInputElement;
     if (picker) {
@@ -134,23 +292,20 @@ export class TripTimelineComponent {
     }
   }
 
-  // This tells Angular which lists an event can be dragged into
+  // Helper for drag and drop to know which containers are linked
   get connectedTo(): string[] {
     return this.timeline().days.map(d => d.id);
   }
 
   // --- Day logic methods ---
-  // Switches from the welcome screen to the timeline view
   startItinerary() {
     this.showHero = false;
   }
 
-  // Adds a new empty day to the trip
   addNewDay() {
     this.timelineService.addDay();
   }
 
-  // Deletes a day after asking the user for confirmation
   deleteDay(dayId: string) {
     Swal.fire({
       title: 'Delete this day?',
@@ -174,32 +329,29 @@ export class TripTimelineComponent {
     return days.findIndex(d => d.id === day.id) + 1;
   }
   
-  // Counts how many activities are marked as "Completed" for a day
+  // Counts how many tasks are marked "Completed" in a day
   completedCount(day: TimelineDay): number {
     return day.events.filter(e => e.status === 'Completed').length;
   }
 
-  // Calculates the progress percentage (0% to 100%) for a day
+  // Calculates the progress bar percentage for a day
   completionPercentage(day: TimelineDay): number {
     if (day.events.length === 0) return 0;
     return Math.round((this.completedCount(day) / day.events.length) * 100);
   }
 
-  // This method runs when an event is dragged and dropped into a new position or new day
+  // Handles moving events up/down or between different days
   drop(event: CdkDragDrop<any>) {
     const currentDayId = event.container.id; 
     
     if (event.previousContainer === event.container) {
-      // Reordering inside the same day
       this.timelineService.reorderEvents(currentDayId, currentDayId, event.previousIndex, event.currentIndex);
     } else {
-      // Moving from one day to another day
       this.timelineService.reorderEvents(event.previousContainer.id, currentDayId, event.previousIndex, event.currentIndex);
     }
   }
 
-  // --- Event logic methods ---
-  // Decides which icon to show based on the category (e.g., taxi for transport)
+  // Returns the correct icon name based on event type (Hotel, Food, etc)
   getCategoryIcon(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'domain'; 
@@ -210,7 +362,7 @@ export class TripTimelineComponent {
     }
   }
 
-  // Decides which CSS color to use for the icon background
+  // Returns CSS class for coloring based on event type
   getCategoryClass(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'cat-hotel';
@@ -221,12 +373,11 @@ export class TripTimelineComponent {
     }
   }
 
-  // Marks an event as "Completed" or "Pending" when the dot is clicked
+  // Switches an event between "Pending" and "Completed"
   toggleStatus(dayId: string, eventItem: TimelineEvent) {
     this.timelineService.toggleEventStatus(dayId, eventItem.id);
   }
 
-  // Deletes a single event after asking for confirmation
   deleteEvent(dayId: string, eventItem: TimelineEvent) {
     Swal.fire({
       title: 'Delete this event?',
@@ -244,56 +395,52 @@ export class TripTimelineComponent {
   }
 
   // --- Modal (Popup) logic methods ---
-  // Opens the popup to add a brand new activity
+  // Prepares the form to add a new activity
   openAddEventModal(dayId: string) {
     this.selectedDayId = dayId;
     this.editingEventId = null;
     this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
-    this.formTouched = { title: false, time: false, location: false };
-    this.formErrors = { title: '', time: '', location: '' };
+    this.formTouched = { title: false, time: false, location: false, description: false };
+    this.formErrors = { title: '', time: '', location: '', description: '' };
     this.isModalOpen = true;
   }
 
-  // Opens the popup to edit an existing activity and fills it with current data
+  // Loads existing data into the form to edit an activity
   openEditEventModal(dayId: string, eventItem: TimelineEvent) {
     this.selectedDayId = dayId;
     this.editingEventId = eventItem.id;
     this.formData = { ...eventItem };
-    this.formTouched = { title: false, time: false, location: false };
-    this.formErrors = { title: '', time: '', location: '' };
+    this.formTouched = { title: false, time: false, location: false, description: false };
+    this.formErrors = { title: '', time: '', location: '', description: '' };
     this.isModalOpen = true;
   }
 
-  // Closes the popup
   closeModal() {
     this.isModalOpen = false;
   }
 
-  // Saves the form data when the user clicks 'Save'
+  // Runs when user clicks "Save" in the popup
   onSubmit(e: Event) {
     e.preventDefault();
     
-    // Trigger validation for all fields
-    this.formTouched = { title: true, time: true, location: true };
+    // Mark everything as touched to show errors if any
+    this.formTouched = { title: true, time: true, location: true, description: true };
     
     if (this.validateForm() && this.selectedDayId) {
       if (this.editingEventId) {
-        // Update existing event
         this.timelineService.updateEvent(this.selectedDayId, { ...this.formData, id: this.editingEventId, dayId: this.selectedDayId } as TimelineEvent);
       } else {
-        // Add new event
         this.timelineService.addEvent(this.selectedDayId, { ...this.formData, dayId: this.selectedDayId });
       }
       
-      // Clear form and close
+      // Reset form and close
       this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
       this.editingEventId = null;
       this.closeModal();
     }
   }
 
-  // --- Export logic ---
-  // Opens Google Calendar to sync the trip plan
+  // Opens Google Calendar to save the trip events
   exportToCalendar() {
     if (this.totalActivities === 0) {
       Swal.fire({
@@ -309,12 +456,10 @@ export class TripTimelineComponent {
   }
 
   // --- Statistics Getters ---
-  // Total number of activities in the whole trip
   get totalActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.length, 0);
   }
 
-  // Total activities marked as "Completed" in the whole trip
   get completedActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.filter(e => e.status === 'Completed').length, 0);
   }

@@ -19,7 +19,10 @@
 
       <!-- Booking Card -->
       <div class="mb-card position-relative" *ngFor="let b of userBookings">
-        <!-- Booking ID removed -->
+        <!-- Close Button (Remove Booking) -->
+        <button class="btn-remove-card" (click)="removeBooking(b)" title="Remove from history">
+          <i class="bi bi-x"></i>
+        </button>
         
         <div class="mb-card-header d-flex justify-content-between align-items-center">
           <div class="d-flex flex-column">
@@ -96,7 +99,7 @@
                 <p class="text-secondary small mb-2">Provider Contact</p>
                 <div *ngIf="b.status === 'Confirmed' || b.status === 'Active' || b.status === 'Completed'" class="d-flex align-items-center mb-contact-reveal">
                   <i class="bi bi-telephone-fill text-secondary me-3"></i>
-                  <span class="fw-bold text-dark">{{b.contactNumber}}</span>
+                  <span class="fw-bold text-dark">{{b.providerPhone}}</span>
                 </div>
                 <div *ngIf="b.status === 'Pending'" class="mb-contact-hidden">
                   <i class="bi bi-lock-fill text-secondary me-2"></i>
@@ -180,7 +183,10 @@
             <label class="form-label small fw-bold text-navy">Share your feedback</label>
             <textarea class="form-control rounded-3" rows="3" 
                       placeholder="Tell us about the vehicle and the driver's service..."
-                      [(ngModel)]="tempComment"></textarea>
+                      [(ngModel)]="tempComment" maxlength="500"></textarea>
+            <div class="text-end mt-1">
+              <small class="text-muted">{{tempComment.length}}/500</small>
+            </div>
           </div>
 
           <div class="d-flex gap-3">

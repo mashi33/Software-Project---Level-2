@@ -12,42 +12,25 @@ using System.Text;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Email Settings Configuration
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddHttpClient<PlacesService>();
 
 // ==========================================================
 // DATABASE CONFIG
 // ==========================================================
 
-// 1. Tell the app to use MongoDBSettings
-builder.Services.Configure<MongoDBSettings>(
-    builder.Configuration.GetSection("MongoDBSettings"));
+// 1. Configure Settings Sections
+builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-var dbSettings = builder.Configuration.GetSection("MongoDBSettings");
-
-//var connectionString = dbSettings["ConnectionString"];
-//var databaseName = dbSettings["DatabaseName"];
-
+// 2. Direct MongoDB Connection (Using your hardcoded Atlas string)
 var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
 var databaseName = "SmartJourneyDb"; 
 
+// 3. Register the Client and Database globally
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
-
-
-
-builder.Services.Configure<DatabaseSettings>(
-    builder.Configuration.GetSection("DatabaseSettings"));
-
-// 2. Get the settings section for connection logic
-var mongoDbSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
-
-// 3. Extract the connection details
-//var connectionString = mongoDbSettingsSection["ConnectionString"];
-//var databaseName = mongoDbSettingsSection["DatabaseName"];
-
-// 4. Register the Client and Database globally
-builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
-
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var client = sp.GetRequiredService<IMongoClient>();
@@ -87,13 +70,15 @@ builder.Services.AddSignalR(options =>
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
+// Find this section in your Program.cs
 builder.Services.AddControllers()
-.AddJsonOptions(options =>
-{
-  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-  options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-});
-
+    .AddJsonOptions(options =>
+    {
+        // This forces the API to send 'fullName' instead of 'FullName'
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // This makes the API more flexible when receiving data back from Angular
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 // ==========================================================
 // CORS
 // ==========================================================
@@ -113,7 +98,9 @@ builder.Services.AddCors(options =>
 // SERVICES REGISTRATION
 // ==========================================================
 
+// ✅ This ensures AdminService is available to your TransportVehiclesController
 builder.Services.AddSingleton<AdminService>(); 
+
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<DiscussionsService>();
@@ -122,6 +109,8 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
+builder.Services.AddHttpClient<PlacesService>();
+builder.Services.AddSingleton<MemoryService>();
 
 // ==========================================================
 // BUILD & MIDDLEWARE
@@ -136,7 +125,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
-  app.UseSwaggerUI();
+  app.UseSwaggerUI(); // ✅ This is the correct method
 }
 
 app.UseRouting();

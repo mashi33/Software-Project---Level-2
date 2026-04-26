@@ -1,14 +1,17 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 
 namespace SmartJourneyPlanner.Models
 {
+    [BsonIgnoreExtraElements]
     public class CommentItem
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; } //ID from MongoDB
+
+        public string TripId { get; set; } = string.Empty;
 
         public string User { get; set; } = "Guest User";
         public string Text { get; set; } = string.Empty;

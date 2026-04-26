@@ -29,16 +29,59 @@
   color: white;
 }
 
+/* Search Container Styling */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .search-box input {
   padding: 10px 15px;
   border: 1px solid #ccc;
   border-radius: 8px;
   width: 300px;
   outline: none;
+  transition: border-color 0.3s;
 }
 
 .search-box input:focus {
   border-color: #004a99;
+}
+
+/* New Search Button Styling */
+.search-btn {
+  padding: 10px 20px;
+  background-color: #004a99;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.search-btn:hover {
+  background-color: #003366;
+}
+
+.search-btn:active {
+  transform: scale(0.95);
+}
+
+.search-icon {
+  font-size: 1.1rem;
+}
+
+/* Filters Row Styling */
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .budget-filter,
@@ -66,10 +109,29 @@
   outline: none;
   cursor: pointer;
   color: #333;
+  background-color: white;
 }
 
 .budget-filter select:focus,
 .rating-filter select:focus,
 .distance-filter select:focus {
   border-color: #004a99;
+}
+
+/* Google Autocomplete Dropdown එක ලස්සන කිරීමට (Global) */
+::ng-deep .pac-container {
+  border-radius: 8px;
+  margin-top: 5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: none;
+  z-index: 10000 !important;
+}
+
+::ng-deep .pac-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+::ng-deep .pac-item:hover {
+  background-color: #f0f7ff;
 }
