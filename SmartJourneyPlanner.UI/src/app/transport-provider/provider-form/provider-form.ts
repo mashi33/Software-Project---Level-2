@@ -61,6 +61,7 @@ export class ProviderForm implements OnInit {
   licensePreview: string | ArrayBuffer | null = null;
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
+  isSubmitting = false;
   
   // File validation state
   fileErrors: { [key: string]: string | null } = {
@@ -138,7 +139,28 @@ export class ProviderForm implements OnInit {
       
       insuranceExpiry: ['', Validators.required],
       revenueLicenseExpiry: ['', Validators.required]
-    });
+    }, { validators: this.vehicleClassSeatValidator });
+  }
+
+  // Cross-field validator: Vehicle Class vs Seat Count
+  vehicleClassSeatValidator(group: FormGroup) {
+    const vClass = group.get('vehicleClass')?.value;
+    const seats = group.get('seatCount')?.value;
+
+    if (vClass === 'Car' && seats > 9) return { invalidSeatsForCar: true };
+    if (vClass === 'Van' && (seats < 5 || seats > 20)) return { invalidSeatsForVan: true };
+    if (vClass === 'Bus' && seats < 15) return { invalidSeatsForBus: true };
+
+    return null;
+  }
+
+  // Prevent non-numeric characters in numeric fields
+  onNumericKeyDown(event: KeyboardEvent) {
+    const allowedKeys = ['Backspace', 'Tab', 'End', 'Home', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'];
+    if (allowedKeys.includes(event.key)) return;
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
   }
 
   // Custom Validator to prevent repeated characters and numbers
@@ -383,6 +405,7 @@ export class ProviderForm implements OnInit {
   }
 
   submitForm() {
+    if (this.isSubmitting) return;
     this.submitted = true;
     if (this.vehicleForm.invalid) {
       this.vehicleForm.markAllAsTouched();
@@ -431,8 +454,10 @@ export class ProviderForm implements OnInit {
       bookedDates: []
     };
 
+    this.isSubmitting = true;
     this.transportVehicleService.createVehicle(formData).subscribe({
       next: () => {
+        this.isSubmitting = false;
         Swal.fire({
           icon: 'success',
           title: 'Listing Submitted!',
@@ -442,6 +467,7 @@ export class ProviderForm implements OnInit {
         this.resetForm();
       },
       error: (err) => {
+        this.isSubmitting = false;
         console.error(err);
         Swal.fire('Error', 'Failed to submit listing.', 'error');
       }
@@ -449,6 +475,7 @@ export class ProviderForm implements OnInit {
   }
 
   resetForm() {
+    this.submitted = false;
     this.vehicleForm.reset({
       providerProfile: { name: '', phone: '', email: '', location: '' },
       type: VehicleType.Budget,

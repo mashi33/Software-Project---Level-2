@@ -17,7 +17,7 @@
       <div class="row g-4">
         <div class="col-md-6 text-start">
           <label class="form-label fw-bold">Full Name</label>
-          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera">
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('providerProfile.name')" formControlName="name" placeholder="Kamal Perera" maxlength="100">
           <div *ngIf="isFieldInvalid('providerProfile.name')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('providerProfile.name')?.errors?.['required']">Full name is required</span>
@@ -119,7 +119,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Year of Manufacture</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('yearOfManufacture')" formControlName="yearOfManufacture">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('yearOfManufacture')" formControlName="yearOfManufacture" (keydown)="onNumericKeyDown($event)">
           <div *ngIf="isFieldInvalid('yearOfManufacture')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('yearOfManufacture')?.errors?.['required']">Year is required</span>
@@ -132,7 +132,7 @@
       <div class="row g-4 mt-2">
         <div class="col-md-6">
           <label class="form-label fw-bold">Vehicle Model</label>
-          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('modelName')" formControlName="modelName" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class">
+          <input type="text" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('modelName')" formControlName="modelName" placeholder="e.g., Suzuki Alto, Toyota Axio, Mercedes E-Class" maxlength="100">
           <div *ngIf="isFieldInvalid('modelName')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('modelName')?.errors?.['required']">Vehicle model is required</span>
@@ -193,17 +193,26 @@
           <div class="row mb-4 g-3">
             <div class="col-md-4">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-people text-primary"></i> Seats</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('seatCount')" formControlName="seatCount" min="1" step="1">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('seatCount') || (submitted && vehicleForm.errors?.['invalidSeatsForCar']) || (submitted && vehicleForm.errors?.['invalidSeatsForVan']) || (submitted && vehicleForm.errors?.['invalidSeatsForBus'])" formControlName="seatCount" min="1" step="1" (keydown)="onNumericKeyDown($event)">
               <div *ngIf="isFieldInvalid('seatCount')" class="pf-error-text">
                 <i class="bi bi-exclamation-circle"></i> 
                 <span *ngIf="vehicleForm.get('seatCount')?.errors?.['required']">Seat count is required</span>
                 <span *ngIf="vehicleForm.get('seatCount')?.errors?.['min']">Minimum 1 seat required</span>
                 <span *ngIf="vehicleForm.get('seatCount')?.errors?.['max']">Maximum 100 seats allowed</span>
               </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForCar']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Cars usually have 1-9 seats
+              </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForVan']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Vans usually have 6-20 seats
+              </div>
+              <div *ngIf="submitted && vehicleForm.errors?.['invalidSeatsForBus']" class="pf-error-text">
+                <i class="bi bi-exclamation-triangle"></i> Buses usually have at least 15 seats
+              </div>
             </div>
             <div class="col-md-4" formGroupName="features">
               <label class="form-label small fw-bold mb-1"><i class="bi bi-luggage text-primary"></i> Luggage</label>
-              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('features.luggage')" formControlName="luggage" min="1" step="1">
+              <input type="number" class="form-control form-control-sm pf-input-soft" [class.is-invalid]="isFieldInvalid('features.luggage')" formControlName="luggage" min="1" step="1" (keydown)="onNumericKeyDown($event)">
               <div *ngIf="isFieldInvalid('features.luggage')" class="pf-error-text">
                 <i class="bi bi-exclamation-circle"></i> 
                 <span *ngIf="vehicleForm.get('features.luggage')?.errors?.['required']">Luggage count is required</span>
@@ -292,7 +301,7 @@
       <div class="row g-4">
         <div class="col-md-6">
           <label class="form-label fw-bold">Standard Daily Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate" min="500" step="1">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('standardDailyRate')" formControlName="standardDailyRate" min="500" step="1" (keydown)="onNumericKeyDown($event)">
           <div *ngIf="isFieldInvalid('standardDailyRate')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('standardDailyRate')?.errors?.['required']">Daily rate is required</span>
@@ -309,7 +318,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Extra KM Rate (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('extraKMRate')" formControlName="extraKMRate" min="1" step="1">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('extraKMRate')" formControlName="extraKMRate" min="1" step="1" (keydown)="onNumericKeyDown($event)">
           <div *ngIf="isFieldInvalid('extraKMRate')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('extraKMRate')?.errors?.['required']">Extra KM rate is required</span>
@@ -319,7 +328,7 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-bold">Driver Night Out Fee (LKR)</label>
-          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('driverNightOutFee')" formControlName="driverNightOutFee" min="0" step="1">
+          <input type="number" class="form-control pf-input-soft" [class.is-invalid]="isFieldInvalid('driverNightOutFee')" formControlName="driverNightOutFee" min="0" step="1" (keydown)="onNumericKeyDown($event)">
           <div *ngIf="isFieldInvalid('driverNightOutFee')" class="pf-error-text">
             <i class="bi bi-exclamation-circle"></i> 
             <span *ngIf="vehicleForm.get('driverNightOutFee')?.errors?.['required']">Night out fee is required</span>
@@ -486,8 +495,9 @@
     </div>
 
     <div class="text-center mt-4 mb-3">
-      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid">
-        <i class="bi bi-check2-circle me-2"></i> Submit Listing
+      <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid || isSubmitting">
+        <span *ngIf="!isSubmitting"><i class="bi bi-check2-circle me-2"></i> Submit Listing</span>
+        <span *ngIf="isSubmitting"><span class="spinner-border spinner-border-sm me-2"></span> Submitting...</span>
       </button>
       <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
         Please complete all required fields and agree to the terms.
