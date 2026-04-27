@@ -5,7 +5,7 @@
       <h2 class="fw-bold m-0 text-dark">{{ tripDetails?.tripName || 'Trip Summary' }}</h2>
       
       <div class="d-flex gap-2 align-items-center">
-
+        <!--Drop down edit hitory-->
         <div class="dropdown">
             <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2" 
                     type="button" 
@@ -28,6 +28,7 @@
              <span class="text-muted small">No changes recorded for this trip.</span>
              </li>
             
+             <!--Edit History Items-->
             <li *ngFor="let history of editHistory">
             <div class="dropdown-item p-3 border-bottom whitespace-normal" style="white-space: normal; cursor: default;">
               <div class="d-flex justify-content-between align-items-start mb-2">
@@ -56,10 +57,11 @@
          </li>
         </ul>
        </div>
-        
+       <!--View members button--> 
        <button class="btn btn-header-outline btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#membersModal">
           View members
         </button>
+        <!--Delete trip button-->
         <button *ngIf="userRole === 'owner'" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm border-0">
           Delete Trip
         </button>
@@ -68,10 +70,12 @@
 
     <hr class="opacity-10 mb-4">
     
+    <!--Viewer Only show-->
     <div *ngIf="userRole === 'viewer'" class="alert alert-info border-0 shadow-sm mb-4 rounded-pill py-2">
       <i class="bi bi-info-circle-fill me-2"></i> You are viewing this trip in <strong>Read-Only</strong> mode.
     </div>
-
+    
+    <!--Trip details-->
     <div class="row g-4">
       <div class="col-md-5">
         <div class="p-4 shadow-sm detail-card h-100 border-0">
@@ -108,6 +112,7 @@
             <span class="badge bg-white text-dark border px-3 py-2 rounded-pill fw-normal">{{ tripDetails.transportMode }}</span>
           </div>
           
+          <!--Hotels, Restaurants, Places Dropdowns-->
           <div class="mt-4 pt-2">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <label class="text-muted small m-0">Hotels</label>
@@ -146,7 +151,8 @@
 
         </div>
       </div>
-
+      
+      <!--Explore more connection buttons-->
       <div class="col-md-7">
         <h2 class="text-muted small mb-3">Explore more options for your trip:</h2>
         <div class="row g-3">
@@ -190,6 +196,7 @@
           </div>
         </div>
         
+        <!--Back to Edit and Confirm Buttons-->
         <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
           <button class="btn btn-outline-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
             Back to Edit Trip
@@ -199,7 +206,8 @@
       </div>
     </div>
   </div>
-
+  
+  <!-- Members Modal -->
   <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">

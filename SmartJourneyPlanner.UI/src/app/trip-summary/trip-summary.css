@@ -3,6 +3,7 @@
     max-width: 1200px;
 }
 
+/*Summary Page Background */
 .summary-container {
     
     background: linear-gradient(135deg, #6dc2de 0%, #b3d1de 100%);
@@ -17,6 +18,7 @@
     border: 1px solid rgba(0,0,0,0.05);
 }
 
+/* Trip Detail Items */
 .detail-item {
     margin-bottom: 20px;
 }
@@ -125,6 +127,7 @@
     background-color: #fff;
 }
 
+/* Badges */
 .badge {
     font-weight: 500;
 }
