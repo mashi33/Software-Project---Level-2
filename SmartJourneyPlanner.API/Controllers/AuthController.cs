@@ -44,7 +44,7 @@ namespace SmartJourneyPlanner.API.Controllers
              await _users.InsertOneAsync(newUser);
             var checkUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
 
-    if (checkUser != null)
+    if (checkUser != null)// If the user was successfully saved and can be retrieved from the database, return a success response with some details
     {
         return Ok(new { 
             message = "User registered and verified in DB!", 

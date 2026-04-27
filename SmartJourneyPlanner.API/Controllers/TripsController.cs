@@ -227,7 +227,7 @@ namespace SmartJourneyPlanner.API.Controllers
                 using (var client = new SmtpClient())
                 {
                     await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "ejuh wevn elec dkpn");
+                    await client.AuthenticateAsync("abc@gmail.com", "abc");
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
                 }
