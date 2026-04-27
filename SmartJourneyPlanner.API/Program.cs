@@ -17,10 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddHttpClient<PlacesService>();
 
-// ==========================================================
-// DATABASE CONFIG
-// ==========================================================
-
 // 1. Configure Settings Sections
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
@@ -36,10 +32,6 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     var client = sp.GetRequiredService<IMongoClient>();
     return client.GetDatabase(databaseName);
 });
-
-// ==========================================================
-// JWT AUTHENTICATION
-// ==========================================================
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -57,10 +49,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   };
 });
 
-// ==========================================================
-// SIGNALR & CONTROLLERS
-// ==========================================================
-
 builder.Services.AddSignalR(options =>
 {
   options.EnableDetailedErrors = true;
@@ -70,7 +58,6 @@ builder.Services.AddSignalR(options =>
   options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
-// Find this section in your Program.cs
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -79,24 +66,18 @@ builder.Services.AddControllers()
         // This makes the API more flexible when receiving data back from Angular
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
-// ==========================================================
-// CORS
-// ==========================================================
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Angular URL 
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
 
-// ==========================================================
-// SERVICES REGISTRATION
-// ==========================================================
 
 // ✅ This ensures AdminService is available to your TransportVehiclesController
 builder.Services.AddSingleton<AdminService>(); 
@@ -111,10 +92,8 @@ builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
-
-// ==========================================================
-// BUILD & MIDDLEWARE
-// ==========================================================
+builder.Services.AddScoped<WeatherSuggestionService>();
+builder.Services.AddScoped<SmartJourneyPlanner.Services.ProviderDashboardService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -125,7 +104,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
-  app.UseSwaggerUI(); // ✅ This is the correct method
+  app.UseSwaggerUI();
 }
 
 app.UseRouting();

@@ -14,9 +14,9 @@ namespace SmartJourneyPlanner.Controllers
   // DTO used to receive file upload data from the client (fixes Swagger multipart form issue)
   public class FileUploadDto
   {
-    public IFormFile File { get; set; } = null!;               // The uploaded file
-    public string User { get; set; } = "Guest User";           // The user who uploaded the file
-    public string TripId { get; set; } = string.Empty;         // The trip this file belongs to
+    public IFormFile File { get; set; } = null!;               
+    public string User { get; set; } = "Guest User";           
+    public string TripId { get; set; } = string.Empty;         
   }
 
   // Handles all API requests related to file uploads and downloads (PDF files only)
@@ -24,9 +24,9 @@ namespace SmartJourneyPlanner.Controllers
   [ApiController]
   public class FileController : ControllerBase
   {
-    private readonly FileStorageService _fileStorage;      // Handles storing and retrieving files in GridFS
-    private readonly CommentsService _commentsService;     // Saves file messages as comment records
-    private readonly IHubContext<ChatHub> _hubContext;     // Sends real-time notifications to connected clients
+    private readonly FileStorageService _fileStorage;      
+    private readonly CommentsService _commentsService;     
+    private readonly IHubContext<ChatHub> _hubContext;    
 
     private const long MaxFileSize = 20 * 1024 * 1024;    // Maximum allowed file size: 20 MB
 

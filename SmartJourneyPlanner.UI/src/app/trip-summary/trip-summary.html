@@ -157,7 +157,7 @@
         <h2 class="text-muted small mb-3">Explore more options for your trip:</h2>
         <div class="row g-3">
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm">
+            <div class="suggestion-box shadow-sm" (click)="navigateToHotels()">
               <i class="bi bi-house-door fs-4 mb-2"></i>
               <span>Hotels</span>
             </div>
@@ -169,7 +169,7 @@
             </div>
           </div>
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm">
+            <div class="suggestion-box shadow-sm" (click)="navigateToRouteOptimization()">
               <i class="bi bi-geo-alt fs-4 mb-2"></i>
               <span>Places</span>
             </div>
@@ -183,11 +183,12 @@
           </div>
 
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm">
+            <div class="suggestion-box shadow-sm" (click)="navigateToBudget()" style="cursor: pointer;">
               <i class="bi bi-briefcase fs-4 mb-2"></i>
               <span>Budget</span>
             </div>
           </div>
+          
           <div class="col-6 col-lg-4">
             <div class="suggestion-box shadow-sm">
               <i class="bi bi-cloud-sun fs-4 mb-2"></i>

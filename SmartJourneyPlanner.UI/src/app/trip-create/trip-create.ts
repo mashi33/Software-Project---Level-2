@@ -77,7 +77,6 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
       budgetLimit: data.budgetLimit || data.BudgetLimit,
       description: data.description || data.Description
     });
-
     const members = data.members || data.Members;
     if (members) {
       this.invitedMembers = members.map((m: any) => ({ // Map members to the format used in the form, handling both camelCase and PascalCase property names
@@ -103,11 +102,9 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
     const email = this.tripForm.get('memberEmail')?.value;
     const role = this.tripForm.get('memberRole')?.value;
     if (email && this.tripForm.get('memberEmail')?.valid) {
-      this.invitedMembers.push({ email: email, role: role });
+      this.invitedMembers.push({ email, role });
       this.tripForm.get('memberEmail')?.reset();
       this.tripForm.patchValue({ memberRole: 'Viewer' });
-    } else {
-      alert("Please enter a valid email address.");
     }
   }
 
@@ -131,13 +128,10 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
         Destination: this.tripForm.value.destination,
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
-        BudgetLimit: this.tripForm.value.budgetLimit,
+        BudgetLimit: this.tripForm.value.budgetLimit, 
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
-        Members: this.invitedMembers.map(m => ({
-          Email: m.email,
-          Role: m.role
-        })),
+        Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
         CreatedBy: createdBy
       };
       
@@ -176,7 +170,7 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
   //Method to handle budget limi changes
   onAddBudget() {
     const budget = this.tripForm.get('budgetLimit')?.value;
-    console.log("Selected Budget:", budget);
+    console.log("Selected Budget Limit:", budget);
   }
   //Remove member from the invited member list
   removeMember(index: number) {

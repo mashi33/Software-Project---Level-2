@@ -13,6 +13,7 @@ Chart.register(...registerables);
 
 @Component({
     selector: 'app-budget-dashboard',
+    standalone: true,
     imports: [CommonModule, BaseChartDirective, FormsModule, RouterModule],
     templateUrl: './budget-dashboard.html',
     styleUrls: ['./budget-dashboard.css']
@@ -24,7 +25,6 @@ export class BudgetDashboard implements OnInit {
   allTrips: any[] = []; 
   tripId: string = ''; 
   costPerPerson: number = 0;
-
   membersCount: number = 1;
   totalAllowedBudget: number = 50000; 
   budgetPercentage: number = 0;
@@ -32,9 +32,9 @@ export class BudgetDashboard implements OnInit {
   sortColumn: string = '';
   sortAscending: boolean = true;
 
+  public doughnutChartType: ChartType = 'pie';
   public chartColors: string[] = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#1A535C', '#88D49E', '#FF9F1C'];
   public doughnutChartLabels: string[] = [];
-  public doughnutChartType: ChartType = 'pie';
   public doughnutChartData: ChartData<'pie'> = { labels: [], datasets: [] };
   public chartOptions: any = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
 
@@ -47,55 +47,62 @@ export class BudgetDashboard implements OnInit {
   ) { }
 
   ngOnInit() {
+    // 1. Load all trips first
     this.tripService.getAllTrips().subscribe({ 
       next: (res: any[]) => {
-        this.allTrips = res;
+        // Filter duplicates
+        this.allTrips = Array.from(new Map(res.map(trip => [trip._id || trip.id, trip])).values());
+
+        // 2. ✅ Catch the tripId from the URL Bridge
         this.route.queryParams.subscribe(params => {
           if (params['tripId']) {
             this.tripId = params['tripId'];
-          } else if (this.allTrips.length > 0) {
-            this.tripId = this.allTrips[0]._id || this.allTrips[0].id;
-          }
-          if (this.tripId) {
-            this.loadBudget();
+            this.loadBudget(); // Automatically load the summary-linked trip
+          } else {
+            // Default to first trip if no ID in URL
+            this.tripId = (this.allTrips.length > 0 ? (this.allTrips[0]._id || this.allTrips[0].id) : '');
+            if (this.tripId) this.loadBudget();
           }
         });
       },
-      error: (err: any) => console.error("Could not load trips:", err)
+      error: (err) => console.error("Trips failed to load", err)
     });
   }
 
   loadBudget() {
     if (!this.tripId) return;
+    
+    const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+    if (selectedTrip) {
+      // ✅ Bridge: Parse the limit from the selected Trip
+      this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
+      this.membersCount = selectedTrip.members?.length || 1;
+    }
+
     this.budgetService.getBudget(this.tripId).subscribe({
       next: (data: any) => {
         this.budget = data;
         this.expenses = data.expenses || []; 
-        
-        // --- Sync Member Count ---
-        const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
-        const tripMembersCount = selectedTrip?.members?.length;
-        
-        // Priority: DB budget count > Trip member list size > Default 1
-        this.membersCount = data.membersCount || tripMembersCount || 1;
-
         this.calculateTotal();
         this.updateChartData();
         this.cd.detectChanges();
-      },
-      error: (err: any) => console.error('Error loading budget:', err)
+      }
     });
+  }
+
+  private parseBudgetLimit(limitStr: string): number {
+    if (!limitStr) return 50000;
+    if (limitStr.includes('Above')) return 60000;
+    const parts = limitStr.split('-');
+    const numericValue = parts.length > 1 ? parts[1].trim() : limitStr.trim();
+    return parseInt(numericValue, 10) || 50000;
   }
 
   calculateTotal() {
     if (this.budget) {
       const sum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
       this.budget.totalSpent = sum;
-      
-      const divisor = this.membersCount > 0 ? this.membersCount : 1;
-      this.costPerPerson = sum / divisor;
-
-      // ✅ Updated: Calculate raw percentage (allow > 100 for warning triggers)
+      this.costPerPerson = sum / (this.membersCount || 1);
       this.budgetPercentage = (sum / this.totalAllowedBudget) * 100;
     }
   }
@@ -126,11 +133,23 @@ export class BudgetDashboard implements OnInit {
     });
   }
 
+  updateChartData() {
+    const totals: { [key: string]: number } = {};
+    this.expenses.forEach(e => {
+      const cat = e.category || 'Others';
+      totals[cat] = (totals[cat] || 0) + Number(e.amount);
+    });
+    this.doughnutChartLabels = Object.keys(totals);
+    this.doughnutChartData = {
+      labels: this.doughnutChartLabels,
+      datasets: [{ data: Object.values(totals), backgroundColor: this.chartColors }]
+    };
+  }
+
   deleteExpense(expenseId: string) {
     if (confirm(`Delete this expense?`)) {
       this.budgetService.deleteExpense(this.tripId, expenseId).subscribe({
-        next: () => this.loadBudget(),
-        error: (err: any) => console.error('Error deleting:', err)
+        next: () => this.loadBudget()
       });
     }
   }
@@ -138,60 +157,56 @@ export class BudgetDashboard implements OnInit {
   editExpense(item: any) {
     this.router.navigate(['/add-expense'], {
       queryParams: {
-        tripId: this.tripId,
-        mode: 'edit',
-        expenseId: item.id,
-        description: item.description,
-        amount: item.amount,
-        category: item.category
+        tripId: this.tripId, mode: 'edit', expenseId: item.id,
+        description: item.description, amount: item.amount, category: item.category
       }
     });
   }
 
-  updateChartData() {
-    if (!this.expenses || !this.expenses.length) {
-      this.doughnutChartData = { labels: [], datasets: [] };
-      return;
-    }
-    const totals: { [key: string]: number } = {};
-    this.expenses.forEach((e: any) => {
-      const cat = e.category || 'Others';
-      totals[cat] = (totals[cat] || 0) + Number(e.amount);
-    });
-    this.doughnutChartLabels = Object.keys(totals);
-    this.doughnutChartData = {
-      labels: this.doughnutChartLabels,
-      datasets: [{
-        data: Object.values(totals),
-        backgroundColor: this.chartColors,
-      }]
-    };
-  }
-
-  getColorForCategory(categoryName: string): string {
-    const index = this.doughnutChartLabels.indexOf(categoryName);
-    return index !== -1 ? this.chartColors[index % this.chartColors.length] : '#ccc';
-  }
-
   exportToPDF() {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(10, 64, 135); 
-    doc.text('Trip Budget Report', 14, 22);
-    const tableData = this.expenses.map(e => [
-      e.category,
-      'Rs. ' + Number(e.amount).toFixed(2),
-      new Date(e.date).toLocaleDateString(),
-      e.description
+  const doc = new jsPDF();
+  
+  // 1. Add Title
+  doc.setFontSize(18);
+  doc.text('Trip Budget Report', 14, 22);
+  
+  // 2. Add Trip Name (Optional but helpful)
+  const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
+
+  // 3. Prepare the data rows
+  const tableData = this.expenses.map(e => [
+    e.category, 
+    'Rs. ' + Number(e.amount).toFixed(2), 
+    new Date(e.date).toLocaleDateString(), 
+    e.description
+  ]);
+
+  // ✅ 4. Add the Total Spent row at the bottom of the data array
+  if (this.budget) {
+    tableData.push([
+      { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+      { content: 'Rs. ' + Number(this.budget.totalSpent).toFixed(2), styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+      '',
+      ''
     ]);
-    autoTable(doc, {
-      startY: 30,
-      head: [['Category', 'Amount', 'Date', 'Description']],
-      body: tableData,
-      foot: [['Total', 'Rs. ' + (this.budget?.totalSpent || 0).toFixed(2), '', '']],
-      theme: 'grid',
-      headStyles: { fillColor: [0, 131, 143] }
-    });
-    doc.save(`Budget_Report_${this.tripId}.pdf`);
   }
+
+  // 5. Generate the table
+  autoTable(doc, {
+    startY: 35,
+    head: [['Category', 'Amount', 'Date', 'Description']],
+    body: tableData,
+    theme: 'grid',
+    headStyles: { fillColor: [0, 131, 143] }, // Matches your teal/blue theme
+    columnStyles: {
+      1: { halign: 'right' }, // Align amounts to the right
+    }
+  });
+
+  // 6. Save
+  doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
+}
 }

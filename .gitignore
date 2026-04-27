@@ -45,6 +45,7 @@ yarn-error.log*
 /coverage
 /libpeerconnection.log
 testem.log
+*.log
 /typings
 __screenshots__/
 
@@ -66,15 +67,18 @@ src/environments/environment.development.ts
 # Ignore local development settings
 SmartJourneyPlanner.API/appsettings.Development.json
 # Environment files
-.env
+.env*
+!*.example
+src/environments/environment.development.ts
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-src/environments/environment.ts
-src/environments/environment.development.ts
+
 
 # Build artifacts
 SmartJourneyPlanner.API/bin/
 SmartJourneyPlanner.API/obj/
 SmartJourneyPlanner.UI/dist/
+
+appsettings.Development.json
