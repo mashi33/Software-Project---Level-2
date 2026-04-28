@@ -1,8 +1,9 @@
+<div class="background-container">
 <div class="weather-page-wrapper">
   <aside class="left-panel">
     <h2>Plan with the Past</h2>
     <div class="input-group">
-      <input [(ngModel)]="city" placeholder="Search City">
+      <input type="text" (keyup.enter)="searchWeather()" [(ngModel)]="city" placeholder="Search City">
     </div>
     <div class="input-group">
       <input type="date" [(ngModel)]="selectedDate">
@@ -49,4 +50,5 @@
   </div>
 </section>
   </main>
+</div>
 </div>

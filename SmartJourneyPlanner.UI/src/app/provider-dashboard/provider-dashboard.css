@@ -1,6 +1,10 @@
+.dashboard-container{
+    padding-top:20px;
+    padding-bottom:20px;
+}
+
 h2,p {
     margin-left:15px;
-    margin-top:10px;
 }
 
 .stats-row { 
@@ -62,7 +66,6 @@ h4 {
 }
 
 .bookings{
-    margin: 20px 0;
     border: 1px solid #ccc;
     border-radius: 8px;
     flex:1;

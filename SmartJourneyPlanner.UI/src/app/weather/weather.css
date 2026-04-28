@@ -1,11 +1,21 @@
+.background-container {
+  background-image: url('/weather2.png'); 
+  background-color: #E0F7FA; 
+  background-size: cover;
+  background-repeat: no-repeat;
+  min-height: 120vh;
+  padding-top: 100px;
+}
+
 .weather-page-wrapper {
   display: flex;
   gap: 24px;
-  padding: 30px;
+  padding: 90px;
   max-width: 1200px;
+  height:750px;
   margin: 0 auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8fafc;
+  background-color: rgba(202, 240, 247, 0.25);
 }
 
 .left-panel {
@@ -15,6 +25,7 @@
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   height: fit-content;
+  max-width: 600px;
 }
 
 .left-panel h2 {
@@ -59,7 +70,7 @@
 }
 
 .weather-header {
-  background: #77c9f5;
+  background: #187adc;
   color: rgb(0, 0, 0);
   padding: 24px;
   border-radius: 16px 16px 0 0;

@@ -37,7 +37,7 @@ export class TripSummaryComponent implements OnInit {
 
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
-    this.tripId = tripIdFromUrl || '';
+    this.tripId = tripId || '';
     
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
