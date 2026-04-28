@@ -1,49 +1,29 @@
+using MongoDB.Bson;
+using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
-using System.Collections.Generic;
 
 namespace SmartJourneyPlanner.API.Services
 {
     public class WeatherSuggestionService
     {
-        public WeatherSuggestionResult GenerateSuggestion(double temp, double humidity, string condition)
+        private readonly IMongoCollection<WeatherRule> _rules;
+
+        public WeatherSuggestionService(IMongoDatabase database, IConfiguration config)
         {
-            if (condition == "Rainy" || humidity > 80)
-            {
-                return new WeatherSuggestionResult {
-                    Message = "It's likely to rain. Stay dry!",
-                    Packing = new List<string> { "Umbrella", "Waterproof Jacket", "Quick-dry Socks" },
-                    Outfit = new List<string> { "Anorak", "Waterproof ankle boots" },
-                    Activity = new List<string> { "Play music", "Watch movie", "Reading", "Indoor games" }
-                };
-            }
+            var collectionName = config.GetValue<string>("DatabaseSettings:WeatherCollectionName");
+            _rules = database.GetCollection<WeatherRule>(collectionName);
+        }
 
-            if (condition == "Sunny" && temp >= 20)
-            {
-                return new WeatherSuggestionResult {
-                    Message = "Beautiful weather! Perfect for the outdoors.",
-                    Packing = new List<string> { "Sunscreen", "Sunglasses", "Hat", "Water bottle" },
-                    Outfit = new List<string> { "Linen/Cotton fabrics", "Sandals" },
-                    Activity = new List<string> { "Hiking", "Beach/Pool", "Picnic" }
-                };
-            }
+        public WeatherRule? GenerateSuggestion(double temp, string condition)
+        {
+            var filter = Builders<WeatherRule>.Filter.And(
+                // Use case-insensitive regex matching to ensure valid rules are not missed
+                Builders<WeatherRule>.Filter.Regex(weather => weather.Condition, new BsonRegularExpression($"^{condition}$", "i")),
+                Builders<WeatherRule>.Filter.Lte(weather => weather.MinTemp, temp),
+                Builders<WeatherRule>.Filter.Gte(weather => weather.MaxTemp, temp)
+            );
 
-            if (condition == "Cloudy" || temp < 20)
-            {
-                return new WeatherSuggestionResult {
-                    Message = "A bit overcast or cool. Dress in layers.",
-                    Packing = new List<string> { "Light sweater", "Portable charger", "Camera" },
-                    Outfit = new List<string> { "Layered clothes (T-shirt + Hoodie)", "Sneakers", "Jeans" },
-                    Activity = new List<string> { "City walking tour", "Photography", "Cafe hopping" }
-                };
-            }
-
-              // Fallback ensures system always returns a valid suggestion even for unexpected inputs
-            return new WeatherSuggestionResult {
-                Message = "Enjoy your trip!",
-                Packing = new List<string> { "Water" },
-                Outfit = new List<string> { "Casual" },
-                Activity = new List<string> { "Sightseeing" }
-            };
+            return _rules.Find(filter).FirstOrDefault();
         }
     }
 }

@@ -95,23 +95,49 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   refreshMapMarkers(memories: any[]) {
-    // Clearing prevents duplicate markers when filtering or reloading
-    this.markersLayer.clearLayers();
-    memories.forEach((memory) => {
-      const marker = Leaflet.marker([memory.latitude, memory.longitude]);
-      
-      const popupHtml = `
-        <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
-          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
-        </div>`;
-      
-      marker.bindPopup(popupHtml).addTo(this.markersLayer);
-    });
-  }
+  // Clearing prevents duplicate markers when filtering or reloading
+  this.markersLayer.clearLayers();
 
+  memories.forEach((memory) => {
+
+    // Skip invalid coordinates (safe check)
+    if (!memory.latitude || !memory.longitude) return;
+
+    const marker = Leaflet.marker([memory.latitude, memory.longitude]);
+
+    const popupHtml = `
+      <div class="popup-container">
+        <h6 class="title">${memory.title}</h6>
+
+        <img src="${memory.imageUrl}" 
+             class="popup-image view-big-image" 
+             data-img="${memory.imageUrl}" />
+
+        <p class="location">${memory.locationName}</p>
+      </div>
+    `;
+
+    marker
+      .bindPopup(popupHtml)
+      // Only attaches logic after the popup exists in the DOM to avoid null reference errors.
+      .on('popupopen', (e: any) => {
+
+        const popupEl = e.popup.getElement();
+
+        const img = popupEl.querySelector('.view-big-image');
+
+        // Listens for clicks to trigger the full-screen view.
+        img?.addEventListener('click', () => {
+
+          // Broadcasts a custom event to keep map logic decoupled from the UI handler.
+          window.dispatchEvent(
+            new CustomEvent('viewBig', { detail: memory.imageUrl })
+          );
+        });
+      })
+      .addTo(this.markersLayer);
+  });
+}
     private initMap(): void {
       this.map = Leaflet.map('map', {
         center: [7.8731, 80.7718],

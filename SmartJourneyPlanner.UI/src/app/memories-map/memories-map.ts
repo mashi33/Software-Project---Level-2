@@ -172,20 +172,46 @@ toggleSeeMore() {
  });
  }    
 
+  private getPopupHtml(memory: any): string {
+    return `
+      <div class="popup-container">
+        <h6 class="popup-title">${memory.title}</h6>
+
+        <img src="${memory.imageUrl}" 
+             class="popup-image view-big-image"
+             data-img="${memory.imageUrl}" />
+
+        <p class="popup-location">${memory.locationName}</p>
+      </div>
+    `;
+  }
+
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
+
     this.allMemories.forEach((memory) => {
+
       const marker = leaflet.marker([memory.latitude, memory.longitude]);
-      
-      const popupHtml = `
-        <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
-          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
-        </div>`;
-      
-      marker.bindPopup(popupHtml).addTo(this.markersLayer);
+
+      const popupHtml = this.getPopupHtml(memory);
+
+      marker
+        .bindPopup(popupHtml)
+        // Waits for the popup to load because the HTML doesn't exist until then.
+        .on('popupopen', (e: any) => {
+          const popupEl = e.popup.getElement();
+          const img = popupEl.querySelector('.view-big-image');
+
+          img?.addEventListener('click', () => {
+            // Broadcasts an event to trigger image viewing without tying it to the map.
+            window.dispatchEvent(
+              new CustomEvent('viewBig', {
+                detail: memory.imageUrl
+              })
+            );
+          });
+        })
+        .addTo(this.markersLayer);
     });
   }
 

@@ -1,8 +1,16 @@
 import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { WeatherService } from '../services/weather.service';
+
+export interface WeatherRule {
+  condition: string;
+  message: string;
+  packing: string[];
+  outfit: string[];
+  activity: string[];
+}
 
 @Component({
   selector: 'app-weather-suggestion',
@@ -15,72 +23,64 @@ export class WeatherSuggestionComponent {
   city: string = '';
   selectedDate: string = new Date().toISOString().split('T')[0];
   weatherData: any = null;
-  suggestionResult: any = null; 
-  loading: boolean = false;
   weatherCategory: string = '';
+  suggestionResult: WeatherRule | null = null;
+  loading: boolean = false;
 
-  constructor(
-    private http: HttpClient, 
-    private weatherService: WeatherService
-  ) {}
+  constructor(private http: HttpClient, private weatherService: WeatherService) {}
 
   searchWeather() {
-    if (!this.city) return alert("Please enter a city.");
+    if (!this.city) return;
     this.loading = true;
+    this.suggestionResult = null;
 
     const geoUrl = `https://nominatim.openstreetmap.org/search?q=${this.city}&format=json`;
-this.http.get<any[]>(geoUrl, {
-  // Nominatim requires a user-agent
-  headers: { 'User-Agent': 'SmartJourneyApp/1.0' } 
-}).subscribe({
+    this.http.get<any[]>(geoUrl).subscribe({
       next: (res) => {
-        if (res && res.length > 0) {
-          // Uses the first match assuming it is the most relevant result from the API
-          this.fetchWeather(res[0].lat, res[0].lon);
-        } else {
-          this.loading = false;
-          alert('City not found.');
-        }
+        if (res?.length > 0) this.fetchWeather(res[0].lat, res[0].lon);
+        else { alert('City not found.'); this.loading = false; }
       },
-      error: (err) => {
-        console.error("Geo API Error:", err);
-        this.loading = false;
-      }
+      error: () => { alert('Geo API failed.'); this.loading = false; }
     });
   }
 
-  fetchWeather(lat: string, lon: string) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`;
-
+  private fetchWeather(lat: string, lon: string) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m`;
+    
     this.http.get<any>(url).subscribe({
       next: (data) => {
-        const temp = data.current.temperature_2m;
-        const humidity = data.current.relative_humidity_2m;
+        const { temperature_2m: temp, relative_humidity_2m: humidity } = data.current;
         
-        // Simplifies raw weather data into categories expected by the recommendation system
-        this.weatherCategory = (humidity > 80) ? 'Rainy' : (temp >= 25 ? 'Sunny' : 'Cloudy');
+        
+        if (humidity >= 80) {
+          this.weatherCategory = 'Rainy';
+        } else if (temp >= 25) {
+          this.weatherCategory = 'Sunny';
+        } else {
+          this.weatherCategory = 'Cloudy';
+        }
+        
         this.weatherData = { temp, humidity };
-        
-        // Delegates business logic to backend instead of handling it in the UI
-        this.fetchSuggestions(temp, humidity, this.weatherCategory);
+        this.getBackendSuggestion(temp, this.weatherCategory);
       },
-      error: (err) => {
-        console.error("Weather API Error:", err);
-        this.loading = false;
-      }
+      error: () => { alert('Weather API failed.'); this.loading = false; }
     });
   }
 
-  fetchSuggestions(temp: number, humidity: number, condition: string) {
-    this.weatherService.getSuggestions(temp, humidity, condition).subscribe({
+  private getBackendSuggestion(temp: number, condition: string) {
+    // Prevents API request errors by ensuring parameters are URL-safe.
+    const params = new HttpParams()
+        .set('temp', temp.toString())
+        .set('condition', condition);
+
+    this.http.get<WeatherRule>('http://localhost:5233/api/weather/suggestions', { params }).subscribe({
       next: (res) => {
-        console.log("Data Received from .NET:", res);
         this.suggestionResult = res;
-        // Marks completion only after final dependent API call finishes
         this.loading = false;
       },
-      error: (err) => {
-        console.error("Critical API Error (Backend is likely failing):", err);
+      error: () => {
+        console.warn("No suggestions found in database for condition:", condition);
+        this.suggestionResult = null;
         this.loading = false;
       }
     });

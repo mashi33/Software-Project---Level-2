@@ -19,3 +19,25 @@ app-root {
   flex: 1; /* Takes up all available empty space */
   background-color: #F0F8FF; 
 }
+
+.popup-container {
+  width: 160px;
+  font-family: sans-serif;
+}
+
+.title {
+  margin: 0 0 5px 0;
+  color: #0D47A1;
+}
+
+.popup-image {
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.location {
+  font-size: 11px;
+  margin: 5px 0;
+  color: #666;
+}

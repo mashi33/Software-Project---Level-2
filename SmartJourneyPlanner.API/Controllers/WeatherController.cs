@@ -3,26 +3,28 @@ using SmartJourneyPlanner.API.Services;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
-[ApiController]
-[Route("api/weather")] 
-public class WeatherController : ControllerBase
-{
-    private readonly WeatherSuggestionService _service;
-
-    public WeatherController(WeatherSuggestionService service) => _service = service;
-
-    [HttpGet("suggestions")]
-    public IActionResult GetSuggestion(double temp, double humidity, string condition)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class WeatherController : ControllerBase
     {
-        // Delegates business logic to service layer to keep controller lightweight and testable
-        var result = _service.GenerateSuggestion(temp, humidity, condition);
+        private readonly WeatherSuggestionService _weatherService;
 
-        if (result == null || string.IsNullOrEmpty(result.Message))
+        public WeatherController(WeatherSuggestionService weatherService)
         {
-            return NotFound("No suggestion generated.");
+            _weatherService = weatherService;
         }
-        // Standard REST response when valid recommendation data is produced
-        return Ok(result);
+
+        [HttpGet("suggestions")]
+        public IActionResult GetSuggestion([FromQuery] double temp, [FromQuery] string condition)
+        {
+            var result = _weatherService.GenerateSuggestion(temp, condition);
+
+            if (result == null)
+            {
+                return NotFound(new { message = $"No rules found for {condition} weather at {temp}°C." });
+            }
+
+            return Ok(result);
+        }
     }
-}
 }
