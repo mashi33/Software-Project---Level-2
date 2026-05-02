@@ -122,43 +122,113 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
               input: 'swal-trip-radio-group'
             },
             didOpen: () => {
-              const style = document.createElement('style');
-              style.textContent = `
-                .swal-trip-radio-group {
-                  display: flex !important;
-                  flex-direction: column !important;
-                  gap: 10px !important;
-                  text-align: left !important;
-                  width: 100% !important;
-                }
-                .swal2-radio {
-                  display: flex !important;
-                  flex-direction: column !important;
-                  gap: 10px !important;
-                  width: 100% !important;
-                }
-                .swal2-radio label {
-                  display: flex !important;
-                  align-items: flex-start !important;
-                  gap: 10px !important;
-                  padding: 10px 14px !important;
-                  border: 1px solid #e0e0e0 !important;
-                  border-radius: 8px !important;
-                  cursor: pointer !important;
-                  font-size: 14px !important;
-                  transition: background 0.2s !important;
-                }
-                .swal2-radio label:hover {
-                  background: #f0f7ff !important;
-                  border-color: #4A90D9 !important;
-                }
-                .swal2-radio input[type="radio"]:checked + span {
-                  font-weight: 600 !important;
-                  color: #4A90D9 !important;
-                }
-              `;
-              document.head.appendChild(style);
-            }
+  const style = document.createElement('style');
+  style.textContent = `
+    .swal2-popup {
+      width: 520px !important;
+      padding: 30px !important;
+      border-radius: 16px !important;
+    }
+    .swal2-title {
+      font-size: 22px !important;
+      font-weight: 700 !important;
+      color: #1a1a2e !important;
+      margin-bottom: 20px !important;
+    }
+    .swal2-radio {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      width: 100% !important;
+      max-height: 380px !important;
+      overflow-y: auto !important;
+      padding: 4px 6px !important;
+    }
+    .swal2-radio::-webkit-scrollbar {
+      width: 6px !important;
+    }
+    .swal2-radio::-webkit-scrollbar-track {
+      background: #f1f1f1 !important;
+      border-radius: 10px !important;
+    }
+    .swal2-radio::-webkit-scrollbar-thumb {
+      background: #c0c0c0 !important;
+      border-radius: 10px !important;
+    }
+    .swal2-radio label {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      padding: 14px 16px !important;
+      border: 1.5px solid #e8e8e8 !important;
+      border-radius: 12px !important;
+      cursor: pointer !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      color: #333 !important;
+      background: #fff !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+    }
+    .swal2-radio label:hover {
+      background: #f0f7ff !important;
+      border-color: #4A90D9 !important;
+      box-shadow: 0 2px 8px rgba(74,144,217,0.15) !important;
+      transform: translateY(-1px) !important;
+    }
+    .swal2-radio input[type="radio"] {
+      width: 18px !important;
+      height: 18px !important;
+      accent-color: #4A90D9 !important;
+      flex-shrink: 0 !important;
+    }
+    .swal2-radio input[type="radio"]:checked + span {
+      font-weight: 600 !important;
+      color: #4A90D9 !important;
+    }
+    .swal2-radio label:has(input:checked) {
+      background: #eef6ff !important;
+      border-color: #4A90D9 !important;
+      box-shadow: 0 2px 10px rgba(74,144,217,0.2) !important;
+    }
+    .swal2-actions {
+      margin-top: 24px !important;
+      gap: 12px !important;
+    }
+    .swal2-confirm {
+      padding: 12px 32px !important;
+      border-radius: 10px !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      background: #4A90D9 !important;
+      box-shadow: 0 4px 12px rgba(74,144,217,0.35) !important;
+      transition: all 0.2s !important;
+    }
+    .swal2-confirm:hover {
+      background: #357abd !important;
+      box-shadow: 0 6px 16px rgba(74,144,217,0.45) !important;
+      transform: translateY(-1px) !important;
+    }
+    .swal2-cancel {
+      padding: 12px 32px !important;
+      border-radius: 10px !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      background: #f0f0f0 !important;
+      color: #555 !important;
+    }
+    .swal2-cancel:hover {
+      background: #e0e0e0 !important;
+    }
+    .swal2-validation-message {
+      border-radius: 8px !important;
+      font-size: 13px !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
           });
 
           if (selectedTripId) {
