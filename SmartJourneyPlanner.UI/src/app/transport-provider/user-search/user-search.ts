@@ -41,6 +41,10 @@ export class UserSearch implements OnInit {
   showLanguageDropdown: boolean = false; // UI toggle
   showCityDropdown: boolean = false; // UI toggle
   sortBy: string = 'Default'; // Sorting logic (Price/Rating)
+  
+  // --- PAGINATION ---
+  currentPage: number = 1;
+  pageSize: number = 9;
 
   // --- STATE VARIABLES ---
   isLoading: boolean = false; // Shows loading spinner
@@ -78,6 +82,30 @@ export class UserSearch implements OnInit {
   allVehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
   vehicleCategories = ['All Categories', ...Object.values(VehicleType)];
+
+  // Get only the vehicles for the current page
+  get paginatedVehicles(): Vehicle[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    return this.filteredVehicles.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  // Calculate total number of pages
+  get totalPages(): number {
+    return Math.ceil(this.filteredVehicles.length / this.pageSize);
+  }
+
+  // Generate an array of page numbers for the UI
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  setPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      // Scroll to top of results smoothly
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+  }
 
   // --- CALENDAR UI STATE ---
   showCalendarModal = false;
@@ -213,6 +241,7 @@ export class UserSearch implements OnInit {
    * Category, Capacity, Text Search, City, Features, Languages, and Date Availability.
    */
   applyFilters() {
+    this.currentPage = 1; // Reset to first page whenever filters change
     const cleanQuery = this.searchQuery.trim().toLowerCase();
 
     this.filteredVehicles = this.allVehicles.filter(v => {
