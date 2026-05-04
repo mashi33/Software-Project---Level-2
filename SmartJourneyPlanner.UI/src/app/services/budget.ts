@@ -2,12 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+// Importing environment to avoid hardcoding strings
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class BudgetService {
 
-  private apiUrl = 'http://localhost:5233/api/Budget';
+  // Base URL is now managed in one place (environment.ts) 
+  private apiUrl = `${environment.apiUrl}/Budget`;
 
   constructor(private http: HttpClient) { }
 

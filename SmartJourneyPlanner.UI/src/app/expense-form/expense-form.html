@@ -29,7 +29,7 @@
                required>
         
         <div *ngIf="expense.description && !isNoteValid(expense.description)" 
-             style="color: #ff6b6b; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
+             class="validation-error">
           ⚠ Please enter a valid description (must contain letters).
         </div>
       </div>

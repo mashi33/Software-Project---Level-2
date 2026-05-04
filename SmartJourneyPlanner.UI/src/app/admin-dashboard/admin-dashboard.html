@@ -17,8 +17,8 @@
   </aside>
 
   <main class="content">
-    <header class="main-header" style="display: flex; justify-content: space-between; align-items: center;">
-      <div>
+    <header class="main-header header-container">
+      <div class="header-content">
         <h1>Smart Journey Control Center</h1>
         <p class="date-text">System Overview — {{ currentDate | date:'fullDate' }}</p>
       </div>
@@ -92,9 +92,8 @@
         <tbody>
           <tr *ngFor="let u of allUsers" class="table-row">
             <td>
-              <div class="d-flex align-items-center">
-                <div class="avatar-sm me-2 bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                     style="width: 30px; height: 30px; font-size: 0.8rem;">
+              <div class="user-info-cell">
+                <div class="user-avatar">
                   {{ u.fullName?.charAt(0) || u.name?.charAt(0) }}
                 </div>
                 <span>{{ u.fullName || u.name }}</span>
@@ -103,8 +102,7 @@
             <td>{{ u.email }}</td>
             <td><span class="role-badge" [ngClass]="u.role">{{ u.role }}</span></td>
             <td>
-              <span class="badge" [ngClass]="u.isBlocked ? 'bg-danger' : 'bg-success'" 
-                    style="padding: 5px 10px; border-radius: 12px; font-size: 0.7rem; color: white;">
+              <span class="status-badge" [ngClass]="u.isBlocked ? 'blocked' : 'active'">
                 {{ u.isBlocked ? 'Blocked' : 'Active' }}
               </span>
             </td>

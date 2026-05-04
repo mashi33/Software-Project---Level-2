@@ -34,7 +34,7 @@ export class AdminDashboardComponent implements OnInit {
     this.refreshDashboard();
   }
 
-  // --- 1. DASHBOARD HOME & VIEW HANDLERS ---
+  // DASHBOARD HOME & VIEW HANDLERS
 
   onReviewNow() {
     this.view = 'providers';
@@ -46,10 +46,8 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchAllUsers();
   }
 
-  /**
-   * ✅ DEDICATED REFRESH LOGIC
-   * Updates all counts and lists simultaneously.
-   */
+  /* DEDICATED REFRESH LOGIC
+    Updates all counts and lists simultaneously */
   refreshDashboard() {
     this.errorMessage = '';
     this.fetchPendingProviders();
@@ -66,7 +64,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- 2. DATA FETCHING ---
+  // DATA FETCHING
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
@@ -88,11 +86,9 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- 3. MANAGE PROVIDERS ACTIONS ---
+  // MANAGE PROVIDERS ACTIONS
 
-  /**
-   * Approves or Rejects a transport provider.
-   */
+  /* Approves or Rejects a transport provider */
   updateProviderStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
 
@@ -139,9 +135,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * Opens the detail modal for a specific provider and fetches full data.
-   */
+  /* Opens the detail modal for a specific provider and fetches full data */
   viewDetails(provider: any) {
     const id = provider._id || provider.id;
     this.adminService.getProviderById(id).subscribe({
@@ -160,11 +154,9 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- 4. USER MANAGEMENT ACTIONS ---
+  // USER MANAGEMENT ACTIONS 
 
-  /**
-   * Promotes a regular user to an Admin role.
-   */
+  /* Promotes a regular user to an Admin role */
   changeRole(userId: string, newRole: string) {
     if (!userId) {
       Swal.fire('Error', 'User ID is missing!', 'error');
@@ -184,9 +176,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * ✅ FIXED: Toggle Block status for users.
-   */
+  /* Toggle Block status for users */
   toggleBlock(user: any) {
     const userId = user.id || user._id;
     const newBlockStatus = !user.isBlocked;
@@ -213,9 +203,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * ✅ FIXED: Permanently deletes a user.
-   */
+  /* Permanently deletes a user */
   deleteUser(userId: string) {
     if (!userId) {
       Swal.fire('Error', 'User ID is missing!', 'error');
@@ -252,7 +240,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- DOCUMENT UTILITIES ---
+  // DOCUMENT UTILITIES
 
   openImage(base64Data: string | undefined) {
     if (!base64Data) {
