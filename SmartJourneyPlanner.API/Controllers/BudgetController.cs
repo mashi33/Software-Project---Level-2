@@ -38,6 +38,11 @@ namespace SmartJourneyPlanner.API.Controllers
             //Validation check here to catch empty payloads before hitting the service.
             if (expense == null) return BadRequest("Expense data is missing.");
             
+            if (expense.Amount <= 0) 
+            {
+                return BadRequest(new { message = "Amount cannot be zero or negative." });
+            }
+            
             await _budgetService.AddExpenseAsync(tripId, expense);
             return Ok(new { message = "Expense added and total updated!" });
         }
