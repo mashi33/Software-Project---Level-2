@@ -17,19 +17,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddHttpClient<PlacesService>();
 
-// ==========================================================
 // DATABASE CONFIG
-// ==========================================================
 
-// 1. Configure Settings Sections
+// Configure Settings Sections
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-// 2. Direct MongoDB Connection (Using your hardcoded Atlas string)
+// Direct MongoDB Connection (Using your hardcoded Atlas string)
 var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
 var databaseName = "SmartJourneyDb"; 
 
-// 3. Register the Client and Database globally
+// Register the Client and Database globally
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
@@ -37,16 +35,14 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
-// ==========================================================
 // JWT AUTHENTICATION
-// ==========================================================
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // ✅ UPDATED: Relaxed for development to fix 401 Unauthorized errors
+            // fix 401 Unauthorized errors
             ValidateIssuer = false, 
             ValidateAudience = false, 
             ValidateLifetime = true,
@@ -57,9 +53,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ==========================================================
 // SIGNALR & CONTROLLERS
-// ==========================================================
 
 builder.Services.AddSignalR(options =>
 {
@@ -77,9 +71,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-// ==========================================================
 // CORS
-// ==========================================================
 
 builder.Services.AddCors(options =>
 {
@@ -92,9 +84,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ==========================================================
+
 // SERVICES REGISTRATION
-// ==========================================================
 
 builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<BudgetService>();
@@ -108,9 +99,7 @@ builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
 
-// ==========================================================
 // BUILD & MIDDLEWARE
-// ==========================================================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -127,7 +116,7 @@ if (app.Environment.IsDevelopment())
 app.UseRouting();
 app.UseCors("AllowAngularApp");
 
-// ✅ Order is critical here: Authentication MUST come before Authorization
+// Order is critical here: Authentication MUST come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
