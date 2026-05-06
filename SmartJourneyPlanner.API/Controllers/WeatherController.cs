@@ -17,7 +17,7 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpGet("suggestions")]
         public IActionResult GetSuggestion([FromQuery] double temp, [FromQuery] string condition)
         {
-            var result = _weatherService.GenerateSuggestion(temp, condition);
+            var result = _weatherService.GetSuggestion(temp, condition);
 
             if (result == null)
             {

@@ -107,13 +107,13 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
 
     const popupHtml = `
       <div class="popup-container">
-        <h6 class="title">${memory.title}</h6>
+        <h6 class="popup-title">${memory.title}</h6>
 
         <img src="${memory.imageUrl}" 
              class="popup-image view-big-image" 
              data-img="${memory.imageUrl}" />
 
-        <p class="location">${memory.locationName}</p>
+        <p class="popup-location">${memory.locationName}</p>
       </div>
     `;
 

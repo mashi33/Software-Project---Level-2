@@ -156,4 +156,8 @@ navigateToHotels() {
     } 
   });
 }
+
+ navigateToWeather() {
+    this.router.navigate(['/weather']);
+  }
 }

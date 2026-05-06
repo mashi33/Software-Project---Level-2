@@ -14,7 +14,7 @@ namespace SmartJourneyPlanner.API.Services
             _rules = database.GetCollection<WeatherRule>(collectionName);
         }
 
-        public WeatherRule? GenerateSuggestion(double temp, string condition)
+        public WeatherRule? GetSuggestion(double temp, string condition)
         {
             var filter = Builders<WeatherRule>.Filter.And(
                 // Use case-insensitive regex matching to ensure valid rules are not missed

@@ -83,6 +83,8 @@
 .form-input.has-value {
     color: black;
     font-weight: 500;
+    border:  2px solid #ced4da; 
+  background-color: #f7fff9;
 }
 
 .date-row {
@@ -115,6 +117,13 @@
 .visibility-options label {
     font-size: 14px;
     margin-bottom: 6px;
+    margin-right: 5px;
+    align-content: left;  
+
+}
+
+.visible-private{
+    margin-left: 50px;
 }
 
 .form-input:focus {
@@ -222,7 +231,7 @@
     align-items: center;
     font-size: 11px;       
     color: #888;    
-    font-style: italic;       
+    font-style: italic;      
 }
 
 .visibility-status {
@@ -244,7 +253,7 @@
     width: 100%;
     display: flex;
     justify-content: right;
-    padding: 100px 0;
+    padding: 50px 0;
 }
 
 .btn-see-more {
@@ -323,7 +332,8 @@
     border-radius: 6px;
     overflow: hidden;
     border: 1px solid #eee;
-    background: #f8f9fa;
+    background: #faf8f9;
+
 }
 
 .upload-preview img {
@@ -348,3 +358,19 @@
     align-items: center;
     justify-content: center;
 }
+
+
+.status-msg {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #e6f9ec, #f3fff7);
+  color: #1b5e20;
+  border-left: 4px solid #28a745;
+}
+

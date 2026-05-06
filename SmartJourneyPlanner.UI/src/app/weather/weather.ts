@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WeatherService } from '../services/weather.service';
@@ -20,6 +19,7 @@ export interface WeatherRule {
   styleUrls: ['./weather.css']
 })
 export class WeatherSuggestionComponent {
+
   city: string = '';
   selectedDate: string = new Date().toISOString().split('T')[0];
   weatherData: any = null;
@@ -27,62 +27,129 @@ export class WeatherSuggestionComponent {
   suggestionResult: WeatherRule | null = null;
   loading: boolean = false;
 
-  constructor(private http: HttpClient, private weatherService: WeatherService) {}
+  constructor(private weatherService: WeatherService) {}
 
   searchWeather() {
-    if (!this.city) return;
+    if (!this.city || !this.city.trim()) return;
+
+     this.city = this.city.trim();
+
+  
+   if (!/^[a-zA-Z\s\-'.]+$/.test(this.city)) {
+     alert("Enter a valid city name");
+     return;
+  }
+
     this.loading = true;
     this.suggestionResult = null;
 
-    const geoUrl = `https://nominatim.openstreetmap.org/search?q=${this.city}&format=json`;
-    this.http.get<any[]>(geoUrl).subscribe({
+    this.weatherService.getCoordinates(this.city).subscribe({
       next: (res) => {
-        if (res?.length > 0) this.fetchWeather(res[0].lat, res[0].lon);
-        else { alert('City not found.'); this.loading = false; }
+        const place = res?.find((item: any) =>
+      ['city', 'town', 'village'].includes(item.type)
+    );
+
+    if (place) {
+      const lat = place.lat;
+      const lon = place.lon;
+      this.fetchWeather(lat, lon);
+    } else {
+      alert('Invalid city name.');
+      this.loading = false;
+        }
       },
-      error: () => { alert('Geo API failed.'); this.loading = false; }
+      error: () => {
+        alert('Geo API failed.');
+        this.loading = false;
+      }
     });
   }
 
   private fetchWeather(lat: string, lon: string) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m`;
-    
-    this.http.get<any>(url).subscribe({
+
+  const today = new Date().toISOString().split('T')[0];
+
+  if (this.selectedDate === today) {
+
+    this.weatherService.getCurrentWeather(lat, lon).subscribe({
       next: (data) => {
-        const { temperature_2m: temp, relative_humidity_2m: humidity } = data.current;
-        
-        
-        if (humidity >= 80) {
-          this.weatherCategory = 'Rainy';
-        } else if (temp >= 25) {
-          this.weatherCategory = 'Sunny';
-        } else {
-          this.weatherCategory = 'Cloudy';
-        }
-        
-        this.weatherData = { temp, humidity };
-        this.getBackendSuggestion(temp, this.weatherCategory);
-      },
-      error: () => { alert('Weather API failed.'); this.loading = false; }
-    });
-  }
+        const temp = data.current.temperature_2m;
+        const humidity = data.current.relative_humidity_2m;
 
-  private getBackendSuggestion(temp: number, condition: string) {
-    // Prevents API request errors by ensuring parameters are URL-safe.
-    const params = new HttpParams()
-        .set('temp', temp.toString())
-        .set('condition', condition);
-
-    this.http.get<WeatherRule>('http://localhost:5233/api/weather/suggestions', { params }).subscribe({
-      next: (res) => {
-        this.suggestionResult = res;
-        this.loading = false;
+        this.processWeather(temp, humidity);
       },
       error: () => {
-        console.warn("No suggestions found in database for condition:", condition);
-        this.suggestionResult = null;
+        alert('Current weather API failed.');
         this.loading = false;
       }
     });
+
+  } else if (this.selectedDate < today) {
+
+    this.weatherService.getHistoricalWeather(lat, lon, this.selectedDate).subscribe({
+      next: (data) => {
+        const tempMax = data.daily.temperature_2m_max[0];
+        const tempMin = data.daily.temperature_2m_min[0];
+        const humidity = data.daily.relative_humidity_2m_mean[0];
+
+        const temp = (tempMax + tempMin) / 2;
+
+        this.processWeather(temp, humidity);
+      },
+      error: () => {
+        alert('Historical weather API failed.');
+        this.loading = false;
+      }
+    });
+
+  } else {
+
+    this.weatherService.getForecastWeather(lat, lon, this.selectedDate).subscribe({
+      next: (data) => {
+        const tempMax = data.daily.temperature_2m_max[0];
+        const tempMin = data.daily.temperature_2m_min[0];
+        const humidity = data.daily.relative_humidity_2m_mean[0];
+
+        const temp = (tempMax + tempMin) / 2;
+
+        this.processWeather(temp, humidity);
+      },
+      error: () => {
+        alert('Forecast weather API failed.');
+        this.loading = false;
+      }
+    });
+  }
+}
+
+      private processWeather(temp: number, humidity: number) {
+
+      if (humidity >= 80) {
+        this.weatherCategory = 'Rainy';
+      } else if (temp >= 25) {
+        this.weatherCategory = 'Sunny';
+      } else {
+        this.weatherCategory = 'Cloudy';
+      }
+
+      this.weatherData = { temp, humidity };
+
+      this.getBackendSuggestion(temp, this.weatherCategory);
+}
+
+  private getBackendSuggestion(temp: number, condition: string) {
+    this.weatherService
+      .getSuggestions(temp, condition, this.selectedDate)
+      .subscribe({
+        next: (res) => {
+          this.suggestionResult = res;
+          this.loading = false;
+        },
+        error: () => {
+          console.warn("No suggestions found for condition:", condition);
+          this.suggestionResult = null;
+          this.loading = false;
+        }
+      });
   }
 }

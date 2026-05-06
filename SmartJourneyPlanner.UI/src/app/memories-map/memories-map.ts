@@ -6,7 +6,8 @@ import * as leaflet from 'leaflet';
 
 @Component({
     selector: 'app-memories-map',
-    imports: [CommonModule, FormsModule,],
+    standalone: true,
+    imports: [CommonModule, HttpClientModule, FormsModule],
     templateUrl: './memories-map.html',
     styleUrls: ['./memories-map.css']
 })
@@ -72,11 +73,13 @@ onFileSelected(event: any): void {
 }
 
 
+
 removeImage(fileInput: HTMLInputElement): void {
   this.newMemory.imageUrl = '';
 
   fileInput.value = '';
 }
+
 
   private formatData(memory: any) {
     return {
@@ -92,6 +95,8 @@ removeImage(fileInput: HTMLInputElement): void {
        isPublic: memory.isPublic || memory.IsPublic || false
     };
   }
+  
+
 
   loadAllMemories() {
     this.http.get<any[]>(this.apiUrl).subscribe({
@@ -104,11 +109,15 @@ removeImage(fileInput: HTMLInputElement): void {
     });
   }
 
+
 showMax: number = 3;
+
+
 
 toggleSeeMore() {
   this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
 }
+
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -142,7 +151,22 @@ toggleSeeMore() {
     });
   }
 
+
+
   saveMemory() {
+    if (!this.newMemory.startDate || !this.newMemory.endDate) {
+    alert("Please select both start and end dates");
+    return;
+  }
+
+  const start = new Date(this.newMemory.startDate);
+  const end = new Date(this.newMemory.endDate);
+
+  if (end < start) {
+    alert("End date cannot be before start date");
+    return;
+  }
+  
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
     ...this.newMemory, 
@@ -172,6 +196,7 @@ toggleSeeMore() {
  });
  }    
 
+
   private getPopupHtml(memory: any): string {
     return `
       <div class="popup-container">
@@ -185,6 +210,8 @@ toggleSeeMore() {
       </div>
     `;
   }
+
+
 
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
@@ -215,6 +242,8 @@ toggleSeeMore() {
     });
   }
 
+
+
   private initMap(): void {
     this.map = leaflet.map('map', {
       center: [7.8731, 80.7718],
@@ -231,9 +260,12 @@ toggleSeeMore() {
     this.markersLayer.addTo(this.map);
   }
 
+
   trackByFn(index: number, item: any) {
     return item.id || index;
   }
+
+
 
   private fixLeafletIcons() {
   const iconDefault = leaflet.icon({
@@ -248,6 +280,8 @@ toggleSeeMore() {
   });
   leaflet.Marker.prototype.options.icon = iconDefault;
 }
+
+
 
 
 deleteMemory(id: string, event: Event) {
@@ -274,6 +308,8 @@ deleteMemory(id: string, event: Event) {
     });
   }
 }
+
+
 
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 

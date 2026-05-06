@@ -25,7 +25,7 @@ app-root {
   font-family: sans-serif;
 }
 
-.title {
+.popup-title {
   margin: 0 0 5px 0;
   color: #0D47A1;
 }
@@ -36,8 +36,10 @@ app-root {
   cursor: pointer;
 }
 
-.location {
+.popup-location {
   font-size: 11px;
   margin: 5px 0;
   color: #666;
 }
+
+

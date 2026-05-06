@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { MemoriesMapComponent } from '../memories-map/memories-map'; 
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-memories-map',
   standalone: true,
   imports: [
     CommonModule,
     MemoriesMapComponent 
   ],
-  templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css']
+  templateUrl: './memories-map.html',
+  styleUrls: ['./memories-map.css']
 })
-export class DashboardComponent { }
+export class MemoryMapComponent { }
