@@ -74,9 +74,9 @@ export class BudgetDashboard implements OnInit {
     
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
-      // Bridge: Parse the limit from the selected Trip
+      // Parse the limit from the selected Trip
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
-      this.membersCount = selectedTrip.members?.length || 1;
+      this.membersCount = (selectedTrip.members?.length || 1) + 1;
     }
 
     this.budgetService.getBudget(this.tripId).subscribe({
@@ -200,9 +200,9 @@ export class BudgetDashboard implements OnInit {
     head: [['Category', 'Amount', 'Date', 'Description']],
     body: tableData,
     theme: 'grid',
-    headStyles: { fillColor: [0, 131, 143] }, // Matches teal/blue theme
+    headStyles: { fillColor: [0, 131, 143] }, 
     columnStyles: {
-      1: { halign: 'right' }, // Align amounts to the right
+      1: { halign: 'right' }, 
     }
   });
 

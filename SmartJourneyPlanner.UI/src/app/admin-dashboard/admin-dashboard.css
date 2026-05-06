@@ -204,6 +204,78 @@
   to { transform: scale(1); opacity: 1; } 
 }
 
+.modal-header { 
+  padding: 30px; 
+  display: flex; justify-content: space-between; align-items: flex-start; 
+}
+.tag { 
+  background: #e0f2fe; 
+  color: #0369a1; 
+  padding: 4px 12px; 
+  border-radius: 8px; 
+  font-weight: 700; 
+  font-size: 0.75rem; 
+}
+.modal-body { 
+  padding: 0 35px 35px; 
+}
+.modal-grid-layout { 
+  display: grid; 
+  grid-template-columns: 1fr 1.2fr; 
+  gap: 40px; 
+}
+
+.specs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.spec-row .label {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.spec-row .val {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.spec-row .val.highlight {
+  color: #00838F;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 35px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+:host ::ng-deep .swal2-container {
+  position: absolute !important;
+}
+
+.action-group {
+  display: flex;
+  gap: 12px;
+}
+
+/* DOC CARDS STYLE */
+.docs-stack { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 15px; 
+}
 .doc-card {
   display: flex; 
   align-items: center; 
@@ -215,7 +287,52 @@
   transition: all 0.3s ease;
 }
 
-.doc-card:hover { border-color: #38bdf8; transform: translateX(10px); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.1); }
+.doc-card:hover { 
+  border-color: #38bdf8; 
+  transform: translateX(10px); 
+  box-shadow: 0 10px 20px rgba(56, 189, 248, 0.1); 
+}
+
+.d-icon { 
+  width: 50px; 
+  height: 50px; 
+  border-radius: 14px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 1.4rem; 
+  margin-right: 18px; 
+}
+.d-icon.license { 
+  background: #eff6ff; 
+  color: #2563eb; 
+}
+.d-icon.nic { 
+  background: #fff7ed; 
+  color: #ea580c; 
+}
+.d-icon.revenue { 
+  background: #f0fdf4; 
+  color: #16a34a; 
+}
+
+.d-content { 
+  flex-grow: 1; 
+}
+.d-title { 
+  font-weight: 700; 
+  color: #1e293b; 
+  display: block; 
+}
+.d-status { 
+  font-size: 0.8rem; 
+  color: #10b981; 
+  font-weight: 600; 
+}
+.d-arrow { 
+  color: #cbd5e1; 
+  font-size: 1.2rem; 
+}
 
 /* FOOTER BUTTONS */
 .btn-approve-main { background: #10b981; color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; }

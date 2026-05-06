@@ -46,8 +46,8 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchAllUsers();
   }
 
-  /* DEDICATED REFRESH LOGIC
-    Updates all counts and lists simultaneously */
+  /* DEDICED REFRESH LOGIC
+     Updates all counts and lists simultaneously */
   refreshDashboard() {
     this.errorMessage = '';
     this.fetchPendingProviders();
@@ -107,7 +107,8 @@ export class AdminDashboardComponent implements OnInit {
       cancelButtonText: 'No, cancel',
       heightAuto: false,
       focusConfirm: true,
-      returnFocus: true
+      returnFocus: true,
+      target: document.querySelector('.modal-card') as HTMLElement || document.body
     }).then((result) => {
       if (result.isConfirmed) {
         this.adminService.updateProviderStatus(id, status).subscribe({
@@ -118,7 +119,8 @@ export class AdminDashboardComponent implements OnInit {
               title: 'Success',
               text: `Provider has been ${status}`,
               icon: 'success',
-              heightAuto: false
+              heightAuto: false,
+              target: document.querySelector('.modal-card') as HTMLElement || document.body
             });
           },
           error: (err: any) => {
@@ -127,7 +129,8 @@ export class AdminDashboardComponent implements OnInit {
               title: 'Error',
               text: 'Update failed. Backend might be down.',
               icon: 'error',
-              heightAuto: false
+              heightAuto: false,
+              target: document.querySelector('.modal-card') as HTMLElement || document.body
             });
           }
         });
