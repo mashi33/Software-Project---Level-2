@@ -18,6 +18,7 @@ import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
+import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
 
 
 export const routes: Routes = [
@@ -39,6 +40,7 @@ export const routes: Routes = [
   { path: 'community', component: CommunityMapComponent },
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
   { path: 'booking-details/:id', component: MyBookings },
+  { path: 'traveller-dashboard', component: TravelerDashboardComponent },
 
   // 5. Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },

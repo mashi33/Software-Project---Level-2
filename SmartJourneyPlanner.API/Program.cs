@@ -122,6 +122,16 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())// This code block runs once when the application starts, creating a unique index on the Email field of the Users collection to prevent duplicate registrations.
+{
+    var mongoDatabase = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    var usersCollection = mongoDatabase.GetCollection<User>("Users");
+    var indexOptions = new CreateIndexOptions { Unique = true };
+    var indexKeys = Builders<User>.IndexKeys.Ascending(u => u.Email);
+    var indexModel = new CreateIndexModel<User>(indexKeys, indexOptions);
+    await usersCollection.Indexes.CreateOneAsync(indexModel);
+}
+
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();

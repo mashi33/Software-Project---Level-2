@@ -17,7 +17,7 @@ export class TripSummaryComponent implements OnInit {
   // variable to hold the edit history
   editHistory: any[] = [];
   isDropdownOpen = false;
-  userRole: string = 'owner'; 
+  userRole: string = 'owner';
  
 
   tripId: string = '';
@@ -35,7 +35,7 @@ export class TripSummaryComponent implements OnInit {
     // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
     const tripId = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
-
+    
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
       console.log('Current User Role:', this.userRole);

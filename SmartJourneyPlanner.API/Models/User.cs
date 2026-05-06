@@ -12,13 +12,10 @@ namespace SmartJourneyPlanner.API.Models
         public string? Id { get; set; }
 
         // User's full name
-        public string FullName { get; set; } = null!;
+        public string FullName { get; set; } = string.Empty;
 
         // User's email address (used for login and communication)
-        public string Email { get; set; } = null!;
-
-        // Hashed password for security (never store plain text passwords)
-        public string PasswordHash { get; set; } = null!;
+        public string Email { get; set; } = string.Empty;
 
         // Short bio or description about the user (default message provided)
         public string Bio { get; set; } = "Hey there! I am using Smart Journey Planner.";
@@ -32,13 +29,8 @@ namespace SmartJourneyPlanner.API.Models
         // List of user interests (e.g., hiking, beaches, food)
         public List<string> Interests { get; set; } = new List<string>();
         
-        // "Admin", "Provider", or "Traveller"
-        public string UserType { get; set; } = "Traveller"; 
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-
         // --- PASSWORD MAPPING ---
-        // We use PasswordHash to satisfy the AuthController
+        // Hashed password for security (never store plain text passwords)
         public string PasswordHash { get; set; } = string.Empty;
         
         // This lets your code still use .Password if needed

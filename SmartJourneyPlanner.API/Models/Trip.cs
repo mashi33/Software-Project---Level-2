@@ -15,14 +15,13 @@ namespace SmartJourneyPlanner.API.Models
 
         // Unique identifier for the trip, represented as a MongoDB ObjectId 
         public string? Id { get; set; }
-        public string TripName { get; set; } = null!;
-        public string DepartFrom { get; set; } = null!;
-        public string Destination { get; set; } = null!;
+        public string TripName { get; set; } = string.Empty;
+        public string DepartFrom { get; set; } = string.Empty;
+        public string Destination { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }  // Using Nullable DateTime (DateTime?) is safer in case some
         public DateTime EndDate { get; set; }    // documents in your database have missing or null dates.
         public string BudgetLimit { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string DepartFrom { get; set; } = null!;
         
          // Invite many members to the trip
         public List<TripMember> Members { get; set; } = new List<TripMember>();

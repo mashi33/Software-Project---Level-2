@@ -30,7 +30,14 @@ namespace SmartJourneyPlanner.API.Controllers
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto model)
-        {
+        {  
+            // Check if a user with the same email already exists in the database to prevent duplicate registrations
+            var existingUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
+            if (existingUser != null)
+             {
+              // If a user with the same email already exists, return a 400 Bad Request response with an appropriate message
+                return BadRequest(new { message = "This email is already registered." });
+             }
             // hash the password using BCrypt before saving to the database
             string passwordHash = BCryptNet.HashPassword(model.Password);
 
@@ -44,15 +51,15 @@ namespace SmartJourneyPlanner.API.Controllers
              await _users.InsertOneAsync(newUser);
             var checkUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
 
-    if (checkUser != null)
-    {
-        return Ok(new { 
-            message = "User registered and verified in DB!", 
-            savedEmail = checkUser.Email,
-            databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
-            collectionName = _users.CollectionNamespace.CollectionName     
-        });
-    }
+            if (checkUser != null)
+            {
+                    return Ok(new { 
+                               message = "User registered and verified in DB!", 
+                               savedEmail = checkUser.Email,
+                               databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
+                               collectionName = _users.CollectionNamespace.CollectionName     
+                   });
+           }
 
              return BadRequest(new { message = "Data was sent but could not be verified in Database." });
         }
@@ -89,6 +96,12 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> Signup([FromBody] User user)
         {
+            var existingUser = await _users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
+            if (existingUser != null)
+             {
+              // If a user with the same email already exists, return a 400 Bad Request response with an appropriate message
+                return BadRequest(new { message = "This email is already registered." });
+             }
             
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
             // send the data to mongoDB
@@ -99,13 +112,13 @@ namespace SmartJourneyPlanner.API.Controllers
         private string CreateToken(User user) // This method creates a JWT token for the authenticated user, including their claims and signing credentials
         {
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, user.FullName), 
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.UserType),
-        new Claim("userId", user.Id.ToString()),
-        new Claim(ClaimTypes.Role, user.UserType ?? "Traveler")
-    };
+      {
+            new Claim(ClaimTypes.Name, user.FullName), 
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.UserType),
+            new Claim("userId", user.Id.ToString()),
+            new Claim(ClaimTypes.Role, user.UserType ?? "Traveler")
+      };
             // Generate a symmetric security key using the secret key from configuration
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             // Create signing credentials using the secret key and HMAC SHA256 algorithm

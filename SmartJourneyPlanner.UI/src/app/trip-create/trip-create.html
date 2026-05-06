@@ -6,7 +6,7 @@
     
     <p class="text-muted fs-5">Fill in the details and let the magic begin. Your dream vacation is just a few clicks away.</p>
     
-    <div class="mx-auto bg-primary opacity-50" style="width: 50px; height: 3px; border-radius: 2px;"></div>
+    <div class="mx-auto custom-divider"></div>
    </div>
     
    <!-- Form starts here -->
@@ -15,7 +15,7 @@
       <div class="form-container">
 
         <div class="left-form">
-             <input type="text" formControlName="tripName" placeholder="Trip name" />
+                     <input type="text" formControlName="tripName" placeholder="Trip name" />
 
                      <div class="row">
                          <input type="text" formControlName="departFrom" placeholder="Depart from" />
@@ -23,8 +23,10 @@
                      </div>
 
                     <div class="row">
-                         <input type="date" formControlName="startDate" />
-                         <input type="date" formControlName="endDate" />
+                        <span class="date-label">Start Date :</span>
+                        <input type="date" formControlName="startDate" placeholder="Start date" [min]="todayDate" #sDate />
+                        <span class="date-label">End Date :</span>
+                        <input type="date" formControlName="endDate" placeholder="End date" [min]="sDate.value || todayDate" />
                      </div>
 
                      <div class="budget-section">
@@ -38,7 +40,7 @@
                           </select>
                        </div>
 
-                 <textarea formControlName="description" placeholder="Trip description..."></textarea>
+                    <textarea formControlName="description" placeholder="Trip description..."></textarea>
         </div>
         
         <!-- Right side for member invitations -->
