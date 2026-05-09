@@ -16,12 +16,12 @@ namespace SmartJourneyPlanner.API.Controllers
             _dashboardService = dashboardService;
         }
 
-        // --- Stats ---
+       // Returns aggregated metrics used for dashboard summary cards (KPIs)
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats() 
             => Ok(await _dashboardService.GetDashboardStats());
 
-        // --- Vehicle Operations ---
+        // Provides full vehicle list for fleet management UI
         [HttpGet("vehicles")]
         public async Task<IActionResult> GetVehicles() 
             => Ok(await _dashboardService.GetAllVehicles());
@@ -40,7 +40,6 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok();
         }
 
-        // --- Booking Operations ---
         [HttpGet("bookings")]
         public async Task<IActionResult> GetBookings() 
             => Ok(await _dashboardService.GetAllBookings());

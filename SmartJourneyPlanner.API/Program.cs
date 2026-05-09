@@ -10,24 +10,27 @@ using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
+using Tomlyn.Extensions.Configuration; // TOML Support
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Email Settings Configuration
+// --- 1. CONFIGURATION LOADING (The .toml Integration) ---
+// This tells .NET to prioritize your appsettings.toml file
+builder.Configuration.AddTomlFile("appsettings.toml", optional: false, reloadOnChange: true);
+
+// Extract connection values for global database registration
+var mongoSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+var connectionString = mongoSettingsSection["ConnectionString"] ?? "mongodb://localhost:27017";
+var databaseName = mongoSettingsSection["DatabaseName"] ?? "SmartJourneyDb";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForSmartJourneyPlanner2026!";
+
+// --- 2. SERVICE CONFIGURATION (Options Pattern) ---
+// These lines map the TOML sections to your C# Model classes
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddHttpClient<PlacesService>();
-
-// DATABASE CONFIG
-
-// Configure Settings Sections
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-// Direct MongoDB Connection (Using your hardcoded Atlas string)
-var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
-var databaseName = "SmartJourneyDb"; 
-
-// Register the Client and Database globally
+// --- 3. DATABASE REGISTRATION ---
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
@@ -35,48 +38,33 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
-// JWT AUTHENTICATION
-
+// --- 4. JWT AUTHENTICATION ---
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // fix 401 Unauthorized errors
             ValidateIssuer = false, 
             ValidateAudience = false, 
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-              Encoding.UTF8.GetBytes("ThisIsMySuperSecretKeyForSmartJourneyPlanner2026!"))
-                //Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "YourFallbackVeryLongSecretKeyHere"))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
-// SIGNALR & CONTROLLERS
-
-builder.Services.AddSignalR(options =>
-{
-    options.EnableDetailedErrors = true;
-})
-.AddJsonProtocol(options =>
-{
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-});
+// --- 5. SIGNALR & CONTROLLERS ---
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; })
+.AddJsonProtocol(options => { options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; });
 
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
+    .AddJsonOptions(options => {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-// CORS
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
+// --- 6. CORS ---
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAngularApp", policy => {
         policy.WithOrigins("http://localhost:4200") 
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -84,12 +72,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-// SERVICES REGISTRATION
-
+// --- 7. SERVICES REGISTRATION ---
 builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<BudgetService>();
-builder.Services.AddSingleton<TimelineService>();
+builder.Services.AddSingleton<TimelineService>(); 
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
@@ -98,8 +84,8 @@ builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
-
-// BUILD & MIDDLEWARE
+builder.Services.AddScoped<WeatherSuggestionService>();
+builder.Services.AddScoped<ProviderDashboardService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -107,16 +93,16 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(); 
+// --- 8. HTTP REQUEST PIPELINE ---
+if (app.Environment.IsDevelopment()) {
+  app.UseSwagger();
+  app.UseSwaggerUI(); 
 }
 
 app.UseRouting();
 app.UseCors("AllowAngularApp");
 
-// Order is critical here: Authentication MUST come before Authorization
+// Authentication must always come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -117,7 +117,7 @@
 .thumb-dates {
     display: flex;
     align-items: center;
-    font-size: 11px;       /* Smaller than the title */
+    font-size: 11px;       
     color: #888;    
     font-style: italic;       
 }

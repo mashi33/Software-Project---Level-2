@@ -36,7 +36,7 @@ export class TripSummaryComponent implements OnInit {
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
-    this.tripId = tripIdFromUrl || '';
+    
     
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
@@ -59,6 +59,7 @@ export class TripSummaryComponent implements OnInit {
             this.editHistory = data.editHistory;
           } else {
             this.loadHistory(this.tripId);
+            this.filterSavedPlaces();
           }
         },
         error: (err) => {
@@ -71,7 +72,7 @@ export class TripSummaryComponent implements OnInit {
     }
   }
 
-  // ✅ The Bridge Function: Links to your Budget Dashboard
+  // Links to Budget Dashboard
   navigateToBudget() {
     if (this.tripId) {
       this.router.navigate(['/budget'], { 

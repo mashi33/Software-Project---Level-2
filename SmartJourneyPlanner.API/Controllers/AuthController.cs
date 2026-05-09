@@ -42,15 +42,15 @@ namespace SmartJourneyPlanner.API.Controllers
             await _users.InsertOneAsync(newUser);
             var checkUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
 
-            if (checkUser != null)
-            {
-                return Ok(new { 
-                    message = "User registered and verified in DB!", 
-                    savedEmail = checkUser.Email,
-                    databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
-                    collectionName = _users.CollectionNamespace.CollectionName     
-                });
-            }
+    if (checkUser != null)// If the user was successfully saved and can be retrieved from the database, return a success response with some details
+    {
+        return Ok(new { 
+            message = "User registered and verified in DB!", 
+            savedEmail = checkUser.Email,
+            databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
+            collectionName = _users.CollectionNamespace.CollectionName     
+        });
+    }
 
             return BadRequest(new { message = "Data was sent but could not be verified in Database." });
         }

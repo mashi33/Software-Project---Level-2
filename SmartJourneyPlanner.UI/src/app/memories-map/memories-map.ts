@@ -6,11 +6,7 @@ import * as leaflet from 'leaflet';
 
 @Component({
     selector: 'app-memories-map',
-    imports: [CommonModule, FormsModule,
-        // TODO: `HttpClientModule` should not be imported into a component directly.
-        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
-        // application bootstrap logic and remove the `HttpClientModule` import from this component.
-        /*HttpClientModule*/],
+    imports: [CommonModule, FormsModule,],
     templateUrl: './memories-map.html',
     styleUrls: ['./memories-map.css']
 })
@@ -133,6 +129,7 @@ toggleSeeMore() {
             this.newMemory.latitude = lat;
             this.newMemory.longitude = lon;
             this.newMemory.locationName = res[0].display_name;
+            // Smooth transition improves UX when focusing on selected location
             this.map.flyTo([lat, lon], 14);
           } else {
             alert("This location is outside of Sri Lanka.");
@@ -165,6 +162,7 @@ toggleSeeMore() {
  
  this.refreshMapMarkers();
 
+ // Reset form state after successful save to prevent duplicate submissions
  this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0,isPublic: true };
  this.visibilityStatus = 'public';
  this.searchQuery = '';
@@ -239,7 +237,6 @@ deleteMemory(id: string, event: Event) {
         // 2. Remove from myRecentUploads (Sidebar)
         this.myRecentUploads = this.myRecentUploads.filter(memory => memory.id !== id);
         
-        // 3. Refresh the map markers
         this.refreshMapMarkers();
         
         console.log("Deleted successfully");
@@ -254,6 +251,7 @@ deleteMemory(id: string, event: Event) {
 
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
+    // Stores selected image for modal/lightbox display
     this.selectedMemory = event.detail; 
   }
 
