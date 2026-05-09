@@ -47,13 +47,13 @@ export class BudgetDashboard implements OnInit {
   ) { }
 
   ngOnInit() {
-    // 1. Load all trips first
+    // Load all trips first
     this.tripService.getAllTrips().subscribe({ 
       next: (res: any[]) => {
         // Filter duplicates
         this.allTrips = Array.from(new Map(res.map(trip => [trip._id || trip.id, trip])).values());
 
-        // 2. ✅ Catch the tripId from the URL Bridge
+        // Catch the tripId from the URL Bridge
         this.route.queryParams.subscribe(params => {
           if (params['tripId']) {
             this.tripId = params['tripId'];
@@ -74,9 +74,9 @@ export class BudgetDashboard implements OnInit {
     
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
-      // ✅ Bridge: Parse the limit from the selected Trip
+      // Parse the limit from the selected Trip
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
-      this.membersCount = selectedTrip.members?.length || 1;
+      this.membersCount = (selectedTrip.members?.length || 1) + 1;
     }
 
     this.budgetService.getBudget(this.tripId).subscribe({
@@ -166,17 +166,17 @@ export class BudgetDashboard implements OnInit {
   exportToPDF() {
   const doc = new jsPDF();
   
-  // 1. Add Title
+  // Add Title
   doc.setFontSize(18);
   doc.text('Trip Budget Report', 14, 22);
   
-  // 2. Add Trip Name (Optional but helpful)
+  // Add Trip Name
   const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
 
-  // 3. Prepare the data rows
+  // Prepare the data rows
   const tableData = this.expenses.map(e => [
     e.category, 
     'Rs. ' + Number(e.amount).toFixed(2), 
@@ -184,7 +184,7 @@ export class BudgetDashboard implements OnInit {
     e.description
   ]);
 
-  // ✅ 4. Add the Total Spent row at the bottom of the data array
+  // Add the Total Spent row at the bottom of the data array
   if (this.budget) {
     tableData.push([
       { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
@@ -194,19 +194,19 @@ export class BudgetDashboard implements OnInit {
     ]);
   }
 
-  // 5. Generate the table
+  // Generate the table
   autoTable(doc, {
     startY: 35,
     head: [['Category', 'Amount', 'Date', 'Description']],
     body: tableData,
     theme: 'grid',
-    headStyles: { fillColor: [0, 131, 143] }, // Matches your teal/blue theme
+    headStyles: { fillColor: [0, 131, 143] }, 
     columnStyles: {
-      1: { halign: 'right' }, // Align amounts to the right
+      1: { halign: 'right' }, 
     }
   });
 
-  // 6. Save
+  // Save
   doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
 }
 }

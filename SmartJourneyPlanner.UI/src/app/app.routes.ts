@@ -20,18 +20,15 @@ import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 
-
 export const routes: Routes = [
-  // 1. Default Route
+  // Default Route
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   
-  // 2. Auth Routes
+  // Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
-  { path: 'createTrip', component: TripCreateComponent },
-  { path: 'signup', component: Signup },
 
-  // 3. Budget & Expense Routes
+  // Budget & Expense Routes
   { path: 'budget', component: BudgetDashboard },
   { path: 'add-expense', component: ExpenseForm },
 
@@ -42,9 +39,9 @@ export const routes: Routes = [
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
   { path: 'booking-details/:id', component: MyBookings },
 
-  // 5. Team 43 Shared Modules
+  // Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
-   { 
+  { 
     path: 'explore', 
     children: [
       { path: '', component: ExploreWelcome },
@@ -54,13 +51,13 @@ export const routes: Routes = [
   },
   { path: 'timeline', component: TripTimelineComponent },
 
-  // 6. Admin Control Center
-  // ✅ canActivate removed so you can access it directly during testing
+  // Admin Control Center
   { 
-    path: 'admin', 
+    path: 'admin-dashboard', 
     component: AdminDashboardComponent 
   },
 
+  // Transport & Vehicle Routes
   { path: 'transport', component: TransportProvider },
   { 
     path: 'vehicle/:id', 
@@ -69,12 +66,12 @@ export const routes: Routes = [
   },
   { path: 'register-vehicle', component: RegisterVehicleComponent },
 
-  //7. Trip creation and invite
+  // Trip creation and invite
   { path: 'createTrip', component: TripCreateComponent },
   { path: 'editTrip/:id', component: TripCreateComponent },
   { path: 'trip-summary/:id', component: TripSummaryComponent },
   { path: 'trip-summary', component: TripSummaryComponent },
   
-  //8.Use Profile
+  // User Profile
   { path: 'profile', component: ProfileComponent }
 ];

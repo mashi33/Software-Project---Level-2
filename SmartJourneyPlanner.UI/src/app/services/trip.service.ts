@@ -16,7 +16,7 @@ export class TripService {
   constructor(private http: HttpClient) { }
 
   // Sends a POST request to create a new trip with the provided data.
-  // ✅ NEW METHOD: Fetches all trips for the Budget Dropdown
+  // Fetches all trips for the Budget Dropdown
   getAllTrips(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }

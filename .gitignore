@@ -82,3 +82,4 @@ SmartJourneyPlanner.API/obj/
 SmartJourneyPlanner.UI/dist/
 
 appsettings.Development.json
+/environment.development.ts
