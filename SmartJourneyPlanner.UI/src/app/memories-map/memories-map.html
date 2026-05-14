@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div *ngIf="newMemory.latitude !== 0" class="status-msg success">
+      <div *ngIf="newMemory.latitude !== 0" class="status-msg">
         <i class="bi bi-geo-alt-fill"></i> Location ready to pin!
       </div>
 
@@ -52,7 +52,7 @@
     <label class="visible">Public:</label>
     <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
     
-    <label class="visible">Private:</label>
+    <label class="visible-private">Private:</label>
     <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
   </div>
   </div>

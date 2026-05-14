@@ -77,8 +77,8 @@ export class ProviderDashboardComponent implements OnInit {
 
   
   viewBookingDetails(id: string | undefined) {
-    // Defensive check prevents runtime errors from invalid or undefined IDs
-    const booking = this.bookings.find(booking => booking.id === id);
-    if (!booking) return;
-  }
+  if (!id) return;
+
+  this.router.navigate(['', id]);
+}
 }

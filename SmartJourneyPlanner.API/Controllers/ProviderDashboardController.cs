@@ -36,7 +36,7 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpPut("vehicles/{id}/availability")]
         public async Task<IActionResult> UpdateAvailability(string id, [FromBody] bool available)
         {
-            await _dashboardService.UpdateVehicleAvailability(id, "Available");
+            await _dashboardService.UpdateVehicleAvailability(id,available ? "Available" : "Unavailable");
             return Ok();
         }
 

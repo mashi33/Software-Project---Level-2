@@ -1,8 +1,15 @@
 import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { WeatherService } from '../services/weather.service';
+
+export interface WeatherRule {
+  condition: string;
+  message: string;
+  packing: string[];
+  outfit: string[];
+  activity: string[];
+}
 
 @Component({
   selector: 'app-weather-suggestion',
@@ -12,77 +19,137 @@ import { WeatherService } from '../services/weather.service';
   styleUrls: ['./weather.css']
 })
 export class WeatherSuggestionComponent {
+
   city: string = '';
   selectedDate: string = new Date().toISOString().split('T')[0];
   weatherData: any = null;
-  suggestionResult: any = null; 
-  loading: boolean = false;
   weatherCategory: string = '';
+  suggestionResult: WeatherRule | null = null;
+  loading: boolean = false;
 
-  constructor(
-    private http: HttpClient, 
-    private weatherService: WeatherService
-  ) {}
+  constructor(private weatherService: WeatherService) {}
 
   searchWeather() {
-    if (!this.city) return alert("Please enter a city.");
-    this.loading = true;
+    if (!this.city || !this.city.trim()) return;
 
-    const geoUrl = `https://nominatim.openstreetmap.org/search?q=${this.city}&format=json`;
-this.http.get<any[]>(geoUrl, {
-  // Nominatim requires a user-agent
-  headers: { 'User-Agent': 'SmartJourneyApp/1.0' } 
-}).subscribe({
+     this.city = this.city.trim();
+
+  
+   if (!/^[a-zA-Z\s\-'.]+$/.test(this.city)) {
+     alert("Enter a valid city name");
+     return;
+  }
+
+    this.loading = true;
+    this.suggestionResult = null;
+
+    this.weatherService.getCoordinates(this.city).subscribe({
       next: (res) => {
-        if (res && res.length > 0) {
-          // Uses the first match assuming it is the most relevant result from the API
-          this.fetchWeather(res[0].lat, res[0].lon);
-        } else {
-          this.loading = false;
-          alert('City not found.');
+        const place = res?.find((item: any) =>
+      ['city', 'town', 'village'].includes(item.type)
+    );
+
+    if (place) {
+      const lat = place.lat;
+      const lon = place.lon;
+      this.fetchWeather(lat, lon);
+    } else {
+      alert('Invalid city name.');
+      this.loading = false;
         }
       },
-      error: (err) => {
-        console.error("Geo API Error:", err);
+      error: () => {
+        alert('Geo API failed.');
         this.loading = false;
       }
     });
   }
 
-  fetchWeather(lat: string, lon: string) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`;
+  private fetchWeather(lat: string, lon: string) {
 
-    this.http.get<any>(url).subscribe({
+  const today = new Date().toISOString().split('T')[0];
+
+  if (this.selectedDate === today) {
+
+    this.weatherService.getCurrentWeather(lat, lon).subscribe({
       next: (data) => {
         const temp = data.current.temperature_2m;
         const humidity = data.current.relative_humidity_2m;
-        
-        // Simplifies raw weather data into categories expected by the recommendation system
-        this.weatherCategory = (humidity > 80) ? 'Rainy' : (temp >= 25 ? 'Sunny' : 'Cloudy');
-        this.weatherData = { temp, humidity };
-        
-        // Delegates business logic to backend instead of handling it in the UI
-        this.fetchSuggestions(temp, humidity, this.weatherCategory);
+
+        this.processWeather(temp, humidity);
       },
-      error: (err) => {
-        console.error("Weather API Error:", err);
+      error: () => {
+        alert('Current weather API failed.');
+        this.loading = false;
+      }
+    });
+
+  } else if (this.selectedDate < today) {
+
+    this.weatherService.getHistoricalWeather(lat, lon, this.selectedDate).subscribe({
+      next: (data) => {
+        const tempMax = data.daily.temperature_2m_max[0];
+        const tempMin = data.daily.temperature_2m_min[0];
+        const humidity = data.daily.relative_humidity_2m_mean[0];
+
+        const temp = (tempMax + tempMin) / 2;
+
+        this.processWeather(temp, humidity);
+      },
+      error: () => {
+        alert('Historical weather API failed.');
+        this.loading = false;
+      }
+    });
+
+  } else {
+
+    this.weatherService.getForecastWeather(lat, lon, this.selectedDate).subscribe({
+      next: (data) => {
+        const tempMax = data.daily.temperature_2m_max[0];
+        const tempMin = data.daily.temperature_2m_min[0];
+        const humidity = data.daily.relative_humidity_2m_mean[0];
+
+        const temp = (tempMax + tempMin) / 2;
+
+        this.processWeather(temp, humidity);
+      },
+      error: () => {
+        alert('Forecast weather API failed.');
         this.loading = false;
       }
     });
   }
+}
 
-  fetchSuggestions(temp: number, humidity: number, condition: string) {
-    this.weatherService.getSuggestions(temp, humidity, condition).subscribe({
-      next: (res) => {
-        console.log("Data Received from .NET:", res);
-        this.suggestionResult = res;
-        // Marks completion only after final dependent API call finishes
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error("Critical API Error (Backend is likely failing):", err);
-        this.loading = false;
+      private processWeather(temp: number, humidity: number) {
+
+      if (humidity >= 80) {
+        this.weatherCategory = 'Rainy';
+      } else if (temp >= 25) {
+        this.weatherCategory = 'Sunny';
+      } else {
+        this.weatherCategory = 'Cloudy';
       }
-    });
+
+      this.weatherData = { temp, humidity };
+
+      this.getBackendSuggestion(temp, this.weatherCategory);
+}
+
+  private getBackendSuggestion(temp: number, condition: string) {
+    this.weatherService
+      .getSuggestions(temp, condition, this.selectedDate)
+      .subscribe({
+        next: (res) => {
+          this.suggestionResult = res;
+          this.loading = false;
+        },
+        error: () => {
+          console.warn("No suggestions found for condition:", condition);
+          this.suggestionResult = null;
+          this.loading = false;
+        }
+      });
   }
 }

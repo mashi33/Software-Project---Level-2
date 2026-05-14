@@ -36,7 +36,7 @@ export class TripSummaryComponent implements OnInit {
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
-    
+    this.tripId = tripId || '';
     
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
@@ -154,4 +154,8 @@ navigateToHotels() {
     } 
   });
 }
+
+ navigateToWeather() {
+    this.router.navigate(['/weather']);
+  }
 }

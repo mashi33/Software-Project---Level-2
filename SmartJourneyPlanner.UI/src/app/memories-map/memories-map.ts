@@ -6,7 +6,8 @@ import * as leaflet from 'leaflet';
 
 @Component({
     selector: 'app-memories-map',
-    imports: [CommonModule, FormsModule,],
+    standalone: true,
+    imports: [CommonModule, HttpClientModule, FormsModule],
     templateUrl: './memories-map.html',
     styleUrls: ['./memories-map.css']
 })
@@ -72,11 +73,13 @@ onFileSelected(event: any): void {
 }
 
 
+
 removeImage(fileInput: HTMLInputElement): void {
   this.newMemory.imageUrl = '';
 
   fileInput.value = '';
 }
+
 
   private formatData(memory: any) {
     return {
@@ -92,6 +95,8 @@ removeImage(fileInput: HTMLInputElement): void {
        isPublic: memory.isPublic || memory.IsPublic || false
     };
   }
+  
+
 
   loadAllMemories() {
     this.http.get<any[]>(this.apiUrl).subscribe({
@@ -104,11 +109,15 @@ removeImage(fileInput: HTMLInputElement): void {
     });
   }
 
+
 showMax: number = 3;
+
+
 
 toggleSeeMore() {
   this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
 }
+
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -142,7 +151,22 @@ toggleSeeMore() {
     });
   }
 
+
+
   saveMemory() {
+    if (!this.newMemory.startDate || !this.newMemory.endDate) {
+    alert("Please select both start and end dates");
+    return;
+  }
+
+  const start = new Date(this.newMemory.startDate);
+  const end = new Date(this.newMemory.endDate);
+
+  if (end < start) {
+    alert("End date cannot be before start date");
+    return;
+  }
+  
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
     ...this.newMemory, 
@@ -172,22 +196,53 @@ toggleSeeMore() {
  });
  }    
 
+
+  private getPopupHtml(memory: any): string {
+    return `
+      <div class="popup-container">
+        <h6 class="popup-title">${memory.title}</h6>
+
+        <img src="${memory.imageUrl}" 
+             class="popup-image view-big-image"
+             data-img="${memory.imageUrl}" />
+
+        <p class="popup-location">${memory.locationName}</p>
+      </div>
+    `;
+  }
+
+
+
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
+
     this.allMemories.forEach((memory) => {
+
       const marker = leaflet.marker([memory.latitude, memory.longitude]);
-      
-      const popupHtml = `
-        <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
-          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
-        </div>`;
-      
-      marker.bindPopup(popupHtml).addTo(this.markersLayer);
+
+      const popupHtml = this.getPopupHtml(memory);
+
+      marker
+        .bindPopup(popupHtml)
+        // Waits for the popup to load because the HTML doesn't exist until then.
+        .on('popupopen', (e: any) => {
+          const popupEl = e.popup.getElement();
+          const img = popupEl.querySelector('.view-big-image');
+
+          img?.addEventListener('click', () => {
+            // Broadcasts an event to trigger image viewing without tying it to the map.
+            window.dispatchEvent(
+              new CustomEvent('viewBig', {
+                detail: memory.imageUrl
+              })
+            );
+          });
+        })
+        .addTo(this.markersLayer);
     });
   }
+
+
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -205,9 +260,12 @@ toggleSeeMore() {
     this.markersLayer.addTo(this.map);
   }
 
+
   trackByFn(index: number, item: any) {
     return item.id || index;
   }
+
+
 
   private fixLeafletIcons() {
   const iconDefault = leaflet.icon({
@@ -222,6 +280,8 @@ toggleSeeMore() {
   });
   leaflet.Marker.prototype.options.icon = iconDefault;
 }
+
+
 
 
 deleteMemory(id: string, event: Event) {
@@ -248,6 +308,8 @@ deleteMemory(id: string, event: Event) {
     });
   }
 }
+
+
 
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
