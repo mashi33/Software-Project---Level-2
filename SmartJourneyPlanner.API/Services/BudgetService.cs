@@ -19,13 +19,13 @@ namespace SmartJourneyPlanner.API.Services
             _budgetCollection = mongoDatabase.GetCollection<TripBudget>("Budgets");
         }
 
-        // --- 1. THE CONNECTOR (Updated with Auto-Creation) ---
+        // THE CONNECTOR-Updated with Auto-Creation
         public async Task<TripBudget> GetBudgetByTripIdAsync(string tripId)
         {
             // Search for an existing budget for this trip
             var budget = await _budgetCollection.Find(x => x.TripId == tripId).FirstOrDefaultAsync();
 
-            // ✅ Fix: If it's a brand new trip, create the container automatically!
+            // If it's a brand new trip, create the container automatically
             if (budget == null)
             {
                 budget = new TripBudget 
@@ -41,7 +41,7 @@ namespace SmartJourneyPlanner.API.Services
             return budget;
         }
 
-        // --- 2. ADD EXPENSE ---
+        // ADD EXPENSE
         public async Task AddExpenseAsync(string tripId, Expense expense)
         {
             // Reuse the connector to ensure a budget exists
@@ -55,7 +55,7 @@ namespace SmartJourneyPlanner.API.Services
             await _budgetCollection.UpdateOneAsync(t => t.TripId == tripId, combinedUpdate);
         }
 
-        // --- 3. DELETE EXPENSE ---
+        // DELETE EXPENSE
         public async Task DeleteExpenseAsync(string tripId, string expenseId)
         {
             var trip = await GetBudgetByTripIdAsync(tripId);
@@ -68,17 +68,22 @@ namespace SmartJourneyPlanner.API.Services
             {
                 trip.Expenses.Remove(expenseToRemove);
                 trip.TotalSpent = (double)trip.Expenses.Sum(e => e.Amount);
+
+                // Using ReplaceOneAsync here because once the list changes significantly, 
+                // it's safer to just swap the whole document.
                 await _budgetCollection.ReplaceOneAsync(t => t.TripId == tripId, trip);
             }
         }
 
-        // --- 4. CREATE NEW TRIP CONTAINER ---
+        // CREATE NEW TRIP CONTAINER
         public async Task CreateBudgetAsync(TripBudget newBudget) =>
             await _budgetCollection.InsertOneAsync(newBudget);
 
-        // --- 5. GENERIC UPDATE ---
+        // GENERIC UPDATE
         public async Task UpdateBudgetAsync(TripBudget updatedBudget)
         {
+            //Generic catch-all for when we need to update the entire budget object 
+            // from the controller (like during a bulk edit).
             await _budgetCollection.ReplaceOneAsync(b => b.TripId == updatedBudget.TripId, updatedBudget);
         }
     }

@@ -10,21 +10,27 @@ using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
+using Tomlyn.Extensions.Configuration; // TOML Support
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Email Settings Configuration
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddHttpClient<PlacesService>();
+// --- 1. CONFIGURATION LOADING (The .toml Integration) ---
+// This tells .NET to prioritize your appsettings.toml file
+builder.Configuration.AddTomlFile("appsettings.toml", optional: false, reloadOnChange: true);
 
-// 1. Configure Settings Sections
+// Extract connection values for global database registration
+var mongoSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
+var connectionString = mongoSettingsSection["ConnectionString"] ?? "mongodb://localhost:27017";
+var databaseName = mongoSettingsSection["DatabaseName"] ?? "SmartJourneyDb";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForSmartJourneyPlanner2026!";
+
+// --- 2. SERVICE CONFIGURATION (Options Pattern) ---
+// These lines map the TOML sections to your C# Model classes
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-var connectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?retryWrites=true&w=majority";
-var databaseName = "SmartJourneyDb"; 
-
-// 3. Register the Client and Database globally
+// --- 3. DATABASE REGISTRATION ---
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
@@ -32,57 +38,44 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
+// --- 4. JWT AUTHENTICATION ---
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-  options.TokenValidationParameters = new TokenValidationParameters
-  {
-    ValidateIssuer = true,
-    ValidateAudience = true,
-    ValidateLifetime = true,
-    ValidateIssuerSigningKey = true,
-    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-    ValidAudience = builder.Configuration["Jwt:Audience"],
-    IssuerSigningKey = new SymmetricSecurityKey(
-          Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
-  };
-});
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false, 
+            ValidateAudience = false, 
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
 
-builder.Services.AddSignalR(options =>
-{
-  options.EnableDetailedErrors = true;
-})
-.AddJsonProtocol(options =>
-{
-  options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-});
+// --- 5. SIGNALR & CONTROLLERS ---
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; })
+.AddJsonProtocol(options => { options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; });
 
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        // This forces the API to send 'fullName' instead of 'FullName'
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        // This makes the API more flexible when receiving data back from Angular
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200")
+// --- 6. CORS ---
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAngularApp", policy => {
+        policy.WithOrigins("http://localhost:4200") 
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
 
-
-// ✅ This ensures AdminService is available to your TransportVehiclesController
+// --- 7. SERVICES REGISTRATION ---
 builder.Services.AddSingleton<AdminService>(); 
-
 builder.Services.AddSingleton<BudgetService>();
-builder.Services.AddSingleton<TimelineService>();
+builder.Services.AddSingleton<TimelineService>(); 
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
@@ -92,7 +85,7 @@ builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
-builder.Services.AddScoped<SmartJourneyPlanner.Services.ProviderDashboardService>();
+builder.Services.AddScoped<ProviderDashboardService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -100,14 +93,16 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+// --- 8. HTTP REQUEST PIPELINE ---
+if (app.Environment.IsDevelopment()) {
   app.UseSwagger();
-  app.UseSwaggerUI();
+  app.UseSwaggerUI(); 
 }
 
 app.UseRouting();
 app.UseCors("AllowAngularApp");
+
+// Authentication must always come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
