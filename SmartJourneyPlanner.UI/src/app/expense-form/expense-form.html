@@ -29,14 +29,19 @@
                required>
         
         <div *ngIf="expense.description && !isNoteValid(expense.description)" 
-             style="color: #ff6b6b; font-size: 0.85rem; margin-top: 5px; font-weight: 500;">
+             class="validation-error">
           ⚠ Please enter a valid description (must contain letters).
         </div>
       </div>
 
       <div class="input-group">
         <label>Amount (LKR)</label>
-        <input type="number" [(ngModel)]="expense.amount" name="amount" placeholder="0.00" required>
+        <input type="number" [(ngModel)]="expense.amount" name="amount" placeholder="0.00" min="1" required>
+
+        <div *ngIf="expense.amount !== null && expense.amount !== undefined && expense.amount <= 0" 
+            class="validation-error">
+          ⚠ Amount cannot be zero or negative.
+      </div>
       </div>
 
       <div class="buttons">
@@ -45,7 +50,7 @@
         <button type="submit" 
                 class="btn-save" 
                 [disabled]="expense.description && !isNoteValid(expense.description)">
-          {{ isEditMode ? '💾 Update Expense' : '✅ Save Expense' }}
+          {{ isEditMode ? 'Update Expense' : 'Save Expense' }}
         </button>
       </div>
 
