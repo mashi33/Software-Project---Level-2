@@ -43,24 +43,16 @@ export class WeatherSuggestionComponent {
     this.loading = true;
     this.suggestionResult = null;
 
-    this.weatherService.getCoordinates(this.city).subscribe({
-      next: (res) => {
-        const place = res?.find((item: any) =>
-      ['city', 'town', 'village'].includes(item.type)
-    );
-
-    if (place) {
-      const lat = place.lat;
-      const lon = place.lon;
-      this.fetchWeather(lat, lon);
-    } else {
-      alert('Invalid city name.');
-      this.loading = false;
-        }
-      },
-      error: () => {
-        alert('Geo API failed.');
-        this.loading = false;
+    this.weatherService.getCoordinates(this.city).subscribe(
+      { next: (res) => 
+        { if (res?.length > 0) 
+          { const lat = res[0].lat; const lon = res[0].lon;
+             this.fetchWeather(lat, lon);
+             } else { alert('City not found.');
+               this.loading = false; 
+              } 
+            }, error: () => { alert('Geo API failed.'); 
+              this.loading = false;
       }
     });
   }
