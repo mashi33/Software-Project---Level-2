@@ -83,7 +83,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 message = "Login successful!", 
                 userType = user.UserType,
                 userId = user.Id,
-                username = user.FullName
+                username = user.FullName,
+                email = user.Email
             });
         }
         

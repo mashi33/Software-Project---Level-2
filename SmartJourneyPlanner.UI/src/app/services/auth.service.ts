@@ -54,6 +54,14 @@ export class AuthService {
       localStorage.setItem('userName', userName);
       this.userNameSubject.next(userName);
 
+      const email =
+  decoded['email'] ||
+  decoded['unique_name'] ||
+  decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
+  '';
+
+localStorage.setItem('email', email);
+
     } catch (error) {
       console.error('Token decode failed:', error);
     }
@@ -75,6 +83,11 @@ export class AuthService {
     return localStorage.getItem('userName');
   }
 
+  getUserEmail(): string | null {
+
+  return localStorage.getItem('email');
+}
+
   getUserRole(): string {
     const token = this.getToken();
     if (!token) return 'Guest'; 
@@ -95,6 +108,7 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
+    localStorage.removeItem('email');
     localStorage.removeItem('userType');
     localStorage.removeItem('userRole'); 
     this.userNameSubject.next('User');

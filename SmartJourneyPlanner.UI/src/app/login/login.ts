@@ -31,6 +31,8 @@ export class LoginComponent {
         
         // Save other metadata
         localStorage.setItem('userType', response.userType);
+        localStorage.setItem('userId', response.userId);
+        localStorage.setItem('email', response.email || ''); 
 
         // Standard redirects
         const tripId = this.route.snapshot.queryParamMap.get('tripId');

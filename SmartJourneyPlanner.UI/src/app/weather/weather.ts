@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { WeatherService } from '../services/weather.service';
 
 export interface WeatherRule {
@@ -14,132 +15,154 @@ export interface WeatherRule {
 @Component({
   selector: 'app-weather-suggestion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule
+  ],
   templateUrl: './weather.html',
   styleUrls: ['./weather.css']
 })
+
 export class WeatherSuggestionComponent {
 
   city: string = '';
-  selectedDate: string = new Date().toISOString().split('T')[0];
+
+  selectedDate: string =
+    new Date().toISOString().split('T')[0];
+
   weatherData: any = null;
+
   weatherCategory: string = '';
+
   suggestionResult: WeatherRule | null = null;
+
   loading: boolean = false;
 
-  constructor(private weatherService: WeatherService) {}
+  constructor(
+    private weatherService: WeatherService
+  ) {}
 
+  // =========================
+  // SEARCH WEATHER
+  // =========================
   searchWeather() {
-    if (!this.city || !this.city.trim()) return;
 
-     this.city = this.city.trim();
+    if (!this.city || !this.city.trim()) {
+      return;
+    }
 
-  
-   if (!/^[a-zA-Z\s\-'.]+$/.test(this.city)) {
-     alert("Enter a valid city name");
-     return;
-  }
+    this.city = this.city.trim();
+
+    if (!/^[a-zA-Z\s\-'.]+$/.test(this.city)) {
+
+      alert('Enter a valid city name');
+
+      return;
+    }
 
     this.loading = true;
+
     this.suggestionResult = null;
 
-    this.weatherService.getCoordinates(this.city).subscribe(
-      { next: (res) => 
-        { if (res?.length > 0) 
-          { const lat = res[0].lat; const lon = res[0].lon;
-             this.fetchWeather(lat, lon);
-             } else { alert('City not found.');
-               this.loading = false; 
-              } 
-            }, error: () => { alert('Geo API failed.'); 
-              this.loading = false;
-      }
-    });
-  }
-
-  private fetchWeather(lat: string, lon: string) {
-
-  const today = new Date().toISOString().split('T')[0];
-
-  if (this.selectedDate === today) {
-
-    this.weatherService.getCurrentWeather(lat, lon).subscribe({
-      next: (data) => {
-        const temp = data.current.temperature_2m;
-        const humidity = data.current.relative_humidity_2m;
-
-        this.processWeather(temp, humidity);
-      },
-      error: () => {
-        alert('Current weather API failed.');
-        this.loading = false;
-      }
-    });
-
-  } else if (this.selectedDate < today) {
-
-    this.weatherService.getHistoricalWeather(lat, lon, this.selectedDate).subscribe({
-      next: (data) => {
-        const tempMax = data.daily.temperature_2m_max[0];
-        const tempMin = data.daily.temperature_2m_min[0];
-        const humidity = data.daily.relative_humidity_2m_mean[0];
-
-        const temp = (tempMax + tempMin) / 2;
-
-        this.processWeather(temp, humidity);
-      },
-      error: () => {
-        alert('Historical weather API failed.');
-        this.loading = false;
-      }
-    });
-
-  } else {
-
-    this.weatherService.getForecastWeather(lat, lon, this.selectedDate).subscribe({
-      next: (data) => {
-        const tempMax = data.daily.temperature_2m_max[0];
-        const tempMin = data.daily.temperature_2m_min[0];
-        const humidity = data.daily.relative_humidity_2m_mean[0];
-
-        const temp = (tempMax + tempMin) / 2;
-
-        this.processWeather(temp, humidity);
-      },
-      error: () => {
-        alert('Forecast weather API failed.');
-        this.loading = false;
-      }
-    });
-  }
-}
-
-      private processWeather(temp: number, humidity: number) {
-
-      if (humidity >= 80) {
-        this.weatherCategory = 'Rainy';
-      } else if (temp >= 25) {
-        this.weatherCategory = 'Sunny';
-      } else {
-        this.weatherCategory = 'Cloudy';
-      }
-
-      this.weatherData = { temp, humidity };
-
-      this.getBackendSuggestion(temp, this.weatherCategory);
-}
-
-  private getBackendSuggestion(temp: number, condition: string) {
     this.weatherService
-      .getSuggestions(temp, condition, this.selectedDate)
+      .getCoordinates(this.city)
       .subscribe({
+
         next: (res) => {
+
+          if (res?.length > 0) {
+
+            const lat = res[0].lat;
+            const lon = res[0].lon;
+
+            this.loadWeather(lat, lon);
+
+          } else {
+
+            alert('City not found.');
+
+            this.loading = false;
+          }
+        },
+
+        error: () => {
+
+          alert('Geo API failed.');
+
+          this.loading = false;
+        }
+      });
+  }
+
+  // =========================
+  // LOAD WEATHER
+  // =========================
+  loadWeather(
+    lat: string,
+    lon: string
+  ) {
+
+    this.weatherService
+      .getProcessedWeather(
+        lat,
+        lon,
+        this.selectedDate
+      )
+      .subscribe({
+
+        next: (weather) => {
+
+          this.weatherData = weather;
+
+          this.weatherCategory =
+            weather.condition;
+
+          this.getBackendSuggestion(
+            Number(weather.avgTemp),
+            weather.condition
+          );
+        },
+
+        error: () => {
+
+          alert('Weather API failed.');
+
+          this.loading = false;
+        }
+      });
+  }
+
+  // =========================
+  // BACKEND SUGGESTIONS
+  // =========================
+  private getBackendSuggestion(
+    temp: number,
+    condition: string
+  ) {
+
+    this.weatherService
+      .getSuggestions(
+        temp,
+        condition,
+        this.selectedDate
+      )
+      .subscribe({
+
+        next: (res) => {
+
           this.suggestionResult = res;
+
           this.loading = false;
         },
+
         error: () => {
-          console.warn("No suggestions found for condition:", condition);
+
+          console.warn(
+            'No suggestions found'
+          );
+
           this.suggestionResult = null;
+
           this.loading = false;
         }
       });
