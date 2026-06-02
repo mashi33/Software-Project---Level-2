@@ -17,7 +17,6 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
- 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -36,7 +35,8 @@ export class TripSummaryComponent implements OnInit {
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
-    this.tripId = tripId || '';
+    // FIXED: Correctly mapping the variable extracted from route parameters
+    this.tripId = tripIdFromUrl || ''; 
     
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
@@ -47,19 +47,16 @@ export class TripSummaryComponent implements OnInit {
 
       this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
-      this.tripDetails = data;
+          this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // FIX: Call filterSavedPlaces() after data is loaded
+          // Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
 
-          //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
-          this.tripDetails = data;
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
           } else {
             this.loadHistory(this.tripId);
-            this.filterSavedPlaces();
           }
         },
         error: (err) => {
@@ -68,6 +65,7 @@ export class TripSummaryComponent implements OnInit {
         }
       });
     } else {
+      // Fallback if no tripId is present in URL
       this.loadFromTemp();
     }
   }
@@ -135,27 +133,23 @@ export class TripSummaryComponent implements OnInit {
   }
 
   navigateToRouteOptimization() {
-  this.router.navigate(['/explore/route-optimization'], {
-    //Autofill on route optimization page using query parameters to pass 
-    // the departure and destination locations from the current trip details. 
-    queryParams: {
-      start: this.tripDetails.departFrom, 
-      end: this.tripDetails.destination   
-    }
-  });
-}
+    this.router.navigate(['/explore/route-optimization'], {
+      queryParams: {
+        start: this.tripDetails?.departFrom, 
+        end: this.tripDetails?.destination   
+      }
+    });
+  }
 
-navigateToHotels() {
-  this.router.navigate(['/explore/hotel-restaurant-finder'], { 
-    // Autofill on hotel finder page using query parameters
-    //  to pass the destination location from the current trip details.
-    queryParams: { 
-      city: this.tripDetails.destination 
-    } 
-  });
-}
+  navigateToHotels() {
+    this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+      queryParams: { 
+        city: this.tripDetails?.destination 
+      } 
+    });
+  }
 
- navigateToWeather() {
+  navigateToWeather() {
     this.router.navigate(['/weather']);
   }
 }
