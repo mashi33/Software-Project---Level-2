@@ -20,6 +20,7 @@ ConnectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2
 DatabaseName = "SmartJourneyDb"
 CollectionName = "Discussions"
 MemoryCollectionName = "TripMemories"
+WeatherCollectionName= "WeatherRules"
 TransportVehiclesCollectionName = "TransportVehicles"
 TransportBookingsCollectionName = "TransportBookings"
 

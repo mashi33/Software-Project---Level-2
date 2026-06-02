@@ -29,6 +29,16 @@ namespace SmartJourneyPlanner.API.Services
         // Returns all documents; filtering is intentionally handled at controller/service level if needed
             await _memoriesCollection.Find(_ => true).ToListAsync();
 
+        public async Task<List<TripMemory>> GetByUserIdAsync(string userId) =>
+    await _memoriesCollection
+        .Find(memory => memory.UserId == userId)
+        .ToListAsync();
+
+public async Task<List<TripMemory>> GetPublicMemoriesAsync() =>
+    await _memoriesCollection
+        .Find(memory => memory.IsPublic == true)
+        .ToListAsync();
+
         public async Task<bool> DeleteAsync(string id)
            {
               var filter = Builders<TripMemory>.Filter.Eq(memory => memory.Id, id);

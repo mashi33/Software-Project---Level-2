@@ -46,7 +46,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.fixLeafletIcons();
-    this.loadAllMemories(); 
+    this.loadMyMemories(); 
   }
 
   ngAfterViewInit(): void {
@@ -98,16 +98,17 @@ removeImage(fileInput: HTMLInputElement): void {
   
 
 
-  loadAllMemories() {
-    this.http.get<any[]>(this.apiUrl).subscribe({
-      next: (data) => {
-        this.allMemories = data.map(memory => this.formatData(memory));
-        this.myRecentUploads = [...this.allMemories].reverse();
-        this.refreshMapMarkers();
-      },
-      error: (err) => console.error("Database connection error:", err)
+  loadMyMemories() {
+    const userId = localStorage.getItem('userId');
+    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
+        next: (data) => {
+            this.allMemories = data.map(m => this.formatData(m));
+            this.myRecentUploads = [...this.allMemories].reverse();
+
+            this.refreshMapMarkers();
+        }
     });
-  }
+}
 
 
 showMax: number = 3;
@@ -154,6 +155,14 @@ toggleSeeMore() {
 
 
   saveMemory() {
+
+    const userId = localStorage.getItem('userId'); // Retrieve logged-in ID
+    
+    if (!userId) {
+        alert("Please log in to save memories");
+        return;
+    }
+
     if (!this.newMemory.startDate || !this.newMemory.endDate) {
     alert("Please select both start and end dates");
     return;
@@ -169,7 +178,8 @@ toggleSeeMore() {
   
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
-    ...this.newMemory, 
+    ...this.newMemory,
+    userId: userId, 
     isPublic: this.newMemory.isPublic 
   };
  this.http.post(this.apiUrl, body).subscribe({

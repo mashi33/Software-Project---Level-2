@@ -21,6 +21,10 @@ namespace SmartJourneyPlanner.API.Models
 
         public string Destination { get; set; } = null!;
 
+        public double Lat { get; set; }
+
+        public double Lon { get; set; }
+
         // Using DateTime (Ensure your Angular frontend sends ISO strings)
         public DateTime StartDate { get; set; }  
         
@@ -35,7 +39,7 @@ namespace SmartJourneyPlanner.API.Models
 
         public List<TripPlace> SavedPlaces { get; set; } = new List<TripPlace>();
 
-        // Tracks which user created the trip
+        public string? creatorEmail { get; set; }
         public string? CreatedBy { get; set; }
     }
 

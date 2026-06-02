@@ -5,63 +5,61 @@
       <h2 class="fw-bold m-0 text-dark">{{ tripDetails?.tripName || 'Trip Summary' }}</h2>
       
       <div class="d-flex gap-2 align-items-center">
-        <!--Drop down edit hitory-->
         <div class="dropdown">
-            <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2" 
-                    type="button" 
-                    (click)="toggleDropdown()">
-                <i class="bi bi-clock-history"></i> 
-                Edited History 
-                <span class="badge rounded-pill bg-danger">{{ editHistory.length }}</span>
-            </button>
+          <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2" 
+                  type="button" 
+                  (click)="toggleDropdown()">
+              <i class="bi bi-clock-history"></i> 
+              Edited History 
+              <span class="badge rounded-pill bg-danger">{{ editHistory.length }}</span>
+          </button>
 
           <ul class="dropdown-menu shadow-lg border-0 p-0 show" 
-             *ngIf="isDropdownOpen"
-             style="display: block; position: absolute; right: 0; min-width: 320px; max-height: 400px; overflow-y: auto; z-index: 1050; border-radius: 12px;">
+              *ngIf="isDropdownOpen"
+              style="display: block; position: absolute; right: 0; min-width: 320px; max-height: 400px; overflow-y: auto; z-index: 1050; border-radius: 12px;">
       
-             <li class="dropdown-header border-bottom p-3 bg-light" style="border-radius: 12px 12px 0 0;">
-             <h6 class="mb-0 text-dark fw-bold">Modification Log</h6>
-             </li>
+            <li class="dropdown-header border-bottom p-3 bg-light" style="border-radius: 12px 12px 0 0;">
+              <h6 class="mb-0 text-dark fw-bold">Modification Log</h6>
+            </li>
 
-             <li *ngIf="editHistory.length === 0" class="p-4 text-center">
-             <i class="bi bi-info-circle text-muted d-block mb-2" style="font-size: 1.5rem;"></i>
-             <span class="text-muted small">No changes recorded for this trip.</span>
-             </li>
+            <li *ngIf="editHistory.length === 0" class="p-4 text-center">
+              <i class="bi bi-info-circle text-muted d-block mb-2" style="font-size: 1.5rem;"></i>
+              <span class="text-muted small">No changes recorded for this trip.</span>
+            </li>
             
-             <!--Edit History Items-->
             <li *ngFor="let history of editHistory">
-            <div class="dropdown-item p-3 border-bottom whitespace-normal" style="white-space: normal; cursor: default;">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="d-flex align-items-center gap-2">
-                  <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
-                    {{ history.editedBy?.charAt(0) || 'U' }}
-                  </div>
+              <div class="dropdown-item p-3 border-bottom whitespace-normal" style="white-space: normal; cursor: default;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                      {{ history.editedBy?.charAt(0) || 'U' }}
+                    </div>
                     <span class="fw-bold text-primary small">{{ history.editedBy }}</span>
+                  </div>
+                  <small class="text-muted" style="font-size: 0.75rem;">
+                    <i class="bi bi-calendar3 me-1"></i>{{ history.editedAt | date:'MMM d, h:mm a' }}
+                  </small>
                 </div>
-                <small class="text-muted" style="font-size: 0.75rem;">
-                 <i class="bi bi-calendar3 me-1"></i>{{ history.editedAt | date:'MMM d, h:mm a' }}
-                </small>
-              </div>
           
-             <div class="bg-light rounded p-2 border-start border-4 border-primary">
-              <p class="mb-0 small text-dark fw-medium">
-                <i class="bi bi-pencil-square me-1 text-secondary"></i>
-                {{ history.changes }}
-              </p>
-            </div>
-          </div>
-        </li>
+                <div class="bg-light rounded p-2 border-start border-4 border-primary">
+                  <p class="mb-0 small text-dark fw-medium">
+                    <i class="bi bi-pencil-square me-1 text-secondary"></i>
+                    {{ history.changes }}
+                  </p>
+                </div>
+              </div>
+            </li>
 
-         <li class="p-2 text-center bg-light" style="border-radius: 0 0 12px 12px;" *ngIf="editHistory && editHistory.length > 0">
-             <small class="text-muted font-monospace" style="font-size: 0.65rem;">End of history</small>
-         </li>
-        </ul>
-       </div>
-       <!--View members button--> 
-       <button class="btn btn-header-outline btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#membersModal">
+            <li class="p-2 text-center bg-light" style="border-radius: 0 0 12px 12px;" *ngIf="editHistory && editHistory.length > 0">
+              <small class="text-muted font-monospace" style="font-size: 0.65rem;">End of history</small>
+            </li>
+          </ul>
+        </div>
+
+        <button class="btn btn-header-outline btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#membersModal">
           View members
         </button>
-        <!--Delete trip button-->
+
         <button *ngIf="userRole === 'owner'" class="btn btn-danger btn-sm rounded-pill px-4 shadow-sm border-0">
           Delete Trip
         </button>
@@ -70,12 +68,10 @@
 
     <hr class="opacity-10 mb-4">
     
-    <!--Viewer Only show-->
     <div *ngIf="userRole === 'viewer'" class="alert alert-info border-0 shadow-sm mb-4 rounded-pill py-2">
       <i class="bi bi-info-circle-fill me-2"></i> You are viewing this trip in <strong>Read-Only</strong> mode.
     </div>
     
-    <!--Trip details-->
     <div class="row g-4">
       <div class="col-md-5">
         <div class="p-4 shadow-sm detail-card h-100 border-0">
@@ -109,10 +105,9 @@
 
           <div class="detail-item">
             <label>Transport Mode</label>
-            <span class="badge bg-white text-dark border px-3 py-2 rounded-pill fw-normal">{{ tripDetails.transportMode }}</span>
+            <span class="badge bg-white text-dark border px-3 py-2 rounded-pill fw-normal">{{ tripDetails.transportMode || tripDetails.TransportMode }}</span>
           </div>
           
-          <!--Hotels, Restaurants, Places Dropdowns-->
           <div class="mt-4 pt-2">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <label class="text-muted small m-0">Hotels</label>
@@ -144,7 +139,7 @@
               <label class="text-muted small m-0">Places</label>
               <select class="form-select form-select-sm summary-dropdown shadow-sm">
                 <option selected disabled>View Places List</option>
-                <option *ngFor="let place of tripDetails.places">{{ place }}</option>
+                <option *ngFor="let place of (tripDetails.places || tripDetails.Places)">{{ place }}</option>
               </select>
             </div>
           </div>
@@ -152,7 +147,6 @@
         </div>
       </div>
       
-      <!--Explore more connection buttons-->
       <div class="col-md-7">
         <h2 class="text-muted small mb-3">Explore more options for your trip:</h2>
         <div class="row g-3">
@@ -176,28 +170,145 @@
           </div>
 
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm" (click)="navigateToChat()" style="cursor: pointer;">
+            <div class="suggestion-box shadow-sm" (click)="navigateToChat()">
               <i class="bi bi-chat-left-text fs-4 mb-2"></i>
               <span>View Chat</span>
             </div>
           </div>
 
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm" (click)="navigateToBudget()" style="cursor: pointer;">
+            <div class="suggestion-box shadow-sm" (click)="navigateToBudget()">
               <i class="bi bi-briefcase fs-4 mb-2"></i>
               <span>Budget</span>
             </div>
           </div>
           
           <div class="col-6 col-lg-4">
-            <div class="suggestion-box shadow-sm" (click)="navigateToWeather()" style="cursor: pointer;">
+           <div class="suggestion-box active-weather shadow-sm" (click)="navigateToWeather()">
               <i class="bi bi-cloud-sun fs-4 mb-2"></i>
               <span>Weather</span>
             </div>
           </div>
         </div>
+<div class="weather-card shadow-lg mt-4">
+          
+          <div *ngIf="isLastYearWeather" class="alert alert-warning border-0 m-3 mb-1 small d-flex align-items-center gap-2" style="border-radius: 8px; font-size: 0.85rem; font-weight: 500;">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 text-warning"></i>
+            <span>Note: Showing last year's weather records as an estimate for this date.</span>
+          </div>
+          <div class="weather-header">
+            <div>
+              <h3 class="weather-location">
+                <i class="bi bi-geo-alt-fill me-2 text-danger"></i>
+                {{ tripDetails?.Destination || tripDetails?.destination || 'Loading Destination...' }}
+              </h3>
+              <p class="weather-dates" *ngIf="tripDetails?.StartDate || tripDetails?.startDate">
+                {{ (tripDetails.StartDate || tripDetails.startDate) | date:'MMM d' }}
+                -
+                {{ (tripDetails.EndDate || tripDetails.endDate) | date:'MMM d, y' }}
+              </p>
+            </div>
+
+            <div class="weather-stats">
+              <div class="weather-stat-item">
+                <i class="bi bi-droplet-half text-info"></i>
+                <div>
+                  <small class="stat-label">Humidity</small>
+                  <strong class="stat-value">{{ summaryWeather?.humidity ? summaryWeather.humidity + '%' : '--' }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row align-items-center g-4 mt-1">
+            <div class="col-lg-4">
+              <div class="current-weather-box">
+                <div class="current-temp-wrapper">
+                  <i class="weather-main-icon"
+                     [ngClass]="{
+                       'bi bi-cloud-rain-fill text-primary': summaryWeather?.condition === 'Rainy',
+                       'bi bi-brightness-high-fill text-warning': summaryWeather?.condition === 'Sunny',
+                       'bi bi-cloud-fill text-secondary': summaryWeather?.condition === 'Cloudy'
+                     }">
+                  </i>
+                  <div class="temp-display">
+                    <h1 class="temperature">
+                      {{ summaryWeather?.avgTemp || '--' }}
+                    </h1>
+                    <span class="temp-unit">°C</span>
+                  </div>
+                </div>
+
+                <h5 class="weather-condition-text">
+                  {{ summaryWeather?.condition || 'No Data Available' }} {{ summaryWeather?.emoji }}
+                </h5>
+
+                <p class="feels-like-text" *ngIf="summaryWeather && summaryWeather.avgTemp">
+                  Feels like {{ summaryWeather.avgTemp }}°C
+                </p>
+              </div>
+            </div>
+
+            <div class="col-lg-8">
+              <div class="forecast-grid">
+                <div class="forecast-day" *ngFor="let day of forecastDays">
+                  <h6 class="forecast-day-title">{{ day.day }}</h6>
+                  <i [class]="day.icon" class="forecast-day-icon"></i>
+                  <p class="forecast-day-temp">{{ day.temp }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="smart-suggestion-box mt-4">
+            <div class="suggestion-layout">
+              <div class="suggestion-content-group">
+                <div class="suggestion-avatar">
+                  <i class="bi bi-stars"></i>
+                </div>
+
+                <div class="suggestion-details">
+                  <h6 class="suggestion-condition-heading">
+                    <i class="bi bi-shield-check me-1"></i>
+                    {{ summarySuggestion?.Condition || summarySuggestion?.condition || 'Climate Activity Parameters' }}
+                  </h6>
+
+                  <p class="suggestion-message">
+                    {{ summarySuggestion?.Message || summarySuggestion?.message || 'Analyzing environmental variations across itinerary collections...' }}
+                  </p>
+
+                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Packing || summarySuggestion?.packing">
+                    <span class="meta-label"><i class="bi bi-suitcase-lg text-primary me-1"></i>Pack List:</span>
+                    <span class="meta-value">
+                      {{ summarySuggestion?.Packing ? summarySuggestion.Packing.join(', ') : summarySuggestion?.packing?.join(', ') }}
+                    </span>
+                  </div>
+
+                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Outfit || summarySuggestion?.outfit">
+                    <span class="meta-label"><i class="bi bi-person-workspace text-danger me-1"></i>Suggested Wear:</span>
+                    <span class="meta-value">
+                      {{ summarySuggestion?.Outfit ? summarySuggestion.Outfit.join(', ') : summarySuggestion?.outfit?.join(', ') }}
+                    </span>
+                  </div>
+
+                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Activity || summarySuggestion?.activity">
+                    <span class="meta-label"><i class="bi bi-scooter text-success me-1"></i>Optimal Tasks:</span>
+                    <span class="meta-value">
+                      {{ summarySuggestion?.Activity ? summarySuggestion.Activity.join(', ') : summarySuggestion?.activity?.join(', ') }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="travel-accessories-pane">
+                <i class="bi bi-sunglasses" [class.accessory-active]="summaryWeather?.condition === 'Sunny'"></i>
+                <i class="bi bi-umbrella" [class.accessory-active]="summaryWeather?.condition === 'Rainy'"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
         
-        <!--Back to Edit and Confirm Buttons-->
         <div class="mt-4 d-flex gap-3" *ngIf="userRole === 'owner' || userRole === 'editor'">
           <button class="btn btn-outline-primary rounded-pill px-4 shadow-sm" [routerLink]="['/editTrip', tripDetails?.id || tripDetails?.Id]">
             Back to Edit Trip
@@ -208,7 +319,6 @@
     </div>
   </div>
   
-  <!-- Members Modal -->
   <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
