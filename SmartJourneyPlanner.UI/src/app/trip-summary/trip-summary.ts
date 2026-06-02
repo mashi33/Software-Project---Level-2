@@ -18,7 +18,6 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
- 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -65,10 +64,10 @@ isLastYearWeather: boolean = false;
 
       this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
-      this.tripDetails = data;
+          this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // FIX: Call filterSavedPlaces() after data is loaded
+          // Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
 
           this.loadTripWeather();
@@ -79,7 +78,6 @@ isLastYearWeather: boolean = false;
             this.editHistory = data.editHistory;
           } else {
             this.loadHistory(this.tripId);
-            this.filterSavedPlaces();
           }
         },
         error: (err) => {
@@ -88,6 +86,7 @@ isLastYearWeather: boolean = false;
         }
       });
     } else {
+      // Fallback if no tripId is present in URL
       this.loadFromTemp();
     }
   }
@@ -248,27 +247,23 @@ isLastYearWeather: boolean = false;
   }
 
   navigateToRouteOptimization() {
-  this.router.navigate(['/explore/route-optimization'], {
-    //Autofill on route optimization page using query parameters to pass 
-    // the departure and destination locations from the current trip details. 
-    queryParams: {
-      start: this.tripDetails.departFrom, 
-      end: this.tripDetails.destination   
-    }
-  });
-}
+    this.router.navigate(['/explore/route-optimization'], {
+      queryParams: {
+        start: this.tripDetails?.departFrom, 
+        end: this.tripDetails?.destination   
+      }
+    });
+  }
 
-navigateToHotels() {
-  this.router.navigate(['/explore/hotel-restaurant-finder'], { 
-    // Autofill on hotel finder page using query parameters
-    //  to pass the destination location from the current trip details.
-    queryParams: { 
-      city: this.tripDetails.destination 
-    } 
-  });
-}
+  navigateToHotels() {
+    this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+      queryParams: { 
+        city: this.tripDetails?.destination 
+      } 
+    });
+  }
 
- navigateToWeather() {
+  navigateToWeather() {
     this.router.navigate(['/weather']);
   }
 }
