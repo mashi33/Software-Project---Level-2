@@ -11,10 +11,10 @@ export class TravellerDashboardService {
 
   constructor(private http: HttpClient) {}
 
-  getDashboardData(userId: string): Observable<any> {
+  getDashboardData(): Observable<any> {
 
     return this.http.get<any>(
-      `${this.apiUrl}/dashboard/${userId}`
+      `${this.apiUrl}/dashboard`
     );
   }
 }

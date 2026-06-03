@@ -223,6 +223,11 @@
           <div class="row align-items-center g-4 mt-1">
             <div class="col-lg-4">
               <div class="current-weather-box">
+                <div class="start-date-weather">
+                    <h6 class="m-0 fw-bold text-dark">
+                        {{ (tripDetails.StartDate || tripDetails.startDate) | date:'EEEE, MMM d' }}
+                    </h6>
+                  </div>
                 <div class="current-temp-wrapper">
                   <i class="weather-main-icon"
                      [ngClass]="{
@@ -233,7 +238,8 @@
                   </i>
                   <div class="temp-display">
                     <h1 class="temperature">
-                      {{ summaryWeather?.avgTemp || '--' }}
+                    <!-- Use a number conversion check to protect decimal rendering -->
+                    {{ summaryWeather?.avgTemp ? (summaryWeather.avgTemp | number:'1.1-1') : '--' }}
                     </h1>
                     <span class="temp-unit">°C</span>
                   </div>
@@ -244,7 +250,8 @@
                 </h5>
 
                 <p class="feels-like-text" *ngIf="summaryWeather && summaryWeather.avgTemp">
-                  Feels like {{ summaryWeather.avgTemp }}°C
+                <!-- Forces display consistency to exactly 1 decimal point -->
+                Feels like {{ summaryWeather.avgTemp | number:'1.1-1' }}°C
                 </p>
               </div>
             </div>
@@ -263,47 +270,51 @@
           <div class="smart-suggestion-box mt-4">
             <div class="suggestion-layout">
               <div class="suggestion-content-group">
-                <div class="suggestion-avatar">
-                  <i class="bi bi-stars"></i>
-                </div>
 
                 <div class="suggestion-details">
-                  <h6 class="suggestion-condition-heading">
-                    <i class="bi bi-shield-check me-1"></i>
-                    {{ summarySuggestion?.Condition || summarySuggestion?.condition || 'Climate Activity Parameters' }}
-                  </h6>
 
                   <p class="suggestion-message">
                     {{ summarySuggestion?.Message || summarySuggestion?.message || 'Analyzing environmental variations across itinerary collections...' }}
                   </p>
 
-                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Packing || summarySuggestion?.packing">
-                    <span class="meta-label"><i class="bi bi-suitcase-lg text-primary me-1"></i>Pack List:</span>
-                    <span class="meta-value">
-                      {{ summarySuggestion?.Packing ? summarySuggestion.Packing.join(', ') : summarySuggestion?.packing?.join(', ') }}
-                    </span>
-                  </div>
+                  <!-- ======= HIGHLIGHTED NEW THREE-COLUMN SUGGESTION GRID ======= -->
+<div class="suggestion-columns-grid mt-3">
 
-                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Outfit || summarySuggestion?.outfit">
-                    <span class="meta-label"><i class="bi bi-person-workspace text-danger me-1"></i>Suggested Wear:</span>
-                    <span class="meta-value">
-                      {{ summarySuggestion?.Outfit ? summarySuggestion.Outfit.join(', ') : summarySuggestion?.outfit?.join(', ') }}
-                    </span>
-                  </div>
+  <!-- Column 1: Packing List -->
+  <div class="suggestion-column" *ngIf="summarySuggestion?.Packing || summarySuggestion?.packing">
+    <h6 class="column-title">PACKING LIST</h6>
+    <div class="column-items-list">
+      <p class="column-item-text" *ngFor="let item of (summarySuggestion?.Packing || summarySuggestion?.packing)">
+        {{ item }}
+      </p>
+    </div>
+  </div>
 
-                  <div class="suggestion-meta-row" *ngIf="summarySuggestion?.Activity || summarySuggestion?.activity">
-                    <span class="meta-label"><i class="bi bi-scooter text-success me-1"></i>Optimal Tasks:</span>
-                    <span class="meta-value">
-                      {{ summarySuggestion?.Activity ? summarySuggestion.Activity.join(', ') : summarySuggestion?.activity?.join(', ') }}
-                    </span>
-                  </div>
+  <!-- Column 2: Outfit -->
+  <div class="suggestion-column" *ngIf="summarySuggestion?.Outfit || summarySuggestion?.outfit">
+    <h6 class="column-title">OUTFIT</h6>
+    <div class="column-items-list">
+      <p class="column-item-text" *ngFor="let item of (summarySuggestion?.Outfit || summarySuggestion?.outfit)">
+        {{ item }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Column 3: Activity -->
+  <div class="suggestion-column" *ngIf="summarySuggestion?.Activity || summarySuggestion?.activity">
+    <h6 class="column-title">ACTIVITY</h6>
+    <div class="column-items-list">
+      <p class="column-item-text" *ngFor="let item of (summarySuggestion?.Activity || summarySuggestion?.activity)">
+        {{ item }}
+      </p>
+    </div>
+  </div>
+
+</div>
+<!-- ============================================================ -->
                 </div>
               </div>
 
-              <div class="travel-accessories-pane">
-                <i class="bi bi-sunglasses" [class.accessory-active]="summaryWeather?.condition === 'Sunny'"></i>
-                <i class="bi bi-umbrella" [class.accessory-active]="summaryWeather?.condition === 'Rainy'"></i>
-              </div>
             </div>
           </div>
 

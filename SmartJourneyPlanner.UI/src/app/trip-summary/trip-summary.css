@@ -7,6 +7,7 @@
 .detail-card {
   background-color: #ffffff;
   border-radius: 24px;
+  max-height: 600px;
 }
 
 .detail-item {
@@ -140,10 +141,22 @@
   font-size: 0.9rem;
   font-family: monospace;
 }
+.h6{
+  font-size: 1rem;
+}
 
 .current-weather-box {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  /* 🌟 SOFT CLOUDY WHITE-BLUE GRADIENT MATRIX */
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.6), transparent 25%),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.5), transparent 30%),
+    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.4), transparent 25%),
+    linear-gradient(135deg, rgba(240, 246, 255, 0.8) 0%, rgba(224, 236, 254, 0.7) 100%); /* Elegant cloudy blue base */
+
+  /* Optional High-End Polish to make the "clouds" pop: */
+  backdrop-filter: blur(8px); /* Gives it a premium frosted look */
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Soft white border that mimics a cloud edge */
+  box-shadow: 0 4px 15px rgba(219, 234, 254, 0.3); /* Subtle blue ambient glow underneath */
   border-radius: 16px;
   padding: 1.25rem;
 }
@@ -202,8 +215,17 @@
   text-align: center;
   padding: 1rem 0.5rem;
   border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  /* 🌟 SOFT CLOUDY WHITE-BLUE GRADIENT MATRIX */
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.6), transparent 25%),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.5), transparent 30%),
+    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.4), transparent 25%),
+    linear-gradient(135deg, rgba(240, 246, 255, 0.8) 0%, rgba(224, 236, 254, 0.7) 100%); /* Elegant cloudy blue base */
+
+  /* Optional High-End Polish to make the "clouds" pop: */
+  backdrop-filter: blur(8px); /* Gives it a premium frosted look */
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Soft white border that mimics a cloud edge */
+  box-shadow: 0 4px 15px rgba(219, 234, 254, 0.3); /* Subtle blue ambient glow underneath */
   flex: 1 1 100px;
   min-width: 90px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
@@ -231,88 +253,72 @@
 
 .smart-suggestion-box {
   border-radius: 16px;
-  background-color: #ffffff;
-  border: 1px solid #d1fae5;
+  background: linear-gradient(
+    135deg, 
+    #cedced 0%,    /* Muted Slate Silver */
+    #e2e8f0 35%,   /* Soft Platinum Gray (Replaced the harsh white reflection) */
+    #c7d7eb 70%,   /* Satin Steel Shadow */
+    #c8d6ec 100%   /* Deep Muted Base */
+  );
+  
+  /* Softened dark ambient shadow */
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
   padding: 1.25rem;
+  
 }
 
-.suggestion-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+.suggestion-message{
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #032b69;
+  text-align: center;
 }
-
-.suggestion-content-group {
-  display: flex;
+/* Container holding the 3 distinct recommendation columns */
+.suggestion-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Splits space evenly into 3 columns */
+  gap: 24px;                             /* Generates breathing room gutters */
+  padding: 10px 0;
   align-items: start;
-  gap: 1rem;
 }
 
-.suggestion-avatar {
-  background-color: #d1fae5;
-  color: #059669;
-  padding: 0.5rem;
-  border-radius: 50%;
+.suggestion-column {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  
+  /* Unified premium soft cloudy white-blue canvas (independent of height) */
+  background: linear-gradient(135deg, rgba(244, 248, 255, 0.85) 0%, rgba(230, 240, 255, 0.65) 100%);
+  backdrop-filter: blur(10px);
+  
+  border-radius: 10px;
+  padding: 20px;
 }
 
-.suggestion-avatar i {
-  font-size: 1.25rem;
-}
-
-.suggestion-details {
-  flex: 1;
-}
-
-.suggestion-condition-heading {
-  font-weight: 700;
-  color: #059669;
+/* Bold, uppercase headers matching image_484fb0.png styling rules */
+.suggestion-column .column-title {
+  font-size: 0.9rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
+  color: #1e1a5b; /* Deep luxury navy slate tone */
+  letter-spacing: 0.03em;
+  margin: 0;
 }
 
-.suggestion-message {
-  color: #1e293b;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.suggestion-meta-row {
-  font-size: 0.85rem;
-  margin-bottom: 0.25rem;
-}
-
-.meta-label {
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.meta-value {
-  color: #475569;
-  margin-left: 0.35rem;
-}
-
-.travel-accessories-pane {
+/* Vertical items collection well */
+.suggestion-column .column-items-list {
   display: flex;
-  gap: 0.7rem;
-  font-size: 1.75rem;
-  color: #cbd5e1;
+  flex-direction: column;
+  gap: 8px; /* Vertical margin spacing between successive lines */
 }
 
-.accessory-active.bi-sunglasses {
-  color: #eab308;
-}
-
-.accessory-active.bi-umbrella {
-  color: #3b82f6;
+/* Clean, modern text item presentation rules */
+.suggestion-column .column-item-text {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #475569; /* Polished readable neutral grey slate color */
+  margin: 0;
+  text-transform: capitalize; /* Ensures crisp initial capitalization */
 }
 
 @media (max-width: 576px) {
@@ -321,3 +327,10 @@
   }
 }
 
+/* Responsive adjustments if the dashboard card becomes cramped on small devices */
+@media (max-width: 768px) {
+  .suggestion-columns-grid {
+    grid-template-columns: 1fr; /* Drop into vertical rows layout on mobile views */
+    gap: 20px;
+  }
+}
