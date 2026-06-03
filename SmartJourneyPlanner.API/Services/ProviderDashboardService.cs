@@ -17,16 +17,16 @@ namespace SmartJourneyPlanner.Services
             _bookingCollection = database.GetCollection<TransportBooking>("Bookings");
         }
 
-        // --- Dashboard Statistics ---
         public async Task<object> GetDashboardStats()
         {
+             // Aggregates lightweight counts to power dashboard KPI cards (not full datasets)
             var totalVehicles = await _vehicleCollection.CountDocumentsAsync(_ => true);
             var totalBookings = await _bookingCollection.CountDocumentsAsync(_ => true);
             return new { totalVehicles, totalBookings };
         }
 
-        // --- Vehicle Operations ---
         public async Task<List<TransportVehicle>> GetAllVehicles() 
+        // Full dataset used for fleet management UI rendering
             => await _vehicleCollection.Find(_ => true).ToListAsync();
 
         public async Task DeleteVehicle(string vehicleId)
@@ -36,15 +36,13 @@ namespace SmartJourneyPlanner.Services
 
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {
-            // Note: Your model did not have an 'Available' property. 
-            // I updated this to use your existing 'Status' property instead.
             var filter = Builders<TransportVehicle>.Filter.Eq(vehicle => vehicle.Id, vehicleId);
             var update = Builders<TransportVehicle>.Update.Set(vehicle => vehicle.Status, newStatus);
             await _vehicleCollection.UpdateOneAsync(filter, update);
         }
 
-        // --- Booking Operations ---
         public async Task<List<TransportBooking>> GetAllBookings() 
+         // Returns complete booking dataset for provider dashboard management
             => await _bookingCollection.Find(_ => true).ToListAsync();
 
         public async Task DeleteBooking(string bookingId)
@@ -58,6 +56,7 @@ namespace SmartJourneyPlanner.Services
             var update = Builders<TransportBooking>.Update.Set(booking => booking.Status, status);
             
             var result = await _bookingCollection.UpdateOneAsync(filter, update);
+            // Returns success indicator so controller can decide appropriate HTTP response
             return result.ModifiedCount > 0;
         }
     }

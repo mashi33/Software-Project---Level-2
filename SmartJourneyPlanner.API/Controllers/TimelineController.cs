@@ -1,5 +1,12 @@
-// This controller defines the API endpoints for the Trip Timeline.
-// It allows the frontend to Get, Create, Update, and Delete trip plans.
+/**
+ * This controller defines the API endpoints for the Trip Timeline.
+ * It acts as the bridge between the Frontend (Angular) and the Backend (Database).
+ * It allows users to:
+ * - Load their saved trips (GET)
+ * - Save a brand new trip (POST)
+ * - Update an existing trip (PUT)
+ * - Delete a trip (DELETE)
+ */
 
 using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.API.Models;   
@@ -7,27 +14,34 @@ using SmartJourneyPlanner.API.Services;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
-    // Controller for managing the user's trip timeline plans
+    // The [ApiController] attribute tells ASP.NET this is a web API
+    // [Route] sets the URL path to start with /api/Timeline
     [ApiController]
     [Route("api/[controller]")]
     public class TimelineController : ControllerBase
     {
         private readonly TimelineService _timelineService;
 
-        // The constructor connects this controller to the TimelineService
+        // The constructor injects the TimelineService so we can talk to the database
         public TimelineController(TimelineService timelineService)
         {
             _timelineService = timelineService;
         }
 
-        // GET: api/Timeline - Get a list of all trip plans saved in the system
+        /**
+         * GET: /api/Timeline
+         * Returns a list of all trip plans saved in the database.
+         */
         [HttpGet]
         public async Task<List<TimelinePlan>> Get()
         {
             return await _timelineService.GetAsync();
         }
 
-        // GET: api/Timeline/{id} - Get full details for one specific trip plan using its ID
+        /**
+         * GET: /api/Timeline/{id}
+         * Returns full details for one specific trip (e.g. for sharing or detailed viewing).
+         */
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TimelinePlan>> Get(string id)
         {
@@ -36,37 +50,54 @@ namespace SmartJourneyPlanner.API.Controllers
             return plan;
         }
 
-        // POST: api/Timeline - Save a brand new trip plan to the database
+        /**
+         * POST: /api/Timeline
+         * Saves a brand new trip plan to the database.
+         * The data is sent from the frontend as a JSON object in the "body" of the request.
+         */
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] TimelinePlan newPlan)
         {
-            // We use a try-catch block to handle any unexpected errors during saving
             try 
             {
+                // Call the service to actually write the data to the database
                 await _timelineService.CreateAsync(newPlan);
+                // Return a "201 Created" success response
                 return CreatedAtAction(nameof(Get), new { id = newPlan.Id }, newPlan);
             }
             catch (Exception ex)
             {
-                // If something goes wrong, we log the error for developers to see
+                // If there's a technical error, log it so developers can fix it
                 Console.WriteLine($"Error creating plan: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
         }
 
-        // PUT: api/Timeline/{id} - Update the information for an existing trip plan
+        /**
+         * PUT: /api/Timeline/{id}
+         * Updates an existing trip plan (e.g. when the user adds a new event or changes a date).
+         */
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] TimelinePlan updatedPlan)
         {
+            // First check if the trip even exists
             var plan = await _timelineService.GetAsync(id);
             if (plan is null) return NotFound();
             
-            updatedPlan.Id = plan.Id; // Keep the same ID to ensure we update the correct record
+            // Ensure the updated plan keeps its original ID
+            updatedPlan.Id = plan.Id; 
+            
+            // Save the updated information
             await _timelineService.UpdateAsync(id, updatedPlan);
-            return NoContent(); // Success (204 No Content)
+            
+            // Return "204 No Content" indicating success
+            return NoContent(); 
         }
 
-        // DELETE: api/Timeline/{id} - Permanently remove a trip plan from the system
+        /**
+         * DELETE: /api/Timeline/{id}
+         * Permanently removes a trip plan from the database.
+         */
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -77,4 +108,4 @@ namespace SmartJourneyPlanner.API.Controllers
             return NoContent();
         }
     }
-}
+}

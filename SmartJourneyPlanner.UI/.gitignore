@@ -49,13 +49,21 @@ bin/
 obj/
 *.user
 *.suo
+# Ignore sensitive appsettings, keep the base one
+appsettings.*.json
+!appsettings.json
 .vs/
 SmartJourneyPlanner/bin/
 SmartJourneyPlanner/obj/
 
 # Ignore local development settings
 SmartJourneyPlanner.API/appsettings.Development.json
-.env
-environments/
-src/environments/environment.ts
+appsettings.Development.json
+.env*
+!*.example
 src/environments/environment.development.ts
+*.development.ts
+environments/
+
+
+appsettings.Development.json

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PlacesService } from '../services/places.service';
 import { FilterComponent } from '../filter/filter';
 import { MapViewComponent } from '../map-view/map-view';
 import { PlaceCardListComponent } from '../place-card/place-card';
@@ -18,7 +19,7 @@ import { PlaceCardListComponent } from '../place-card/place-card';
 }) 
 
 export class HotelRestaurantFinder {
-  constructor(private router: Router) {}
+  constructor(private router: Router,private route: ActivatedRoute,private placesService: PlacesService) {}
 
  //Navigate to explore page
   goBack() {

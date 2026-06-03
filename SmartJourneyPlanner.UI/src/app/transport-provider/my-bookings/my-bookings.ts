@@ -1,3 +1,8 @@
+/**
+ * This component manages the "My Bookings" page.
+ * It shows travelers their trip history and vehicle owners their customer requests.
+ */
+
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Booking } from '../../models/transport.model';
@@ -12,27 +17,21 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
     templateUrl: './my-bookings.html',
     styleUrl: './my-bookings.css'
 })
-/**
- * This component displays a list of bookings.
- * It has two views: 
- * 1. User View: Shows trips booked by the traveler.
- * 2. Provider View: Shows requests received by the vehicle owner.
- */
 export class MyBookings implements OnInit {
-  // role: 'user' means traveler, 'provider' means vehicle owner
+  // role: 'user' means traveler view, 'provider' means vehicle owner view
   @Input() role: 'user' | 'provider' = 'user'; 
   
-  userBookings: Booking[] = []; // List of bookings for the traveler
-  providerBookings: Booking[] = []; // List of requests for the owner
+  userBookings: Booking[] = [];      // Trips booked by the traveler
+  providerBookings: Booking[] = [];  // Requests received by the vehicle owner
 
-  // Rating Modal state
+  // --- Rating Modal State ---
   showRatingModal: boolean = false;
   selectedBooking: Booking | null = null;
-  tempRating: number = 0; // Selected star rating (1-5)
-  tempComment: string = ''; // User's review text
-  showSuccessMessage: boolean = false; // Shows "Thank you" after rating
+  tempRating: number = 0;           // Number of stars selected (1-5)
+  tempComment: string = '';         // Review text typed by the user
+  showSuccessMessage: boolean = false; 
   
-  // Navigation helper to go back to search
+  // Event to tell the parent component to switch back to the search page
   @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
 
   constructor(
@@ -40,23 +39,23 @@ export class MyBookings implements OnInit {
     private transportVehicleService: TransportVehicleService
   ) {}
 
-  // Automatically load data when the page opens
+  // Load the bookings as soon as the page opens
   ngOnInit() {
     this.loadBookings(); 
   }
 
   /**
-   * Fetches the booking list from the database based on the user's role.
+   * Fetches the correct list of bookings from the database based on who is logged in.
    */
   loadBookings() {
     if (this.role === 'user') {
-      // Load traveler's bookings (using mock ID 'u1')
+      // Load trips for the traveler (using mock user ID 'u1')
       this.transportBookingService.getUserBookings('u1').subscribe(res => {
         this.userBookings = res;
         this.enrichBookings(this.userBookings);
       });
     } else {
-      // Load provider's requests (using mock ID 'p1')
+      // Load trip requests for the vehicle owner (using mock provider ID 'p1')
       this.transportBookingService.getProviderBookings('p1').subscribe(res => {
         this.providerBookings = res;
         this.enrichBookings(this.providerBookings);
@@ -65,8 +64,8 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * If a booking record is missing the provider's phone or name, 
-   * this function fetches that info from the vehicle service.
+   * Sometimes booking records are missing the provider's phone number.
+   * This helper function looks up the vehicle details to fill in the missing info.
    */
   private enrichBookings(bookings: Booking[]) {
     bookings.forEach(b => {
@@ -87,7 +86,7 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Allows a traveler to cancel a pending booking request.
+   * Allows a traveler to cancel a trip request before it is confirmed.
    */
   cancelBooking(booking: Booking) {
     Swal.fire({
@@ -109,7 +108,7 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Opens the rating popup window.
+   * Opens the popup so the traveler can rate their trip.
    */
   openRatingModal(booking: Booking) {
     this.selectedBooking = booking;
@@ -124,27 +123,30 @@ export class MyBookings implements OnInit {
     this.selectedBooking = null;
   }
 
+  // Sets the star rating (1 to 5)
   setRating(rating: number) {
     this.tempRating = rating;
   }
 
   /**
-   * Submits the user's review and rating to the server.
+   * Saves the user's review and marks the booking as "Rated" so they can't review it twice.
    */
   submitReview() {
     if (!this.selectedBooking || !this.selectedBooking.id) return;
     
-    // Check if stars are selected
+    // Validation: Stars are mandatory
     if (this.tempRating === 0) {
       Swal.fire('Rating Required', 'Please select a star rating.', 'warning');
       return;
     }
 
-    // Check if comment length is between 10 and 500 characters
+    // Validation: Comment must be at least 10 characters long
     if (!this.tempComment || this.tempComment.trim().length < 10) {
       Swal.fire('Comment Too Short', 'Please write at least 10 characters.', 'warning');
       return;
     }
+    
+    // Validation: Comment cannot exceed 500 characters
     if (this.tempComment.length > 500) {
       Swal.fire('Comment Too Long', 'Please keep it under 500 characters.', 'warning');
       return;
@@ -157,17 +159,17 @@ export class MyBookings implements OnInit {
       date: new Date().toISOString().split('T')[0]
     };
 
-    // 1. Add review to vehicle profile
+    // Step 1: Save the review to the vehicle's profile
     this.transportVehicleService.addVehicleReview(this.selectedBooking.vehicleId, reviewData).subscribe({
       next: () => {
-        // 2. Mark this specific booking as 'Rated'
+        // Step 2: Update the booking record to remember it has been rated
         if (this.selectedBooking?.id) {
           this.transportBookingService.markBookingAsRated(this.selectedBooking.id).subscribe({
             next: () => {
               this.showSuccessMessage = true;
               if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
               
-              // Close modal after a short delay
+              // Close the popup after a short success pause
               setTimeout(() => {
                 this.closeModal();
                 this.loadBookings();
@@ -182,7 +184,7 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Provider action: Confirms a booking request.
+   * Provider Action: Confirms a trip request from a customer.
    */
   acceptBooking(booking: Booking) {
     Swal.fire({
@@ -204,7 +206,7 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Provider action: Rejects a booking request.
+   * Provider Action: Declines a trip request.
    */
   rejectBooking(booking: Booking) {
     Swal.fire({
@@ -226,7 +228,7 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Permanently deletes a booking record from the traveler's history.
+   * Deletes a booking record from the user's history list.
    */
   removeBooking(booking: Booking) {
     Swal.fire({
@@ -247,12 +249,13 @@ export class MyBookings implements OnInit {
     });
   }
 
+  // Switches the view back to the Vehicle Search page
   goToSearch() {
     this.switchTab.emit('search');
   }
 
   /**
-   * Shows a loading spinner and reloads the booking data.
+   * Refreshes the data from the server with a nice loading effect.
    */
   refreshBookings() {
     Swal.fire({

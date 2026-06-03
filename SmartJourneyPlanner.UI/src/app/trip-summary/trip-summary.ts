@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { WeatherService } from '../services/weather.service';
 
 @Component({
   selector: 'app-trip-summary',
@@ -17,7 +18,6 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
- 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -25,54 +25,172 @@ export class TripSummaryComponent implements OnInit {
   savedRestaurants: any[] = [];
   
 
+  // =========================
+// SUMMARY PAGE WEATHER
+// =========================
+
+summaryWeather: any = null;
+
+summarySuggestion: any = null;
+
+forecastDays: any[] = [];
+
+loadingWeather = false;
+isLastYearWeather: boolean = false;
+
   constructor(
     private tripService: TripService,
     private route: ActivatedRoute,
     private router: Router,
+    private weatherService: WeatherService
   ) {}
 
   ngOnInit(): void {
     // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
-    const tripId = this.route.snapshot.paramMap.get('id');
-
+     //this.tripId = this.route.snapshot.paramMap.get('id') || '';
+    //const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+    
+    const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
-    this.tripId = this.route.snapshot.paramMap.get('id') || '';
+    
+    this.tripId = tripIdFromUrl || '';
+    
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
-      console.log('Current User Role:', this.userRole);
     }
 
-    if (tripId) {
-      console.log('Fetching data for ID:', tripId);
-      
-      // 2. All data fetching logic is now in one place, with a fallback to temp data if the database call fails
-      this.tripService.getTripById(tripId).subscribe({
+    if (this.tripId) {
+      console.log('Fetching data for ID:', this.tripId);
+
+      this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
-      this.tripDetails = data;
+          this.tripDetails = data;
           console.log('Data received from database:', data);
 
+          // Call filterSavedPlaces() after data is loaded
+          this.filterSavedPlaces();
+
+          this.loadTripWeather();
+
           //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
+          this.tripDetails = data;
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
-            console.log('History loaded from main object:', this.editHistory);
           } else {
-            
-            this.loadHistory(tripId);
-            this.filterSavedPlaces();
-
+            this.loadHistory(this.tripId);
           }
         },
         error: (err) => {
           console.error('Data load error:', err);
-          this.loadFromTemp(); // If there's an error fetching from the database, load from temporary storage or show sample data. This provides a fallback to ensure the user still sees something instead of a blank page.
+          this.loadFromTemp();
         }
       });
     } else {
+      // Fallback if no tripId is present in URL
       this.loadFromTemp();
     }
   }
 
-  // Method to load the edit history of the trip by making a call to the TripService. This is used to populate the edit history section in the UI, allowing users to see past changes and versions of the trip details.
+// =========================
+  // LOAD TRIP WEATHER
+  // =========================
+ loadTripWeather() {
+  const destination = this.tripDetails?.Destination || this.tripDetails?.destination;
+  const rawDate = this.tripDetails?.StartDate || this.tripDetails?.startDate;
+
+  if (!destination || !rawDate) {
+    return;
+  }
+
+  // 1. Clean the incoming date format safely
+  let startDateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : new Date(rawDate).toISOString().split('T')[0];
+
+  // Reset the fallback tracker flag on execution
+  this.isLastYearWeather = false;
+
+  // 2. Calculate thresholds to detect deep-future timelines
+  const today = new Date();
+  const maxForecastDate = new Date();
+  maxForecastDate.setDate(today.getDate() + 14); // Open-Meteo's absolute maximum limit
+
+  const targetTripDate = new Date(startDateStr);
+
+  // === HIGHLIGHTED LOGIC: SHIFT TIMELINE IF OUTSIDE FORECAST WINDOW ===
+  if (targetTripDate > maxForecastDate) {
+    this.isLastYearWeather = true;
+    
+    // Subtract exactly 1 year from the target trip date
+    const lastYear = targetTripDate.getFullYear() - 1;
+    const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetTripDate.getDate()).padStart(2, '0');
+    
+    startDateStr = `${lastYear}-${month}-${day}`; // Changes target route request parameter string
+  }
+
+  this.loadingWeather = true;
+
+  // 3. Acquire location details
+  this.weatherService.getCoordinates(destination).subscribe({
+    next: (geoRes) => {
+      if (!geoRes?.length) {
+        this.loadingWeather = false;
+        return;
+      }
+
+      const latStr = geoRes[0].lat.toString();
+      const lonStr = geoRes[0].lon.toString();
+
+      // 4. Fetch the weather data matrix
+      this.weatherService.getProcessedWeather(latStr, lonStr, startDateStr).subscribe({
+        next: (weather) => {
+          this.summaryWeather = weather;
+
+          if (this.buildForecastCards) {
+            this.buildForecastCards(weather);
+          }
+
+          // 5. Fetch recommendations using the calculated weather metrics
+          this.weatherService.getSuggestions(
+            Number(weather.avgTemp),
+            weather.condition,
+            startDateStr
+          ).subscribe({
+            next: (suggestion) => {
+              this.summarySuggestion = suggestion;
+              this.loadingWeather = false;
+            },
+            error: () => { this.loadingWeather = false; }
+          });
+        },
+        error: () => { this.loadingWeather = false; }
+      });
+    },
+    error: () => { this.loadingWeather = false; }
+  });
+}
+
+  buildForecastCards(weather: any) {
+    const baseTemp = Math.round(Number(weather.avgTemp || 28));
+    this.forecastDays = [
+      { day: 'Sat', icon: 'bi bi-cloud-sun-fill text-warning', temp: `${baseTemp}°C` },
+      { day: 'Sun', icon: 'bi bi-cloud text-secondary', temp: `${baseTemp + 1}°C` },
+      { day: 'Mon', icon: 'bi bi-cloud-drizzle text-primary', temp: `${baseTemp - 1}°C` },
+      { day: 'Tue', icon: 'bi bi-brightness-high-fill text-warning', temp: `${baseTemp + 2}°C` },
+      { day: 'Wed', icon: 'bi bi-cloud-fill text-secondary', temp: `${baseTemp}°C` }
+    ];
+  }
+
+  // Links to Budget Dashboard
+  navigateToBudget() {
+    if (this.tripId) {
+      this.router.navigate(['/budget'], { 
+        queryParams: { tripId: this.tripId } 
+      });
+    } else {
+      alert('Trip ID not found!');
+    }
+  }
+
   loadHistory(id: string) {
     this.tripService.getTripHistory(id).subscribe({
       next: (data) => {
@@ -85,55 +203,67 @@ export class TripSummaryComponent implements OnInit {
     });
   }
 
-  toggleDropdown() {
+  toggleDropdown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
-  /**
-   * Sample data to show when there's no data in the database or when there's an error fetching data.
-   * This helps in testing the UI and also provides a fallback for users.
-   * Filters savedPlaces array into hotels and restaurants separately.
-   */
   filterSavedPlaces() {
     const places = this.tripDetails?.savedPlaces || this.tripDetails?.SavedPlaces || [];
-
-    console.log('All saved places:', places);
-
     this.savedHotels = places.filter((p: any) => {
       const cat = (p.category || p.Category || '').toLowerCase();
       return cat.includes('hotel') || cat.includes('lodging');
     });
-
     this.savedRestaurants = places.filter((p: any) => {
       const cat = (p.category || p.Category || '').toLowerCase();
-      return cat.includes('restaurant') || cat.includes('food') || cat.includes('dining');
+      return cat.includes('restaurant') || cat.includes('food');
     });
-
-    console.log('Filtered Hotels:', this.savedHotels);
-    console.log('Filtered Restaurants:', this.savedRestaurants);
   }
 
   loadFromTemp() {
     this.tripDetails = this.tripService.getTempTripData();
     if (!this.tripDetails) {
-      console.warn('No data found! Showing sample data.');
       this.tripDetails = {
-        tripName: 'Nuwara Eliya Trip',
-        destination: 'Nuwara Eliya',
-        departFrom: 'Colombo',
-        startDate: '2026-05-10',
-        endDate: '2026-05-15',
-        description: 'Enjoying the cold weather and tea estates.'
+        tripName: 'Trip Summary',
+        destination: 'Destination',
+        departFrom: 'Origin',
+        startDate: new Date(),
+        endDate: new Date(),
+        description: 'No description available.'
       };
     }
     this.filterSavedPlaces();
+
+    this.loadTripWeather();
   }
 
+
+ 
   navigateToChat() {
     if (this.tripId) {
       this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
     } else {
       alert('Trip ID not found!');
     }
+  }
+
+  navigateToRouteOptimization() {
+    this.router.navigate(['/explore/route-optimization'], {
+      queryParams: {
+        start: this.tripDetails?.departFrom, 
+        end: this.tripDetails?.destination   
+      }
+    });
+  }
+
+  navigateToHotels() {
+    this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+      queryParams: { 
+        city: this.tripDetails?.destination 
+      } 
+    });
+  }
+
+  navigateToWeather() {
+    this.router.navigate(['/weather']);
   }
 }

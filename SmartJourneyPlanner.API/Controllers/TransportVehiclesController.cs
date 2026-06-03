@@ -1,3 +1,8 @@
+/**
+ * This controller manages the API for Transport Vehicles.
+ * It allows providers to list their vehicles and travelers to view them.
+ */
+
 using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
@@ -11,10 +16,7 @@ using System.Linq;
 
 namespace SmartJourneyPlanner.Controllers
 {
-    /// <summary>
-    /// This controller manages the API endpoints for transport vehicles.
-    /// It communicates between the Angular frontend and the MongoDB database.
-    /// </summary>
+    // API endpoint: /api/TransportVehicles
     [ApiController]
     [Route("api/[controller]")]
     public class TransportVehiclesController : ControllerBase
@@ -22,17 +24,19 @@ namespace SmartJourneyPlanner.Controllers
         private readonly AdminService _adminService;
         private readonly TransportVehicleService _vehicleService;
 
+        // Constructor connects to the needed services
         public TransportVehiclesController(AdminService adminService, TransportVehicleService vehicleService)
         {
             _adminService = adminService;
             _vehicleService = vehicleService;
         }
 
-        // --- 🌍 PUBLIC VIEW (Travelers) ---
+        // --- 🌍 PUBLIC VIEW (For Travelers) ---
 
         /**
-         * GET: api/TransportVehicles
+         * GET: /api/TransportVehicles
          * Returns a list of all vehicles that have been approved by the Admin.
+         * Travelers use this to search for available transport.
          */
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
@@ -44,16 +48,17 @@ namespace SmartJourneyPlanner.Controllers
         // --- 🚐 PROVIDER ACTIONS ---
 
         /**
-         * POST: api/TransportVehicles
-         * Takes vehicle information from the frontend and saves it to the database.
-         * The vehicle starts with a "Pending" status until an Admin approves it.
+         * POST: /api/TransportVehicles
+         * Saves a new vehicle to the database.
+         * IMPORTANT: New vehicles start as "Pending" and "Unverified" 
+         * until an Admin reviews and approves them.
          */
         [HttpPost]
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
             try 
             {
-                // ✅ FORCE LOGIC: Every new vehicle starts as Pending and Unverified
+                // Force new vehicles to be Pending for security
                 vehicleInfo.Status = "Pending";
                 vehicleInfo.IsVerified = false;
 
@@ -69,8 +74,9 @@ namespace SmartJourneyPlanner.Controllers
         }
 
         /**
-         * GET: api/TransportVehicles/my-vehicles/{providerId}
-         * Allows a provider to see their specific fleet and their approval status.
+         * GET: /api/TransportVehicles/my-vehicles/{providerId}
+         * Returns only the vehicles belonging to a specific provider.
+         * Used in the provider's dashboard.
          */
         [HttpGet("my-vehicles/{providerId}")]
         public async Task<IActionResult> GetMyVehicles(string providerId)
@@ -89,17 +95,18 @@ namespace SmartJourneyPlanner.Controllers
         // --- 🛠️ MANAGEMENT & SEEDING ---
 
         /**
-         * POST: api/TransportVehicles/seed
-         * Clears the current vehicles and inserts a list of pre-defined sample vehicles.
-         * Used for testing and demonstration.
+         * POST: /api/TransportVehicles/seed
+         * Populates the database with sample vehicles for testing.
          */
         [HttpPost("seed")]
         public async Task<IActionResult> Seed([FromBody] List<TransportVehicle> vehicles)
         {
             if (vehicles == null || !vehicles.Any()) return BadRequest();
             
+            // Remove existing data first
             await _vehicleService.DeleteAllAsync();
             
+            // Mark sample vehicles as already approved
             var vehiclesToInsert = vehicles.Select(v => { 
                 v.Id = null; 
                 v.Status = "Approved"; 
@@ -112,8 +119,8 @@ namespace SmartJourneyPlanner.Controllers
         }
 
         /**
-         * DELETE: api/TransportVehicles/clear
-         * Deletes every single vehicle from the database.
+         * DELETE: /api/TransportVehicles/clear
+         * Wipes all vehicle data from the collection.
          */
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearAll()
@@ -123,8 +130,8 @@ namespace SmartJourneyPlanner.Controllers
         }
 
         /**
-         * GET: api/TransportVehicles/{id}
-         * Finds and returns the full details of a specific vehicle using its database ID.
+         * GET: /api/TransportVehicles/{id}
+         * Returns full details for one specific vehicle.
          */
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<TransportVehicle>> Get(string id)
@@ -135,8 +142,8 @@ namespace SmartJourneyPlanner.Controllers
         }
 
         /**
-         * DELETE: api/TransportVehicles/{id}
-         * Deletes one specific vehicle record from the database.
+         * DELETE: /api/TransportVehicles/{id}
+         * Removes a specific vehicle from the database.
          */
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
@@ -151,8 +158,8 @@ namespace SmartJourneyPlanner.Controllers
         // --- ⭐ REVIEWS ---
 
         /**
-         * POST: api/TransportVehicles/{id}/reviews
-         * Receives a customer's review (stars and text) and adds it to the vehicle's history.
+         * POST: /api/TransportVehicles/{id}/reviews
+         * Allows a traveler to add a rating and comment for a vehicle after their trip.
          */
         [HttpPost("{id}/reviews")]
         public async Task<IActionResult> AddReview(string id, [FromBody] TransportReview review)
@@ -163,6 +170,7 @@ namespace SmartJourneyPlanner.Controllers
                 return NotFound(new { message = $"Vehicle with ID {id} not found." });
             }
 
+            // Default to today's date if not provided
             if (string.IsNullOrEmpty(review.Date))
             {
                 review.Date = DateTime.UtcNow.ToString("yyyy-MM-dd");
