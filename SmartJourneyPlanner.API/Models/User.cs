@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Collections.Generic;
 
 namespace SmartJourneyPlanner.API.Models
 {
@@ -32,29 +33,40 @@ namespace SmartJourneyPlanner.API.Models
         // --- PASSWORD MAPPING ---
         // Hashed password for security (never store plain text passwords)
         public string PasswordHash { get; set; } = string.Empty;
-        
-        // This lets your code still use .Password if needed
+
         [BsonIgnore] 
         public string Password { get => PasswordHash; set => PasswordHash = value; }
 
-        // --- ROLE / USERTYPE MAPPING ---
-        // Your teammate uses UserType, you use Role. This handles BOTH.
-        public string UserType { get; set; } = "Traveler";
+        public string Bio { get; set; } = "Hey there! I am using Smart Journey Planner.";
+
+        public string ProfilePictureUrl { get; set; } = "";
+
+        public string Location { get; set; } = "";
+
+        public List<string> Interests { get; set; } = new List<string>();
+        
+        public string UserType { get; set; } = "Traveller";
 
         [BsonIgnore]
         public string Role { get => UserType; set => UserType = value; }
 
         public string Status { get; set; } = "Approved"; 
 
-        // --- Vehicle Details ---
+        public bool IsBlocked { get; set; } = false;
+
+        // --- Vehicle Details (Optional for Providers) ---
         [BsonIgnoreIfNull]
         public string? RegistrationNumber { get; set; }
+        
         [BsonIgnoreIfNull]
         public string? VehicleModel { get; set; }
+        
         [BsonIgnoreIfNull]
         public string? VehicleType { get; set; }
+        
         [BsonIgnoreIfNull]
         public string? LicenseUrl { get; set; }
+        
         [BsonIgnoreIfNull]
         public string? NicUrl { get; set; }
 

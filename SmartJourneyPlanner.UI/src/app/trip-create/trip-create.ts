@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-trip-create',
@@ -22,6 +23,7 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
   constructor(
     private tripService: TripService, // 1. Inject TripService for API calls
+    private authService: AuthService,
     private router: Router,        // 2. Inject Router for navigation
     private route: ActivatedRoute
   ) {

@@ -12,7 +12,7 @@ import { BudgetService } from '../services/budget';
 })
 export class ExpenseForm implements OnInit {
 
-  // ✅ FIXED: Using 'description' instead of 'name' to match C# Backend
+  // Using 'description' instead of 'name' to match C# Backend
   expense = {
     description: '', 
     amount: null,
@@ -27,7 +27,7 @@ export class ExpenseForm implements OnInit {
   categories = [
     { name: 'Meals', icon: '🍔' },
     { name: 'Transport', icon: '🚕' },
-    { name: 'Accommodation', icon: '🛏️' },
+    { name: 'Stay', icon: '🛏️' },
     { name: 'Shopping', icon: '🛍️' },
     { name: 'Others', icon: '⚡' }
   ];
@@ -53,7 +53,7 @@ export class ExpenseForm implements OnInit {
       // Check if we are editing an existing expense
       if (params['mode'] === 'edit') {
         this.isEditMode = true;
-        this.expenseId = params['expenseId']; // ✅ Capture unique ID for editing
+        this.expenseId = params['expenseId']; // Capture unique ID for editing
 
         // Fill form with data passed from dashboard
         this.expense.description = params['description'];
@@ -74,7 +74,7 @@ export class ExpenseForm implements OnInit {
   }
 
   onSubmit() {
-    // 1. Basic frontend validation
+    // Basic frontend validation
     if (!this.expense.amount || !this.expense.description) {
       alert('Validation Error: Please fill in all required fields!');
       return;
@@ -92,7 +92,7 @@ export class ExpenseForm implements OnInit {
     };
 
     if (this.isEditMode) {
-      // ✅ CASE 1: UPDATE using unique expenseId
+      // UPDATE using unique expenseId
       this.budgetService.updateExpense(this.tripId, this.expenseId, payload).subscribe({
         next: () => {
           alert('Expense successfully updated!');
@@ -105,7 +105,7 @@ export class ExpenseForm implements OnInit {
       });
 
     } else {
-      // ✅ CASE 2: ADD NEW
+      // ADD NEW
       this.budgetService.addExpense(this.tripId, payload).subscribe({
         next: () => {
           alert('New expense successfully added!');

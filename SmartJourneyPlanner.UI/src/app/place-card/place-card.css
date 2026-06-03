@@ -150,8 +150,8 @@
 
 /* place-card.css */
 .selected-card {
-  border: 2px solid #004a99 !important; /* තද නිල් පැහැති බෝඩරයක් */
-  background-color: #f0f7ff !important; /* ලා නිල් පැහැති පසුබිමක් */
+  border: 2px solid #004a99 !important; 
+  background-color: #f0f7ff !important; 
   transform: scale(1.02);
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 74, 153, 0.3);

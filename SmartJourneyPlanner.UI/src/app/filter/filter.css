@@ -118,7 +118,7 @@
   border-color: #004a99;
 }
 
-/* Google Autocomplete Dropdown එක ලස්සන කිරීමට (Global) */
+/* Google Autocomplete Dropdown  */
 ::ng-deep .pac-container {
   border-radius: 8px;
   margin-top: 5px;

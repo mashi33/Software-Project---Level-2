@@ -28,8 +28,15 @@
       </button>
     </div>
 
-    <div class="results" *ngIf="results">
-      <h3>Select Your Preferred Route:</h3>
+    <div class="results" *ngIf="isLoading">
+      <h3>Finding the best routes...</h3>
+      <div class="card skeleton skeleton-card"></div>
+      <div class="card skeleton skeleton-card"></div>
+      <div class="card skeleton skeleton-card"></div>
+    </div>
+
+    <div class="results" *ngIf="results && !isLoading">
+      <!-- <h3>Select Your Preferred Route:</h3> -->
       
       <div class="card" [class.active]="selectedRouteType === 'fastest'">
         <label>
@@ -122,7 +129,7 @@
       </map-polyline>
     </google-map>
 
-    <div class="scenic-bottom-panel" *ngIf="selectedRouteType === 'scenic' && results?.scenicViewpoints?.length">
+    <div class="scenic-bottom-panel" *ngIf="!isLoading && selectedRouteType === 'scenic' && results?.scenicViewpoints?.length">
       <div class="scenic-list-container">
         <div class="scenic-item-card" *ngFor="let point of results.scenicViewpoints" (click)="focusOnSpot(point)">
           <span class="material-icons">{{ getIconName(point.name) }}</span>

@@ -1,5 +1,8 @@
-// This service handles all the data operations for the Trip Timeline.
-// It talks to the backend API to save and load trip information.
+/**
+ * This service handles all the data operations for the Trip Timeline.
+ * It talks to the backend API to save and load trip information, and 
+ * manages the local state using Angular Signals.
+ */
 
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -13,11 +16,12 @@ import { environment } from '../../environments/environment';
 })
 export class TimelineService {
   private http = inject(HttpClient);
-  // The URL where our backend server is running
+  
+  // The URL where our backend server is running (e.g. http://localhost:5233/api/Timeline)
   private apiUrl = `${environment.apiUrl}/Timeline`; 
 
-  // We use a Signal to hold the trip data. 
-  // Any component using this signal will update automatically when the data changes.
+  // We use a "Signal" to hold the trip data. 
+  // Any component using this signal will update the UI automatically when the data changes.
   private timelineSignal = signal<TimelinePlan>({
     id: '',
     name: 'My New Trip',
@@ -26,15 +30,17 @@ export class TimelineService {
     days: []
   });
 
-  // This is a read-only version of the signal for other components to use
+  // This is a read-only version of the signal for components (like TripTimelineComponent) to use
   timeline = computed(() => this.timelineSignal());
 
   constructor() {
-    // When the app starts, we immediately try to load the trip from the database
+    // When the app starts, we immediately try to load the trip data from the database
     this.initTimeline();
   }
 
-  // Gets the trip data from the backend API
+  /**
+   * Gets the trip data from the backend API when the app initializes.
+   */
   private async initTimeline() {
     try {
       console.log(`[TimelineService] FETCHING timeline from: ${this.apiUrl}`);
@@ -42,14 +48,15 @@ export class TimelineService {
       
       if (plans && plans.length > 0) {
         let plan = plans[0];
-        // If the ID is just the word "string", it might be corrupted data, so we clear it
+        
+        // Safety check for literal "string" values which sometimes appear from empty API defaults
         if (plan.id === 'string') {
           console.warn('[TimelineService] DATA CORRUPTION: Received literal "string" as ID. Sanitizing...');
           plan.id = '';
         }
         
         console.log(`[TimelineService] SUCCESS: Loaded plan. ID: ${plan.id || 'NEW'}`, plan);
-        // Save the loaded data into our signal
+        // Save the loaded data into our Signal
         this.timelineSignal.set(plan);
       } else {
         console.warn('[TimelineService] EMPTY: No plans found on backend. Starting fresh.');
@@ -62,26 +69,29 @@ export class TimelineService {
     }
   }
 
-  // Sends the current trip data to the backend to be saved in the database
+  /**
+   * Sends the current trip data to the backend to be saved permanently in the database.
+   */
   private async saveToBackend() {
     const currentPlan = this.timelineSignal();
     const planToSave = { ...currentPlan };
     
-    // If it's a brand new trip (no ID), we let the database create an ID for us
+    // If it's a brand new trip (no ID yet), we let the database create an ID for us
     if (!planToSave.id || planToSave.id === '') {
       delete (planToSave as any).id;
     }
 
     try {
       if (currentPlan.id && currentPlan.id !== 'string') {
-        // If trip already exists, we use "PUT" to update it
+        // If trip already exists in database, we use "PUT" to update it
         console.log(`[TimelineService] UPDATING plan: ${currentPlan.id}`);
         await firstValueFrom(this.http.put(`${this.apiUrl}/${currentPlan.id}`, planToSave));
         console.log('[TimelineService] UPDATE SUCCESSful');
       } else {
-        // If it's new, we use "POST" to create it
+        // If it's a new trip, we use "POST" to create the record
         console.log('[TimelineService] CREATING new plan (ID was empty or "string")...');
         const newPlan = await firstValueFrom(this.http.post<TimelinePlan>(this.apiUrl, planToSave));
+        // Store the newly created plan (now with a real ID) back into the Signal
         this.timelineSignal.set(newPlan);
         console.log(`[TimelineService] CREATE SUCCESSful. New ID: ${newPlan.id}`);
       }
@@ -90,33 +100,38 @@ export class TimelineService {
     }
   }
 
-  // Returns the current plan data
+  /**
+   * Returns the current plan data.
+   */
   getTimeline(): TimelinePlan {
     return this.timelineSignal();
   }
 
   // --- Actions ---
 
-  // Adds a new day to the trip and calculates the next date automatically
+  /**
+   * Adds a new empty day to the trip and calculates the next date automatically.
+   */
   async addDay() {
     const currentPlan = this.timelineSignal();
     const days = currentPlan.days;
     let nextDateStr = '';
     
     if (days.length > 0) {
-       // If we already have days, set the new day to be the day after the last one
+       // Set the new day to be exactly 1 day after the last existing day
        const lastDateStr = days[days.length - 1].date;
        const lastDate = new Date(lastDateStr);
        
-       if (!isNaN(lastDate.getTime())) {
-           const nextDate = new Date(lastDate);
-           nextDate.setDate(nextDate.getDate() + 1);
-           nextDateStr = nextDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-       } else {
+        if (lastDate && !isNaN(lastDate.getTime())) {
+            const nextDate = new Date(lastDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            // Format: "Monday, January 1, 2026"
+            nextDateStr = nextDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        } else {
            nextDateStr = 'Date TBD';
        }
     } else {
-        // If it's the first day, use today's date
+        // If it's the very first day, use today's date
         let startDate = new Date();
         nextDateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
@@ -127,16 +142,19 @@ export class TimelineService {
       events: []
     };
 
-    // Update the signal and then save to database
+    // Update the Signal with the new day
     this.timelineSignal.set({ 
       ...currentPlan, 
       days: [...days, newDay] 
     });
 
+    // Save changes to backend
     await this.saveToBackend();
   }
 
-  // Changes the name of the trip
+  /**
+   * Changes the name/title of the trip (e.g. "Sri Lanka Journey").
+   */
   async updateTimelineName(newName: string) {
     if (!newName || newName.trim() === '') return;
     const currentPlan = this.timelineSignal();
@@ -144,14 +162,18 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Updates the date of a specific day and re-orders the list of days
+  /**
+   * Updates the date of a specific day and re-sorts the days by time.
+   */
   async updateDayDate(dayId: string, newDateStrYYYYMMDD: string) {
     const currentPlan = this.timelineSignal();
     
+    // Parse the new date string (YYYY-MM-DD)
     const [year, month, day] = newDateStrYYYYMMDD.split('-').map(Number);
     const targetDate = new Date(year, month - 1, day);
     const formattedDate = targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
+    // Update the specific day and then sort all days based on their dates
     const updatedDays = currentPlan.days.map(d => {
       if (d.id === dayId) {
         return { ...d, date: formattedDate };
@@ -163,7 +185,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Removes a day from the trip
+  /**
+   * Deletes an entire day from the trip.
+   */
   async deleteDay(dayId: string) {
     const currentPlan = this.timelineSignal();
     const updatedDays = currentPlan.days.filter(d => d.id !== dayId);
@@ -171,12 +195,15 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Adds a new activity/event to a specific day
+  /**
+   * Adds a new activity (event) like a hotel check-in or sightseeing stop to a day.
+   */
   async addEvent(dayId: string, event: Omit<TimelineEvent, 'id'>) {
     if (!event.title || !event.time || !event.location) return;
 
     const currentPlan = this.timelineSignal();
     
+    // Create a new event object with a unique ID
     const newEvent: TimelineEvent = {
       ...event,
       status: event.status as 'Pending' | 'Completed',
@@ -184,6 +211,7 @@ export class TimelineService {
       dayId: dayId
     };
 
+    // Add the event to the correct day's list
     const updatedDays = currentPlan.days.map(day => {
       if (day.id === dayId) {
         return { ...day, events: [...day.events, newEvent] };
@@ -195,7 +223,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Updates an existing activity (e.g. changing the time or title)
+  /**
+   * Updates the details of an existing activity.
+   */
   async updateEvent(dayId: string, updatedEvent: TimelineEvent) {
     if (!updatedEvent.title || !updatedEvent.time || !updatedEvent.location) return;
     const currentPlan = this.timelineSignal();
@@ -214,7 +244,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Removes a single activity from a day
+  /**
+   * Deletes a single activity from a day.
+   */
   async deleteEvent(dayId: string, eventId: string) {
     const currentPlan = this.timelineSignal();
 
@@ -232,7 +264,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Toggles an activity between "Pending" and "Completed"
+  /**
+   * Switches an activity status between "Pending" and "Completed".
+   */
   async toggleEventStatus(dayId: string, eventId: string) {
     const currentPlan = this.timelineSignal();
 
@@ -255,7 +289,9 @@ export class TimelineService {
     await this.saveToBackend();
   }
 
-  // Handles moving an activity up/down or into another day (Drag and Drop)
+  /**
+   * Handles reordering events within a day or moving them between different days (Drag and Drop).
+   */
   async reorderEvents(
     previousDayId: string,
     currentDayId: string,
@@ -270,17 +306,18 @@ export class TimelineService {
     if (!prevDay || !currDay) return;
 
     if (previousDayId === currentDayId) {
-      // Reordering in the same day
+      // Moving item within the same day
       moveItemInArray(prevDay.events, previousIndex, currentIndex);
     } 
     else {
-      // Moving to a different day
+      // Moving item to a different day
       transferArrayItem(
         prevDay.events,
         currDay.events,
         previousIndex,
         currentIndex
       );
+      // Update the event's internal reference to its new day
       currDay.events[currentIndex].dayId = currentDayId;
     }
 
@@ -288,4 +325,3 @@ export class TimelineService {
     await this.saveToBackend();
   }
 }
-

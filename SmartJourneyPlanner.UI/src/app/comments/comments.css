@@ -1,5 +1,5 @@
 /* ==========================================================================
-   4. CHAT AREA
+   1. CHAT AREA
    ========================================================================== */
 :host {
     display: block;
@@ -54,7 +54,6 @@
     max-width: 85%;
     padding: 8px 12px;
     border-radius: 15px;
-    /* ── CHANGED: was rgba(255,255,255,0.15) blur(12px) — too transparent ── */
     background: rgba(255, 255, 255, 0.10);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -65,7 +64,6 @@
 }
 
 .chat-bubble-row.row-right .chat-bubble {
-    /* ── CHANGED: was rgba(0,123,255,0.3) — bumped to 0.45 for clarity ── */
     background: rgba(0, 123, 255, 0.45);
     border-color: rgba(0, 150, 255, 0.35);
     border-top-color: rgba(100, 190, 255, 0.55);
@@ -76,7 +74,6 @@
     font-size: 12px;
     font-weight: 800;
     margin-bottom: 4px;
-    /* ── CHANGED: was #ffca28 — slightly brighter for contrast ── */
     color: #ffd54f;
     display: block;
 }
@@ -90,7 +87,6 @@
     margin: 0;
     font-size: 16px;
     line-height: 1.5;
-    /* ── CHANGED: now uses token instead of hardcoded #ffffff ── */
     color: rgba(255, 255, 255, 0.95) !important;
     opacity: 1;
 }
@@ -106,7 +102,6 @@
 
 .chat-time {
     font-size: 10px;
-    /* ── CHANGED: was #e0e0e0 opacity 0.8 → explicit rgba for reliability ── */
     color: rgba(255, 255, 255, 0.65);
 }
 
@@ -158,7 +153,6 @@
 }
 
 .date-divider span {
-    /* ── CHANGED: was rgba(0,0,0,0.4) — bumped to 0.58 for legibility ── */
     background: rgba(0, 0, 0, 0.58);
     color: rgba(255, 255, 255, 0.90);
     padding: 3px 12px;
@@ -168,7 +162,6 @@
 
 .chat-input-container {
     padding: 10px 15px;
-    /* ── CHANGED: was rgba(255,255,255,0.05) — slightly more visible ── */
     background: rgba(0, 0, 0, 0.28);
     border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
@@ -215,7 +208,7 @@
 }
 
 /* ==========================================================================
-   PDF ATTACHMENT — NEW STYLES
+   2.  PDF ATTACHMENT — NEW STYLES
    ========================================================================== */
 .pdf-attach-btn {
     display: flex;
@@ -292,7 +285,6 @@
 
 .pdf-bubble-size {
     font-size: 11px;
-    /* ── CHANGED: was 0.6 — bumped to 0.72 ── */
     color: rgba(255, 255, 255, 0.72);
     margin-top: 2px;
 }
@@ -332,7 +324,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ==========================================================================
-   SEARCH — NEW STYLES
+   3.  SEARCH — NEW STYLES
    ========================================================================== */
 .search-bar-wrapper {
     /* ── CHANGED: was 0.25 — bumped for clear separation ── */
@@ -361,7 +353,6 @@
 
 .search-input {
     flex: 1;
-    /* ── CHANGED: bumped from 0.1 → 0.15 ── */
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 20px;

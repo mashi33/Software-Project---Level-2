@@ -96,6 +96,7 @@ textarea {
   background: rgba(255,255,255,0.4);
 }
 
+/*Invite section */
 .invite-btn {
   margin-top: 10px;
   padding: 10px;
@@ -118,7 +119,7 @@ textarea {
   margin-top: 20px;
 }
   
-
+/*Cancle button*/
 .cancel-btn {
   padding: 10px 30px;
   border-radius: 10px;
@@ -129,6 +130,7 @@ textarea {
   background: #7d7c7c;
 }
 
+/*submit button*/
 .submit-btn {
   padding: 10px 30px;
   border-radius: 10px;
@@ -147,6 +149,7 @@ textarea {
   width: 100%;
 }
 
+/*suggestion box for budget*/
 .form-select {
   flex: 1;
   background-color: rgba(255, 255, 255, 0.8);
@@ -161,6 +164,7 @@ textarea {
   cursor: pointer;
 }
 
+/*main title and subtitle*/
 .main-title {
     font-size: 3rem; 
     font-weight: 800;
@@ -194,6 +198,7 @@ textarea {
     }
 }
 
+/*member chips*/
 .member-chip {
     display: inline-flex;
     align-items: center;
@@ -217,6 +222,7 @@ textarea {
     color: #333;
 }
 
+/*member role badge*/
 .badge-role {
     font-size: 0.75rem;
     background: #e9ecef;
@@ -227,6 +233,7 @@ textarea {
     text-transform: capitalize;
 }
 
+/*remove button for member chips*/
 .remove-btn {
     margin-left: 12px;
     cursor: pointer;

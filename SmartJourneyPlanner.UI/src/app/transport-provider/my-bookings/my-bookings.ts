@@ -1,3 +1,8 @@
+/**
+ * This component manages the "My Bookings" page.
+ * It shows travelers their trip history and vehicle owners their customer requests.
+ */
+
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Booking } from '../../models/transport.model';
@@ -13,20 +18,20 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
     styleUrl: './my-bookings.css'
 })
 export class MyBookings implements OnInit {
-  // Determines if we are looking at the page as a Traveler (user) or as a Transport Owner (provider)
+  // role: 'user' means traveler view, 'provider' means vehicle owner view
   @Input() role: 'user' | 'provider' = 'user'; 
   
-  userBookings: Booking[] = []; // Bookings made by the user
-  providerBookings: Booking[] = []; // Bookings received by the provider
+  userBookings: Booking[] = [];      // Trips booked by the traveler
+  providerBookings: Booking[] = [];  // Requests received by the vehicle owner
 
-  // Variables to manage the Rating/Review popup window
+  // --- Rating Modal State ---
   showRatingModal: boolean = false;
   selectedBooking: Booking | null = null;
-  tempRating: number = 0; // Temporary star rating (1-5)
-  tempComment: string = ''; // Temporary review text
-  showSuccessMessage: boolean = false;
+  tempRating: number = 0;           // Number of stars selected (1-5)
+  tempComment: string = '';         // Review text typed by the user
+  showSuccessMessage: boolean = false; 
   
-  // Event to tell the main page to switch back to the search view
+  // Event to tell the parent component to switch back to the search page
   @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
 
   constructor(
@@ -34,21 +39,23 @@ export class MyBookings implements OnInit {
     private transportVehicleService: TransportVehicleService
   ) {}
 
-  // This runs automatically when the component is created
+  // Load the bookings as soon as the page opens
   ngOnInit() {
     this.loadBookings(); 
   }
 
-  // Load the list of bookings from the server
+  /**
+   * Fetches the correct list of bookings from the database based on who is logged in.
+   */
   loadBookings() {
     if (this.role === 'user') {
-      // Get all trips booked by this user (u1 is a test user ID)
+      // Load trips for the traveler (using mock user ID 'u1')
       this.transportBookingService.getUserBookings('u1').subscribe(res => {
         this.userBookings = res;
         this.enrichBookings(this.userBookings);
       });
     } else {
-      // Get all trips requested from this provider (p1 is a test provider ID)
+      // Load trip requests for the vehicle owner (using mock provider ID 'p1')
       this.transportBookingService.getProviderBookings('p1').subscribe(res => {
         this.providerBookings = res;
         this.enrichBookings(this.providerBookings);
@@ -57,25 +64,20 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * For older booking records where 'providerPhone' or 'providerName' might be missing,
-   * this helper fetches the current vehicle data to fill those gaps.
+   * Sometimes booking records are missing the provider's phone number.
+   * This helper function looks up the vehicle details to fill in the missing info.
    */
   private enrichBookings(bookings: Booking[]) {
     bookings.forEach(b => {
-      // If phone is missing but we have a vehicle ID, fetch the vehicle details
       if (!b.providerPhone && b.vehicleId) {
         this.transportVehicleService.getVehicleById(b.vehicleId).subscribe({
           next: (v) => {
             if (v && v.providerProfile) {
               b.providerPhone = v.providerProfile.phone;
-              // Also fill provider name if it's missing
-              if (!b.providerName) {
-                b.providerName = v.providerProfile.name;
-              }
+              if (!b.providerName) b.providerName = v.providerProfile.name;
             }
           },
           error: () => {
-            // Silently fail if vehicle cannot be found (e.g. deleted)
             if (!b.providerPhone) b.providerPhone = 'Not available';
           }
         });
@@ -83,7 +85,9 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Cancel a booking request (only works if the status is still 'Pending')
+  /**
+   * Allows a traveler to cancel a trip request before it is confirmed.
+   */
   cancelBooking(booking: Booking) {
     Swal.fire({
       title: 'Cancel Booking?',
@@ -91,12 +95,10 @@ export class MyBookings implements OnInit {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Yes, Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
         if (!booking.id) return;
-        // Update the status to 'Cancelled' on the server
         this.transportBookingService.updateBookingStatus(booking.id, 'Cancelled').subscribe(() => {
           booking.status = 'Cancelled';
           Swal.fire('Cancelled', 'Your booking has been cancelled.', 'success');
@@ -105,82 +107,85 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Open the modal to let the user rate their completed trip
+  /**
+   * Opens the popup so the traveler can rate their trip.
+   */
   openRatingModal(booking: Booking) {
     this.selectedBooking = booking;
-    this.tempRating = 0; // Reset stars
-    this.tempComment = ''; // Reset comment
+    this.tempRating = 0;
+    this.tempComment = '';
     this.showSuccessMessage = false;
     this.showRatingModal = true;
   }
 
-  // Close the rating modal without saving
   closeModal() {
     this.showRatingModal = false;
     this.selectedBooking = null;
   }
 
-  // Set the number of stars selected by the user
+  // Sets the star rating (1 to 5)
   setRating(rating: number) {
     this.tempRating = rating;
   }
 
-  // Send the review to the server
+  /**
+   * Saves the user's review and marks the booking as "Rated" so they can't review it twice.
+   */
   submitReview() {
     if (!this.selectedBooking || !this.selectedBooking.id) return;
     
-    // Validation: Ensure a rating is selected
+    // Validation: Stars are mandatory
     if (this.tempRating === 0) {
-      Swal.fire('Rating Required', 'Please select a star rating before submitting.', 'warning');
+      Swal.fire('Rating Required', 'Please select a star rating.', 'warning');
       return;
     }
 
-    // Validation: Ensure a comment is provided
-    if (!this.tempComment || this.tempComment.trim().length < 5) {
-      Swal.fire('Comment Required', 'Please write a short review (at least 5 characters).', 'warning');
+    // Validation: Comment must be at least 10 characters long
+    if (!this.tempComment || this.tempComment.trim().length < 10) {
+      Swal.fire('Comment Too Short', 'Please write at least 10 characters.', 'warning');
+      return;
+    }
+    
+    // Validation: Comment cannot exceed 500 characters
+    if (this.tempComment.length > 500) {
+      Swal.fire('Comment Too Long', 'Please keep it under 500 characters.', 'warning');
       return;
     }
 
-    // Prepare the review data object
     const reviewData = {
       userName: this.selectedBooking.userName || 'Anonymous User',
       rating: this.tempRating,
       comment: this.tempComment.trim(),
-      date: new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+      date: new Date().toISOString().split('T')[0]
     };
 
-    // Step 1: Add the review to the vehicle's review history
+    // Step 1: Save the review to the vehicle's profile
     this.transportVehicleService.addVehicleReview(this.selectedBooking.vehicleId, reviewData).subscribe({
       next: () => {
-        // Step 2: Mark the booking as 'Rated' so the user doesn't rate it twice
+        // Step 2: Update the booking record to remember it has been rated
         if (this.selectedBooking?.id) {
           this.transportBookingService.markBookingAsRated(this.selectedBooking.id).subscribe({
             next: () => {
               this.showSuccessMessage = true;
-              if (this.selectedBooking) {
-                this.selectedBooking.hasBeenRated = true;
-              }
+              if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
               
-              // Wait a moment then close the modal and refresh the page
+              // Close the popup after a short success pause
               setTimeout(() => {
                 this.closeModal();
                 this.loadBookings();
               }, 1500);
             },
-            error: (err) => {
-              Swal.fire('Error', 'Failed to update booking status.', 'error');
-            }
+            error: () => Swal.fire('Error', 'Failed to update booking status.', 'error')
           });
         }
       },
-      error: (err) => {
-        const msg = err.error?.message || 'Failed to submit review.';
-        Swal.fire('Error', msg, 'error');
-      }
+      error: (err) => Swal.fire('Error', err.error?.message || 'Failed to submit review.', 'error')
     });
   }
 
-  // Provider: Confirm that the vehicle is available for the requested dates
+  /**
+   * Provider Action: Confirms a trip request from a customer.
+   */
   acceptBooking(booking: Booking) {
     Swal.fire({
       title: 'Accept Request?',
@@ -188,7 +193,6 @@ export class MyBookings implements OnInit {
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#10b981',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Yes, Accept'
     }).then((result) => {
       if (result.isConfirmed) {
@@ -201,7 +205,9 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Provider: Reject a booking if the vehicle is not available
+  /**
+   * Provider Action: Declines a trip request.
+   */
   rejectBooking(booking: Booking) {
     Swal.fire({
       title: 'Reject Request?',
@@ -209,7 +215,6 @@ export class MyBookings implements OnInit {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Yes, Reject'
     }).then((result) => {
       if (result.isConfirmed) {
@@ -222,7 +227,9 @@ export class MyBookings implements OnInit {
     });
   }
 
-  // Delete a booking from the history list permanently
+  /**
+   * Deletes a booking record from the user's history list.
+   */
   removeBooking(booking: Booking) {
     Swal.fire({
       title: 'Remove Booking?',
@@ -230,35 +237,32 @@ export class MyBookings implements OnInit {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Yes, Remove'
     }).then((result) => {
       if (result.isConfirmed) {
         if (!booking.id) return;
         this.transportBookingService.deleteBooking(booking.id).subscribe(() => {
           Swal.fire('Removed', 'The booking has been removed.', 'success');
-          this.loadBookings(); // Reload the list to show it's gone
+          this.loadBookings();
         });
       }
     });
   }
 
-  // Go back to the main search page
+  // Switches the view back to the Vehicle Search page
   goToSearch() {
     this.switchTab.emit('search');
   }
 
-  // Manually refresh the list of bookings
+  /**
+   * Refreshes the data from the server with a nice loading effect.
+   */
   refreshBookings() {
     Swal.fire({
       title: 'Refreshing...',
       timer: 1000,
       timerProgressBar: true,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    }).then(() => {
-      this.loadBookings();
-    });
+      didOpen: () => Swal.showLoading()
+    }).then(() => this.loadBookings());
   }
 }

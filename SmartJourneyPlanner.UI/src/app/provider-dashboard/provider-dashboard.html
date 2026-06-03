@@ -1,6 +1,6 @@
 <div class="dashboard-container">
   <h2>Provider Dashboard</h2>
-  <p>Hi, ! Manage your fleet and bookings here.</p>
+  <p>Hi !, Manage your fleet and bookings here.</p>
   
   <div class="stats-row">
     <div class="card"><h3>Total Vehicles</h3><p>{{stats.totalVehicles}}</p></div>
@@ -14,6 +14,7 @@
       <h4>Fleet Management</h4>
       <a routerLink="/register-vehicle" class="btn-add">+ Add Vehicle</a>
     </div>
+    <!-- Each vehicle is rendered independently to allow per-item actions (toggle/delete) -->
     <div *ngFor="let vehicle of vehicles" class="item-card">
       <span>{{vehicle.name}}</span>
       <input type="checkbox" [checked]="vehicle.available" (change)="toggleAvailability(vehicle)">
@@ -27,28 +28,29 @@
    <div class="bookings-section">
     <h4>Recent Bookings</h4>
 
-    <div *ngIf="bookings.length === 0" class="alert alert-info">
+    <div *ngIf="bookings.length === 0" class="no-bookings-alert">
       No bookings found at the moment.
     </div>
 
-    <div *ngFor="let booking of bookings" class="card mb-3 shadow-sm">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
+    <div *ngFor="let booking of bookings" class="booking-card">
+      <div class="booking-card-body">
+        <div class="booking-row">
           <div>
+            <!-- Clickable title allows navigation to detailed booking view without extra button clutter -->
             <h5 class="card-title" (click)="viewBookingDetails(booking.id)" >
                 Booking from {{booking.userName}}
             </h5>
-            <p class="card-text text-muted mb-1">
+            <p class="booking-info">
               <strong>Status:</strong> {{booking.status}} | <strong>Date:</strong> {{booking.startDate | date:'shortDate'}}
             </p>
           </div>
 
-         <div class="actions d-flex gap-2">
-           <button *ngIf="booking.status === 'Pending'" class="btn btn-success btn-sm" (click)="acceptBooking(booking)">Accept</button>
+         <div class="actions">
+           <button *ngIf="booking.status === 'Pending'" class="accept-btn" (click)="acceptBooking(booking)">Accept</button>
 
-           <button *ngIf="booking.status === 'Pending'" class="btn btn-outline-danger btn-sm" (click)="rejectBooking(booking)">Reject</button>
+           <button *ngIf="booking.status === 'Pending'" class="reject-btn" (click)="rejectBooking(booking)">Reject</button>
 
-           <button *ngIf="booking.status === 'Confirmed'" class="btn btn-primary btn-sm" (click)="completeBooking(booking)">Complete</button>
+           <button *ngIf="booking.status === 'Confirmed'" class="complete-btn" (click)="completeBooking(booking)">Complete</button>
          </div>
         </div>
       </div>

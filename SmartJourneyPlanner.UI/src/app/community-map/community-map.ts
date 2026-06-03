@@ -1,12 +1,13 @@
 import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-community-map',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './community-map.html',
   styleUrls: ['./community-map.css']
 })
@@ -15,15 +16,17 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   private markersLayer: L.LayerGroup = Leaflet.layerGroup();
   
   private readonly sriLankaBounds = Leaflet.latLngBounds(
-    Leaflet.latLng(5.9, 79.5), 
-    Leaflet.latLng(9.9, 82.0)
+    Leaflet.latLng(5.0, 78.0), 
+    Leaflet.latLng(10.5, 83.5)
   );
 
+   // Centralized endpoint so backend URL changes don't affect multiple places
   private apiUrl = 'http://localhost:5233/api/memories'; 
 
-  // Variable names must match your HTML exactly to fix TS2339 errors
+  searchQuery: string = '';
   allMemories: any[] = [];
   myRecentUploads: any[] = []; 
+  filteredMemories: any[] = [];
   
   selectedMemory: any | null = null;
   showMax: number = 3;
@@ -56,54 +59,90 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   loadCommunityMemories() {
-  this.http.get<any[]>(this.apiUrl).subscribe({
-    next: (data) => {
-      console.log("RAW DATA FROM API:", data); // ADD THIS LINE
-
-      const allFormatted = data.map(memory => this.formatData(memory));
-      console.log("FORMATTED DATA:", allFormatted); // ADD THIS LINE
-      
-      this.allMemories = allFormatted.filter(memory => memory.isPublic === true);
-      console.log("FILTERED DATA:", this.allMemories); // ADD THIS LINE
-      
-      this.myRecentUploads = [...this.allMemories].reverse();
-      this.refreshMapMarkers();
-    },
-      error: (err) => console.error("Database connection error:", err)
+    this.http.get<any[]>(this.apiUrl).subscribe({
+      next: (data) => {
+        const allFormatted = data.map(memory => this.formatData(memory));
+        this.allMemories = allFormatted.filter(memory => memory.isPublic === true);
+        
+        // Initialize filtered list with all memories
+        this.filteredMemories = [...this.allMemories].reverse();
+    
+        this.refreshMapMarkers(this.filteredMemories); // Pass the list
+      }
     });
   }
 
   toggleSeeMore() {
-    this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
+    this.showMax = (this.showMax === 3) ? this.filteredMemories.length : 3;
   }
 
-  // Required by your HTML: trackBy: trackByFn
+  // Helps Angular reuse DOM elements efficiently instead of re-rendering entire lists
   trackByFn(index: number, item: any) {
     return item.id || index;
   }
 
-  refreshMapMarkers() {
-    this.markersLayer.clearLayers();
-    this.allMemories.forEach((memory) => {
-      const marker = Leaflet.marker([memory.latitude, memory.longitude]);
-      
-      const popupHtml = `
-        <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
-          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
-        </div>`;
-      
-      marker.bindPopup(popupHtml).addTo(this.markersLayer);
-    });
+  filterMemories() {
+    if (!this.searchQuery || this.searchQuery.trim() === '') {
+    this.filteredMemories = [...this.allMemories];
+    } else {
+      const query = this.searchQuery.toLowerCase();
+      this.filteredMemories = this.allMemories.filter(memory => 
+        memory.locationName.toLowerCase().includes(query)
+      );
+    }
+    // Ensures map markers reflect filtered results instead of original dataset
+    this.refreshMapMarkers(this.filteredMemories);
   }
 
+  refreshMapMarkers(memories: any[]) {
+  // Clearing prevents duplicate markers when filtering or reloading
+  this.markersLayer.clearLayers();
+
+  memories.forEach((memory) => {
+
+    // Skip invalid coordinates (safe check)
+    if (!memory.latitude || !memory.longitude) return;
+
+    const marker = Leaflet.marker([memory.latitude, memory.longitude]);
+
+    const popupHtml = `
+      <div class="popup-container">
+        <h6 class="popup-title">${memory.title}</h6>
+
+        <img src="${memory.imageUrl}" 
+             class="popup-image view-big-image" 
+             data-img="${memory.imageUrl}" />
+
+        <p class="popup-location">${memory.locationName}</p>
+      </div>
+    `;
+
+    marker
+      .bindPopup(popupHtml)
+      // Only attaches logic after the popup exists in the DOM to avoid null reference errors.
+      .on('popupopen', (e: any) => {
+
+        const popupEl = e.popup.getElement();
+
+        const img = popupEl.querySelector('.view-big-image');
+
+        // Listens for clicks to trigger the full-screen view.
+        img?.addEventListener('click', () => {
+
+          // Broadcasts a custom event to keep map logic decoupled from the UI handler.
+          window.dispatchEvent(
+            new CustomEvent('viewBig', { detail: memory.imageUrl })
+          );
+        });
+      })
+      .addTo(this.markersLayer);
+  });
+}
     private initMap(): void {
       this.map = Leaflet.map('map', {
         center: [7.8731, 80.7718],
         zoom: 8,
-        minZoom: 8,
+        minZoom: 7,
         maxBounds: this.sriLankaBounds,
         maxBoundsViscosity: 1.0
     });

@@ -1,4 +1,7 @@
-// This service handles all database operations for the Trip Timeline using MongoDB.
+/**
+ * This service handles all database operations for the Trip Timeline using MongoDB.
+ * It is responsible for actually writing to and reading from the database.
+ */
 
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -10,12 +13,16 @@ namespace SmartJourneyPlanner.API.Services
     // This service connects our application to the MongoDB collection for trip plans
     public class TimelineService
     {
+        // _timelineCollection is the direct link to the "TripTimelinePlans" table/collection in MongoDB
         private readonly IMongoCollection<TimelinePlan> _timelineCollection;
 
-        // The constructor sets up the connection to the database
+        // The constructor sets up the connection to the database using settings from appsettings.json
         public TimelineService(IOptions<MongoDBSettings> settings)
         {
+            // Connect to the MongoDB server
             var client = new MongoClient(settings.Value.ConnectionString);
+            
+            // Access the specific database for our app
             var database = client.GetDatabase(settings.Value.DatabaseName);
             
             // We use the collection name from settings, or default to "TripTimelinePlans"
@@ -23,27 +30,32 @@ namespace SmartJourneyPlanner.API.Services
                 ? "TripTimelinePlans" 
                 : settings.Value.TimelineCollectionName;
                 
+            // Initialize the collection handler
             _timelineCollection = database.GetCollection<TimelinePlan>(collectionToUse);
         }
 
-        // Retrieves all trip timeline plans from the database
+        /**
+         * Retrieves all trip timeline plans from the database.
+         * We do extra checks here to make sure "broken" or "empty" plans don't crash the app.
+         */
         public async Task<List<TimelinePlan>> GetAsync()
         {
             try 
             {
-                // We fetch all documents as raw BSON first to make sure we can handle any data issues
+                // 1. Fetch all documents from the database as raw BSON data
                 var rawCollection = _timelineCollection.Database.GetCollection<BsonDocument>(_timelineCollection.CollectionNamespace.CollectionName);
                 var rawDocuments = await rawCollection.Find(new BsonDocument()).ToListAsync();
                 var validPlans = new List<TimelinePlan>();
 
+                // 2. Loop through each document and try to convert it to our C# model
                 foreach (BsonDocument doc in rawDocuments)
                 {
                     try 
                     {
-                        // Try to convert (deserialize) the raw data into our C# TimelinePlan model
+                        // Convert the database data into a TimelinePlan object
                         var plan = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<TimelinePlan>(doc);
                         
-                        // We only add the plan if it has a valid ID (not empty and not a placeholder "string")
+                        // Only add the plan if it has a real ID (and not just the default placeholder "string")
                         if (plan != null && !string.IsNullOrEmpty(plan.Id) && !plan.Id.Equals("string", StringComparison.OrdinalIgnoreCase))
                         {
                             validPlans.Add(plan);
@@ -51,7 +63,7 @@ namespace SmartJourneyPlanner.API.Services
                     }
                     catch (Exception deserializeEx)
                     {
-                        // If one document is "broken", we skip it and continue with the others
+                        // If one specific document is corrupted, skip it so the rest of the list still loads
                         Console.WriteLine($"Skipping a broken document: {deserializeEx.Message}");
                     }
                 }
@@ -60,46 +72,55 @@ namespace SmartJourneyPlanner.API.Services
             }
             catch (Exception ex)
             {
-                // If the entire database fetch fails, we log it and return an empty list
+                // If there's a serious database connection error, log it and return an empty list
                 Console.WriteLine($"Database error in GetAsync: {ex.Message}");
                 return new List<TimelinePlan>();
             }
         }
 
-        // Find and return one specific trip plan using its ID
+        /**
+         * Find and return one specific trip plan using its unique ID.
+         */
         public async Task<TimelinePlan?> GetAsync(string id) =>
             await _timelineCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        // Save a brand new trip plan to the MongoDB database
+        /**
+         * Save a brand new trip plan to the MongoDB database.
+         */
         public async Task CreateAsync(TimelinePlan newPlan)
         {
             try 
             {
-                // If the ID is missing or is just a placeholder "string", we generate a new unique ID
+                // If the incoming data doesn't have an ID, we create a unique one using a GUID
                 if (string.IsNullOrEmpty(newPlan.Id) || newPlan.Id.Equals("string", StringComparison.OrdinalIgnoreCase)) 
                 {
                     newPlan.Id = Guid.NewGuid().ToString();
                 }
                 
-                // Insert the new plan into the collection
+                // Insert the document into the MongoDB collection
                 await _timelineCollection.InsertOneAsync(newPlan);
             }
             catch (Exception ex)
             {
-                // Log any errors that happen during the saving process
+                // Log any errors that happen during the insertion process
                 Console.WriteLine($"Error saving new plan: {ex.Message}");
-                throw; // Rethrow the error so the controller knows it failed
+                throw; // Rethrow the error so the API Controller knows it failed
             }
         }
 
-        // Update an existing trip plan's information in the database
+        /**
+         * Update an existing trip plan's information (replace the old data with new data).
+         */
         public async Task UpdateAsync(string id, TimelinePlan updatedPlan)
         {
+            // We search for the document by ID and replace it completely with the updated version
             await _timelineCollection.ReplaceOneAsync(x => x.Id == id, updatedPlan);
         }
 
-        // Permanently delete a trip plan from the database using its ID
+        /**
+         * Permanently delete a trip plan from the database.
+         */
         public async Task RemoveAsync(string id) =>
             await _timelineCollection.DeleteOneAsync(x => x.Id == id);
     }
-}
+}

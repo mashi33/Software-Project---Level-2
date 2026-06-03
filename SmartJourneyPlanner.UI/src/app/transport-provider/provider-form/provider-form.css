@@ -167,6 +167,12 @@ select.pf-input-soft {
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
 }
 
+.pf-input-soft.is-invalid:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
+  background-color: #ffffff !important;
+}
+
 /* Hide Bootstrap validation icon for date inputs to avoid overlap with native calendar icon */
 input[type="date"].is-invalid {
   background-image: none !important;
@@ -418,11 +424,22 @@ input[type="date"].is-invalid {
   border-style: solid;
 }
 
-.pf-upload-box.verification {
-  border-color: rgba(59, 130, 246, 0.3);
-}
 .pf-upload-box.verification:hover {
   border-color: #3b82f6;
+}
+
+.pf-upload-box.success {
+  border-color: #10b981 !important;
+  background: #ecfdf5 !important;
+}
+
+.pf-upload-box.error {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+.pf-upload-box.missing {
+  border-color: #ef4444 !important;
 }
 
 .pf-upload-box input[type="file"] {

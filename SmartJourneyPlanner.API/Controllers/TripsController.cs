@@ -74,7 +74,7 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         // Fetch trips where the user is either the creator or a member
-        [HttpGet("by-email/{email}")]
+        /*[HttpGet("by-email/{email}")]
         public async Task<ActionResult<List<Trip>>> GetTripsByEmail(string email)
         {
             try
@@ -90,7 +90,86 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 return BadRequest(new { message = "Error fetching trips: " + ex.Message });
             }
-        }
+        }*/
+
+        // Dashboard data for logged-in user only
+[HttpGet("dashboard/{userId}")]
+public async Task<IActionResult> GetDashboardData(string userId)
+{
+    try
+    {
+        // Get trips created by this user only
+        var userTrips = await _tripsCollection
+            .Find(t => t.CreatedBy == userId)
+            .ToListAsync();
+
+        // Upcoming trips
+        var upcomingTrips = userTrips
+            .Where(t => t.StartDate >= DateTime.UtcNow)
+            .ToList();
+
+        // Completed trips
+        var completedTrips = userTrips
+            .Where(t => t.EndDate < DateTime.UtcNow)
+            .ToList();
+
+        return Ok(new
+        {
+            upcomingCount = upcomingTrips.Count,
+            completedCount = completedTrips.Count,
+            
+            upcomingTrips = upcomingTrips.Select(t => new
+    {
+        id = t.Id,
+
+        tripName = t.TripName,
+
+        destination = t.Destination,
+
+        startDate = t.StartDate,
+
+        lat = t.Lat,
+
+        lon = t.Lon
+    }),
+    
+            completedTrips = completedTrips
+        });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new
+        {
+            message = "Dashboard loading error: " + ex.Message
+        });
+    }
+}
+
+[HttpGet("next-trip/{userId}")]
+public async Task<IActionResult> GetNextTrip(string userId)
+{
+    var trips = await _tripsCollection
+        .Find(t => t.CreatedBy == userId)
+        .ToListAsync();
+
+    var nextTrip = trips
+        .Where(t => t.StartDate >= DateTime.UtcNow)
+        .OrderBy(t => t.StartDate)
+        .FirstOrDefault();
+
+    if (nextTrip == null)
+    {
+        return Ok(null);
+    }
+
+    return Ok(new
+    {
+        nextTrip.Id,
+        nextTrip.TripName,
+        nextTrip.Destination,
+        nextTrip.StartDate
+    });
+}
 
         // Create a new trip and send invitation emails to all members
         [HttpPost]
@@ -227,7 +306,7 @@ namespace SmartJourneyPlanner.API.Controllers
                 using (var client = new SmtpClient())
                 {
                     await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "ejuh wevn elec dkpn");
+                    await client.AuthenticateAsync("abc@gmail.com", "abc");
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
                 }

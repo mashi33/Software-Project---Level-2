@@ -19,7 +19,7 @@ namespace SmartJourneyPlanner.Services
             });
         }
 
-        /// <summary>Upload a stream and return the new GridFS ObjectId as a string.</summary>
+        //Upload a stream and return the new GridFS ObjectId as a string.
         public async Task<string> UploadAsync(Stream stream, string fileName)
         {
             var options = new GridFSUploadOptions
@@ -35,15 +35,14 @@ namespace SmartJourneyPlanner.Services
             return id.ToString();
         }
 
-        /// <summary>Open a download stream by file id.</summary>
+        // Open a download stream by file id.
         // ✅ FIXED: GridFSDownloadStream is generic in MongoDB.Driver v3 — must use GridFSDownloadStream<ObjectId>
         public async Task<Stream> DownloadAsync(string fileId)
         {
             var objectId = new ObjectId(fileId);
-            // OpenDownloadStreamAsync මගින් ලැබෙන Stream එක කෙලින්ම ලබා දීම
             return await _bucket.OpenDownloadStreamAsync(objectId);
         }
-        /// <summary>Delete a file from GridFS.</summary>
+        //Delete a file from GridFS.
         public async Task DeleteAsync(string fileId)
         {
             var objectId = new ObjectId(fileId);
