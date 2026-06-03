@@ -10,37 +10,27 @@ namespace SmartJourneyPlanner.API.Models
     public class Trip
     {
         [BsonId]
+        [BsonElement]
         [BsonRepresentation(BsonType.ObjectId)]
-        // Unique identifier for the trip
+
+        // Unique identifier for the trip, represented as a MongoDB ObjectId 
         public string? Id { get; set; }
-
-        public string TripName { get; set; } = null!;
-
-        // ✅ FIXED: Removed the duplicate definition of DepartFrom below
-        public string DepartFrom { get; set; } = null!;
-
-        public string Destination { get; set; } = null!;
+        public string TripName { get; set; } = string.Empty;
+        public string DepartFrom { get; set; } = string.Empty;
+        public string Destination { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }  // Using Nullable DateTime (DateTime?) is safer in case some
+        public DateTime EndDate { get; set; }    // documents in your database have missing or null dates.
+        public string BudgetLimit { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         public double Lat { get; set; }
-
         public double Lon { get; set; }
-
-        // Using DateTime (Ensure your Angular frontend sends ISO strings)
-        public DateTime StartDate { get; set; }  
         
-        public DateTime EndDate { get; set; }    
-
-        public string BudgetLimit { get; set; } = string.Empty;
-
-        public string? Description { get; set; }
-        
-        // Invite many members to the trip
+         // Invite many members to the trip
         public List<TripMember> Members { get; set; } = new List<TripMember>();
-
         public List<TripPlace> SavedPlaces { get; set; } = new List<TripPlace>();
-
-        public string? creatorEmail { get; set; }
         public string? CreatedBy { get; set; }
+        public string? CreatorEmail { get; set;}
     }
 
     // Represents a member invited to the trip
@@ -48,11 +38,10 @@ namespace SmartJourneyPlanner.API.Models
     public class TripMember
     {
         public string Email { get; set; } = null!;
-        public string Role { get; set; } = "Viewer"; // "Editor" or "Viewer"
+        public string Role { get; set; } = "Viewer"; // Editor or Viewer
     }
 
     // Represents a specific location saved within a trip
-    [BsonIgnoreExtraElements]
     public class TripPlace
     {
         public string PlaceId { get; set; } = null!;
