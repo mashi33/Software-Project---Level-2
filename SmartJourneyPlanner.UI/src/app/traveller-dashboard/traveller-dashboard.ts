@@ -29,21 +29,30 @@ export class TravelerDashboardComponent implements OnInit {
   // =========================
   // TRIPS DATA
   // =========================
+  ongoingTripsCount: number = 0;
   upcomingTripsCount: number = 0;
   completedTripsCount: number = 0;
 
   completedTrips: any[] = [];
   upcomingTrips: any[] = [];
+  ongoingTrips: any[] = [];
 
+  visibleOngoingTrips: any[] = [];
   visibleUpcomingTrips: any[] = [];
   visibleCompletedTrips: any[] = [];
 
+  showAllOngoing: boolean = false;
   showAllUpcoming: boolean = false;
   showAllCompleted: boolean = false;
 
   // =========================
 // POPUP CONTROL
 // =========================
+showOngoingList: boolean = false;
+showUpcomingList: boolean = false;
+showCompletedList: boolean = false;
+
+showOngoingPopup: boolean = false;
 showUpcomingPopup: boolean = false;
 showCompletedPopup: boolean = false;
 
@@ -93,28 +102,52 @@ showCompletedPopup: boolean = false;
   // LOAD DASHBOARD DATA
   // =========================
   loadDashboardData() {
+  this.dashboardService.getDashboardData()
+    .subscribe({
+      next: (data) => {
+        console.log("Verified Secure API Payload:", data);
 
-    if (!this.userId) return;
+        // Map counts cleanly
+        this.ongoingTripsCount = data.ongoingCount || 0;
+        this.upcomingTripsCount = data.upcomingCount || 0;
+        this.completedTripsCount = data.completedCount || 0;
 
-    this.dashboardService.getDashboardData(this.userId)
-      .subscribe({
+        // 🌟 HIGHLIGHT: Fallback to an empty array if data fields are null/missing
+        this.completedTrips = data.completedTrips || [];
+        this.upcomingTrips = data.upcomingTrips || [];
+        this.ongoingTrips = data.ongoingTrips || [];
 
-        next: (data) => {
+        // 🌟 HIGHLIGHT: Safely populate visible subset cards without template runtime crashes
+        this.visibleOngoingTrips = this.ongoingTrips.slice(0, 3);
+        this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 3);
+        this.visibleCompletedTrips = this.completedTrips.slice(0, 3);
+        
+        this.setNextTrip(this.upcomingTrips);
+      },
+      error: (err) => {
+        console.error('Dashboard loading failed', err);
+      }
+    });
+}
 
-          this.upcomingTripsCount = data.upcomingCount;
-          this.completedTripsCount = data.completedCount;
-          this.completedTrips = data.completedTrips;
-          this.upcomingTrips = data.upcomingTrips;
 
-          this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 3);
-          this.visibleCompletedTrips = this.completedTrips.slice(0, 3);
-          this.setNextTrip(data.upcomingTrips || []);
-        },
-
-        error: (err) => {
-          console.error('Dashboard loading failed', err);
-        }
-      });
+// ==========================================
+  // 🌟 HIGHLIGHT: NEW TOGGLE METHOD FOR STAT CARDS
+  // ==========================================
+  toggleList(category: string) {
+    if (category === 'ongoing') {
+      this.showOngoingList = !this.showOngoingList;
+      this.showUpcomingList = false;
+      this.showCompletedList = false;
+    } else if (category === 'upcoming') {
+      this.showUpcomingList = !this.showUpcomingList;
+      this.showOngoingList = false;
+      this.showCompletedList = false;
+    } else if (category === 'completed') {
+      this.showCompletedList = !this.showCompletedList;
+      this.showOngoingList = false;
+      this.showUpcomingList = false;
+    }
   }
 
   toggleUpcomingTrips() {
@@ -135,6 +168,15 @@ toggleCompletedTrips() {
     : this.completedTrips.slice(0, 3);
 }
 
+toggleOngoingTrips() {
+
+  this.showAllOngoing = !this.showAllOngoing;
+
+  this.visibleOngoingTrips = this.showAllOngoing
+    ? this.ongoingTrips
+    : this.ongoingTrips.slice(0, 3);
+}
+
 openUpcomingPopup() {
 
   this.showUpcomingPopup = true;
@@ -143,6 +185,17 @@ openUpcomingPopup() {
 closeUpcomingPopup() {
 
   this.showUpcomingPopup = false;
+}
+
+
+openOngoingPopup() {
+
+  this.showOngoingPopup = true;
+}
+
+closeOngoingPopup() {
+
+  this.showOngoingPopup = false;
 }
 
 openCompletedPopup() {

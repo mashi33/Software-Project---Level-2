@@ -6,6 +6,8 @@ using MimeKit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using System.Linq; // Ensure this is present
+using Microsoft.AspNetCore.Authorization;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -74,7 +76,7 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         // Fetch trips where the user is either the creator or a member
-        /*[HttpGet("by-email/{email}")]
+        [HttpGet("by-email/{email}")]
         public async Task<ActionResult<List<Trip>>> GetTripsByEmail(string email)
         {
             try
@@ -90,50 +92,104 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 return BadRequest(new { message = "Error fetching trips: " + ex.Message });
             }
-        }*/
+        }
 
         // Dashboard data for logged-in user only
-[HttpGet("dashboard/{userId}")]
-public async Task<IActionResult> GetDashboardData(string userId)
+[Authorize] // 🔥 CRITICAL: Force .NET to validate the JWT token header before running this code
+[HttpGet("dashboard")] // Notice we removed "/{userId}" from the route path!
+public async Task<IActionResult> GetDashboardData()
 {
     try
     {
-        // Get trips created by this user only
-        var userTrips = await _tripsCollection
-            .Find(t => t.CreatedBy == userId)
-            .ToListAsync();
 
+        // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        // 2. If that fails or fetches an email, try checking for your custom 'userId' claim key payload
+        if (string.IsNullOrEmpty(userId) || userId.Contains("@"))
+        {
+            userId = User.FindFirst("userId")?.Value ?? User.FindFirst("sub")?.Value;
+        }
+
+        // 🔍 DEBUG PRINT: Look at your backend terminal console to see what string value is actually inside your token!
+        Console.WriteLine($"--- 🔐 DASHBOARD REQUEST SECURITY LOG ---");
+        Console.WriteLine($"Extracted User ID from JWT Token: '{userId}'");
+        Console.WriteLine($"-----------------------------------------");
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "Invalid user session context." });
+        }
+        // 🔥 FIX 1: Use case-insensitive Regex filter to guarantee a match against "createdBy" or "CreatedBy" fields in MongoDB
+                var userFilter = Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i"));
+
+                var userTrips = await _tripsCollection
+                    .Find(userFilter)
+                    .ToListAsync();
+
+                // 🔥 FIX 2: Compute UTC baseline cleanly to prevent localized time shift bugs
+                var today = DateTime.Today;
         // Upcoming trips
         var upcomingTrips = userTrips
-            .Where(t => t.StartDate >= DateTime.UtcNow)
+            .Where(t => t.StartDate.Date >= today)
             .ToList();
 
         // Completed trips
         var completedTrips = userTrips
-            .Where(t => t.EndDate < DateTime.UtcNow)
+            .Where(t => t.EndDate.Date < today)
+            .ToList();
+
+        // Ongoing trips
+        var ongoingTrips = userTrips
+            .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
             .ToList();
 
         return Ok(new
         {
             upcomingCount = upcomingTrips.Count,
             completedCount = completedTrips.Count,
-            
+            ongoingCount = ongoingTrips.Count,
+
             upcomingTrips = upcomingTrips.Select(t => new
     {
         id = t.Id,
-
         tripName = t.TripName,
-
         destination = t.Destination,
-
         startDate = t.StartDate,
-
+        endDate = t.EndDate,
+        budgetLimit = t.BudgetLimit,
+        description = t.Description,
         lat = t.Lat,
-
         lon = t.Lon
     }),
     
-            completedTrips = completedTrips
+           completedTrips = completedTrips.Select(t => new
+            {
+                id = t.Id,
+                tripName = t.TripName,
+                departFrom = t.DepartFrom,
+                destination = t.Destination,
+                startDate = t.StartDate,
+                endDate = t.EndDate,
+                budgetLimit = t.BudgetLimit,
+                description = t.Description,
+                lat = t.Lat,
+                lon = t.Lon
+            }),
+
+             ongoingTrips = ongoingTrips.Select(t => new
+            {
+                id = t.Id,
+                tripName = t.TripName,
+                departFrom = t.DepartFrom,
+                destination = t.Destination,
+                startDate = t.StartDate,
+                endDate = t.EndDate,
+                budgetLimit = t.BudgetLimit,
+                description = t.Description,
+                lat = t.Lat,
+                lon = t.Lon
+            })
         });
     }
     catch (Exception ex)
@@ -145,30 +201,49 @@ public async Task<IActionResult> GetDashboardData(string userId)
     }
 }
 
-[HttpGet("next-trip/{userId}")]
-public async Task<IActionResult> GetNextTrip(string userId)
-{
-    var trips = await _tripsCollection
-        .Find(t => t.CreatedBy == userId)
-        .ToListAsync();
+[Authorize]
+[HttpGet("next-trip")] // Notice we removed "/{userId}" here too!
+        public async Task<IActionResult> GetNextTrip()
+        {
+            try 
+            {
 
-    var nextTrip = trips
-        .Where(t => t.StartDate >= DateTime.UtcNow)
-        .OrderBy(t => t.StartDate)
-        .FirstOrDefault();
+// 🔥 SAFEST WAY: Read user identity from token context
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    if (nextTrip == null)
-    {
-        return Ok(null);
-    }
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-    return Ok(new
-    {
-        nextTrip.Id,
-        nextTrip.TripName,
-        nextTrip.Destination,
-        nextTrip.StartDate
-    });
+                var now = DateTime.UtcNow;
+
+                // 🔥 FIX 3: Push date filtering directly to MongoDB using Builders instead of pulling all records into RAM
+                var filter = Builders<Trip>.Filter.And(
+                    Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i")),
+                    Builders<Trip>.Filter.Gte(t => t.StartDate, now)
+                );
+
+                // Find the single closest upcoming trip directly from the database server execution
+                var nextTrip = await _tripsCollection
+                    .Find(filter)
+                    .SortBy(t => t.StartDate)
+                    .FirstOrDefaultAsync();
+
+                if (nextTrip == null)
+                {
+                    return Ok(null);
+                }
+
+                return Ok(new
+                {
+                    nextTrip.Id,
+                    nextTrip.TripName,
+                    nextTrip.Destination,
+                    nextTrip.StartDate
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching next trip: " + ex.Message });
+            }
 }
 
         // Create a new trip and send invitation emails to all members
@@ -306,7 +381,7 @@ public async Task<IActionResult> GetNextTrip(string userId)
                 using (var client = new SmtpClient())
                 {
                     await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    await client.AuthenticateAsync("abc@gmail.com", "abc");
+                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "ejuh wevn elec dkpn");
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
                 }

@@ -18,6 +18,7 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
+ 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -64,10 +65,10 @@ isLastYearWeather: boolean = false;
 
       this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
-          this.tripDetails = data;
+      this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // Call filterSavedPlaces() after data is loaded
+          // FIX: Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
 
           this.loadTripWeather();
@@ -78,6 +79,7 @@ isLastYearWeather: boolean = false;
             this.editHistory = data.editHistory;
           } else {
             this.loadHistory(this.tripId);
+            this.filterSavedPlaces();
           }
         },
         error: (err) => {
@@ -86,7 +88,6 @@ isLastYearWeather: boolean = false;
         }
       });
     } else {
-      // Fallback if no tripId is present in URL
       this.loadFromTemp();
     }
   }
@@ -169,17 +170,61 @@ isLastYearWeather: boolean = false;
   });
 }
 
-  buildForecastCards(weather: any) {
-    const baseTemp = Math.round(Number(weather.avgTemp || 28));
-    this.forecastDays = [
-      { day: 'Sat', icon: 'bi bi-cloud-sun-fill text-warning', temp: `${baseTemp}°C` },
-      { day: 'Sun', icon: 'bi bi-cloud text-secondary', temp: `${baseTemp + 1}°C` },
-      { day: 'Mon', icon: 'bi bi-cloud-drizzle text-primary', temp: `${baseTemp - 1}°C` },
-      { day: 'Tue', icon: 'bi bi-brightness-high-fill text-warning', temp: `${baseTemp + 2}°C` },
-      { day: 'Wed', icon: 'bi bi-cloud-fill text-secondary', temp: `${baseTemp}°C` }
-    ];
-  }
+buildForecastCards(weather: any) {
+  const getWeatherIcon = (condition: string): string => {
+    const cond = (condition || '').toLowerCase();
+    if (cond.includes('rain') || cond.includes('drizzle')) return 'bi bi-cloud-drizzle text-primary';
+    if (cond.includes('sun') || cond.includes('clear')) return 'bi bi-brightness-high-fill text-warning';
+    if (cond.includes('cloud') && cond.includes('sun')) return 'bi bi-cloud-sun-fill text-warning';
+    return 'bi bi-cloud-fill text-secondary';
+  };
 
+  const dailyTimes = weather?.daily?.time;
+  const dailyTemps = weather?.daily?.temperature_2m_max || weather?.daily?.temperatures || weather?.daily?.temp;
+
+  // 🌟 SCENARIO A: Fetching from the API array keys
+  if (dailyTimes && dailyTemps) {
+    this.forecastDays = dailyTimes.slice(0, 5).map((dateStr: string, index: number) => {
+      const actualDate = new Date(dateStr);
+      const dayLabel = actualDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const rawTemp = Number(dailyTemps[index]);
+
+      return {
+        day: dayLabel,
+        icon: getWeatherIcon(weather.daily.conditions?.[index] || weather.condition),
+        temp: `${rawTemp.toFixed(1)}°C`
+      };
+    });
+  } 
+  
+  // 🌟 SCENARIO B: Intelligent Fallback Loop
+  else {
+    const baseTempNum = Number(weather.avgTemp || 27.9);
+    const rawDate = this.tripDetails?.StartDate || this.tripDetails?.startDate || new Date();
+    
+    // === HIGHLIGHTED CORRECTION: ALIGNING THE BASE TIMELINE TIMESTAMPS ===
+    this.forecastDays = Array.from({ length: 5 }, (_, i) => {
+      const nextDate = new Date(rawDate);
+      
+      // CHANGE HERE: Changing "+ i" to "+ (i + 1)" forces the cards to start 
+      // exactly on the day AFTER your main trip start date box.
+      nextDate.setDate(nextDate.getDate() + (i + 1));
+
+      const dayLabel = nextDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      
+      // Keep realistic micro-variances mapping intact
+      const realisticOffsets = [0.0, 0.8, -1.3, 1.5, -0.4];
+      const calculatedUnroundedTemp = baseTempNum + realisticOffsets[i];
+
+      return {
+        day: dayLabel,
+        icon: getWeatherIcon(weather.condition),
+        temp: `${calculatedUnroundedTemp.toFixed(1)}°C`
+      };
+    });
+    // ====================================================================
+  }
+}
   // Links to Budget Dashboard
   navigateToBudget() {
     if (this.tripId) {
@@ -247,23 +292,27 @@ isLastYearWeather: boolean = false;
   }
 
   navigateToRouteOptimization() {
-    this.router.navigate(['/explore/route-optimization'], {
-      queryParams: {
-        start: this.tripDetails?.departFrom, 
-        end: this.tripDetails?.destination   
-      }
-    });
-  }
+  this.router.navigate(['/explore/route-optimization'], {
+    //Autofill on route optimization page using query parameters to pass 
+    // the departure and destination locations from the current trip details. 
+    queryParams: {
+      start: this.tripDetails?.departFrom, 
+      end: this.tripDetails?.destination   
+    }
+  });
+}
 
-  navigateToHotels() {
-    this.router.navigate(['/explore/hotel-restaurant-finder'], { 
-      queryParams: { 
-        city: this.tripDetails?.destination 
-      } 
-    });
-  }
+navigateToHotels() {
+  this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+    // Autofill on hotel finder page using query parameters
+    //  to pass the destination location from the current trip details.
+    queryParams: { 
+      city: this.tripDetails?.destination 
+    } 
+  });
+}
 
-  navigateToWeather() {
+ navigateToWeather() {
     this.router.navigate(['/weather']);
   }
 }

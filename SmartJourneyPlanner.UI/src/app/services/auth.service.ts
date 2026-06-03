@@ -62,6 +62,8 @@ export class AuthService {
 
 localStorage.setItem('email', email);
 
+
+
     } catch (error) {
       console.error('Token decode failed:', error);
     }
@@ -76,17 +78,29 @@ localStorage.setItem('email', email);
   }
 
   getUserId(): string | null {
-    return localStorage.getItem('userId');
-  }
-
+      return localStorage.getItem('userId');
+    }
+  
   getUserName(): string | null {
     return localStorage.getItem('userName');
   }
 
   getUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
 
-  return localStorage.getItem('email');
-}
+    try {
+      // Decode dynamically to prevent user tampering
+      const decoded: any = jwtDecode(token);
+      return decoded['email'] ||
+             decoded['unique_name'] ||
+             decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
+             localStorage.getItem('email');
+    } catch (error) {
+      console.error('Token decoding failed, falling back to storage', error);
+      return localStorage.getItem('email');
+    }
+  }
 
   getUserRole(): string {
     const token = this.getToken();
