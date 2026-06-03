@@ -286,7 +286,7 @@ public async Task<IActionResult> GetNextTrip(string userId)
 
                 string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
 
-                // Your original HTML design maintained 100%
+                // Html email body with inline styles for better presentation
                 message.Body = new TextPart("html")
                 {
                     Text = $@"

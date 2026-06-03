@@ -27,7 +27,15 @@ namespace SmartJourneyPlanner.API.Controllers
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto model)
-        {
+        {  
+            // Check if a user with the same email already exists in the database to prevent duplicate registrations
+            var existingUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
+            if (existingUser != null)
+             {
+              // If a user with the same email already exists, return a 400 Bad Request response with an appropriate message
+                return BadRequest(new { message = "This email is already registered." });
+             }
+            // hash the password using BCrypt before saving to the database
             string passwordHash = BCryptNet.HashPassword(model.Password);
 
             var newUser = new User
@@ -42,15 +50,15 @@ namespace SmartJourneyPlanner.API.Controllers
             await _users.InsertOneAsync(newUser);
             var checkUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
 
-    if (checkUser != null)// If the user was successfully saved and can be retrieved from the database, return a success response with some details
-    {
-        return Ok(new { 
-            message = "User registered and verified in DB!", 
-            savedEmail = checkUser.Email,
-            databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
-            collectionName = _users.CollectionNamespace.CollectionName     
-        });
-    }
+            if (checkUser != null)
+            {
+                    return Ok(new { 
+                               message = "User registered and verified in DB!", 
+                               savedEmail = checkUser.Email,
+                               databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
+                               collectionName = _users.CollectionNamespace.CollectionName     
+                   });
+           }
 
             return BadRequest(new { message = "Data was sent but could not be verified in Database." });
         }
@@ -91,6 +99,13 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> Signup([FromBody] User user)
         {
+            var existingUser = await _users.Find(u => u.Email == user.Email).FirstOrDefaultAsync();
+            if (existingUser != null)
+             {
+              // If a user with the same email already exists, return a 400 Bad Request response with an appropriate message
+                return BadRequest(new { message = "This email is already registered." });
+             }
+            
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
             user.IsBlocked = false; // Ensure they aren't blocked by default
             await _users.InsertOneAsync(user);

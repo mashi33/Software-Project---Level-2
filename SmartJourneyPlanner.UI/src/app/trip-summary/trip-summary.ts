@@ -17,7 +17,8 @@ export class TripSummaryComponent implements OnInit {
   // variable to hold the edit history
   editHistory: any[] = [];
   isDropdownOpen = false;
-  userRole: string = 'owner'; 
+  userRole: string = 'owner';
+ 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array

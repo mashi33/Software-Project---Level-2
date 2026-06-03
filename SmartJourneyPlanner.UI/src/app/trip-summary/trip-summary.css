@@ -109,6 +109,11 @@
   flex-wrap: wrap;
 }
 
+/* Badge for edit history */
+.badge {
+    font-weight: 500;
+}
+
 .weather-stat-item {
   display: flex;
   align-items: center;

@@ -40,6 +40,7 @@ export const routes: Routes = [
   { path: 'provider-dashboard', component: ProviderDashboardComponent },
   { path: 'traveller-dashboard', component: TravelerDashboardComponent },
   { path: 'booking-details/:id', component: MyBookings },
+  { path: 'traveller-dashboard', component: TravelerDashboardComponent },
 
   // Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },

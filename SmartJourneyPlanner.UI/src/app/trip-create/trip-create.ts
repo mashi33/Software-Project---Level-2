@@ -16,8 +16,10 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
   tripForm: FormGroup;
   invitedMembers: { email: string; role: string }[] = [];
-  isEditMode: boolean = false;
+  isEditMode: boolean = false;// Flag to determine if we're creating a new trip or editing an existing one
   tripId: string | null = null;
+
+  todayDate: string = '';// Used to set the minimum date for the date pickers to prevent selecting past dates
 
   constructor(
     private tripService: TripService, // 1. Inject TripService for API calls
@@ -45,6 +47,10 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
     const idFromUrl = this.route.snapshot.paramMap.get('id');// Check if there's an ID in the URL to determine if we're editing an existing trip
     
+    // Set the minimum date for the date pickers to prevent selecting past dates
+    const today = new Date();
+    this.todayDate = today.toISOString().split('T')[0]; 
+
     if (idFromUrl) {
       this.tripId = idFromUrl;
       this.isEditMode = true;
@@ -111,11 +117,19 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
   }
 
   // Method to handle form submission for both creating a new trip and updating an existing one. It constructs the trip data object from the form values and invited members, then makes the appropriate API call based on whether we're in edit mode or not. After a successful response, it navigates to the trip summary page, passing along the new or updated trip ID.
- onSubmit() {
+  onSubmit() {
     if (this.tripForm.valid) {
-      const createdBy = localStorage.getItem('userId') || '';
-
-const creatorEmail = localStorage.getItem('email') || '';
+      const token = localStorage.getItem('token');
+      let createdBy = '';
+      if (token) {
+        try {
+          const decoded: any = JSON.parse(atob(token.split('.')[1]));
+          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';// Extract the email address from the decoded token
+        } catch (e) {
+          console.error("Token decoding failed", e);
+        }
+      }
+      
       //contruct trip data to send to backend
       const tripData = {
         TripName: this.tripForm.value.tripName,
@@ -126,8 +140,7 @@ const creatorEmail = localStorage.getItem('email') || '';
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
-        createdBy: createdBy,       // CRITICAL: Used to filter and display on user dashboard
-        creatorEmail: creatorEmail  // Secure audit tracking of who made it
+        CreatedBy: createdBy
       };
       
       // If we're in edit mode, update the existing trip; otherwise, create a new one. This logic ensures that the same form can be used for both creating and editing trips, providing a seamless user experience.
@@ -162,7 +175,7 @@ const creatorEmail = localStorage.getItem('email') || '';
       alert("Form has errors. Please check again.");
     }
   }
-  //Method to handle budget limi changes
+  //Method to handle budget limit changes
   onAddBudget() {
     const budget = this.tripForm.get('budgetLimit')?.value;
     console.log("Selected Budget Limit:", budget);

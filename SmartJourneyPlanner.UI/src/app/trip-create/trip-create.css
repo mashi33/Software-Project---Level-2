@@ -247,3 +247,14 @@ textarea {
 .remove-btn:hover {
     color: #dc3545; 
 }
+
+/* Custom divider line */
+.custom-divider {
+    width: 150px;          
+    height: 4px;           
+    background-color: #1b6fd5; 
+    border-radius: 10px;    
+    margin-top: 10px;      
+    opacity: 0.8;           
+}
+
