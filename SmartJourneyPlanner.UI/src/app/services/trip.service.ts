@@ -50,4 +50,8 @@ export class TripService {
   getTripHistory(id: string): Observable<any[]> {
   return this.http.get<any[]>(`${this.apiUrl}/${id}/history`);
   }
+
+  getUserTrips(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/my-trips`);
+  }
 }

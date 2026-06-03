@@ -4,10 +4,10 @@
     <div class="header-section glass-header">
       <div class="header-flex">
         <h2 class="header-title">Budget Planner for</h2>
-        <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="loadBudget()">
+        <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="onTripDropdownChange(tripId)">
           <option value="" disabled>Select a Trip</option>
-          <option *ngFor="let t of allTrips" [value]="t._id || t.id">
-            {{ t.tripName }}
+          <option *ngFor="let t of userTripsList" [value]="t._id || t.id">
+            {{ t.tripName || t.destination }}
           </option>
         </select>
       </div>
@@ -24,10 +24,26 @@
             <table class="custom-table">
               <thead>
                 <tr class="table-header-row">
-                  <th (click)="sortTable('category')" class="sortable-header">Category</th>
-                  <th (click)="sortTable('amount')" class="sortable-header">Amount</th>
-                  <th (click)="sortTable('date')" class="sortable-header">Date</th>
-                  <th (click)="sortTable('description')" class="sortable-header">Note</th>
+                  <th (click)="sortTable('category')" class="sortable-header">
+                    Category
+                    <span class="sort-arrow" *ngIf="sortColumn === 'category'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
+                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'category'"> ↕</span>
+                  </th>
+                  <th (click)="sortTable('amount')" class="sortable-header">
+                    Amount
+                    <span class="sort-arrow" *ngIf="sortColumn === 'amount'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
+                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'amount'"> ↕</span>
+                  </th>
+                  <th (click)="sortTable('date')" class="sortable-header">
+                    Date
+                    <span class="sort-arrow" *ngIf="sortColumn === 'date'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
+                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'date'"> ↕</span>
+                  </th>
+                  <th (click)="sortTable('description')" class="sortable-header">
+                    Note
+                    <span class="sort-arrow" *ngIf="sortColumn === 'description'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
+                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'description'"> ↕</span>
+                  </th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -37,10 +53,19 @@
                   <td class="amount-bold">Rs. {{ item.amount | number:'1.2-2' }}</td>
                   <td>{{ item.date | date:'MMM d, y' }}</td>
                   <td class="note-text">{{ item.description }}</td>
+                  
                   <td>
-                    <button class="btn-edit" (click)="editExpense(item)">✏️</button>
-                    <button class="btn-delete" (click)="deleteExpense(item.id)">🗑️</button>
+                    <ng-container *ngIf="item.addedBy === currentUserEmail">
+                      <button class="btn-edit" (click)="editExpense(item)" title="Edit Expense">✏️</button>
+                      <button class="btn-delete" (click)="deleteExpense(item.id)" title="Delete Expense">🗑️</button>
+                    </ng-container>
+                    
+                    <ng-container *ngIf="item.addedBy !== currentUserEmail">
+                      <button class="btn-edit disabled-action" disabled title="Only the creator can modify this expense">✏️</button>
+                      <button class="btn-delete disabled-action" disabled title="Only the creator can delete this expense">🗑️</button>
+                    </ng-container>
                   </td>
+                  
                 </tr>
                 <tr class="total-row" *ngIf="budget">
                   <td>Total</td>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using SmartJourneyPlanner.API.Models;
@@ -6,6 +7,8 @@ using MimeKit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
+using System.Security.Claims;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -22,6 +25,51 @@ namespace SmartJourneyPlanner.API.Controllers
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
+        }
+
+        [HttpGet("my-trips")]
+        [Authorize] // Requires a valid JWT token in the authorization header pipeline
+        public async Task<IActionResult> GetUserSpecificTrips()
+        {
+            try
+            {
+                // 1. Contextually extract BOTH Identity Claims from the logged-in JWT Token
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+                if (string.IsNullOrEmpty(currentUserId) && string.IsNullOrEmpty(currentUserEmail))
+                {
+                    return Unauthorized(new { message = "Invalid user identity tokens." });
+                }
+
+                // 2. Build defensive filter conditions to catch all structural variations in Atlas
+                var creatorConditions = new List<FilterDefinition<Trip>>();
+
+                // If token contains an email, check CreatedBy, creatorEmail, and the Members sub-document array
+                if (!string.IsNullOrEmpty(currentUserEmail))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq("creatorEmail", currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == currentUserEmail));
+                }
+
+                // If token contains a database ID string, check CreatedBy for ID matches too
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserId));
+                }
+
+                // Combine all conditions using a logical OR statement
+                var combinedFilter = Builders<Trip>.Filter.Or(creatorConditions);
+
+                // 3. Query your Atlas Cluster and return the user-isolated records
+                var isolatedTrips = await _tripsCollection.Find(combinedFilter).ToListAsync();
+                return Ok(isolatedTrips);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error loading secure user trip stream: " + ex.Message });
+            }
         }
 
         // Fetch all trips available in the database
