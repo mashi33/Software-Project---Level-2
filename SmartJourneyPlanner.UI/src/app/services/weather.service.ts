@@ -160,6 +160,80 @@ export class WeatherService {
     });
   }
 
+
+  // =========================
+// GET 3 DAYS BEFORE + AFTER
+// =========================
+getWeatherRange(lat: string, lon: string, selectedDate: string): Observable<any[]> {
+    return new Observable((observer: any) => {
+      const selected = new Date(selectedDate);
+      const promises: any[] = [];
+
+      for (let i = -3; i <= 3; i++) {
+        const newDate = new Date(selected);
+        newDate.setDate(selected.getDate() + i);
+        const formatted = newDate.toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+
+        let request = formatted === today
+          ? this.getCurrentWeather(lat, lon)
+          : formatted < today
+          ? this.getHistoricalWeather(lat, lon, formatted)
+          : this.getForecastWeather(lat, lon, formatted);
+
+        promises.push({ date: formatted, request: request });
+      }
+
+      const results: any[] = [];
+      let completed = 0;
+
+      promises.forEach((item) => {
+        item.request.subscribe({
+          next: (data: any) => {
+            let avgTemp = 0;
+            let humidity = 0;
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (item.date === todayStr) {
+              avgTemp = data.current.temperature_2m;
+              humidity = data.current.relative_humidity_2m;
+            } else {
+              const tempMax = data.daily.temperature_2m_max[0];
+              const tempMin = data.daily.temperature_2m_min[0];
+              humidity = data.daily.relative_humidity_2m_mean[0];
+              avgTemp = (tempMax + tempMin) / 2;
+            }
+
+            let condition = 'Cloudy';
+            let emoji = '☁️';
+
+            if (humidity >= 80) {
+              condition = 'Rainy';
+              emoji = '🌧️';
+            } else if (avgTemp >= 25) {
+              condition = 'Sunny';
+              emoji = '☀️';
+            }
+
+            results.push({
+              date: item.date,
+              avgTemp: avgTemp.toFixed(1),
+              humidity: humidity,
+              condition: condition,
+              emoji: emoji
+            });
+
+            completed++;
+            if (completed === promises.length) {
+              results.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+              observer.next(results);
+              observer.complete();
+            }
+          }
+        });
+      });
+    });
+  }
   // =========================
   // WEATHER SUGGESTIONS
   // =========================
