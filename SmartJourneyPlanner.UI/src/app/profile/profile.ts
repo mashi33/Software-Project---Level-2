@@ -50,4 +50,10 @@ export class ProfileComponent implements OnInit {
       console.warn('User ID not found in localStorage');
     }
   }
+
+ 
+onEditProfile() {
+  console.log('Edit profile clicked!');
+  
+}
 }

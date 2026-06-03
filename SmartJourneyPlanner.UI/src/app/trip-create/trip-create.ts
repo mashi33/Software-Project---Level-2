@@ -3,7 +3,6 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-trip-create',
@@ -23,7 +22,6 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
   constructor(
     private tripService: TripService, // 1. Inject TripService for API calls
-    private authService: AuthService,
     private router: Router,        // 2. Inject Router for navigation
     private route: ActivatedRoute
   ) {
@@ -121,10 +119,13 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
     if (this.tripForm.valid) {
       const token = localStorage.getItem('token');
       let createdBy = '';
+      let creatorEmail = '';
       if (token) {
         try {
           const decoded: any = JSON.parse(atob(token.split('.')[1]));
-          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';// Extract the email address from the decoded token
+          createdBy = decoded['userId'] || '';
+           creatorEmail =
+      decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';// Extract the email address from the decoded token
         } catch (e) {
           console.error("Token decoding failed", e);
         }
@@ -140,7 +141,8 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
-        CreatedBy: createdBy
+        CreatedBy: createdBy,
+        CreatorEmail: creatorEmail
       };
       
       // If we're in edit mode, update the existing trip; otherwise, create a new one. This logic ensures that the same form can be used for both creating and editing trips, providing a seamless user experience.
