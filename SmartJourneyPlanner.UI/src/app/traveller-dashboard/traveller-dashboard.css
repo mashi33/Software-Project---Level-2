@@ -380,7 +380,6 @@
   display: flex;
   gap: 20px;
   margin-bottom: 20px;
-
 }
 
 .stat-box, .trip-list, .map-section {
@@ -893,30 +892,3 @@
 
 /* =========================
    RESPONSIVE
-========================= */
-@media(max-width: 900px){
-
-  .popup-box{
-    width: 95%;
-    height: 92vh;
-  }
-
-  .popup-trip-card{
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-
-  .trip-right{
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .popup-header h2{
-    font-size: 2rem;
-  }
-
-  .trip-info h4{
-    font-size: 1.5rem;
-  }
-}
