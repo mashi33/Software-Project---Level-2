@@ -45,7 +45,7 @@ private STORAGE_KEY = 'weather_search_history';
 
 // Calendar generation states
 currentMonthName: string = '';
-monthDays: Array<{ dayNumber: number | null, emoji: string }> = [];
+monthDays: Array<{ dayNumber: number | null }> = [];
 
 public calendarDays: number[] = [];
   public searchedDayNumber: number | null = null;
@@ -243,7 +243,7 @@ scrollForecast(direction: 'left' | 'right') {
     if (!this.forecastSlider) return;
     
     const slider = this.forecastSlider.nativeElement;
-    const cardWidth = 220; // Step size covering card footprint + gaps
+    const cardWidth = 180; // Step size covering card footprint + gaps
 
     if (direction === 'left') {
       slider.scrollLeft -= cardWidth;
@@ -264,23 +264,18 @@ generateInlineCalendar() {
   const firstDayIndex = new Date(year, month, 1).getDay(); // Day of week index (0 = Sun)
   const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
   
-  const generatedDays = [];
+  // Explicitly typing the array keeps TypeScript completely happy
+  const generatedDays: Array<{ dayNumber: number | null }> = [];
 
   // 1. Fill leading blank spacing blocks for empty weekday offsets
   for (let i = 0; i < firstDayIndex; i++) {
-    generatedDays.push({ dayNumber: null, emoji: '' });
+    generatedDays.push({ dayNumber: null });
   }
 
-  // 2. Populate actual days of the month
-  // Mock condition mapping strategy mimicking your core backend engine values
-  const weatherMockPool = ['☀️', '☁️', '🌧️']; 
+  // 2. Populate actual days of the month without emoji definitions
   for (let day = 1; day <= totalDaysInMonth; day++) {
-    // Generates a stable pseudo-random icon map per day for display simulation
-    const simulatedEmoji = weatherMockPool[(day + month) % weatherMockPool.length];
-    
     generatedDays.push({
-      dayNumber: day,
-      emoji: simulatedEmoji
+      dayNumber: day
     });
   }
 
