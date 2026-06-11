@@ -39,6 +39,16 @@ public async Task<List<TripMemory>> GetPublicMemoriesAsync() =>
         .Find(memory => memory.IsPublic == true)
         .ToListAsync();
 
+        // =========================================================================================
+        // === ADD THIS NEW METHOD HERE ===
+        // =========================================================================================
+        public async Task<int> GetCountByUserIdAsync(string userId)
+        {
+            long count = await _memoriesCollection.CountDocumentsAsync(memory => memory.UserId == userId);
+            return (int)count;
+        }
+        // =========================================================================================
+
         public async Task<bool> DeleteAsync(string id)
            {
               var filter = Builders<TripMemory>.Filter.Eq(memory => memory.Id, id);
