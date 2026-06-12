@@ -1,74 +1,26 @@
-/* Container for the profile card to add vertical spacing */
-.container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
+/* Bootstrap Icons Import */
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css");
 
-/* Custom styling for the profile card */
 .profile-card {
-    border: none;
-    border-radius: 15px; /* Rounded corners for a modern look */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: #ffffff;
 }
 
-/* Subtle hover effect to improve interactivity */
 .profile-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Header section of the profile card */
-.card-header {
-    border-top-left-radius: 15px !important;
-    border-top-right-radius: 15px !important;
-    padding: 1.5rem;
+.icon-box {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Profile image styling with a border effect */
-.img-thumbnail {
-    border: 4px solid #f8f9fa;
-    object-fit: cover; /* Ensures image isn't stretched */
-}
-
-/* Typography for the username */
-h4 {
-    font-weight: 700;
-    color: #2c3e50;
-    margin-top: 10px;
-}
-
-/* Styling for bio and location details */
-.text-start p {
-    margin-bottom: 0.8rem;
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
-
-/* Custom badge styling for interests */
-.badge {
-    padding: 8px 12px;
-    font-weight: 500;
-    border-radius: 8px;
-    letter-spacing: 0.5px;
-}
-
-/* Button styling for a professional appearance */
-.btn-outline-primary {
-    border-width: 2px;
-    font-weight: 600;
-    border-radius: 10px;
-    padding: 10px 25px;
-    transition: all 0.3s ease;
-}
-
-/* Media query for better mobile responsiveness */
-@media (max-width: 576px) {
-    .profile-card {
-        margin: 10px;
-    }
-    
-    .img-thumbnail {
-        width: 120px !important;
-        height: 120px !important;
-    }
+@media (min-width: 768px) {
+  .border-start-md {
+    border-left: 1px solid #dee2e6 !important;
+  }
 }

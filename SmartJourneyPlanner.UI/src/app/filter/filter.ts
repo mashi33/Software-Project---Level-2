@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 import { PlacesService } from '../services/places.service';
 import { environment } from '../../environments/environment'; // environment file එකෙන් key එක ගනී
 import { v4 as uuidv4 } from 'uuid';
@@ -26,19 +27,31 @@ export class FilterComponent implements OnInit, AfterViewInit {
   activeCategory = 'Hotel';
   hasSearched    = false;
 
-  constructor(private placesService: PlacesService) {}
+  constructor(private placesService: PlacesService, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    // Debouncing භාවිතා කර නගරයේ නම වෙනස් වීම නිරීක්ෂණය කිරීම
-    this.searchControl.valueChanges.pipe(
-      debounceTime(500), // තත්පර 0.5ක් පරිශීලකයා නතර වන තෙක් සිටී
-      distinctUntilChanged()
-    ).subscribe(value => {
-      // මෙහිදී Suggestions පෙන්වීමට අවශ්‍ය නම් logic එකක් දැමිය හැක
-      // නමුත් අප autocomplete සක්‍රිය කර ඇති නිසා Google විසින් එය ස්වයංක්‍රීයව කරයි
+    //check url for city query param and perform search if present. 
+    this.route.queryParams.subscribe(params => {
+      const cityFromUrl = params['city']; 
+      
+      if (cityFromUrl) {
+        this.searchControl.setValue(cityFromUrl);
+        setTimeout(() => {
+          this.performSearch(); 
+        }, 1200); 
+      }
     });
 
-    // Filters වෙනස් වූ විට සෙවීම (පළමු වරට සෙවීමෙන් පසු පමණක්)
+    // Debouncing and distinctUntilChanged for search input to reduce API calls and improve performance
+    this.searchControl.valueChanges.pipe(
+      debounceTime(500), 
+      distinctUntilChanged()
+    ).subscribe(value => {
+      
+    });
+
+    // Three filter controls (budget, rating, distance) 
+
     this.budgetControl.valueChanges.subscribe(() => {
       if (this.hasSearched) this.performSearch();
     });
@@ -56,7 +69,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
     this.ensureGoogleMapsLoaded();
   }
 
-  // Environment key එක භාවිතා කර script එක load කිරීම
+  // load script using environment variable and initialize autocomplete after script is loaded
   private ensureGoogleMapsLoaded() {
     if (typeof google !== 'undefined' && google.maps && google.maps.places) {
       this.initAutocomplete();
@@ -75,7 +88,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
     const autocomplete = new google.maps.places.Autocomplete(this.cityInput.nativeElement, {
       types: ['(cities)'],
       componentRestrictions: { country: 'lk' },
-      // Billing ඉතිරි කර ගැනීමට session token එක භාවිතා කිරීම
+      // session tokens are used to group related autocomplete requests for billing purposes and to improve the quality of results
       sessionToken: new google.maps.places.AutocompleteSessionToken()
     });
 
@@ -87,12 +100,12 @@ export class FilterComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // සැබෑ ලෙසම සෙවීම ආරම්භ වන්නේ මෙහිදීය (Search Button Logic)
+  // invoke search function invoke
   performSearch() {
     const cityName = this.searchControl.value?.trim();
     if (!cityName || cityName.length < 3) return;
 
-    this.hasSearched = true; // Button එක එබූ බව තහවුරු කරයි
+    this.hasSearched = true; 
 
     const filters = {
       category:    this.activeCategory,
@@ -101,13 +114,13 @@ export class FilterComponent implements OnInit, AfterViewInit {
       maxDistance: this.distanceControl.value || null
     };
 
-    // Session token එක සමඟ දත්ත ලබා ගැනීම
+    // fetch places with filters and session token for better results
     this.placesService.fetchPlacesByCity(cityName, filters, this.sessionToken);
   }
 
   changeCategory(cat: string) {
     this.activeCategory = cat;
-    this.sessionToken = uuidv4(); // අලුත් සෙවුමකට අලුත් token එකක්
+    this.sessionToken = uuidv4(); //new session token for new category to improve results
     if (this.hasSearched) this.performSearch();
   }
 }

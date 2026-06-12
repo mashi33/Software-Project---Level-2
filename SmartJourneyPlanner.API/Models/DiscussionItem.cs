@@ -6,9 +6,9 @@ using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.Models
 {
-    /// <summary>
-    /// Represents a discussion or voting thread within a specific trip.
-    /// </summary>
+    
+    // Represents a discussion or voting thread within a specific trip.
+    
     [BsonIgnoreExtraElements]
     public class DiscussionItem
     {
@@ -68,9 +68,8 @@ namespace SmartJourneyPlanner.Models
         public List<CommentItem>? Comments { get; set; } = new List<CommentItem>();
     }
 
-    /// <summary>
+
     /// Represents an individual choice in a vote and its current tally.
-    /// </summary>
     public class VoteOption
     {
         [JsonPropertyName("optionText")]
@@ -80,9 +79,7 @@ namespace SmartJourneyPlanner.Models
         public int VoteCount { get; set; } = 0;
     }
 
-    /// <summary>
     /// Tracks which specific option a user has selected.
-    /// </summary>
     public class UserVoteRecord
     {
         [JsonPropertyName("userId")]

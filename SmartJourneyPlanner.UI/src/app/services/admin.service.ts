@@ -8,12 +8,11 @@ import { environment } from '../../environments/environment.development';
 })
 export class AdminService {
   private http = inject(HttpClient);
-  private baseUrl = environment.apiUrl; 
+  private baseUrl = environment.apiUrl;
 
   constructor() { }
 
-  // --- 🚐 Transport Provider Methods ---
-
+  // --- Provider Methods ---
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -27,23 +26,21 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // --- 👥 User Management Methods ---
-
+  // --- User Management Methods ---
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
 
-  /**
-   * ✅ FINAL FIX: We send a "Quoted String". 
-   * .NET's [FromBody] string expects exactly "Admin" (with the quotes).
-   */
   updateUserRole(userId: string, newRole: string): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    
-    // Crucial: JSON.stringify turns Admin -> "Admin"
-    const body = JSON.stringify(newRole); 
-
+    const body = JSON.stringify(newRole);
     return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
+  }
+
+  // Added this specifically for the block button
+  toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });
   }
 
   deleteUser(userId: string): Observable<any> {

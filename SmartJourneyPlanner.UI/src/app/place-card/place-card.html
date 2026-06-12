@@ -1,10 +1,5 @@
 <div class="card-container">
 
-  <!-- Toast Message -->
-  <div class="toast" [class.show]="toastVisible">
-    {{ toastMessage }}
-  </div>
-
   <ng-container *ngIf="places !== null">
     <div *ngFor="let place of places"
       [id]="'card-' + place.id"
@@ -44,49 +39,5 @@
       No places found. Try a different search or category.
     </div>
   </ng-container>
-
-  <!--
-    FLICKERING FIX:
-    - Removed (click)="closeModal()" from overlay div completely.
-    - Previously, clicking anywhere on overlay triggered closeModal() then
-      Angular re-rendered → caused visible flicker on every interaction.
-    - Now only the ✕ button closes the modal (controlled, no flicker).
-    - (click)="$event.stopPropagation()" on modal-box prevents any
-      accidental event bubbling issues.
-  -->
-  <div class="modal-overlay" *ngIf="showTripModal">
-    <div class="modal-box" (click)="$event.stopPropagation()">
-
-      <div class="modal-header">
-        <h3>Select a Trip</h3>
-        <!-- Only X button closes the modal -->
-        <button class="modal-close" (click)="closeModal()">✕</button>
-      </div>
-
-      <!-- Loading state while fetching user trips -->
-      <div *ngIf="isLoadingTrips" class="modal-loading">
-        Loading your trips...
-      </div>
-
-      <!-- No trips found message -->
-      <div *ngIf="!isLoadingTrips && userTrips.length === 0" class="modal-empty">
-        No trips found. Create a trip first!
-      </div>
-
-      <!-- Trip list: user clicks a trip to add the place -->
-      <div *ngIf="!isLoadingTrips && userTrips.length > 0" class="trip-list">
-        <div *ngFor="let trip of userTrips"
-          class="trip-item"
-          (click)="selectTrip(trip)">
-          <div class="trip-name">{{ trip.tripName }}</div>
-          <div class="trip-meta">
-            📍 {{ trip.destination }} &nbsp;|&nbsp;
-            🗓️ {{ trip.startDate | date:'MMM d' }} – {{ trip.endDate | date:'MMM d, y' }}
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
 </div>

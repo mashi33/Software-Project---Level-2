@@ -1,0 +1,449 @@
+<div class="dashboard-container">
+  
+  <aside class="sidebar">
+    <nav>
+      <ul>
+        <li><a class="nav-link" routerLink="/home" routerLinkActive="active">Home</a></li>
+        <li><a class="nav-link" routerLink="/profile" routerLinkActive="active">Profile</a></li>
+        <li><a class="nav-link" routerLink="/trip-summary" routerLinkActive="active">Trip Summary</a></li>
+        <li><a class="nav-link" routerLink="/groupChat" routerLinkActive="active">Group Chat</a></li>
+        <li><a class="nav-link" routerLink="/timeline" routerLinkActive="active">Timeline</a></li>
+        <li><a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a></li>
+        <li><a class="nav-link" routerLink="/achievements" routerLinkActive="active">Achievements</a></li>
+        <li><a class="nav-link" routerLink="/weather" routerLinkActive="active">Weather</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <h1>Traveller Dashboard</h1>
+    <h5>Welcome, {{ userName }}!</h5>
+
+    <section class="weather-card" *ngIf="nextTrip">
+      <div class="weather-card-inner">
+        <div class="weather-left-panel">
+      <div class="weather-icon-box">
+        <span *ngIf="weather?.condition === 'Rainy'">🌧️</span>
+        <span *ngIf="weather?.condition === 'Sunny'">☀️</span>
+        <span *ngIf="weather?.condition === 'Cloudy'">☁️</span>
+        <span *ngIf="!weather?.condition">🌤️</span>
+      </div>
+      <h4 class="mostly-condition">Mostly {{ weather?.condition }}</h4>
+    </div>
+
+    <div class="weather-info">
+      <h3 class="trip-title">Next Trip: {{ nextTrip.tripName }}</h3>
+      <p class="destination"><i class="bi bi-geo-alt-fill me-2 text-danger"></i> {{ nextTrip.destination }}</p>
+      <p class="date">📅 {{ nextTrip.startDate | date }}</p>
+    </div>
+
+    <div class="weather-right-panel">
+      <span class="weather-countdown">🕒 {{ daysLeft }} days left to trip</span>
+      
+      <div class="weather-stats">
+        <div class="stat">
+          <span class="label">Average Temperature</span>
+          <span class="value">{{ weather?.avgTemp }}°C</span>
+        </div>
+        <div class="stat">
+          <span class="label">Humidity</span>
+          <span class="value">{{ weather?.humidity }}%</span>
+        </div>
+        <div class="stat">
+          <span class="label">Condition</span>
+          <span class="value">{{ weather?.condition }}</span>
+        </div>
+      </div>
+
+      <button class="weather-btn" (click)="navigateToWeather()">
+        View Weather
+      </button>
+    </div>
+
+  </div>
+</section>
+    <div class="dashboard-grid">
+      <div class="left-col">
+        
+        <div class="stats-row">
+          
+          <div class="stat-box" (click)="toggleList('ongoing')" style="cursor: pointer;">
+            <p>Total Ongoing Trips</p>
+            <h2>{{ ongoingTripsCount }}</h2>
+          </div>
+
+          <div class="stat-box" (click)="toggleList('upcoming')" style="cursor: pointer;">
+            <p>Total Upcoming Trips</p>
+            <h2>{{ upcomingTripsCount }}</h2>
+            <p class="sub-text">Planned Trips</p>
+          </div>
+
+          <div class="stat-box" (click)="toggleList('completed')" style="cursor: pointer;">
+            <p>Total Completed Trips</p>
+            <h2>{{ completedTripsCount }}</h2>
+          </div>
+
+        </div>
+
+        <div class="stats-row">
+
+          <div class="trip-list" *ngIf="showOngoingList">
+            <h3>Ongoing Trip List</h3>
+            <ol>
+              <li *ngFor="let trip of visibleOngoingTrips" class="trip-card" (click)="openTripSummary(trip.id || trip.Id)">
+                <h5>{{ trip.tripName }}</h5>
+                <p>Destination: {{ trip.destination }}</p>
+              </li>
+            </ol>
+            <div class="see-more-container">
+              <button *ngIf="ongoingTrips.length > 3" class="see-more-btn" (click)="openOngoingPopup(); $event.stopPropagation()">
+                See More
+              </button>
+            </div>
+          </div>
+
+          <div class="trip-list" *ngIf="showUpcomingList">
+            <h3>Upcoming Trip List</h3>
+            <ol>
+              <li *ngFor="let trip of visibleUpcomingTrips" class="trip-card" (click)="openTripSummary(trip.id || trip.Id)">
+                <h5>{{ trip.tripName }}</h5>
+                <p>Destination: {{ trip.destination }}</p>
+              </li>
+            </ol>
+            <div class="see-more-container">
+              <button *ngIf="upcomingTrips.length > 3" class="see-more-btn" (click)="openUpcomingPopup(); $event.stopPropagation()">
+                See More
+              </button>
+            </div>
+          </div>
+
+          <div class="trip-list" *ngIf="showCompletedList">
+            <h3>Completed Trip List</h3>
+            <ol>
+              <li *ngFor="let trip of visibleCompletedTrips" class="trip-card" (click)="openTripSummary(trip.id || trip.Id)">
+                <h5>{{ trip.tripName }}</h5>
+                <p>Destination: {{ trip.destination }}</p>
+              </li>
+            </ol>
+            <div class="see-more-container">
+              <button *ngIf="completedTrips.length > 3" class="see-more-btn" (click)="openCompletedPopup(); $event.stopPropagation()">
+                See More
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="map-section">
+        <div class="map-container">
+          <img src="memory.png" alt="Sri Lanka Map" (click)="navigateToMemories()">
+        </div>
+        <button class="btn-primary" (click)="navigateToMemories()">View All Memories</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+
+<!-- =========================
+     ONGOING TRIPS POPUP
+========================= -->
+<div class="popup-overlay" *ngIf="showOngoingPopup">
+
+  <div class="popup-box">
+
+    <!-- HEADER -->
+    <div class="popup-header ongoing-header">
+
+      <div class="header-left">
+
+        <div class="header-icon">
+          ✈️
+        </div>
+
+        <div>
+          <h2>All Ongoing Trips</h2>
+          <p>Currently active journeys and adventures.</p>
+        </div>
+
+      </div>
+
+      <button class="close-btn" (click)="closeOngoingPopup()">
+        ✕
+      </button>
+
+    </div>
+
+    <!-- CONTENT -->
+    <div class="popup-content">
+
+      <div
+        *ngFor="let trip of ongoingTrips"
+        class="popup-trip-card"
+        (click)="openTripSummary(trip.id || trip.Id)"
+      >
+
+        <!-- LEFT -->
+        <div class="trip-left">
+
+          <div class="trip-image blue-bg">
+            🌍
+          </div>
+
+          <div class="trip-info">
+
+            <h4>{{ trip.tripName }}</h4>
+
+            <p class="trip-location"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>
+               {{ trip.destination }}
+            </p>
+
+            <span class="trip-tag ongoing-tag">
+              ✈ Ongoing Trip
+            </span>
+
+          </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="trip-right">
+
+          <div class="date-icon">
+            📅
+          </div>
+
+          <div class="date-info">
+            <h5>{{ trip.startDate | date:'MMM d, y' }}</h5>
+            <span>{{ trip.startDate | date:'EEEE' }}</span>
+          </div>
+
+          <button class="arrow-btn">
+            ➜
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="popup-footer">
+
+      <div class="footer-left">
+        📌 Showing all ongoing trips
+      </div>
+
+      <button class="calendar-btn">
+        📆 View Calendar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     UPCOMING TRIPS POPUP
+========================= -->
+<div class="popup-overlay" *ngIf="showUpcomingPopup">
+
+  <div class="popup-box">
+
+    <!-- HEADER -->
+    <div class="popup-header upcoming-header">
+
+      <div class="header-left">
+
+        <div class="header-icon">
+          🧳
+        </div>
+
+        <div>
+          <h2>All Upcoming Trips</h2>
+          <p>Here are all your upcoming trips.</p>
+        </div>
+
+      </div>
+
+      <button class="close-btn" (click)="closeUpcomingPopup()">
+        ✕
+      </button>
+
+    </div>
+
+    <!-- CONTENT -->
+    <div class="popup-content">
+
+      <div
+        *ngFor="let trip of upcomingTrips"
+        class="popup-trip-card"
+        (click)="openTripSummary(trip.id || trip.Id)"
+      >
+
+        <!-- LEFT -->
+        <div class="trip-left">
+
+          <div class="trip-image blue-bg">
+            <i class="bi bi-geo-alt-fill me-2 text-danger"></i>
+          </div>
+
+          <div class="trip-info">
+
+            <h4>{{ trip.tripName }}</h4>
+
+            <p class="trip-location">
+              <i class="bi bi-geo-alt-fill me-2 text-danger"></i> {{ trip.destination }}
+            </p>
+
+            <span class="trip-tag solo-tag">
+              👥 Solo Trip
+            </span>
+
+          </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="trip-right">
+
+          <div class="date-icon">
+            📅
+          </div>
+
+          <div class="date-info">
+            <h5>{{ trip.startDate | date:'MMM d, y' }}</h5>
+            <span>{{ trip.startDate | date:'EEEE' }}</span>
+          </div>
+
+          <button class="arrow-btn">
+            ➜
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="popup-footer">
+
+      <div class="footer-left">
+        📌 Showing all upcoming trips
+      </div>
+
+      <button class="calendar-btn">
+        📆 View Calendar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     COMPLETED TRIPS POPUP
+========================= -->
+<div class="popup-overlay" *ngIf="showCompletedPopup">
+
+  <div class="popup-box">
+
+    <!-- HEADER -->
+    <div class="popup-header completed-header">
+
+      <div class="header-left">
+
+        <div class="header-icon">
+          ✅
+        </div>
+
+        <div>
+          <h2>All Completed Trips</h2>
+          <p>Trips you successfully completed.</p>
+        </div>
+
+      </div>
+
+      <button class="close-btn" (click)="closeCompletedPopup()">
+        ✕
+      </button>
+
+    </div>
+
+    <!-- CONTENT -->
+    <div class="popup-content">
+
+      <div
+        *ngFor="let trip of completedTrips"
+        class="popup-trip-card"
+        (click)="openTripSummary(trip.id || trip.Id)"
+      >
+
+        <!-- LEFT -->
+        <div class="trip-left">
+
+          <div class="trip-image green-bg">
+            🏖️
+          </div>
+
+          <div class="trip-info">
+
+            <h4>{{ trip.tripName }}</h4>
+
+            <p class="trip-location">
+              <i class="bi bi-geo-alt-fill me-2 text-danger"></i> {{ trip.destination }}
+            </p>
+
+            <span class="trip-tag completed-tag">
+              ✔ Completed
+            </span>
+
+          </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="trip-right">
+
+          <div class="date-icon">
+            📅
+          </div>
+
+          <div class="date-info">
+            <h5>{{ trip.endDate | date:'MMM d, y' }}</h5>
+            <span>{{ trip.endDate | date:'EEEE' }}</span>
+          </div>
+
+          <button class="arrow-btn">
+            ➜
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="popup-footer">
+
+      <div class="footer-left">
+        📌 Showing all completed trips
+      </div>
+
+      <button class="calendar-btn">
+        📆 View Calendar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

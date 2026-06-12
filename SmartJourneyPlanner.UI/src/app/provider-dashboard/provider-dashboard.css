@@ -1,11 +1,10 @@
-h2,p {
-    margin-left:15px;
-    margin-top:10px;
+.dashboard-container{
+    padding-top:20px;
+    padding-bottom:20px;
 }
 
-h4 {
+h2,p {
     margin-left:15px;
-    margin-top:10px;
 }
 
 .stats-row { 
@@ -24,31 +23,6 @@ h4 {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.header-row {
-     display: flex; 
-     justify-content: space-between; 
-     align-items: center;
-}
-
-.item-card {
-    border: 1px solid #eee;
-    padding: 10px;
-    margin: 10px 0;
-    display: flex; 
-    justify-content: space-between;
-    align-items: center; 
-}
-
-.btn-add { 
-    background: #007bff;
-    color: white; 
-    padding: 10px;
-    text-decoration: none;
-    border-radius: 5px;
-    margin-top: 10px; 
-    margin-right: 15px; 
-}
-
 .fleet{
     margin: 20px 0;
     border: 1px solid #ccc;
@@ -61,8 +35,37 @@ h4 {
     margin:20px;
 }
 
+.header-row {
+     display: flex; 
+     justify-content: space-between; 
+     align-items: center;
+}
+
+h4 {
+    margin-left:15px;
+    margin-top:10px;
+}
+
+.btn-add { 
+    background: #007bff;
+    color: white; 
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px; 
+    margin-right: 15px; 
+}
+
+.item-card {
+    border: 1px solid #eee;
+    padding: 10px;
+    margin: 10px 0;
+    display: flex; 
+    justify-content: space-between;
+    align-items: center; 
+}
+
 .bookings{
-    margin: 20px 0;
     border: 1px solid #ccc;
     border-radius: 8px;
     flex:1;
@@ -77,4 +80,97 @@ h4 {
 cursor: pointer;  
 color: #104276; 
 text-decoration: none;
+}
+
+.no-bookings-alert {
+  padding: 15px 20px;
+  background-color: #e7f3ff;   
+  color: #0c5460;              
+  border: 1px solid #b8daff;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.booking-card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  margin-left: 15px;
+  margin-right:15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.booking-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.booking-card-body {
+  padding: 18px;
+}
+
+.booking-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.accept-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #28a745, #34d058);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.accept-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.reject-btn {
+  padding: 8px 14px;
+  background: transparent;
+  color: #e53935;
+  border: 1.5px solid #e53935;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reject-btn:hover {
+  background-color: #e53935;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.complete-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #007bff, #4da3ff);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.complete-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }

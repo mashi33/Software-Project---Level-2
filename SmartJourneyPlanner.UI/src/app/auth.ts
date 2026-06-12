@@ -7,7 +7,6 @@ import { Observable } from 'rxjs';
 })
 export class AuthService {
   
-  //.NET backend url
   private baseUrl = 'http://localhost:5233/api/Auth';
 
   constructor(private http: HttpClient) { }
@@ -17,7 +16,6 @@ export class AuthService {
   }
 
   signup(userData: any) {
-  // Backend API url
   return this.http.post(`${this.baseUrl}/register`, userData);
 }
 }
