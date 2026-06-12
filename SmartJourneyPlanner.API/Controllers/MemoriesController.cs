@@ -81,20 +81,6 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
         return NoContent();
     }
 
-    // GET USER'S PRIVATE MEMORIES
-[HttpGet("user/{userId}")]
-public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
-{
-    try
-    {
-        var memories = await _memoryService.GetByUserIdAsync(userId);
-        return Ok(memories);
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, ex.Message);
-    }
-}
 
 // =========================================================================================
 // === ADD THIS NEW COUNT ROUTE HERE ===
