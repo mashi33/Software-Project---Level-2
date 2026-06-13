@@ -20,6 +20,9 @@ import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
+import { HelpComponent } from './help/help';
+import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+
 
 export const routes: Routes = [
   // Default Route
@@ -41,6 +44,8 @@ export const routes: Routes = [
   { path: 'traveller-dashboard', component: TravelerDashboardComponent },
   { path: 'booking-details/:id', component: MyBookings },
   { path: 'traveller-dashboard', component: TravelerDashboardComponent },
+  { path: 'help', component: HelpComponent },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent},
 
   // Team 43 Shared Modules
   { path: 'groupChat', component: DiscussionComponent },
