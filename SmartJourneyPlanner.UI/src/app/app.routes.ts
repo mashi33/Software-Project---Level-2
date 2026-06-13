@@ -20,61 +20,68 @@ import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
+import { VerifyEmailComponent } from './verify-email/verify-email';
+import { authGuard } from './guards/auth-guard';
+import { roleGuard } from './guards/role-guard';
 
 export const routes: Routes = [
-  // Default Route
+  //  PUBLIC ROUTES 
   { path: '', redirectTo: '/login', pathMatch: 'full' },
-  
-  // Auth Routes
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
+  { path: 'verify-email', component: VerifyEmailComponent },
 
-  // Budget & Expense Routes
-  { path: 'budget', component: BudgetDashboard },
-  { path: 'add-expense', component: ExpenseForm },
+  //  PROTECTED ROUTES 
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
+  { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
+  { path: 'memories', component: MemoriesMapComponent, canActivate: [authGuard] },
+  { path: 'community', component: CommunityMapComponent, canActivate: [authGuard] },
+  { path: 'weather', component: WeatherSuggestionComponent, canActivate: [authGuard] },
+  { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
+  { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
+  { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
+  
+  
+  { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
+  { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
+  { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
+  { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
 
-  // 4. Map, Weather & Transport Provider Routes
-  { path: 'memories', component: MemoriesMapComponent },
-  { path: 'community', component: CommunityMapComponent },
-  { path: 'weather', component: WeatherSuggestionComponent },
-  { path: 'provider-dashboard', component: ProviderDashboardComponent },
-  { path: 'traveller-dashboard', component: TravelerDashboardComponent },
-  { path: 'booking-details/:id', component: MyBookings },
-  { path: 'traveller-dashboard', component: TravelerDashboardComponent },
-
-  // Team 43 Shared Modules
-  { path: 'groupChat', component: DiscussionComponent },
+  
   { 
     path: 'explore', 
+    canActivate: [authGuard],
     children: [
       { path: '', component: ExploreWelcome },
       { path: 'route-optimization', component: RouteOptimization },
       { path: 'hotel-restaurant-finder', component: HotelRestaurantFinder }
     ]
   },
-  { path: 'timeline', component: TripTimelineComponent },
 
-  // Admin Control Center
-  { 
-    path: 'admin-dashboard', 
-    component: AdminDashboardComponent 
-  },
-
-  // Transport & Vehicle Routes
-  { path: 'transport', component: TransportProvider },
+  { path: 'transport', component: TransportProvider, canActivate: [authGuard] },
+  { path: 'register-vehicle', component: RegisterVehicleComponent, canActivate: [authGuard] },
   { 
     path: 'vehicle/:id', 
+    canActivate: [authGuard],
     loadComponent: () => import('./transport-provider/vehicle-detail/vehicle-detail')
       .then(m => m.VehicleDetailComponent) 
   },
-  { path: 'register-vehicle', component: RegisterVehicleComponent },
 
-  // Trip creation and invite
-  { path: 'createTrip', component: TripCreateComponent },
-  { path: 'editTrip/:id', component: TripCreateComponent },
-  { path: 'trip-summary/:id', component: TripSummaryComponent },
-  { path: 'trip-summary', component: TripSummaryComponent },
-  
-  // User Profile
-  { path: 'profile', component: ProfileComponent }
+  // Admin Control Center
+  { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
+
+  // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
+  { 
+    path: 'provider-dashboard', 
+    component: ProviderDashboardComponent, 
+    canActivate: [authGuard, roleGuard],
+    data: { expectedRoles: ['Provider', 'TransportProvider'] } 
+  },
+  { 
+    path: 'traveller-dashboard', 
+    component: TravelerDashboardComponent, 
+    canActivate: [authGuard, roleGuard],
+    data: { expectedRoles: ['Traveller', 'Traveler'] } 
+  }
 ];

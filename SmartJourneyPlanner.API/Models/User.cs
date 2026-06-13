@@ -38,7 +38,18 @@ namespace SmartJourneyPlanner.API.Models
 
         public bool IsBlocked { get; set; } = false;
 
-        // --- Vehicle Details (Optional for Providers) ---
+        // [EMAIL VERIFICATION PROPERTIES]
+        [BsonElement("IsVerified")]
+        public bool IsVerified { get; set; } = false;
+
+        [BsonElement("VerificationToken")]
+        public string? VerificationToken { get; set; }
+
+        [BsonElement("TokenExpiry")]
+        public DateTime? TokenExpiry { get; set; }
+
+        // 🚚 [VEHICLE DETAILS - OPTIONAL FOR PROVIDERS]
+        
         [BsonIgnoreIfNull]
         public string? RegistrationNumber { get; set; }
         
@@ -55,5 +66,5 @@ namespace SmartJourneyPlanner.API.Models
         public string? NicUrl { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
+    } 
 }

@@ -27,64 +27,63 @@ export class AuthService {
 
   // --- TOKEN & ROLE MANAGEMENT ---
 
-  saveToken(token: string): void {
+  // Get the token from localStorage, decode it, and extract user information to store in localStorage for easy access across the app
+  saveToken(token: string, backendUserType?: string): void {
     localStorage.setItem('token', token);
 
     try {
       const decoded: any = jwtDecode(token);
 
-      // 1. Capture the role specifically (Handles standard .NET claims)
-      const role = decoded['role'] || 
-                   decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                   '';
-      localStorage.setItem('userRole', role);
+      //Get the user type from the backend response if provided, otherwise decode it from the token or fallback to 'Traveler'
+      const finalUserType = backendUserType || decoded['UserType'] || decoded['userType'] || 'Traveler';
+      localStorage.setItem('userType', finalUserType); 
 
-      // 2. Extract User ID
-      const userId = decoded['sub'] || 
-                     decoded['userId'] ||
-                     decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
-                     '';
+      // roll inside the  trip
+      const tripRole = decoded['role'] || decoded['tripRole'] || '';
+      localStorage.setItem('tripRole', tripRole); 
+
+      // 3. save user id
+      const userId = decoded['sub'] || decoded['userId'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '';
       localStorage.setItem('userId', userId);
 
-      // 3. Extract User Name
-      const userName = decoded['name'] || 
-                       decoded['userName'] ||
-                       decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 
-                       '';
+      // 4. Save User Name 
+      const userName = decoded['name'] || decoded['userName'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || '';
       localStorage.setItem('userName', userName);
       this.userNameSubject.next(userName);
 
-      const email =
-  decoded['email'] ||
-  decoded['unique_name'] ||
-  decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
-  '';
-
-localStorage.setItem('email', email);
-
-
+      // 5. Save Email 
+      const email = decoded['email'] || decoded['unique_name'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
+      localStorage.setItem('email', email);
 
     } catch (error) {
       console.error('Token decode failed:', error);
     }
   }
+  // Method to retrieve the user system type (e.g., Traveler, Provider) from localStorage, defaulting to 'Traveler' if not found
+  getUserSystemType(): string {
+    return localStorage.getItem('userType') || 'Traveler';
+  }
   
+  // Method to retrieve the user role within a trip (e.g., viewer, editor) from localStorage, defaulting to 'viewer' if not found
   getToken(): string | null {
     return localStorage.getItem('token');
   }
-
+  
+  // Method to check if the user is currently logged in by verifying the presence of a valid token in localStorage
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
-
+  
+  // Method to retrieve the user identifier from localStorage, which can be used for session management and API calls
   getUserId(): string | null {
       return localStorage.getItem('userId');
     }
   
+    // Method to retrieve the user's display name from localStorage, which can be used for personalization across the app
   getUserName(): string | null {
     return localStorage.getItem('userName');
   }
-
+  // Method to retrieve the user's email address from localStorage, which can be used for profile display and communication purposes
   getUserEmail(): string | null {
     const token = this.getToken();
     if (!token) return null;
@@ -101,7 +100,8 @@ localStorage.setItem('email', email);
       return localStorage.getItem('email');
     }
   }
-
+  
+  // Method to retrieve the user's role within a trip from the token or localStorage, providing a fallback to 'User' if not found
   getUserRole(): string {
     const token = this.getToken();
     if (!token) return 'Guest'; 
@@ -118,6 +118,7 @@ localStorage.setItem('email', email);
     }
   }
   
+  // Method to clear all authentication-related data from localStorage, effectively logging the user out of the application
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');

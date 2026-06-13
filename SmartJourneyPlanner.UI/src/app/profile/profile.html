@@ -1,85 +1,263 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-9">
-      
-      <div class="card profile-card shadow-lg border-0 rounded-4 overflow-hidden" *ngIf="user">
-        
-        <div class="cover-photo position-relative" style="height: 160px; background: linear-gradient(135deg, #007bff, #00c6ff);">
-          <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-3 rounded-pill shadow-sm" (click)="onEditProfile()">
-            <i class="bi bi-pencil-square"></i> Edit Profile
-          </button>
+<div class="profile-card">
+
+  <div class="cover-photo">
+    <button class="edit-btn" (click)="onEditProfile()">
+      <i class="bi bi-pencil-square"></i>
+      Edit Profile
+    </button>
+  </div>
+
+  <div class="profile-content">
+
+    <div class="left-panel">
+      <img *ngIf="user?.profilePictureUrl" 
+           [src]="user?.profilePictureUrl" 
+           [alt]="user?.fullName || 'User'" 
+           class="profile-image" />
+
+      <div *ngIf="!user?.profilePictureUrl" 
+           class="profile-image default-avatar-initial" 
+           style="width: 150px; height: 150px; border-radius: 50%; background-color: #a0aec0; color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 600; margin: 0 auto 15px auto; text-transform: uppercase; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        {{ (user?.fullName || 'T').charAt(0) }}
+      </div>
+
+      <h2>{{ user?.fullName || user?.username }}</h2>
+
+      <p class="email">
+        <i class="bi bi-envelope"></i>
+        {{ user?.email }}
+      </p>
+
+      <span class="traveller-badge" [class.provider-badge]="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+        {{ (user?.role === 'Provider' || user?.role === 'TransportProvider') ? '🚐 Transport Provider' : '✈ Traveller' }}
+      </span>
+
+      <hr>
+
+      <div class="stats-container">
+        <ng-container *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+          <div class="stat-card">
+            <i class="bi bi-briefcase"></i>
+            <h3>12</h3>
+            <span>Trips</span>
+          </div>
+
+          <div class="stat-card">
+            <i class="bi bi-camera"></i>
+            <h3>32</h3>
+            <span>Memories</span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+          <div class="stat-card">
+            <i class="bi bi-car-front-fill text-primary"></i>
+            <h3>3</h3>
+            <span>Vehicles</span>
+          </div>
+
+          <div class="stat-card">
+            <i class="bi bi-calendar-check text-success"></i>
+            <h3>24</h3>
+            <span>Bookings</span>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="section-card">
+        <h4>
+          <i class="bi bi-person-vcard"></i>
+          About Me
+        </h4>
+        <div class="about-box">
+          {{ user?.bio || 'Hey there! I am using Smart Journey Planner.' }}
         </div>
+      </div>
 
-        <div class="card-body position-relative pt-0">
-          <div class="row px-4">
-            
-            <div class="col-md-4 text-center d-flex flex-column align-items-center" style="margin-top: -75px;">
-              <img [src]="user.profilePictureUrl || 'https://api.dicebear.com/7.x/adventurer/svg?seed=' + (user.fullName || 'Traveler')" 
-                   class="rounded-circle border border-4 border-white shadow-sm mb-3" 
-                   style="width: 140px; height: 140px; object-fit: cover; background: #fff;">
-              
-              <h4 class="fw-bold mb-0 text-dark">{{ user.fullName || user.username }}</h4>
-              <p class="text-muted small mb-2"><i class="bi bi-envelope"></i> {{ user.email }}</p>
-              <span class="badge bg-primary rounded-pill px-3 py-2 text-uppercase fs-7 shadow-sm">
-                {{ user.userType || 'Traveler' }}
-              </span>
-            </div>
-
-            <div class="col-md-8 pt-4 pb-3 border-start-md">
-              <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-vcard"></i> About Me</h5>
-              <p class="text-secondary bg-light p-3 rounded-3 border-start border-3 border-primary">
-                {{ user.bio || 'Hey there! I am using Smart Journey Planner to explore the world.' }}
-              </p>
-
-              <div class="row mt-4">
-                <div class="col-sm-6 mb-3">
-                  <div class="d-flex align-items-center bg-light p-2 rounded-3">
-                    <div class="icon-box bg-white text-primary p-2 rounded-2 me-3 shadow-sm">
-                      <i class="bi bi-geo-alt-fill"></i>
-                    </div>
-                    <div>
-                      <small class="text-muted d-block">Location</small>
-                      <strong class="text-dark">{{ user.location || 'Not specified' }}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-sm-6 mb-3">
-                  <div class="d-flex align-items-center bg-light p-2 rounded-3">
-                    <div class="icon-box bg-white text-success p-2 rounded-2 me-3 shadow-sm">
-                      <i class="bi bi-compass-fill"></i>
-                    </div>
-                    <div>
-                      <small class="text-muted d-block">Status</small>
-                      <strong class="text-dark">Active Account</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-3">
-                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-heart-fill text-danger"></i> Travel Interests</h6>
-                <div class="d-flex flex-wrap gap-2" *ngIf="user.interests && user.interests.length > 0">
-                  <span *ngFor="let interest of user.interests" class="badge bg-info text-dark rounded-pill px-3 py-2 shadow-sm">
-                    # {{ interest }}
-                  </span>
-                </div>
-                <div *ngIf="!user.interests || user.interests.length === 0" class="text-muted small">
-                  No interests added yet. Click edit to add yours!
-                </div>
-              </div>
-
-            </div>
+      <div class="info-row">
+        <div class="info-card">
+          <div class="icon-circle location">
+            <i class="bi bi-geo-alt-fill"></i>
+          </div>
+          <div>
+            <small>Location</small>
+            <h6>{{ user?.location || 'Not specified' }}</h6>
           </div>
         </div>
 
+        <div class="info-card">
+          <ng-container *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+            <div class="icon-circle status" style="background-color: #e0f2fe; color: #0284c7;">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+              <small>Status</small>
+              <h6 style="color: #0284c7; font-weight: 600;">Active Account</h6>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+            <div class="icon-circle status" style="background-color: #fffbeb; color: #f59e0b;">
+              <i class="bi bi-star-fill"></i>
+            </div>
+            <div>
+              <small>Average Rating</small>
+              <h6 style="color: #b45309; font-weight: 600;">⭐ 4.8 / 5.0</h6>
+            </div>
+          </ng-container>
+        </div>
       </div>
 
-      <div class="card shadow border-0 rounded-4 p-5 text-center" *ngIf="!user">
-        <div class="spinner-border text-primary mb-3" role="status"></div>
-        <p class="text-muted fw-bold">Loading your adventure profile...</p>
+      <div class="section-card" *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+        <h4>
+          <i class="bi bi-heart-fill text-danger"></i>
+          Travel Interests
+        </h4>
+        <div *ngIf="user?.interests?.length">
+          <span *ngFor="let interest of user?.interests" class="interest-chip">
+            {{ interest }}
+          </span>
+        </div>
+        <div *ngIf="!user?.interests?.length">
+          No interests added yet. Click edit to add yours!
+        </div>
+      </div>
+
+      <div class="section-card" *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+        <h4>
+          <i class="bi bi-truck text-primary"></i>
+          Vehicles & Fleet Services
+        </h4>
+        <div *ngIf="user?.interests?.length">
+          <span *ngFor="let vehicle of user?.interests" class="interest-chip" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+            🚗 {{ vehicle }}
+          </span>
+        </div>
+        <div *ngIf="!user?.interests?.length">
+          No vehicles added yet. Click edit to add your fleet!
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div> 
+
+<div class="custom-modal-overlay" *ngIf="isEditMode">
+  <div class="custom-modal-content">
+    
+    <button type="button" class="modal-close-btn" (click)="onCancel()">×</button>
+    
+    <div class="modal-header">
+      <h2>Edit profile</h2>
+    </div>
+
+    <div class="modal-body">
+      
+      <div *ngIf="user" class="avatar-preview mx-auto mb-4 d-flex align-items-center justify-content-center bg-secondary text-white rounded-circle position-relative" 
+           style="width: 90px; height: 90px; font-size: 2.2rem; font-weight: 600; background-color: #a0aec0 !important;">
+
+        <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 50%;">
+          <img *ngIf="editData.profilePictureUrl || user?.profilePictureUrl" 
+               [src]="editData.profilePictureUrl || user?.profilePictureUrl" 
+               alt="Profile Preview" 
+               style="width: 100%; height: 100%; object-fit: cover;" />
+
+          <span *ngIf="!editData.profilePictureUrl && !user?.profilePictureUrl" class="d-flex align-items-center justify-content-center" style="height: 100%;">
+            {{ (user?.fullName || 'T').charAt(0).toUpperCase() }}
+          </span>
+        </div>
+
+        <button type="button" class="avatar-edit-icon" (click)="triggerFileInput()" 
+                style="cursor: pointer; border: none; z-index: 10; position: absolute; bottom: 0; right: 0; background: #007bff; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0;">
+          <i class="bi bi-pencil-fill" style="font-size: 0.9rem;"></i>
+        </button>
+
+        <input 
+          type="file" 
+          #fileInput
+          style="display: none;" 
+          accept="image/*" 
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <div *ngIf="editData.profilePictureUrl || user?.profilePictureUrl" class="text-center mb-3">
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="onRemovePhoto()" style="border: none; background: transparent; color: #dc3545; font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+          <i class="bi bi-trash3-fill"></i> Remove Photo
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" class="custom-input" [(ngModel)]="editData.fullName" placeholder="Enter your full name">
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" class="custom-input" [(ngModel)]="editData.email" placeholder="Enter your email">
+      </div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" class="custom-input" [(ngModel)]="editData.location" placeholder="Where are you from?">
+      </div>
+
+      <div class="form-group">
+        <label>About Me (Bio)</label>
+        <textarea class="custom-input" rows="3" [(ngModel)]="editData.bio" placeholder="Tell us about your dreams..."></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 15px;">
+        <button type="button" (click)="showPasswordSection = !showPasswordSection" 
+                style="background: #edf2f7; color: #4a5568; border: none; font-weight: 600; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+          <i class="bi" [class.bi-lock-fill]="!showPasswordSection" [class.bi-unlock-fill]="showPasswordSection"></i>
+          {{ showPasswordSection ? 'Hide Password Settings' : 'Change Password' }}
+        </button>
+      </div>
+
+      <div *ngIf="showPasswordSection" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+        
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="font-size: 0.85rem; color: #718096;">Current Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.currentPassword" placeholder="Enter current password">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="font-size: 0.85rem; color: #718096;">New Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.newPassword" placeholder="Enter new password">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 5px;">
+          <label style="font-size: 0.85rem; color: #718096;">Confirm New Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.confirmPassword" placeholder="Confirm new password">
+        </div>
+
+      </div>
+
+      <div class="form-group">
+        <label class="d-block">
+          {{ (user?.role === 'Provider' || user?.role === 'TransportProvider') ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}
+        </label>
+        
+        <div class="chips-container">
+          <button type="button" *ngFor="let interest of availableInterests" 
+                  class="popup-chip"
+                  [class.active-chip]="editData.interests.includes(interest)"
+                  (click)="toggleInterest(interest)">
+            {{ editData.interests.includes(interest) ? '✓ ' : '+ ' }} {{ interest }}
+          </button>
+        </div>
       </div>
 
     </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-done" (click)="onSaveProfile()">
+        Done
+      </button>
+    </div>
+
   </div>
 </div>
