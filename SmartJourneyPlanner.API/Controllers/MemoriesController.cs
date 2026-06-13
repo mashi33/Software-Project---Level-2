@@ -80,4 +80,24 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
         if (!result) return NotFound();
         return NoContent();
     }
+
+
+// =========================================================================================
+// === ADD THIS NEW COUNT ROUTE HERE ===
+// =========================================================================================
+[HttpGet("user/{userId}/count")]
+public async Task<IActionResult> GetUserMemoryCount(string userId)
+{
+    try
+    {
+        // Requests the raw count scalar directly from your underlying service layer
+        int count = await _memoryService.GetCountByUserIdAsync(userId);
+        return Ok(new { count = count });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"SERVER ERROR: {ex.Message}");
+    }
+}
+// =========================================================================================
 }

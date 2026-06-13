@@ -28,6 +28,7 @@ namespace SmartJourneyPlanner.Models
         public DateTime LastFetched { get; set; }
 
         [BsonIgnore]
+        // calculate in run-time based on user's location
         public double DistanceFromUser { get; set; }
     }
 }

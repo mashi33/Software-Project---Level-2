@@ -220,8 +220,8 @@
             </div>
           </div>
 
-          <div class="row align-items-center g-4 mt-1">
-            <div class="col-lg-4">
+          <div class="row align-items-center ">
+            <div class="col-lg-12">
               <div class="current-weather-box">
                 <div class="start-date-weather">
                     <h6 class="m-0 fw-bold text-dark">
@@ -256,18 +256,9 @@
               </div>
             </div>
 
-            <div class="col-lg-8">
-              <div class="forecast-grid">
-                <div class="forecast-day" *ngFor="let day of forecastDays">
-                  <h6 class="forecast-day-title">{{ day.day }}</h6>
-                  <i [class]="day.icon" class="forecast-day-icon"></i>
-                  <p class="forecast-day-temp">{{ day.temp }}</p>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <div class="smart-suggestion-box mt-4">
+          <div class="smart-suggestion-box">
             <div class="suggestion-layout">
               <div class="suggestion-content-group">
 
