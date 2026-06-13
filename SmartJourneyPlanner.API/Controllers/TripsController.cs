@@ -17,13 +17,15 @@ namespace SmartJourneyPlanner.API.Controllers
     {
         private readonly IMongoCollection<Trip> _tripsCollection;
         private readonly IMongoCollection<TripHistory> _historyCollection;
+        private readonly SmartJourneyPlanner.API.Services.EmailService _emailService;
 
         // Constructor to initialize MongoDB collections
-        public TripsController(IMongoClient mongoClient)
+        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
+            _emailService = emailService;
         }
 
         // Fetch all trips available in the database
@@ -257,7 +259,7 @@ public async Task<IActionResult> GetDashboardData()
                 {
                     foreach (var member in newTrip.Members)
                     {
-                        await SendInviteEmail(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
+                        await _emailService.SendInviteEmailAsync(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
                     }
                 }
                 return Ok(new { message = "Trip saved and invites sent!", tripId = newTrip.Id });
@@ -348,49 +350,6 @@ public async Task<IActionResult> GetDashboardData()
                 return BadRequest(new { message = "Error fetching history: " + ex.Message });
             }
         }
-        
-        // Helper method to send invitation emails with full HTML styling
-        private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
-        {
-            try
-            {
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Smart Journey", "dinuriththsarani@gmail.com"));
-                message.To.Add(new MailboxAddress("", receiverEmail));
-                message.Subject = "Trip Invitation - Smart Journey";
 
-                string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
-
-                // Html email body with inline styles for better presentation
-                message.Body = new TextPart("html")
-                {
-                    Text = $@"
-                    <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
-                        <h2 style=""color: #007bff;"">Hi there!</h2>
-                        <p>You have been invited to join the trip <b>'{tripName}'</b> as a <b>{role}</b>.</p>
-                        <p>To view the trip details and join your friends, please click the button below:</p>
-                        <div style=""margin: 30px 0;"">
-                            <a href=""{invitationLink}"" style=""background-color: #007bff; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;"">Accept Invitation & View Details</a>
-                        </div>
-                        <p style=""font-size: 14px; color: #666;"">If you don't have an account yet, you'll be asked to create one after clicking the button.</p>
-                        <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
-                        <p>Happy Journey!<br><b>Smart Journey Team</b></p>
-                    </div>"
-                };
-
-                using (var client = new SmtpClient())
-                {
-                    await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    await client.AuthenticateAsync("dinuriththsarani@gmail.com", "ejuh wevn elec dkpn");
-                    await client.SendAsync(message);
-                    await client.DisconnectAsync(true);
-                }
-                Console.WriteLine($"✅ Email sent successfully to {receiverEmail}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Failed to send email to {receiverEmail}: {ex.Message}");
-            }
-        }
     }
 }

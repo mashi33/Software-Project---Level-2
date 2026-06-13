@@ -35,5 +35,7 @@ Issuer = "smart-journey-api"
 Audience = "smart-journey-users"
 
 [EmailSettings]
-Email = "abc@gmail.com"
-Password = "abc"
+SmtpServer = "smtp.gmail.com"
+Port = 587
+SenderEmail = "dinuriththsarani@gmail.com"
+AppPassword = "ejuh wevn elec dkpn"

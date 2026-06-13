@@ -86,7 +86,7 @@ builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();
-
+builder.Services.AddSingleton<SmartJourneyPlanner.API.Services.EmailService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
@@ -98,6 +98,9 @@ if (app.Environment.IsDevelopment()) {
   app.UseSwagger();
   app.UseSwaggerUI(); 
 }
+
+// This allows browser to access 'http://localhost:5233/uploads/...' without 404/401 errors
+app.UseStaticFiles();
 
 app.UseRouting();
 app.UseCors("AllowAngularApp");

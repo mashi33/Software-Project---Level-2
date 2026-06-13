@@ -1,0 +1,98 @@
+using System;
+using System.Threading.Tasks;
+using MailKit.Net.Smtp;
+using MimeKit;
+using Microsoft.Extensions.Configuration; 
+
+namespace SmartJourneyPlanner.API.Services
+{
+    public class EmailService
+    {
+        private readonly IConfiguration _configuration;
+
+        // injecting IConfiguration to read email settings from appsettings.json or environment variables
+        public EmailService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        //  1. Verification Email Sender
+        public async Task SendVerificationEmailAsync(string receiverEmail, string verificationLink)
+        {
+            // get sender email from configuration (TOML file or environment variable)
+            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+            
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
+            message.To.Add(new MailboxAddress("", receiverEmail));
+            message.Subject = "Verify Your Email - Smart Journey Planner";
+
+            message.Body = new TextPart("html")
+            {
+                Text = $@"
+                <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
+                    <h2 style=""color: #28a745;"">Welcome to Smart Journey Planner!</h2>
+                    <p>Thank you for registering. Please verify your email address to activate your account and start planning your adventures.</p>
+                    <p>Click the button below to verify your email (This link expires in 24 hours):</p>
+                    <div style=""margin: 30px 0;"">
+                        <a href=""{verificationLink}"" style=""background-color: #28a745; color: #ffffff !important; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;"">Verify My Email</a>
+                    </div>
+                    <p style=""font-size: 14px; color: #666;"">If you did not create an account, please ignore this email.</p>
+                    <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
+                    <p>Happy Journey!<br><b>Smart Journey Team</b></p>
+                </div>"
+            };
+
+            await SendEmailAsync(message);
+        }
+
+        // 2. Trip Invitation Email Sender
+        public async Task SendInviteEmailAsync(string receiverEmail, string tripName, string role, string tripId)
+        {
+            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+            
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
+            message.To.Add(new MailboxAddress("", receiverEmail));
+            message.Subject = "Trip Invitation - Smart Journey";
+
+            string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
+
+            message.Body = new TextPart("html")
+            {
+                Text = $@"
+                <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
+                    <h2 style=""color: #007bff;"">Hi there!</h2>
+                    <p>You have been invited to join the trip <b>'{tripName}'</b> as a <b>{role}</b>.</p>
+                    <p>To view the trip details and join your friends, please click the button below:</p>
+                    <div style=""margin: 30px 0;"">
+                        <a href=""{invitationLink}"" style=""background-color: #007bff; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;"">Accept Invitation & View Details</a>
+                    </div>
+                    <p style=""font-size: 14px; color: #666;"">If you don't have an account yet, you'll be asked to create one after clicking the button.</p>
+                    <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
+                    <p>Happy Journey!<br><b>Smart Journey Team</b></p>
+                </div>"
+            };
+
+            await SendEmailAsync(message);
+        }
+
+        // Core Email Sender Logic reading from TOML Configuration
+        private async Task SendEmailAsync(MimeMessage message)
+        {
+            
+            var smtpServer = _configuration["EmailSettings:SmtpServer"];
+            var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
+            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+            var appPassword = _configuration["EmailSettings:AppPassword"];
+
+            using (var client = new SmtpClient())
+            {
+                await client.ConnectAsync(smtpServer, port, MailKit.Security.SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(senderEmail, appPassword);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+            }
+        }
+    }
+}
