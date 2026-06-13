@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { PlacesService } from '../services/places.service';
-import { environment } from '../../environments/environment'; // environment file එකෙන් key එක ගනී
+import { environment } from '../../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 
 declare var google: any;
@@ -27,40 +27,50 @@ export class FilterComponent implements OnInit, AfterViewInit {
   activeCategory = 'Hotel';
   hasSearched    = false;
 
+  // FIX: filter change debounce timer
+  private filterDebounceTimer: any;
+
   constructor(private placesService: PlacesService, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    //check url for city query param and perform search if present. 
-    this.route.queryParams.subscribe(params => {
-      const cityFromUrl = params['city']; 
-      
+    // use only once query params
+    this.route.queryParams.pipe(
+      debounceTime(300)
+    ).subscribe(params => {
+      const cityFromUrl = params['city'];
+      const categoryFromUrl = params['category'];
+
+      if (categoryFromUrl) {
+        this.activeCategory = categoryFromUrl;
+      }
+
       if (cityFromUrl) {
         this.searchControl.setValue(cityFromUrl);
         setTimeout(() => {
-          this.performSearch(); 
-        }, 1200); 
+          this.performSearch();
+        }, 500);
       }
     });
 
-    // Debouncing and distinctUntilChanged for search input to reduce API calls and improve performance
-    this.searchControl.valueChanges.pipe(
-      debounceTime(500), 
+    // add debouncing for filter controls - budget, rating, distance
+    this.budgetControl.valueChanges.pipe(
+      debounceTime(800),
       distinctUntilChanged()
-    ).subscribe(value => {
-      
-    });
-
-    // Three filter controls (budget, rating, distance) 
-
-    this.budgetControl.valueChanges.subscribe(() => {
+    ).subscribe(() => {
       if (this.hasSearched) this.performSearch();
     });
 
-    this.ratingControl.valueChanges.subscribe(() => {
+    this.ratingControl.valueChanges.pipe(
+      debounceTime(800),
+      distinctUntilChanged()
+    ).subscribe(() => {
       if (this.hasSearched) this.performSearch();
     });
 
-    this.distanceControl.valueChanges.subscribe(() => {
+    this.distanceControl.valueChanges.pipe(
+      debounceTime(800),
+      distinctUntilChanged()
+    ).subscribe(() => {
       if (this.hasSearched) this.performSearch();
     });
   }
@@ -69,14 +79,25 @@ export class FilterComponent implements OnInit, AfterViewInit {
     this.ensureGoogleMapsLoaded();
   }
 
-  // load script using environment variable and initialize autocomplete after script is loaded
   private ensureGoogleMapsLoaded() {
     if (typeof google !== 'undefined' && google.maps && google.maps.places) {
       this.initAutocomplete();
       return;
     }
 
+    // check loading of scripts 
+    if (document.getElementById('google-maps-filter-script')) {
+      const interval = setInterval(() => {
+        if (typeof google !== 'undefined' && google.maps?.places) {
+          clearInterval(interval);
+          this.initAutocomplete();
+        }
+      }, 300);
+      return;
+    }
+
     const script = document.createElement('script');
+    script.id = 'google-maps-filter-script';
     script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
@@ -88,7 +109,6 @@ export class FilterComponent implements OnInit, AfterViewInit {
     const autocomplete = new google.maps.places.Autocomplete(this.cityInput.nativeElement, {
       types: ['(cities)'],
       componentRestrictions: { country: 'lk' },
-      // session tokens are used to group related autocomplete requests for billing purposes and to improve the quality of results
       sessionToken: new google.maps.places.AutocompleteSessionToken()
     });
 
@@ -100,12 +120,11 @@ export class FilterComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // invoke search function invoke
   performSearch() {
     const cityName = this.searchControl.value?.trim();
     if (!cityName || cityName.length < 3) return;
 
-    this.hasSearched = true; 
+    this.hasSearched = true;
 
     const filters = {
       category:    this.activeCategory,
@@ -114,13 +133,18 @@ export class FilterComponent implements OnInit, AfterViewInit {
       maxDistance: this.distanceControl.value || null
     };
 
-    // fetch places with filters and session token for better results
     this.placesService.fetchPlacesByCity(cityName, filters, this.sessionToken);
   }
 
   changeCategory(cat: string) {
     this.activeCategory = cat;
-    this.sessionToken = uuidv4(); //new session token for new category to improve results
-    if (this.hasSearched) this.performSearch();
+    this.sessionToken = uuidv4();
+    // add debouncing for categories
+    if (this.hasSearched) {
+      clearTimeout(this.filterDebounceTimer);
+      this.filterDebounceTimer = setTimeout(() => {
+        this.performSearch();
+      }, 300);
+    }
   }
 }

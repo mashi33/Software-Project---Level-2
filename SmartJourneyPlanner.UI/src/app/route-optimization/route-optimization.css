@@ -198,8 +198,8 @@ google-map {
 
 .btn-traffic.active {
   background: #e6f4ea;
-  color: #137333;
-  border-color: #34a853;
+  color: #004a99;
+  border-color: #007bff;
 }
 
 .btn-traffic:hover {
@@ -282,24 +282,68 @@ google-map {
   margin-top: 2px;
 }
 
-/* Skeleton Animation */
-.skeleton {
-  background: #eee;
-  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
-  border-radius: 8px;
-  background-size: 200% 100%;
-  animation: 1.5s shine linear infinite;
-}
-
-@keyframes shine {
-  to {
-    background-position-x: -200%;
-  }
-}
-
+/* ── SKELETON BASE ── */
 .skeleton-card {
-  height: 100px;
-  width: 100%;
-  margin-bottom: 15px;
-  border: none !important;
+  background: #f0f0f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  pointer-events: none;
+}
+
+.skel {
+  background: linear-gradient(
+    90deg,
+    #e0e0e0 25%,
+    #f5f5f5 50%,
+    #e0e0e0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+/* ── SHIMMER ANIMATION ── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── SKELETON SHAPES ── */
+.skel-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skel-title {
+  height: 16px;
+  width: 55%;
+  margin-left: 10px;
+}
+
+.skel-line {
+  height: 13px;
+  width: 80%;
+  margin-top: 10px;
+}
+
+.skel-line.short {
+  width: 55%;
+  margin-top: 8px;
+}
+
+/* ── LOADING LABEL ── */
+.loading-label {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+/* ── CARD HEADER FLEX (skeleton eki also need) ── */
+.skeleton-card .card-header {
+  display: flex;
+  align-items: center;
 }
