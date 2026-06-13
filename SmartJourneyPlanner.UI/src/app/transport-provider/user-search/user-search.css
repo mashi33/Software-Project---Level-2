@@ -598,3 +598,56 @@ select.us-input {
     grid-template-columns: 1fr;
   }
 }
+
+/* Pagination Styles */
+.pagination-container {
+  padding-bottom: 3rem;
+}
+
+.pagination-custom {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.page-item-custom {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.page-item-custom:hover:not(.disabled):not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-2px);
+}
+
+.page-item-custom.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.page-item-custom.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.page-item-custom i {
+  font-size: 1.1rem;
+}

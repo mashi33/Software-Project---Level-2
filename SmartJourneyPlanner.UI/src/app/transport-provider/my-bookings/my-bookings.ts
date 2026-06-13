@@ -29,6 +29,7 @@ export class MyBookings implements OnInit {
   selectedBooking: Booking | null = null;
   tempRating: number = 0;           // Number of stars selected (1-5)
   tempComment: string = '';         // Review text typed by the user
+  commentError: string = '';        // Validation error message
   showSuccessMessage: boolean = false; 
   
   // Event to tell the parent component to switch back to the search page
@@ -114,6 +115,7 @@ export class MyBookings implements OnInit {
     this.selectedBooking = booking;
     this.tempRating = 0;
     this.tempComment = '';
+    this.commentError = '';
     this.showSuccessMessage = false;
     this.showRatingModal = true;
   }
@@ -142,9 +144,11 @@ export class MyBookings implements OnInit {
 
     // Validation: Comment must be at least 10 characters long
     if (!this.tempComment || this.tempComment.trim().length < 10) {
-      Swal.fire('Comment Too Short', 'Please write at least 10 characters.', 'warning');
+      this.commentError = 'Please write at least 10 characters.';
       return;
     }
+    
+    this.commentError = ''; // Clear error if valid
     
     // Validation: Comment cannot exceed 500 characters
     if (this.tempComment.length > 500) {

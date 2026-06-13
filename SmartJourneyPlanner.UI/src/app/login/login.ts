@@ -76,10 +76,7 @@ export class LoginComponent {
           }
           else if (response.userType === 'Traveller') {
             this.router.navigate(['/traveller-dashboard']);
-          }
-          else if (response.userType === 'Admin') {
-            this.router.navigate(['/admin-dashboard']);
-          }
+          } 
           else {
             // Default fallback for unknown user types
             this.router.navigate(['/']);

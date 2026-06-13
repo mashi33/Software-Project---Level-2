@@ -6,11 +6,8 @@ import * as leaflet from 'leaflet';
 
 @Component({
     selector: 'app-memories-map',
-    imports: [CommonModule, FormsModule,
-        // TODO: `HttpClientModule` should not be imported into a component directly.
-        // Please refactor the code to add `provideHttpClient()` call to the provider list in the
-        // application bootstrap logic and remove the `HttpClientModule` import from this component.
-        /*HttpClientModule*/],
+    standalone: true,
+    imports: [CommonModule, HttpClientModule, FormsModule],
     templateUrl: './memories-map.html',
     styleUrls: ['./memories-map.css']
 })
@@ -49,7 +46,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.fixLeafletIcons();
-    this.loadAllMemories(); 
+    this.loadMyMemories(); 
   }
 
   ngAfterViewInit(): void {
@@ -76,11 +73,13 @@ onFileSelected(event: any): void {
 }
 
 
+
 removeImage(fileInput: HTMLInputElement): void {
   this.newMemory.imageUrl = '';
 
   fileInput.value = '';
 }
+
 
   private formatData(memory: any) {
     return {
@@ -96,23 +95,30 @@ removeImage(fileInput: HTMLInputElement): void {
        isPublic: memory.isPublic || memory.IsPublic || false
     };
   }
+  
 
-  loadAllMemories() {
-    this.http.get<any[]>(this.apiUrl).subscribe({
-      next: (data) => {
-        this.allMemories = data.map(memory => this.formatData(memory));
-        this.myRecentUploads = [...this.allMemories].reverse();
-        this.refreshMapMarkers();
-      },
-      error: (err) => console.error("Database connection error:", err)
+
+  loadMyMemories() {
+    const userId = localStorage.getItem('userId');
+    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
+        next: (data) => {
+            this.allMemories = data.map(m => this.formatData(m));
+            this.myRecentUploads = [...this.allMemories].reverse();
+
+            this.refreshMapMarkers();
+        }
     });
-  }
+}
+
 
 showMax: number = 3;
+
+
 
 toggleSeeMore() {
   this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
 }
+
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -133,6 +139,7 @@ toggleSeeMore() {
             this.newMemory.latitude = lat;
             this.newMemory.longitude = lon;
             this.newMemory.locationName = res[0].display_name;
+            // Smooth transition improves UX when focusing on selected location
             this.map.flyTo([lat, lon], 14);
           } else {
             alert("This location is outside of Sri Lanka.");
@@ -145,10 +152,34 @@ toggleSeeMore() {
     });
   }
 
+
+
   saveMemory() {
+
+    const userId = localStorage.getItem('userId'); // Retrieve logged-in ID
+    
+    if (!userId) {
+        alert("Please log in to save memories");
+        return;
+    }
+
+    if (!this.newMemory.startDate || !this.newMemory.endDate) {
+    alert("Please select both start and end dates");
+    return;
+  }
+
+  const start = new Date(this.newMemory.startDate);
+  const end = new Date(this.newMemory.endDate);
+
+  if (end < start) {
+    alert("End date cannot be before start date");
+    return;
+  }
+  
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
-    ...this.newMemory, 
+    ...this.newMemory,
+    userId: userId, 
     isPublic: this.newMemory.isPublic 
   };
  this.http.post(this.apiUrl, body).subscribe({
@@ -165,6 +196,7 @@ toggleSeeMore() {
  
  this.refreshMapMarkers();
 
+ // Reset form state after successful save to prevent duplicate submissions
  this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0,isPublic: true };
  this.visibilityStatus = 'public';
  this.searchQuery = '';
@@ -174,22 +206,53 @@ toggleSeeMore() {
  });
  }    
 
+
+  private getPopupHtml(memory: any): string {
+    return `
+      <div class="popup-container">
+        <h6 class="popup-title">${memory.title}</h6>
+
+        <img src="${memory.imageUrl}" 
+             class="popup-image view-big-image"
+             data-img="${memory.imageUrl}" />
+
+        <p class="popup-location">${memory.locationName}</p>
+      </div>
+    `;
+  }
+
+
+
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
+
     this.allMemories.forEach((memory) => {
+
       const marker = leaflet.marker([memory.latitude, memory.longitude]);
-      
-      const popupHtml = `
-        <div style="width:160px; font-family: sans-serif;">
-          <h6 style="margin:0 0 5px 0; color:#0D47A1;">${memory.title}</h6>
-          <img src="${memory.imageUrl}" style="width:100%; border-radius:4px; cursor:pointer;" 
-               onclick="window.dispatchEvent(new CustomEvent('viewBig', {detail: '${memory.imageUrl}'}))">
-          <p style="font-size:11px; margin:5px 0; color:#666;">${memory.locationName}</p>
-        </div>`;
-      
-      marker.bindPopup(popupHtml).addTo(this.markersLayer);
+
+      const popupHtml = this.getPopupHtml(memory);
+
+      marker
+        .bindPopup(popupHtml)
+        // Waits for the popup to load because the HTML doesn't exist until then.
+        .on('popupopen', (e: any) => {
+          const popupEl = e.popup.getElement();
+          const img = popupEl.querySelector('.view-big-image');
+
+          img?.addEventListener('click', () => {
+            // Broadcasts an event to trigger image viewing without tying it to the map.
+            window.dispatchEvent(
+              new CustomEvent('viewBig', {
+                detail: memory.imageUrl
+              })
+            );
+          });
+        })
+        .addTo(this.markersLayer);
     });
   }
+
+
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -207,9 +270,12 @@ toggleSeeMore() {
     this.markersLayer.addTo(this.map);
   }
 
+
   trackByFn(index: number, item: any) {
     return item.id || index;
   }
+
+
 
   private fixLeafletIcons() {
   const iconDefault = leaflet.icon({
@@ -226,6 +292,8 @@ toggleSeeMore() {
 }
 
 
+
+
 deleteMemory(id: string, event: Event) {
   // Prevent the gallery from opening the large view
   event.stopPropagation();
@@ -239,7 +307,6 @@ deleteMemory(id: string, event: Event) {
         // 2. Remove from myRecentUploads (Sidebar)
         this.myRecentUploads = this.myRecentUploads.filter(memory => memory.id !== id);
         
-        // 3. Refresh the map markers
         this.refreshMapMarkers();
         
         console.log("Deleted successfully");
@@ -252,8 +319,11 @@ deleteMemory(id: string, event: Event) {
   }
 }
 
+
+
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
+    // Stores selected image for modal/lightbox display
     this.selectedMemory = event.detail; 
   }
 

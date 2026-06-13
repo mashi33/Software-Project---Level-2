@@ -9,8 +9,12 @@ public class TripMemory
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    [JsonPropertyName("id")] // Ensures Angular sees 'id' not 'Id'
+    [JsonPropertyName("id")] 
     public string? Id { get; set; }
+
+    [BsonElement("userId")]
+    [JsonPropertyName("userId")]
+    public string UserId { get; set; } = string.Empty;
 
     [BsonElement("title")]
     [JsonPropertyName("title")]
@@ -39,6 +43,7 @@ public class TripMemory
     [BsonElement("startDate")]
     [JsonPropertyName("startDate")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    //UTC enforced to avoid timezone inconsistencies across clients
     public DateTime StartDate { get; set; } = DateTime.UtcNow;
 
     [BsonElement("endDate")]

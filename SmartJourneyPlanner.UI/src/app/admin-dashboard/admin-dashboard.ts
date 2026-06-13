@@ -18,7 +18,7 @@ export class AdminDashboardComponent implements OnInit {
 
   // System Data
   currentDate = new Date();
-
+  
   // View Switcher
   view: 'stats' | 'providers' | 'users' = 'stats';
 
@@ -29,25 +29,25 @@ export class AdminDashboardComponent implements OnInit {
   
   // States
   errorMessage: string = '';
-  searchEmail: string = '';
 
   ngOnInit() {
     this.refreshDashboard();
   }
 
-  // --- VIEW HANDLERS ---
+  // DASHBOARD HOME & VIEW HANDLERS
 
   onReviewNow() {
-    this.view = 'providers'; 
+    this.view = 'providers';
     this.fetchPendingProviders();
   }
 
   onManageLogins() {
-    this.view = 'users'; 
+    this.view = 'users';
     this.fetchAllUsers();
   }
 
-  // ✅ DEDICATED REFRESH LOGIC
+  /* DEDICED REFRESH LOGIC
+     Updates all counts and lists simultaneously */
   refreshDashboard() {
     this.errorMessage = '';
     this.fetchPendingProviders();
@@ -64,7 +64,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- DATA FETCHING ---
+  // DATA FETCHING
 
   fetchPendingProviders() {
     this.adminService.getPendingProviders().subscribe({
@@ -86,12 +86,9 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // --- ACTIONS ---
+  // MANAGE PROVIDERS ACTIONS
 
-  /**
-   * ✅ UPDATED: Approves or Rejects a transport provider.
-   * Fixed navigation issues by disabling heightAuto and forcing focus on Confirm.
-   */
+  /* Approves or Rejects a transport provider */
   updateProviderStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
 
@@ -108,20 +105,22 @@ export class AdminDashboardComponent implements OnInit {
       confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
       confirmButtonText: 'Yes, proceed',
       cancelButtonText: 'No, cancel',
-      heightAuto: false,     // 🛠️ Prevents page jumping/navigation issues
-      focusConfirm: true,    // 🛠️ Ensures you can hit 'Enter' to approve
-      returnFocus: true      // 🛠️ Puts focus back on dashboard after close
+      heightAuto: false,
+      focusConfirm: true,
+      returnFocus: true,
+      target: document.querySelector('.modal-card') as HTMLElement || document.body
     }).then((result) => {
       if (result.isConfirmed) {
         this.adminService.updateProviderStatus(id, status).subscribe({
-          next: (response: any) => {
+          next: () => {
             this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
             this.selectedProvider = null; // Automatically close the detail modal
             Swal.fire({
               title: 'Success',
               text: `Provider has been ${status}`,
               icon: 'success',
-              heightAuto: false
+              heightAuto: false,
+              target: document.querySelector('.modal-card') as HTMLElement || document.body
             });
           },
           error: (err: any) => {
@@ -130,7 +129,8 @@ export class AdminDashboardComponent implements OnInit {
               title: 'Error',
               text: 'Update failed. Backend might be down.',
               icon: 'error',
-              heightAuto: false
+              heightAuto: false,
+              target: document.querySelector('.modal-card') as HTMLElement || document.body
             });
           }
         });
@@ -138,39 +138,9 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * ✅ UPDATED: Promotes a regular user to an Admin role.
-   * Added explicit types to resolve TS compiler errors.
-   */
- changeRole(userId: string, newRole: string) {
-  console.log("Button clicked! Target User ID:", userId); // This should appear in Console
-
-  if (!userId) {
-    Swal.fire('Error', 'User ID is missing!', 'error');
-    return;
-  }
-
-  this.adminService.updateUserRole(userId, newRole).subscribe({
-    next: (res: any) => {
-      console.log("Success from server:", res);
-      const user = this.allUsers.find(u => (u._id || u.id) === userId);
-      if (user) user.role = newRole;
-      Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-    },
-    error: (err: any) => {
-      console.error("Server returned an error:", err);
-      Swal.fire('Error', 'Role update failed.', 'error');
-    }
-  });
-}
-
-  /**
-   * Opens the detail modal for a specific provider.
-   * Fetches full data (including heavy Base64 images) on-demand.
-   */
+  /* Opens the detail modal for a specific provider and fetches full data */
   viewDetails(provider: any) {
     const id = provider._id || provider.id;
-    
     this.adminService.getProviderById(id).subscribe({
       next: (fullData: any) => {
         this.selectedProvider = fullData;
@@ -187,20 +157,99 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * Opens Base64 document images in a new window.
-   */
-  openImage(base64Data: string | undefined) {
-    if (!base64Data) {
-      Swal.fire({
-        title: 'Error',
-        text: 'No document image found.',
-        icon: 'error',
-        heightAuto: false
-      });
+  // USER MANAGEMENT ACTIONS 
+
+  /* Promotes a regular user to an Admin role */
+  changeRole(userId: string, newRole: string) {
+    if (!userId) {
+      Swal.fire('Error', 'User ID is missing!', 'error');
       return;
     }
 
+    this.adminService.updateUserRole(userId, newRole).subscribe({
+      next: (res: any) => {
+        const user = this.allUsers.find(u => (u._id || u.id) === userId);
+        if (user) user.role = newRole;
+        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
+      },
+      error: (err: any) => {
+        console.error("Server error:", err);
+        Swal.fire('Error', 'Role update failed.', 'error');
+      }
+    });
+  }
+
+  /* Toggle Block status for users */
+  toggleBlock(user: any) {
+    const userId = user.id || user._id;
+    const newBlockStatus = !user.isBlocked;
+    const action = newBlockStatus ? 'block' : 'unblock';
+
+    Swal.fire({
+      title: `Confirm ${action}?`,
+      text: `Do you want to ${action} ${user.fullName || user.name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: newBlockStatus ? '#ef4444' : '#10b981',
+      confirmButtonText: `Yes, ${action}`,
+      heightAuto: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.toggleBlockUser(userId, newBlockStatus).subscribe({
+          next: () => {
+            user.isBlocked = newBlockStatus;
+            Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
+          },
+          error: (err) => console.error("Block/Unblock failed:", err)
+        });
+      }
+    });
+  }
+
+  /* Permanently deletes a user */
+  deleteUser(userId: string) {
+    if (!userId) {
+      Swal.fire('Error', 'User ID is missing!', 'error');
+      return;
+    }
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "This user will be permanently removed from the system!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete!',
+      heightAuto: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.deleteUser(userId).subscribe({
+          next: () => {
+            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
+            Swal.fire({
+              title: 'Deleted!',
+              text: 'User has been removed.',
+              icon: 'success',
+              heightAuto: false
+            });
+          },
+          error: (err) => {
+            console.error("Delete failed:", err);
+            Swal.fire('Error', 'Failed to delete user.', 'error');
+          }
+        });
+      }
+    });
+  }
+
+  // DOCUMENT UTILITIES
+
+  openImage(base64Data: string | undefined) {
+    if (!base64Data) {
+      Swal.fire({ title: 'Error', text: 'No document found.', icon: 'error', heightAuto: false });
+      return;
+    }
     const newWindow = window.open();
     if (newWindow) {
       newWindow.document.write(`
@@ -209,13 +258,6 @@ export class AdminDashboardComponent implements OnInit {
           <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
         </body>
       `);
-    } else {
-      Swal.fire({
-        title: 'Pop-up Blocked',
-        text: 'Please allow pop-ups to view documents.',
-        icon: 'warning',
-        heightAuto: false
-      });
     }
   }
 }

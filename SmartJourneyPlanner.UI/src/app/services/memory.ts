@@ -9,13 +9,12 @@ export class MemoryService {
   private apiUrl = 'http://localhost:5233/api/memories';
   constructor(private http: HttpClient) {}
 
-  getMemories(): Observable<TripMemory[]> {
-    return this.http.get<TripMemory[]>(this.apiUrl).pipe(
-      timeout(5000)
-    );
+  getMemories(userId: string): Observable<TripMemory[]> {
+    return this.http.get<TripMemory[]>(`${this.apiUrl}/user/${userId}`);
   }
 
 getPublicMemories(): Observable<TripMemory[]> {
+  // Query parameter used to let backend handle filtering instead of frontend processing
     const params = new HttpParams().set('publicOnly', 'true');
     
     return this.http.get<TripMemory[]>(this.apiUrl, { params }).pipe(
