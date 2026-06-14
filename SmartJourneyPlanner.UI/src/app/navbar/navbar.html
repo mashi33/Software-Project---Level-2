@@ -65,7 +65,7 @@
                 <div class="notification-item-content">
                   <div class="notification-item-title">{{ n.title }}</div>
                   <div class="notification-item-time">{{ n.time }}</div>
-                  <a class="notification-item-link">View full notification</a>
+                  <a class="notification-item-link" [routerLink]="n.route" (click)="closeDropdown(); $event.stopPropagation()">{{ n.linkText }}</a>
                 </div>
               </li>
             </ul>

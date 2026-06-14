@@ -48,7 +48,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-blue',
           title: 'New booking request received from traveler Dinuri for Toyota KDH',
           time: '30 mins ago',
-          isRead: false
+          isRead: false,
+          linkText: 'View Request',
+          route: '/provider-dashboard'
         },
         {
           id: 2,
@@ -56,7 +58,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-red',
           title: 'Booking request #B102 has been cancelled by traveler Sasini',
           time: '3 hours ago',
-          isRead: false
+          isRead: false,
+          linkText: 'Check Status',
+          route: '/provider-dashboard'
         },
         {
           id: 3,
@@ -64,7 +68,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-green',
           title: 'Booking #B105 with traveler Sandali has been completed. Check your dashboard statistics!',
           time: '12 hours ago',
-          isRead: true
+          isRead: true,
+          linkText: 'View Stats',
+          route: '/provider-dashboard'
         },
         {
           id: 4,
@@ -72,7 +78,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-orange',
           title: 'Traveler Malpawani Poornima left a 5-star review for your Toyota Axio',
           time: '1 day ago',
-          isRead: true
+          isRead: true,
+          linkText: 'View Review',
+          route: '/provider-dashboard'
         },
         {
           id: 5,
@@ -80,7 +88,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-green',
           title: 'Your vehicle Toyota KDH listing has been approved by the administrator and is now active!',
           time: '3 days ago',
-          isRead: true
+          isRead: true,
+          linkText: 'Manage Fleet',
+          route: '/provider-dashboard'
         },
         {
           id: 6,
@@ -88,7 +98,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-red',
           title: 'Your vehicle Honda Vezel listing request was rejected by the administrator. Please update details and re-submit',
           time: '5 days ago',
-          isRead: true
+          isRead: true,
+          linkText: 'Edit Listing',
+          route: '/provider-dashboard'
         },
         {
           id: 7,
@@ -96,7 +108,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-green',
           title: 'Reminder: Booking #B102 starts tomorrow morning at 6:00 AM. Traveler Contact: +94771234567',
           time: '1 week ago',
-          isRead: true
+          isRead: true,
+          linkText: 'View Details',
+          route: '/provider-dashboard'
         },
         {
           id: 8,
@@ -104,7 +118,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-orange',
           title: 'Action Required: You have a pending booking request from traveler Sandali waiting for more than 24 hours',
           time: '1 week ago',
-          isRead: true
+          isRead: true,
+          linkText: 'Accept/Reject',
+          route: '/provider-dashboard'
         }
       ];
     } else {
@@ -116,7 +132,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-blue',
           title: 'Due on Monday, 15 June 2026, 8:00 AM: Trip to Ella starting',
           time: '2 hours ago',
-          isRead: false
+          isRead: false,
+          linkText: 'View Trip',
+          route: '/traveller-dashboard'
         },
         {
           id: 2,
@@ -124,7 +142,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-green',
           title: 'Your booking for Honda Vezel has been confirmed by provider',
           time: '1 day 4 hours ago',
-          isRead: false
+          isRead: false,
+          linkText: 'View Booking',
+          route: '/transport'
         },
         {
           id: 3,
@@ -132,7 +152,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-blue',
           title: 'New weather advisory: Heavy rain expected in Nuwara Eliya tomorrow',
           time: '3 days ago',
-          isRead: true
+          isRead: true,
+          linkText: 'Check Weather',
+          route: '/weather'
         },
         {
           id: 4,
@@ -140,7 +162,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-orange',
           title: 'Don\'t forget to add memories to your recent trip to Galle!',
           time: '5 days ago',
-          isRead: true
+          isRead: true,
+          linkText: 'Add Memory',
+          route: '/memories'
         },
         {
           id: 5,
@@ -148,7 +172,9 @@ export class NavbarComponent implements OnInit {
           iconColorClass: 'icon-red',
           title: 'Budget alert: You have reached 80% of your estimated trip budget',
           time: '6 days ago',
-          isRead: true
+          isRead: true,
+          linkText: 'View Budget',
+          route: '/budget'
         }
       ];
     }
