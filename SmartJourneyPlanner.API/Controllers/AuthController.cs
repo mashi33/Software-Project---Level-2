@@ -137,7 +137,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 userType = user.UserType,
                 userId = user.Id,
                 username = user.FullName,
-                email = user.Email
+                email = user.Email,
+                profilePic = user.ProfilePictureUrl
             });
         }
 
@@ -177,6 +178,80 @@ namespace SmartJourneyPlanner.API.Controllers
 
             return Ok(new { message = "Email verified successfully!" });
         }
+        
+        // forgot password endpoint
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var user = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
+    
+            if (user == null)
+            {
+                return NotFound(new { message = "User with this email does not exist." });
+            }
+
+            // 1. Generate Secure Reset Token
+            var resetToken = Guid.NewGuid().ToString();
+    
+           // 2. Set Token and Expiry (Valid for 1 Hour)
+           var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+           var update = Builders<User>.Update
+             .Set(u => u.PasswordResetToken, resetToken)
+             .Set(u => u.ResetTokenExpiry, DateTime.UtcNow.AddHours(1));
+
+           await _users.UpdateOneAsync(filter, update);
+
+           // 3. Send Email via EmailService
+           try
+          {
+            var resetLink = $"http://localhost:4200/reset-password?token={resetToken}";
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, resetLink);
+        
+          return Ok(new { message = "Password reset link has been sent to your email." });
+         }
+         catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Failed to send email: {ex.Message}" });
+        }
+      }
+         
+         // reset password endpoint
+         [HttpPost("reset-password")]
+         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+        if (string.IsNullOrEmpty(model.Token))
+        {
+           return BadRequest(new { message = "Reset token is missing!" });
+        }
+
+         // 1. Find user with the matching reset token
+        var user = await _users.Find(u => u.PasswordResetToken == model.Token).FirstOrDefaultAsync();
+
+        if (user == null)
+       {
+        return BadRequest(new { message = "Invalid or expired password reset token." });
+       }
+
+       // 2. Check if token has expired
+       if (user.ResetTokenExpiry < DateTime.UtcNow)
+      {
+        return BadRequest(new { message = "This reset link has expired. Please request a new one." });
+     }
+
+    // 3. Hash new password and clear token fields
+    string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+
+    var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+    var update = Builders<User>.Update
+        .Set(u => u.PasswordHash, newPasswordHash)
+        .Unset(u => u.PasswordResetToken)
+        .Unset(u => u.ResetTokenExpiry);
+
+    await _users.UpdateOneAsync(filter, update);
+
+    return Ok(new { message = "Password has been reset successfully! You can now login with your new password." });
+}
+
 
         /**
          * Generates a signed JWT containing localized user data claims for authorization handling.

@@ -38,6 +38,10 @@ namespace SmartJourneyPlanner.API.Models
 
         public bool IsBlocked { get; set; } = false;
 
+        // [PASSWORD RESET PROPERTIES]
+        public string? PasswordResetToken { get; set; }
+        public DateTime? ResetTokenExpiry { get; set; }
+
         // [EMAIL VERIFICATION PROPERTIES]
         [BsonElement("IsVerified")]
         public bool IsVerified { get; set; } = false;
