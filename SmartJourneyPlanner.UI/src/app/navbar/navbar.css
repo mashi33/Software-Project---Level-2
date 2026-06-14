@@ -69,13 +69,20 @@
 
 .notification-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 4px;
+  right: 4px;
   background-color: #FF5252;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid white;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 10px;
+  border: 1.5px solid #0D47A1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 .profile-trigger {

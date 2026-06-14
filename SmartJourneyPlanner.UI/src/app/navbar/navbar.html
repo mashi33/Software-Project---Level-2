@@ -40,7 +40,7 @@
         <div class="dropdown notification-dropdown" [class.show]="isNotificationDropdownOpen">
           <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" (click)="toggleDropdown('notification')" style="cursor: pointer;">
             <i class="bi bi-bell"></i>
-            <span class="notification-badge" *ngIf="unreadCount > 0"></span>
+            <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
           </a>
           
           <div class="dropdown-menu notification-menu dropdown-menu-end shadow" [class.show]="isNotificationDropdownOpen">
