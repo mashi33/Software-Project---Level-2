@@ -41,8 +41,8 @@ export class LoginComponent implements OnInit {
       next: (response: any) => {
         console.log('Login Response:', response);
 
-        // Synchronously persist token and core user system type
-        this.authService.saveToken(response.token, response.userType);
+        // 1. Persist token, user type, and full name inside AuthService
+        this.authService.saveToken(response.token, response.userType, response.username, response.profilePic);
 
         // Store user identifier for session referencing
         const id = response.userId || response.id;
@@ -50,35 +50,28 @@ export class LoginComponent implements OnInit {
           localStorage.setItem('userId', id);
         }
 
-        // Extract a fallback display name locally from the email prefix
-        const nameFromEmail = this.loginData.email.split('@')[0];
-        localStorage.setItem('userName', nameFromEmail);
-
         console.log('Login Success!', response);
         alert('Login Successful!');
 
         /**
-         * 🚀 CONDITIONAL REDIRECT LOGIC
-         * Route context prioritizes deep-linked trip invitations over standard dashboard views.
+         * CONDITIONAL REDIRECT LOGIC
          */
         if (this.invitedTripId) {
           console.log(`Redirecting to invited trip: ${this.invitedTripId} as ${this.invitedRole}`);
-          this.router.navigate(['/trip-summary', this.invitedTripId], {
+          this.router.navigate(['/trip-summary', this.invitedTripId], { //
             queryParams: { role: this.invitedRole }
           });
         }
         else {
-          // Standard authorization routing based on verified user system types
-          const currentUserType = this.authService.getUserSystemType(); 
+          const currentUserType = this.authService.getUserSystemType();
 
           if (currentUserType === 'TransportProvider' || currentUserType === 'Provider') {
             this.router.navigate(['/provider-dashboard']);
           }
           else if (currentUserType === 'Traveller' || currentUserType === 'Traveler') {
             this.router.navigate(['/traveller-dashboard']);
-          } 
+          }
           else {
-            // Fallback route for administrators or unassigned roles
             this.router.navigate(['/']);
           }
         }
