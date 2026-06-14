@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { RouterModule } from '@angular/router'; 
 import { AuthService } from '../services/auth.service';
@@ -218,6 +218,23 @@ export class NavbarComponent implements OnInit {
     this.isDropdownOpen = false;
     this.isMemoryDropdownOpen = false;
     this.isNotificationDropdownOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickout(event: Event) {
+    const clickedElement = event.target as HTMLElement;
+    
+    if (!clickedElement.closest('.notification-dropdown')) {
+      this.isNotificationDropdownOpen = false;
+    }
+    
+    if (!clickedElement.closest('.profile-dropdown')) {
+      this.isDropdownOpen = false;
+    }
+    
+    if (!clickedElement.closest('.memory-dropdown')) {
+      this.isMemoryDropdownOpen = false;
+    }
   }
 
   // Handles user logout
