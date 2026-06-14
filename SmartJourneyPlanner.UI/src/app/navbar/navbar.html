@@ -64,7 +64,7 @@
               <li *ngIf="notifications.length === 0" class="text-center py-4 text-muted">
                 No notifications yet.
               </li>
-              <li *ngFor="let n of notifications" class="notification-item" [class.unread]="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
+              <li *ngFor="let n of notifications.slice(0, 8)" class="notification-item" [class.unread]="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
                 <div class="notification-item-icon">
                   <i class="bi" [ngClass]="n.icon + ' ' + n.iconColorClass"></i>
                 </div>
@@ -78,7 +78,7 @@
             
             <!-- Footer -->
             <div class="notification-footer">
-              <a class="notification-footer-link">See all</a>
+              <a class="notification-footer-link" routerLink="/notifications" (click)="closeDropdown()">See all</a>
             </div>
           </div>
         </div>

@@ -1,43 +1,29 @@
-import { Component, OnInit, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { RouterModule } from '@angular/router'; 
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true, // Ensuring compatibility with modern Angular versions
+  selector: 'app-notifications',
+  standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './navbar.html',
-  styleUrls: ['./navbar.css']
+  templateUrl: './notifications.html',
+  styleUrls: ['./notifications.css']
 })
-export class NavbarComponent implements OnInit {
-  // User profile details
-  userName: string = 'User';
-  profilePic: string = '/profilePic.jpg';
-
-  // UI State management
-  isDropdownOpen: boolean = false;
-  isMemoryDropdownOpen: boolean = false;
-  isNotificationDropdownOpen: boolean = false;
-  dropdownLabel: string = 'Memory';
-
-  // Notification State management
+export class NotificationsComponent implements OnInit {
   notifications: any[] = [];
+  filteredNotifications: any[] = [];
+  filterTab: string = 'all';
   unreadCount: number = 0;
+  readCount: number = 0;
 
   constructor(private authService: AuthService) {}
 
-  
-  //Lifecycle hook that initializes the component.
-   
   ngOnInit(): void {
-    const savedName = localStorage.getItem('userName');
-    this.userName = savedName ? savedName : 'User';
-    this.loadNotifications();
+    this.loadAllNotifications();
   }
 
-  loadNotifications() {
+  loadAllNotifications() {
     const userType = this.authService.getUserSystemType();
     
     if (userType === 'TransportProvider' || userType === 'Provider') {
@@ -164,7 +150,6 @@ export class NavbarComponent implements OnInit {
         }
       ];
     } else {
-      // Default to Traveler
       this.notifications = [
         {
           id: 1,
@@ -268,73 +253,37 @@ export class NavbarComponent implements OnInit {
         }
       ];
     }
-    this.updateUnreadCount();
+    this.updateCounts();
+    this.applyFilter(this.filterTab);
   }
 
-  updateUnreadCount() {
+  updateCounts() {
     this.unreadCount = this.notifications.filter(n => !n.isRead).length;
+    this.readCount = this.notifications.filter(n => n.isRead).length;
+  }
+
+  applyFilter(filter: string) {
+    this.filterTab = filter;
+    if (filter === 'unread') {
+      this.filteredNotifications = this.notifications.filter(n => !n.isRead);
+    } else if (filter === 'read') {
+      this.filteredNotifications = this.notifications.filter(n => n.isRead);
+    } else {
+      this.filteredNotifications = [...this.notifications];
+    }
   }
 
   markAllAsRead() {
     this.notifications.forEach(n => n.isRead = true);
     this.notifications = [...this.notifications];
-    this.updateUnreadCount();
+    this.updateCounts();
+    this.applyFilter(this.filterTab);
   }
 
   markAsRead(notification: any) {
     notification.isRead = true;
     this.notifications = [...this.notifications];
-    this.updateUnreadCount();
-  }
-
-  toggleDropdown(menu?: string) {
-    if (menu === 'memory') {
-      this.isMemoryDropdownOpen = !this.isMemoryDropdownOpen;
-      this.isDropdownOpen = false;
-      this.isNotificationDropdownOpen = false;
-    } else if (menu === 'notification') {
-      this.isNotificationDropdownOpen = !this.isNotificationDropdownOpen;
-      this.isDropdownOpen = false;
-      this.isMemoryDropdownOpen = false;
-    } else {
-      this.isDropdownOpen = !this.isDropdownOpen;
-      this.isMemoryDropdownOpen = false;
-      this.isNotificationDropdownOpen = false;
-    }
-  }
-
-  // close dropdown when clicking outside
-  closeDropdown() {
-    this.isDropdownOpen = false;
-    this.isMemoryDropdownOpen = false;
-    this.isNotificationDropdownOpen = false;
-  }
-
-  @HostListener('document:click', ['$event'])
-  clickout(event: Event) {
-    const clickedElement = event.target as HTMLElement;
-    
-    if (!clickedElement.closest('.notification-dropdown')) {
-      this.isNotificationDropdownOpen = false;
-    }
-    
-    if (!clickedElement.closest('.profile-dropdown')) {
-      this.isDropdownOpen = false;
-    }
-    
-    if (!clickedElement.closest('.memory-dropdown')) {
-      this.isMemoryDropdownOpen = false;
-    }
-  }
-
-  // Handles user logout
-  onLogout(): void {
-    localStorage.clear();
-    console.log('User logged out successfully');
-  }
-
-  selectOption(option: string) {
-    this.dropdownLabel = option;
-    this.isMemoryDropdownOpen = false;
+    this.updateCounts();
+    this.applyFilter(this.filterTab);
   }
 }
