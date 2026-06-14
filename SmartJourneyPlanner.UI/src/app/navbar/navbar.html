@@ -52,7 +52,7 @@
                   <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()"></i>
                   <span class="custom-tooltip">Mark all as read</span>
                 </div>
-                <div class="tooltip-container tooltip-align-right">
+                <div class="tooltip-container tooltip-align-right" routerLink="/settings" (click)="closeDropdown(); $event.stopPropagation()" style="cursor: pointer;">
                   <i class="bi bi-gear"></i>
                   <span class="custom-tooltip">Notification Settings</span>
                 </div>
