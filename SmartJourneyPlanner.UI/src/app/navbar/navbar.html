@@ -37,18 +37,44 @@
       <div class="user-actions">
         
         <!-- Notification dropdown -->
-        <div class="dropdown notification-dropdown">
-          <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="dropdown notification-dropdown" [class.show]="isNotificationDropdownOpen">
+          <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" (click)="toggleDropdown('notification')" style="cursor: pointer;">
             <i class="bi bi-bell"></i>
-            <span class="notification-badge"></span>
+            <span class="notification-badge" *ngIf="unreadCount > 0"></span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown">
-            <li class="dropdown-header">Notifications</li>
-            <li><a class="dropdown-item" routerLink="#">New weather alert for Kandy</a></li>
-            <li><a class="dropdown-item" routerLink="#">Memory saved successfully</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-center text-primary" routerLink="#">View All</a></li>
-          </ul>
+          
+          <div class="dropdown-menu notification-menu dropdown-menu-end shadow" [class.show]="isNotificationDropdownOpen">
+            <!-- Header -->
+            <div class="notification-header">
+              <h5>Notifications</h5>
+              <div class="notification-header-actions">
+                <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()" title="Mark all as read"></i>
+                <i class="bi bi-gear" title="Notification Settings"></i>
+              </div>
+            </div>
+            
+            <!-- List -->
+            <ul class="notification-list">
+              <li *ngIf="notifications.length === 0" class="text-center py-4 text-muted">
+                No notifications yet.
+              </li>
+              <li *ngFor="let n of notifications" class="notification-item" [class.unread]="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
+                <div class="notification-item-icon">
+                  <i class="bi" [ngClass]="n.icon + ' ' + n.iconColorClass"></i>
+                </div>
+                <div class="notification-item-content">
+                  <div class="notification-item-title">{{ n.title }}</div>
+                  <div class="notification-item-time">{{ n.time }}</div>
+                  <a class="notification-item-link">View full notification</a>
+                </div>
+              </li>
+            </ul>
+            
+            <!-- Footer -->
+            <div class="notification-footer">
+              <a class="notification-footer-link">See all</a>
+            </div>
+          </div>
         </div>
 
         <!-- Profile dropdown -->
