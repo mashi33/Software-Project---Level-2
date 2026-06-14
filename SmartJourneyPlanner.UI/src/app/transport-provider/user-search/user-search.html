@@ -122,11 +122,8 @@
 
   <!-- Main Content Area -->
   <main class="us-main">
-    <div class="results-header mb-4 d-flex justify-content-between align-items-center">
+    <div class="results-header mb-4">
       <h2 class="fw-bold">Available Vehicles <span class="text-muted fs-5">({{filteredVehicles.length}})</span></h2>
-      <div *ngIf="isLoading" class="spinner-border text-primary spinner-border-sm" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
     </div>
 
     <!-- Error Alert -->
@@ -145,23 +142,22 @@
         <div class="empty-icon-wrapper mb-4">
           <i class="bi bi-search-heart text-muted"></i>
         </div>
-        <h3 class="text-light fw-bold">No vehicles found</h3>
+        <h3 class="text-dark fw-bold">No vehicles found</h3>
         <p class="text-muted mx-auto" style="max-width: 400px;">
           We couldn't find any vehicles matching your current filters.
         </p>
-        <div class="mt-4">
+        <div class="mt-4 d-flex justify-content-center">
           <button class="btn btn-find px-4 py-2" (click)="resetFilters()">
             <i class="bi bi-arrow-counterclockwise me-2"></i> Reset Filters
           </button>
         </div>
       </div>
 
-      <!-- Loading State Skeleton (Optional but good for UX) -->
-      <div *ngIf="isLoading" class="text-center w-100 py-5">
-         <div class="spinner-grow text-primary" role="status" style="width: 3rem; height: 3rem;">
-           <span class="visually-hidden">Loading...</span>
-         </div>
-         <p class="text-muted mt-3">Finding the best rides for you...</p>
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="loading-wrapper w-100">
+        <div class="spinner-premium"></div>
+        <div class="loading-text">Finding the best rides for you...</div>
+        <div class="loading-subtext">Please wait while we search available vehicles.</div>
       </div>
 
       <!-- Vehicle Card -->
