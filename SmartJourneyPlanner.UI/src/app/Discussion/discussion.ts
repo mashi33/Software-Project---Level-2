@@ -126,8 +126,11 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   // Prevent voting if a proposal is already confirmed or rejected
   isVotingDisabled(item: any): boolean {
     if (!item) return true;
+  if (item.type === 'Trip') {
     return !!(item.isConfirmed || item.isRejected);
   }
+  return false; // Other type — no confirmed/rejected 
+}
 
   // Listen for real-time events from SignalR (votes, deletions, new posts)
   setupSignalRListeners() {
@@ -137,14 +140,18 @@ export class DiscussionComponent implements OnInit, OnDestroy {
         const uId = updatedItem.id || updatedItem.Id;
         const index = this.discussions.findIndex(d => d.id === uId);
         if (index !== -1) {
-          this.discussions[index].options = updatedItem.options || updatedItem.Options;
-          this.discussions[index].userVotes = updatedItem.userVotes || updatedItem.UserVotes;
-          this.discussions[index].memberLimit = updatedItem.memberLimit || updatedItem.MemberLimit;
-          
-          // Use nullish coalescing to safely check status
-          this.discussions[index].isConfirmed = updatedItem.isConfirmed ?? updatedItem.IsConfirmed ?? false;
-          this.discussions[index].isRejected  = updatedItem.isRejected  ?? updatedItem.IsRejected  ?? false;
-          
+          // Replace entire item so all fields (userVotes, options, status) are always in sync
+          this.discussions[index] = {
+            ...this.discussions[index],
+            options:     updatedItem.options     || updatedItem.Options     || this.discussions[index].options,
+            userVotes:   updatedItem.userVotes   || updatedItem.UserVotes   || this.discussions[index].userVotes,
+            votedUsers:  updatedItem.votedUsers  || updatedItem.VotedUsers  || this.discussions[index].votedUsers,
+            memberLimit: updatedItem.memberLimit ?? updatedItem.MemberLimit ?? this.discussions[index].memberLimit,
+            isConfirmed: updatedItem.isConfirmed ?? updatedItem.IsConfirmed ?? false,
+            isRejected:  updatedItem.isRejected  ?? updatedItem.IsRejected  ?? false,
+          };
+
+          this.discussions = [...this.discussions];
           this.checkStatusAlerts(this.discussions[index]);
           this.cdr.detectChanges();
         }
@@ -175,6 +182,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
 
   // Show pop-up alerts based on the final voting results
   private checkStatusAlerts(item: DiscussionItem) {
+    if (item.type !== 'Trip') return;
     const totalVotes = item.userVotes?.length || 0;
     if (totalVotes >= item.memberLimit) {
       if (item.isConfirmed) {
@@ -186,6 +194,14 @@ export class DiscussionComponent implements OnInit, OnDestroy {
         });
       } else if (item.isRejected && item.user === this.currentUser) {
         this.showRejectedChoice(item);
+      } else if (!item.isConfirmed && !item.isRejected) {
+        // Tie — all members voted but result is equal, votes remain editable
+        Swal.fire({
+          icon: 'info',
+          title: "It's a Tie!",
+          text: `"${item.title}" is tied. All members can change their vote to break it.`,
+          timer: 3000
+        });
       }
     }
   }
@@ -218,15 +234,18 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const currentVotes = item.userVotes?.length || 0;
     const limit = item.memberLimit || 1;
 
+    // Normalize both sides to lowercase for safe comparison regardless of casing
     const hasAlreadyVoted = item.userVotes?.some(
-      (v: any) => (v.userId || v.UserId) === this.currentUser
+      (v: any) => {
+        const id = v.userId ?? v.UserId ?? v.user ?? v.User ?? '';
+        return id.trim().toLowerCase() === this.currentUser.trim().toLowerCase();
+      }
     );
 
-    // Only allow vote if slots are available OR user is changing their existing vote
-    if (!hasAlreadyVoted && currentVotes >= limit) {
+    // Only block NEW voters when all slots are filled; existing voters can always change their vote
+    if (!hasAlreadyVoted && (item.userVotes?.length || 0) >= limit) {
       Swal.fire('Limit Reached', 'All member slots are filled. Only existing voters can change their vote.', 'warning');
       return;
     }
@@ -238,7 +257,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Voting failed:', err);
         if (err.status === 400) {
-          Swal.fire('Info', err.error.message || 'Voting is closed.', 'info');
+          Swal.fire('Info', err.error?.message || 'Voting is closed.', 'info');
         } else {
           Swal.fire('Error', 'Vote cast failed.', 'error');
         }
@@ -273,10 +292,8 @@ export class DiscussionComponent implements OnInit, OnDestroy {
         const members = actualTripData.members || actualTripData.Members || [];
         const memberCount = members.length;
 
-        // Calculate how many people need to vote
-        const dynamicLimit = (actualTripData.createdBy || actualTripData.CreatedBy) 
-                             ? memberCount + 1 
-                             : (memberCount > 0 ? memberCount : 1);
+        // memberCount = invited members, + 1 for creator (stored separately in CreatedBy)
+        const dynamicLimit = memberCount + 1;
 
         console.log('Calculated dynamic limit:', dynamicLimit);
 

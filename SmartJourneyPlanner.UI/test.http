@@ -1,15 +1,25 @@
 
-POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
+POST http://localhost:5233/api/discussions/69fb5b729a1de85c58c3bb73/vote
 Content-Type: application/json
 
 {
   "optionText": "Agree",
   "userName": "ann"
 }
+### Vote by User 2 
 
 
-### Vote by User 2 (Bob)
-POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
+POST http://localhost:5233/api/discussions/69fb5b729a1de85c58c3bb73/vote
+Content-Type: application/json
+
+{
+  "optionText": "Disagree",
+  "userName": "mali"
+}
+
+
+### Vote by User 3
+POST http://localhost:5233/api/discussions/69fb5adb9a1de85c58c3bb70/vote
 Content-Type: application/json
 
 {
@@ -17,8 +27,10 @@ Content-Type: application/json
   "userName": "bob"
 }
 
-### Vote by User 2 (Charlie)
-POST http://localhost:5233/api/discussions/69ecc2f3d2077f9da6a167c0/vote
+***************************************
+
+### Vote by User 4
+POST http://localhost:5233/api/discussions/69fb58b59a1de85c58c3bb58/vote
 Content-Type: application/json
 
 {
@@ -26,8 +38,8 @@ Content-Type: application/json
   "userName": "charlie"
 }
 
-### Vote by User 3
-POST http://localhost:5233/api/discussions/69ecbda0d2077f9da6a167bd/vote
+### Vote by User 5
+POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
 Content-Type: application/json
 
 {
@@ -35,11 +47,85 @@ Content-Type: application/json
   "userName": "harry"
 }
 
+### Vote by User 5
+POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+Content-Type: application/json
+
+{
+  "optionText": "Disagree",
+  "userName": "hu"
+}
+
+
+
+
+
+
+***************
+
 ### Vote by User 3
-POST http://localhost:5233/api/discussions/69ecbda0d2077f9da6a167bd/vote
+POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
 Content-Type: application/json
 
 {
   "optionText": "Agree",
   "userName": "sarah"
+}
+
+
+### Vote by User 3
+POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+Content-Type: application/json
+
+{
+  "optionText": "Agree",
+  "userName": "sarah"
+}
+
+### vote box creation
+
+POST http://localhost:5233/api/discussions
+Content-Type: application/json
+
+{
+  "tripId": "69eec832d470b3504402b83b", 
+  "title": "Visit Sigiriya Rock",
+  "description": "Shall we go there on Saturday morning?",
+  "type": "Trip",
+  "memberLimit": 3,
+  "createdBy": "Admin"
+}
+
+### message sending
+POST http://localhost:5233/api/comments
+Content-Type: application/json
+
+{
+  "tripId": "69eec832d470b3504402b83b", 
+  "userName": "Kasun",
+  "text": "Hello everyone! This is a test message.",
+  "messageType": "text"
+}
+
+### message sending
+
+POST http://localhost:5233/api/comments
+Content-Type: application/json
+
+{
+  "tripId": "69eec832d470b3504402b83b", 
+  "userName": "tester",
+  "text": "Hello ",
+  "messageType": "text"
+}
+
+
+
+### Vote by User 3
+POST http://localhost:5233/api/discussions/69fb56569a1de85c58c3bb55/vote
+Content-Type: application/json
+
+{
+  "optionText": "Agree",
+  "userName": "ama"
 }

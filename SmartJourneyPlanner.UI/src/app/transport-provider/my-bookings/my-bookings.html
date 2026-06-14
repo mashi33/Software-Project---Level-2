@@ -1,6 +1,13 @@
 <div class="mb-container shadow-sm">
 
-  <div class="mb-list">
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="loading-wrapper">
+    <div class="spinner-premium" [class.spinner-premium-provider]="role === 'provider'"></div>
+    <div class="loading-text">Loading bookings...</div>
+    <div class="loading-subtext">Please wait while we fetch your journey details.</div>
+  </div>
+
+  <div class="mb-list" *ngIf="!loading">
     <!-- USER VIEW -->
     <ng-container *ngIf="role === 'user'">
       <!-- Empty State -->
@@ -184,8 +191,9 @@
             <textarea class="form-control rounded-3" rows="3" 
                       placeholder="Tell us about the vehicle and the driver's service..."
                       [(ngModel)]="tempComment" maxlength="500"></textarea>
-            <div class="text-end mt-1">
-              <small class="text-muted">{{tempComment.length}}/500</small>
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-danger fw-bold" *ngIf="commentError">{{commentError}}</small>
+              <small class="text-muted ms-auto">{{tempComment.length}}/500</small>
             </div>
           </div>
 

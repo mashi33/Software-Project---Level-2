@@ -15,9 +15,9 @@
 
 .category-tabs button {
   padding: 8px 20px;
-  border: 1px solid #004a99;
+  border: 1px solid #007bff;
   background: white;
-  color: #004a99;
+  color: #007bff;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s;
@@ -25,7 +25,7 @@
 }
 
 .category-tabs button.active {
-  background: #004a99;
+  background: #007bff;
   color: white;
 }
 
@@ -46,13 +46,13 @@
 }
 
 .search-box input:focus {
-  border-color: #004a99;
+  border-color: #007bff;
 }
 
 /* New Search Button Styling */
 .search-btn {
   padding: 10px 20px;
-  background-color: #004a99;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 8px;
@@ -65,7 +65,7 @@
 }
 
 .search-btn:hover {
-  background-color: #003366;
+  background-color: #1557b0;
 }
 
 .search-btn:active {
