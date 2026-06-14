@@ -52,33 +52,57 @@ export class NavbarComponent implements OnInit {
         },
         {
           id: 2,
-          icon: 'bi-star-fill',
-          iconColorClass: 'icon-orange',
-          title: 'Traveler Malpawani Poornima left a 5-star review for your vehicle',
-          time: '12 hours ago',
+          icon: 'bi-x-circle-fill',
+          iconColorClass: 'icon-red',
+          title: 'Booking request #B102 has been cancelled by traveler Sasini',
+          time: '3 hours ago',
           isRead: false
         },
         {
           id: 3,
-          icon: 'bi-clock-history',
+          icon: 'bi-check-circle-fill',
           iconColorClass: 'icon-green',
-          title: 'Reminder: Booking #B102 starts tomorrow morning at 6:00 AM',
-          time: '1 day ago',
+          title: 'Booking #B105 with traveler Sandali has been completed. Check your dashboard statistics!',
+          time: '12 hours ago',
           isRead: true
         },
         {
           id: 4,
-          icon: 'bi-patch-check-fill',
-          iconColorClass: 'icon-green',
-          title: 'Your vehicle Toyota Axio has been successfully approved by the administrator',
-          time: '4 days ago',
+          icon: 'bi-star-fill',
+          iconColorClass: 'icon-orange',
+          title: 'Traveler Malpawani Poornima left a 5-star review for your Toyota Axio',
+          time: '1 day ago',
           isRead: true
         },
         {
           id: 5,
-          icon: 'bi-gear-fill',
-          iconColorClass: 'icon-blue',
-          title: 'System update: New service fee rules are now active',
+          icon: 'bi-patch-check-fill',
+          iconColorClass: 'icon-green',
+          title: 'Your vehicle Toyota KDH listing has been approved by the administrator and is now active!',
+          time: '3 days ago',
+          isRead: true
+        },
+        {
+          id: 6,
+          icon: 'bi-exclamation-octagon-fill',
+          iconColorClass: 'icon-red',
+          title: 'Your vehicle Honda Vezel listing request was rejected by the administrator. Please update details and re-submit',
+          time: '5 days ago',
+          isRead: true
+        },
+        {
+          id: 7,
+          icon: 'bi-clock-history',
+          iconColorClass: 'icon-green',
+          title: 'Reminder: Booking #B102 starts tomorrow morning at 6:00 AM. Traveler Contact: +94771234567',
+          time: '1 week ago',
+          isRead: true
+        },
+        {
+          id: 8,
+          icon: 'bi-exclamation-triangle-fill',
+          iconColorClass: 'icon-orange',
+          title: 'Action Required: You have a pending booking request from traveler Sandali waiting for more than 24 hours',
           time: '1 week ago',
           isRead: true
         }

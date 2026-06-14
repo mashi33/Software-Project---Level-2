@@ -160,7 +160,8 @@
   padding: 0;
   display: none;
   position: absolute;
-  right: 0;
+  right: 0 !important;
+  left: auto !important;
   top: 100%;
   margin-top: 10px;
   z-index: 1050;
