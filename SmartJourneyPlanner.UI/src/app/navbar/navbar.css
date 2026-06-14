@@ -347,3 +347,70 @@
   color: #1d4ed8 !important;
   background: transparent !important;
 }
+
+/* Premium Custom CSS Tooltips */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-container .custom-tooltip {
+  visibility: hidden;
+  width: max-content;
+  background-color: #1e293b;
+  color: #ffffff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  position: absolute;
+  z-index: 1100;
+  top: 140%;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%) translateY(-5px);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+}
+
+.tooltip-container .custom-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  top: auto;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+}
+
+.tooltip-container:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Right Aligned Tooltip styling to prevent overflow */
+.tooltip-container.tooltip-align-right .custom-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(-5px);
+}
+
+.tooltip-container.tooltip-align-right .custom-tooltip::after {
+  left: auto;
+  right: 8px;
+  margin-left: 0;
+}
+
+.tooltip-container.tooltip-align-right:hover .custom-tooltip {
+  transform: translateY(0);
+}
+
+

@@ -48,8 +48,14 @@
             <div class="notification-header">
               <h5>Notifications</h5>
               <div class="notification-header-actions">
-                <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()" title="Mark all as read"></i>
-                <i class="bi bi-gear" title="Notification Settings"></i>
+                <div class="tooltip-container">
+                  <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()"></i>
+                  <span class="custom-tooltip">Mark all as read</span>
+                </div>
+                <div class="tooltip-container tooltip-align-right">
+                  <i class="bi bi-gear"></i>
+                  <span class="custom-tooltip">Notification Settings</span>
+                </div>
               </div>
             </div>
             

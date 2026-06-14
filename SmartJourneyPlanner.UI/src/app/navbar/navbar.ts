@@ -187,11 +187,13 @@ export class NavbarComponent implements OnInit {
 
   markAllAsRead() {
     this.notifications.forEach(n => n.isRead = true);
+    this.notifications = [...this.notifications];
     this.updateUnreadCount();
   }
 
   markAsRead(notification: any) {
     notification.isRead = true;
+    this.notifications = [...this.notifications];
     this.updateUnreadCount();
   }
 
