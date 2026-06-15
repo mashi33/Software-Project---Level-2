@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs'; 
 import Swal from 'sweetalert2';
 import { CommentsComponent } from '../comments/comments';
+import { VotePlacesService, VotePlacePrediction } from '../services/vote-places';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
@@ -26,6 +27,12 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   
   userTrips: any[] = []; 
   selectedTripId: string = '';
+
+  // Places autocomplete state
+  placeSuggestions: VotePlacePrediction[] = [];
+  isPlaceValid: boolean = false;
+  selectedPlaceId: string = '';
+  showSuggestions: boolean = false;
   
   currentUser: string = 'Guest User';
   newTrip: any = {
@@ -40,6 +47,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     private discussionService: DiscussionService,
     private signalrService: SignalrService,
     private tripService: TripService, 
+    private votePlacesService: VotePlacesService,
     private cdr: ChangeDetectorRef,
     private zone: NgZone,
     private router: Router
@@ -126,11 +134,11 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   // Prevent voting if a proposal is already confirmed or rejected
   isVotingDisabled(item: any): boolean {
     if (!item) return true;
-  if (item.type === 'Trip') {
-    return !!(item.isConfirmed || item.isRejected);
+    if (item.type === 'Trip') {
+      return !!(item.isConfirmed || item.isRejected);
+    }
+    return false; // Other type — no confirmed/rejected 
   }
-  return false; // Other type — no confirmed/rejected 
-}
 
   // Listen for real-time events from SignalR (votes, deletions, new posts)
   setupSignalRListeners() {
@@ -265,10 +273,15 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Validate title: must have 3 letters, a vowel, and no long consonant strings
+  // ── FIXED: validate title — skip consonant check if Google Places selected
+  // Google Places API already validated the place name, no need for consonant rules
   validateTitle(title: string): boolean {
     if (!title) return false;
     const t = title.trim();
+
+    // If a valid place was selected from Google Places, skip all regex checks
+    if (this.isPlaceValid) return true;
+
     if (t.length < 3 || t.length > 50) return false;
     const letterCount = (t.match(/[a-zA-Z]/g) || []).length;
     if (letterCount < 3) return false;
@@ -279,10 +292,68 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  // Submit a new discussion proposal to the service
+  private searchTimeout: any = null;
+  // Places autocomplete — when user types in the title for a Trip proposal, show place suggestions based on input
+  onTitleInput() {
+    const input = this.newTrip.title.trim();
+
+    // validate title first — only search if it looks like a real place name, not just random text
+    if (this.newTrip.type !== 'Trip' || input.length < 2) {
+      this.placeSuggestions = [];
+      this.showSuggestions = false;
+      return;
+    }
+
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.votePlacesService.autocomplete(input).subscribe((suggestions: VotePlacePrediction[]) => {
+        this.zone.run(() => {
+          this.placeSuggestions = suggestions;
+          this.showSuggestions = suggestions.length > 0;
+          this.isPlaceValid = false;
+          this.cdr.detectChanges();
+        });
+      });
+    }, 350);
+  }
+
+  // when user clicks on a place suggestion, fill the title with the place name and store the place ID for validation on post
+  selectPlace(prediction: VotePlacePrediction) {
+    this.newTrip.title    = prediction.description;
+    this.selectedPlaceId  = prediction.place_id;
+    this.isPlaceValid     = true;
+    this.showSuggestions  = false;
+    this.placeSuggestions = [];
+    this.votePlacesService.resetSession();
+    this.cdr.detectChanges();
+  }
+
+  // ── FIXED: Post button enable/disable logic
+  // Trip type: valid place must be selected from Google Places
+  // Other type: only title validation needed, no place required
+  isReadyToPost(): boolean {
+    // Trip type — place selected via Google Places bypasses title consonant rules
+    if (this.newTrip.type === 'Trip') {
+      return this.isPlaceValid;
+    }
+    // Other type — normal title validation
+    return this.validateTitle(this.newTrip.title);
+  }
+
+  // when user changes the proposal type (Trip vs Other), reset place-related state since only Trip type requires a valid place
+  onTypeChange() {
+    this.isPlaceValid     = false;
+    this.selectedPlaceId  = '';
+    this.placeSuggestions = [];
+    this.showSuggestions  = false;
+  }
+
+  // ── FIXED: Submit — skip validateTitle() check for Trip type if place already validated
   addNewTrip() {
     const title = this.newTrip.title.trim();
-    if (!this.validateTitle(title)) {
+
+    // For Other type, still validate the title normally
+    if (this.newTrip.type !== 'Trip' && !this.validateTitle(title)) {
       Swal.fire('Invalid Title', 'Please provide a meaningful title (at least 3 letters and 1 vowel).', 'warning');
       return;
     }
@@ -368,7 +439,14 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   }
 
   // UI Helpers: reset form, manage dynamic poll options, and calculate percentages
-  resetForm() { this.newTrip = { title: '', description: '', type: 'Trip', customOptions: ['', ''] }; }
+  resetForm() {
+    this.newTrip = { title: '', description: '', type: 'Trip', customOptions: ['', ''] };
+    this.isPlaceValid     = false;
+    this.selectedPlaceId  = '';
+    this.placeSuggestions = [];
+    this.showSuggestions  = false;
+  }
+
   addOptionField() { this.newTrip.customOptions.push(''); }
   removeOptionField(index: number) { if (this.newTrip.customOptions.length > 2) this.newTrip.customOptions.splice(index, 1); }
   trackByIndex(index: number) { return index; }

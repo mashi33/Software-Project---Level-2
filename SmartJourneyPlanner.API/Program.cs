@@ -83,6 +83,7 @@ builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
+builder.Services.AddHttpClient<VotePlacesService>();
 builder.Services.AddSingleton<MemoryService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();

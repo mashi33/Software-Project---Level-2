@@ -6,7 +6,7 @@ Default = "Information"
 "Microsoft.AspNetCore" = "Warning"
 
 [GoogleApi]
-ApiKey = "my_api_key"
+ApiKey = "AIzaSyCFBgypALwG-_LCsmN37z5neV1Et10MXcg"
 
 [MongoDBSettings]
 ConnectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?appName=Cluster-1"
