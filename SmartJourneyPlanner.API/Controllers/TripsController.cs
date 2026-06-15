@@ -7,8 +7,8 @@ using MimeKit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.Linq;
-using System.Security.Claims;
+using System.Linq; // Ensure this is present
+using Microsoft.AspNetCore.Authorization;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -18,13 +18,60 @@ namespace SmartJourneyPlanner.API.Controllers
     {
         private readonly IMongoCollection<Trip> _tripsCollection;
         private readonly IMongoCollection<TripHistory> _historyCollection;
+        private readonly SmartJourneyPlanner.API.Services.EmailService _emailService;
 
         // Constructor to initialize MongoDB collections
-        public TripsController(IMongoClient mongoClient)
+        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
+            _emailService = emailService;
+        }
+
+        [HttpGet("my-trips")]
+        [Authorize] // Requires a valid JWT token in the authorization header pipeline
+        public async Task<IActionResult> GetUserSpecificTrips()
+        {
+            try
+            {
+                // 1. Contextually extract BOTH Identity Claims from the logged-in JWT Token
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+                if (string.IsNullOrEmpty(currentUserId) && string.IsNullOrEmpty(currentUserEmail))
+                {
+                    return Unauthorized(new { message = "Invalid user identity tokens." });
+                }
+
+                // 2. Build defensive filter conditions to catch all structural variations in Atlas
+                var creatorConditions = new List<FilterDefinition<Trip>>();
+
+                // If token contains an email, check CreatedBy, creatorEmail, and the Members sub-document array
+                if (!string.IsNullOrEmpty(currentUserEmail))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq("creatorEmail", currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == currentUserEmail));
+                }
+
+                // If token contains a database ID string, check CreatedBy for ID matches too
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserId));
+                }
+
+                // Combine all conditions using a logical OR statement
+                var combinedFilter = Builders<Trip>.Filter.Or(creatorConditions);
+
+                // 3. Query your Atlas Cluster and return the user-isolated records
+                var isolatedTrips = await _tripsCollection.Find(combinedFilter).ToListAsync();
+                return Ok(isolatedTrips);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error loading secure user trip stream: " + ex.Message });
+            }
         }
 
         [HttpGet("my-trips")]
@@ -140,6 +187,158 @@ namespace SmartJourneyPlanner.API.Controllers
             }
         }
 
+        // Dashboard data for logged-in user only
+[Authorize] // 🔥 CRITICAL: Force .NET to validate the JWT token header before running this code
+[HttpGet("dashboard")] // Notice we removed "/{userId}" from the route path!
+public async Task<IActionResult> GetDashboardData()
+{
+    try
+    {
+
+        // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        // 2. If that fails or fetches an email, try checking for your custom 'userId' claim key payload
+        if (string.IsNullOrEmpty(userId) || userId.Contains("@"))
+        {
+            userId = User.FindFirst("userId")?.Value ?? User.FindFirst("sub")?.Value;
+        }
+
+        // 🔍 DEBUG PRINT: Look at your backend terminal console to see what string value is actually inside your token!
+        Console.WriteLine($"--- 🔐 DASHBOARD REQUEST SECURITY LOG ---");
+        Console.WriteLine($"Extracted User ID from JWT Token: '{userId}'");
+        Console.WriteLine($"-----------------------------------------");
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "Invalid user session context." });
+        }
+        // 🔥 FIX 1: Use case-insensitive Regex filter to guarantee a match against "createdBy" or "CreatedBy" fields in MongoDB
+                var userFilter = Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i"));
+
+                var userTrips = await _tripsCollection
+                    .Find(userFilter)
+                    .ToListAsync();
+
+                // 🔥 FIX 2: Compute UTC baseline cleanly to prevent localized time shift bugs
+                var today = DateTime.Today;
+        // Upcoming trips
+        var upcomingTrips = userTrips
+            .Where(t => t.StartDate.Date >= today)
+            .ToList();
+
+        // Completed trips
+        var completedTrips = userTrips
+            .Where(t => t.EndDate.Date < today)
+            .ToList();
+
+        // Ongoing trips
+        var ongoingTrips = userTrips
+            .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
+            .ToList();
+
+        return Ok(new
+        {
+            upcomingCount = upcomingTrips.Count,
+            completedCount = completedTrips.Count,
+            ongoingCount = ongoingTrips.Count,
+
+            upcomingTrips = upcomingTrips.Select(t => new
+    {
+        id = t.Id,
+        tripName = t.TripName,
+        destination = t.Destination,
+        startDate = t.StartDate,
+        endDate = t.EndDate,
+        budgetLimit = t.BudgetLimit,
+        description = t.Description,
+        lat = t.Lat,
+        lon = t.Lon
+    }),
+    
+           completedTrips = completedTrips.Select(t => new
+            {
+                id = t.Id,
+                tripName = t.TripName,
+                departFrom = t.DepartFrom,
+                destination = t.Destination,
+                startDate = t.StartDate,
+                endDate = t.EndDate,
+                budgetLimit = t.BudgetLimit,
+                description = t.Description,
+                lat = t.Lat,
+                lon = t.Lon
+            }),
+
+             ongoingTrips = ongoingTrips.Select(t => new
+            {
+                id = t.Id,
+                tripName = t.TripName,
+                departFrom = t.DepartFrom,
+                destination = t.Destination,
+                startDate = t.StartDate,
+                endDate = t.EndDate,
+                budgetLimit = t.BudgetLimit,
+                description = t.Description,
+                lat = t.Lat,
+                lon = t.Lon
+            })
+        });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new
+        {
+            message = "Dashboard loading error: " + ex.Message
+        });
+    }
+}
+
+[Authorize]
+[HttpGet("next-trip")] // Notice we removed "/{userId}" here too!
+        public async Task<IActionResult> GetNextTrip()
+        {
+            try 
+            {
+
+// 🔥 SAFEST WAY: Read user identity from token context
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+                var now = DateTime.UtcNow;
+
+                // 🔥 FIX 3: Push date filtering directly to MongoDB using Builders instead of pulling all records into RAM
+                var filter = Builders<Trip>.Filter.And(
+                    Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i")),
+                    Builders<Trip>.Filter.Gte(t => t.StartDate, now)
+                );
+
+                // Find the single closest upcoming trip directly from the database server execution
+                var nextTrip = await _tripsCollection
+                    .Find(filter)
+                    .SortBy(t => t.StartDate)
+                    .FirstOrDefaultAsync();
+
+                if (nextTrip == null)
+                {
+                    return Ok(null);
+                }
+
+                return Ok(new
+                {
+                    nextTrip.Id,
+                    nextTrip.TripName,
+                    nextTrip.Destination,
+                    nextTrip.StartDate
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching next trip: " + ex.Message });
+            }
+}
+
         // Create a new trip and send invitation emails to all members
         [HttpPost]
         public async Task<IActionResult> CreateTrip([FromBody] Trip newTrip)
@@ -151,7 +350,7 @@ namespace SmartJourneyPlanner.API.Controllers
                 {
                     foreach (var member in newTrip.Members)
                     {
-                        await SendInviteEmail(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
+                        await _emailService.SendInviteEmailAsync(member.Email, newTrip.TripName, member.Role, newTrip.Id!);
                     }
                 }
                 return Ok(new { message = "Trip saved and invites sent!", tripId = newTrip.Id });
@@ -242,49 +441,6 @@ namespace SmartJourneyPlanner.API.Controllers
                 return BadRequest(new { message = "Error fetching history: " + ex.Message });
             }
         }
-        
-        // Helper method to send invitation emails with full HTML styling
-        private async Task SendInviteEmail(string receiverEmail, string tripName, string role, string tripId)
-        {
-            try
-            {
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Smart Journey", "dinuriththsarani@gmail.com"));
-                message.To.Add(new MailboxAddress("", receiverEmail));
-                message.Subject = "Trip Invitation - Smart Journey";
 
-                string invitationLink = $"http://localhost:4200/login?tripId={tripId}&role={role.ToLower()}";
-
-                // Your original HTML design maintained 100%
-                message.Body = new TextPart("html")
-                {
-                    Text = $@"
-                    <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
-                        <h2 style=""color: #007bff;"">Hi there!</h2>
-                        <p>You have been invited to join the trip <b>'{tripName}'</b> as a <b>{role}</b>.</p>
-                        <p>To view the trip details and join your friends, please click the button below:</p>
-                        <div style=""margin: 30px 0;"">
-                            <a href=""{invitationLink}"" style=""background-color: #007bff; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;"">Accept Invitation & View Details</a>
-                        </div>
-                        <p style=""font-size: 14px; color: #666;"">If you don't have an account yet, you'll be asked to create one after clicking the button.</p>
-                        <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
-                        <p>Happy Journey!<br><b>Smart Journey Team</b></p>
-                    </div>"
-                };
-
-                using (var client = new SmtpClient())
-                {
-                    await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    await client.AuthenticateAsync("abc@gmail.com", "abc");
-                    await client.SendAsync(message);
-                    await client.DisconnectAsync(true);
-                }
-                Console.WriteLine($"✅ Email sent successfully to {receiverEmail}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Failed to send email to {receiverEmail}: {ex.Message}");
-            }
-        }
     }
 }

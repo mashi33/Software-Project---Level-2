@@ -42,6 +42,11 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
+  // ADD THIS EXACT METHOD INSIDE THE CLASS:
+  isObject(val: any): boolean {
+    return val !== null && typeof val === 'object';
+  }
+
   // Matches the naming used in your memories-map for consistency
   private formatData(memory: any) {
     return {

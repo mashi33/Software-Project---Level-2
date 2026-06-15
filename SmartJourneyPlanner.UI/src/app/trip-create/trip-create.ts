@@ -15,8 +15,10 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
   tripForm: FormGroup;
   invitedMembers: { email: string; role: string }[] = [];
-  isEditMode: boolean = false;
+  isEditMode: boolean = false;// Flag to determine if we're creating a new trip or editing an existing one
   tripId: string | null = null;
+
+  todayDate: string = '';// Used to set the minimum date for the date pickers to prevent selecting past dates
 
   constructor(
     private tripService: TripService, // 1. Inject TripService for API calls
@@ -43,6 +45,10 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
 
     const idFromUrl = this.route.snapshot.paramMap.get('id');// Check if there's an ID in the URL to determine if we're editing an existing trip
     
+    // Set the minimum date for the date pickers to prevent selecting past dates
+    const today = new Date();
+    this.todayDate = today.toISOString().split('T')[0]; 
+
     if (idFromUrl) {
       this.tripId = idFromUrl;
       this.isEditMode = true;
@@ -113,10 +119,13 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
     if (this.tripForm.valid) {
       const token = localStorage.getItem('token');
       let createdBy = '';
+      let creatorEmail = '';
       if (token) {
         try {
           const decoded: any = JSON.parse(atob(token.split('.')[1]));
-          createdBy = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';//
+          createdBy = decoded['userId'] || '';
+           creatorEmail =
+      decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';// Extract the email address from the decoded token
         } catch (e) {
           console.error("Token decoding failed", e);
         }
@@ -132,7 +141,8 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
-        CreatedBy: createdBy
+        CreatedBy: createdBy,
+        CreatorEmail: creatorEmail
       };
       
       // If we're in edit mode, update the existing trip; otherwise, create a new one. This logic ensures that the same form can be used for both creating and editing trips, providing a seamless user experience.
@@ -167,7 +177,7 @@ export class TripCreateComponent implements OnInit { //  Added OnInit interface
       alert("Form has errors. Please check again.");
     }
   }
-  //Method to handle budget limi changes
+  //Method to handle budget limit changes
   onAddBudget() {
     const budget = this.tripForm.get('budgetLimit')?.value;
     console.log("Selected Budget Limit:", budget);

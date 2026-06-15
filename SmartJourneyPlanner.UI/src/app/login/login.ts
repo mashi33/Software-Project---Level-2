@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -10,11 +10,16 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
+  // Data model to store user input from the login form
   loginData = {
     email: '',
     password: ''
   };
+
+  // Holds invitation metadata extracted from the URL to handle deep-linking
+  invitedTripId: string | null = null;
+  invitedRole: string = 'viewer';
 
   constructor(
     private authService: AuthService,
@@ -22,35 +27,49 @@ export class LoginComponent {
     public route: ActivatedRoute
   ) { }
 
+  ngOnInit() {
+    // Extract invitation parameters immediately when the component loads
+    this.invitedTripId = this.route.snapshot.queryParamMap.get('tripId');
+    this.invitedRole = this.route.snapshot.queryParamMap.get('role') || 'viewer';
+  }
+
+  /**
+   * Handles the login process, session persistence, and dynamic redirection.
+   */
   onLogin() {
     this.authService.login(this.loginData).subscribe({
-      next: (response) => {
-        // --- CRITICAL: SAVE TOKEN FIRST ---
-        // This ensures the interceptor is ready before any navigation happens
-        this.authService.saveToken(response.token);
-        
-        // Save other metadata
-        localStorage.setItem('userType', response.userType);
+      next: (response: any) => {
+        console.log('Login Response:', response);
 
-        // Standard redirects
-        const tripId = this.route.snapshot.queryParamMap.get('tripId');
-        const inviteRole = this.route.snapshot.queryParamMap.get('role') || 'viewer';
+        // 1. Persist token, user type, and full name inside AuthService
+        this.authService.saveToken(response.token, response.userType, response.username, response.profilePic);
 
-        if (tripId) {
-          this.router.navigate(['/trip-summary', tripId], {
-            queryParams: { role: inviteRole }
+        // Store user identifier for session referencing
+        const id = response.userId || response.id;
+        if (id) {
+          localStorage.setItem('userId', id);
+        }
+
+        console.log('Login Success!', response);
+        alert('Login Successful!');
+
+        /**
+         * CONDITIONAL REDIRECT LOGIC
+         */
+        if (this.invitedTripId) {
+          console.log(`Redirecting to invited trip: ${this.invitedTripId} as ${this.invitedRole}`);
+          this.router.navigate(['/trip-summary', this.invitedTripId], { //
+            queryParams: { role: this.invitedRole }
           });
         }
         else {
-          // Route based on UserType returned from API
-          if (response.userType === 'TransportProvider') {
+          const currentUserType = this.authService.getUserSystemType();
+
+          if (currentUserType === 'TransportProvider' || currentUserType === 'Provider') {
             this.router.navigate(['/provider-dashboard']);
           }
-          else if (response.userType === 'Traveller') {
+          else if (currentUserType === 'Traveller' || currentUserType === 'Traveler') {
             this.router.navigate(['/traveller-dashboard']);
-          }
-          else if (response.userType === 'Admin') {
-            this.router.navigate(['/admin-dashboard']);
           }
           else {
             this.router.navigate(['/']);
@@ -59,7 +78,7 @@ export class LoginComponent {
       },
       error: (err) => {
         console.error('Login Failed', err);
-        alert('Login Failed! Please check your credentials.');
+        alert('Login Failed! Please check your Email and Password.');
       }
     });
   }

@@ -30,7 +30,6 @@
     display: flex;
     flex-direction: column;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    /* ── CHANGED: overlay darkened from 0.5/0.6 → 0.55/0.68 ── */
     background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
                     url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920');
     background-size: cover;
@@ -102,7 +101,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.1);
+  background: (255, 255, 255, 0.1);
   padding: 8px 15px;
   border-radius: 30px;
   border: 1px solid rgba(255, 255, 255, 0.2);

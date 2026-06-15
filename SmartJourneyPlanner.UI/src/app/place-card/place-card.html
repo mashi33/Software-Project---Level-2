@@ -1,4 +1,16 @@
 <div class="card-container">
+  <!-- Skeleton loader while data is loading -->
+  <ng-container *ngIf="isLoading">
+    <div *ngFor="let item of skeletonItems" class="skeleton-card">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-details">
+        <div class="skeleton-line wide"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-btn"></div>
+      </div>
+    </div>
+  </ng-container> 
 
   <ng-container *ngIf="places !== null">
     <div *ngFor="let place of places"

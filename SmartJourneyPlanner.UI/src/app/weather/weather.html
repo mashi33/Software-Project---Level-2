@@ -1,6 +1,34 @@
 <div class="background-container">
+  <div class="weather-shapes">
+
+  <!-- SMALL CLOUDS -->
+  <div class="cloud cloud1"></div>
+  <div class="cloud cloud2"></div>
+  <div class="cloud cloud3"></div>
+
+  <!-- SUN -->
+  <div class="sun-glow"></div>
+
+  <!-- RAIN -->
+  <div class="rain r1"></div>
+  <div class="rain r2"></div>
+  <div class="rain r3"></div>
+  <div class="rain r4"></div>
+  <div class="rain r5"></div>
+  <div class="rain r6"></div>
+  <div class="rain r7"></div>
+  <div class="rain r8"></div>
+  <div class="rain r9"></div>
+  <div class="rain r10"></div>
+
+  <!-- WAVES -->
+  <div class="wave"></div>
+  <div class="wave2"></div>
+
+</div>
 <div class="weather-page-wrapper">
   <aside class="left-panel">
+    <div class="panel-top-content">
     <h2>Plan with the Past</h2>
     <div class="input-group">
       <input type="text" (keyup.enter)="searchWeather()" [(ngModel)]="city" placeholder="Search City">
@@ -11,44 +39,137 @@
     <button class="btn-fetch" (click)="searchWeather()" [disabled]="loading">
       {{ loading ? 'Loading...' : 'Fetch Weather' }}
     </button>
+
+    </div>
+
+    <div class="sidebar-calendar-wrapper" *ngIf="monthDays.length > 0">
+  <div class="calendar-sidebar-header">
+    <h4>{{ currentMonthName }}</h4>
+  </div>
+  
+  <div class="calendar-weekdays-grid">
+    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+  </div>
+
+  <div class="calendar-days-matrix">
+  <div 
+    *ngFor="let day of monthDays" 
+    class="calendar-day-tile"
+    [ngClass]="{ 
+      'selected-day': day.dayNumber === searchedDayNumber && day.dayNumber !== null, 
+      'empty-tile': !day.dayNumber 
+    }">
+    
+    <!-- Only show contents if dayNumber is valid -->
+    <span class="day-num" *ngIf="day.dayNumber">{{ day.dayNumber }}</span>
+  </div>
+</div>
+</div>
+
+      <!-- RECENT SEARCHES: CONTEXTUAL SUBSECTION (POST-SEARCH STATE) -->
+      <div class="recent-sidebar-container" *ngIf="weatherData && recentSearches.length > 0">
+        <h3 class="sidebar-subheading">Recent Searches</h3>
+        <ul class="recent-list-sidebar">
+          <li *ngFor="let item of recentSearches" (click)="selectRecentSearch(item)">
+            <span class="history-icon">🕒</span>
+            <span class="city-name">{{ item }}</span>
+            <span class="action-arrow">→</span>
+          </li>
+        </ul>
+      </div>
+
   </aside>
 
-  <!-- Prevents rendering empty UI before data is available -->
-  <main class="right-panel" *ngIf="weatherData">
-    <div class="weather-header">
-      <h1>{{ city | titlecase }}</h1>
-      <p>Date: {{ selectedDate | date:'longDate' }}</p>
-    </div>
-    
-    <div class="weather-details">
-      <div class="weather-icon">
-        {{ weatherCategory === 'Sunny' ? '☀️' : (weatherCategory === 'Cloudy' ? '☁️' : '🌧️') }}
-      </div>
-      <div>
-        <h2>{{ weatherCategory }}</h2>
-        <p>Avg Temp: {{ weatherData.temp }}°C</p>
-        <p>Humidity: {{ weatherData.humidity }}%</p> 
-      </div>
-    </div>
+  <!-- RIGHT MAIN WINDOW AREA -->
+    <main class="right-panel">
+      
+      <div class="initial-welcome-card" *ngIf="!weatherData">
+        <div class="welcome-header">
+          <div class="brand-badge">Enterprise Weather Analytics</div>
+          <h1>Predictive Weather Horizon Engine</h1>
+          <p>Please type your requested destination city name and schedule your targeting context matrix in the sidebar panel to render historical parameters and actionable insight recommendations.</p>
+        </div>
 
-    <section class="suggestions-card" *ngIf="suggestionResult">
-  <h3>Suggestions for {{ weatherCategory }} Weather</h3>
-  <div class="suggestions-grid">
-    <div class="col">
-      <h4>Packing List</h4>
-      <!-- ngFor dynamically renders list so UI adapts to varying backend responses -->
-      <ul><li *ngFor="let item of suggestionResult.packing">{{ item }}</li></ul>
-    </div>
-    <div class="col">
-      <h4>Outfit</h4>
-      <ul><li *ngFor="let item of suggestionResult.outfit">{{ item }}</li></ul>
-    </div>
-    <div class="col">
-      <h4>Activity</h4>
-      <ul><li *ngFor="let item of suggestionResult.activity">{{ item }}</li></ul>
-    </div>
-  </div>
-</section>
-  </main>
+        <div class="initial-history-section" *ngIf="recentSearches.length > 0">
+          <h3>Your Recent Search Logs</h3>
+          <div class="history-welcome-grid">
+            <div class="history-chip-large" *ngFor="let item of recentSearches" (click)="selectRecentSearch(item)">
+              <div class="chip-icon">🏙️</div>
+              <div class="chip-info">
+                <span class="chip-label">Analyze Target</span>
+                <span class="chip-title">{{ item }}</span>
+              </div>
+              <div class="chip-arrow">↗</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-display-contents" *ngIf="weatherData">
+        <div class="weather-header">
+          <h1>{{ city | titlecase }}</h1>
+          <p>Date: {{ selectedDate | date:'longDate' }}</p>
+        </div>
+        
+        <div class="weather-details">
+          <div class="weather-icon">
+            {{ weatherCategory === 'Sunny' ? '☀️' : (weatherCategory === 'Cloudy' ? '☁️' : '🌧️') }}
+          </div>
+          <div>
+            <h2>{{ weatherCategory }}</h2>
+            <p>Avg Temp: {{ weatherData.avgTemp }}°C</p>
+            <p>Humidity: {{ weatherData.humidity }}%</p> 
+          </div>
+        </div>
+
+        <section class="forecast-section" *ngIf="weatherRange.length > 0">
+          <div class="forecast-header">
+            <h3>3 Days Before & After</h3>
+            <div class="forecast-buttons">
+              <button class="nav-btn" (click)="scrollForecast('left')">←</button>
+              <button class="nav-btn" (click)="scrollForecast('right')">→</button>
+            </div>
+          </div>
+
+          <div class="forecast-scroll" #forecastSlider>
+            <div class="forecast-slider">
+              <div class="forecast-card" *ngFor="let day of weatherRange">
+                <h4>{{ day.date | date:'EEE' }}</h4>
+                <p class="forecast-date">{{ day.date | date:'MMM d' }}</p>
+                <div class="forecast-icon">{{ day.emoji }}</div>
+                <h2>{{ day.avgTemp }}°C</h2>
+                <p class="forecast-condition">{{ day.condition }}</p>
+                <small>Humidity: {{ day.humidity }}%</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="suggestions-card" *ngIf="suggestionResult">
+          <h3>Suggestions for {{ weatherCategory }} Weather</h3>
+          <div class="suggestions-grid">
+            <div class="col">
+              <h4>Packing List</h4>
+              <ul>
+                <li *ngFor="let item of suggestionResult.packing">{{ item }}</li>
+              </ul>
+            </div>
+            <div class="col">
+              <h4>Outfit</h4>
+              <ul>
+                <li *ngFor="let item of suggestionResult.outfit">{{ item }}</li>
+              </ul>
+            </div>
+            <div class="col">
+              <h4>Activity</h4>
+              <ul>
+                <li *ngFor="let item of suggestionResult.activity">{{ item }}</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
 </div>
 </div>

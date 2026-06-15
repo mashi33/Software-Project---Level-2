@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { GenerationService } from '../services/generation.service';
 import { environment } from '../../environments/environment';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 
 @Component({
     selector: 'app-generation',
@@ -208,6 +209,17 @@ export class GenerationComponent implements OnInit, OnChanges {
     if (this.isLoadingMap) { alert('Please wait for the map to load.'); return; }
     if (!this.mapBase64)   { alert('Map image is not ready yet.');      return; }
 
+    // ✅ Generate QR code
+  const appUrl = `http://localhost:4200/explore/route-optimization?start=${encodeURIComponent(this.routeData.startLocation)}&end=${encodeURIComponent(this.routeData.endLocation)}`;
+  const qrBase64 = await QRCode.toDataURL(appUrl, {
+    width: 150,
+    margin: 1,
+    color: {
+      dark: '#1a56db',  // blue dots
+      light: '#ffffff'
+    }
+  });
+
     // ✅ Translate all scenic spot names to English BEFORE building PDF
     const translatedStops = await this.translateAllSpots(this.routeData.stops || []);
 
@@ -352,6 +364,36 @@ export class GenerationComponent implements OnInit, OnChanges {
         vY += 20;
       });
     }
+
+          // ── QR CODE SECTION ──────────────────────────────────────
+      doc.addPage();
+
+      doc.setFillColor(26, 86, 219);
+      doc.rect(0, 0, pageWidth, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Share This Route', 14, 12);
+
+      // QR code image
+      doc.addImage(qrBase64, 'PNG', 14, 30, 50, 50);
+
+      // Instructions next to QR
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Open in Smart Journey Planner', 72, 45);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('Scan this QR code to open this route', 72, 55);
+      doc.text('directly in the app on your device.', 72, 63);
+
+      // URL text below QR (fallback)
+      doc.setFontSize(8);
+      doc.setTextColor(26, 86, 219);
+      doc.text(appUrl, 14, 88);
 
     // ── FOOTER ON EVERY PAGE ──────────────────────────────────
     const totalPages = (doc as any).internal.getNumberOfPages();

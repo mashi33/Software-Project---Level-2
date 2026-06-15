@@ -12,7 +12,20 @@
       <div class="form-group">
         <input type="text" name="FullName" [(ngModel)]="signupData.FullName" placeholder="User Name">
         <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="E-mail">
-        <input type="password" name="Password" [(ngModel)]="signupData.Password" placeholder="Password">
+        <input 
+  type="password" 
+  name="Password" 
+  [(ngModel)]="signupData.Password" 
+  placeholder="Password"
+  required
+  minlength="8"
+  #pwd="ngModel">
+
+@if (pwd.invalid && (pwd.dirty || pwd.touched)) {
+  <div style="color: #ff4d4d; font-size: 12px; margin-top: -10px; margin-bottom: 10px; text-align: left;">
+    Password must be at least 8 characters long!
+  </div>
+}
 
         <div class="role-selection">
           <label for="role">Your Role : </label>
@@ -35,7 +48,7 @@
         </p>
       </div>
 
-      <button class="start-btn" (click)="onSignup()">Let's start</button>
+      <button class="start-btn" [disabled]="pwd.invalid" (click)="onSignup()">Let's start</button>
     </div>
     
     <!-- Right Image Panel -->

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System.Security.Claims;
 using System.Text;
@@ -8,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using SmartJourneyPlanner.API.Models; 
 using SmartJourneyPlanner.API.DTOs;
+using SmartJourneyPlanner.API.Services; 
 using BCryptNet = BCrypt.Net.BCrypt;
 
 namespace SmartJourneyPlanner.API.Controllers
@@ -18,43 +18,88 @@ namespace SmartJourneyPlanner.API.Controllers
     {
         private readonly IMongoCollection<User> _users;
         private readonly IConfiguration _configuration;
+        private readonly EmailService _emailService; 
 
-        public AuthController(IMongoDatabase database, IConfiguration configuration)
+        // Injecting core dependencies via the constructor
+        public AuthController(IMongoDatabase database, IConfiguration configuration, EmailService emailService)
         {
             _users = database.GetCollection<User>("Users");
             _configuration = configuration;
+            _emailService = emailService; 
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto model)
-        {
+        {  
+            // 1. Check if the email is already registered
+            var existingUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
+            if (existingUser != null)
+            {
+                return BadRequest(new { message = "This email is already registered." });
+            }
+
+            // 2. Create a unique verification token for email verification
+            var token = Guid.NewGuid().ToString();
+
+            // 3. Hash the password before saving to the database
             string passwordHash = BCryptNet.HashPassword(model.Password);
 
+            // 4. Create a new user object with the provided details and the generated token
             var newUser = new User
             {
                 FullName = model.FullName,
                 Email = model.Email,
                 PasswordHash = passwordHash,
-                UserType = model.UserType, // "Traveller", "TransportProvider", or "Admin"
-                IsBlocked = false // Default new users to unblocked
+                UserType = model.UserType ?? "Traveller",
+                Bio = "Hey there! I am using Smart Journey Planner.",
+                ProfilePictureUrl = "",
+                Location = "",
+                Status = "Approved",
+                IsBlocked = false,
+                CreatedAt = DateTime.UtcNow,
+                
+                // Fields handling account status and email verification
+                IsVerified = false, 
+                VerificationToken = token,
+                TokenExpiry = DateTime.UtcNow.AddHours(24) // Token will expire in 24 hours
             };
 
+            // 5. Persist the record to MongoDB
             await _users.InsertOneAsync(newUser);
-            var checkUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
 
-    if (checkUser != null)// If the user was successfully saved and can be retrieved from the database, return a success response with some details
-    {
-        return Ok(new { 
-            message = "User registered and verified in DB!", 
-            savedEmail = checkUser.Email,
-            databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
-            collectionName = _users.CollectionNamespace.CollectionName     
-        });
-    }
+            // 6. Asynchronously send verification email using the EmailService
+            Console.WriteLine($"--- 📧 EMAIL PROCESS STARTED FOR: {newUser.Email} ---");
+            try
+            {
+                var verificationLink = $"http://localhost:4200/verify-email?token={token}";
 
-            return BadRequest(new { message = "Data was sent but could not be verified in Database." });
+                // Append invitation metadata to deep link if optional query fields are provided
+                if (!string.IsNullOrEmpty(model.TripId))
+                {
+                    var role = model.Role ?? "viewer";
+                    verificationLink += $"&tripId={model.TripId}&role={role}";
+                }
+
+                Console.WriteLine($"Generated Link: {verificationLink}");
+                
+                await _emailService.SendVerificationEmailAsync(newUser.Email!, verificationLink);
+                Console.WriteLine("✅ EMAIL SENT SUCCESSFULLY VIA GMAIL SMTP!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ EMAIL SENDING FAILED: {ex.Message}");
+            }
+            Console.WriteLine("------------------------------------------------");
+
+            // 7. Return success payload matching Frontend requirements
+            return Ok(new { 
+                message = "Registration successful! Please check your email to verify your account.", 
+                savedEmail = newUser.Email,
+                databaseName = _users.Database.DatabaseNamespace.DatabaseName, 
+                collectionName = _users.CollectionNamespace.CollectionName     
+            });
         }
-        
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto request)
         {
@@ -65,17 +110,25 @@ namespace SmartJourneyPlanner.API.Controllers
                 return BadRequest("User not found.");
             }
 
-            // ✅ SECURITY CHECK: Prevent blocked users from logging in
+            // SECURITY CHECK 1: Prevent blocked users from logging in
             if (user.IsBlocked)
             {
                 return StatusCode(403, new { message = "Your account has been suspended. Please contact the administrator." });
             }
 
+            // SECURITY CHECK 2: Block unverified users from gaining an active session
+            if (!user.IsVerified)
+            {
+                return BadRequest(new { code = "EMAIL_NOT_VERIFIED", message = "Please verify your email address first. Check your inbox!" });
+            }
+
+            // SECURITY CHECK 3: Match password hash signatures
             if (!BCryptNet.Verify(request.Password, user.PasswordHash))
             {
                 return BadRequest("Wrong password.");
             }
 
+            // Generate authentication token on authorization success
             var token = CreateToken(user); 
             
             return Ok(new { 
@@ -83,33 +136,137 @@ namespace SmartJourneyPlanner.API.Controllers
                 message = "Login successful!", 
                 userType = user.UserType,
                 userId = user.Id,
-                username = user.FullName
+                username = user.FullName,
+                email = user.Email,
+                profilePic = user.ProfilePictureUrl
             });
         }
-        
-        [HttpPost("signup")]
-        public async Task<IActionResult> Signup([FromBody] User user)
+
+        [HttpGet("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromQuery] string token)
         {
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
-            user.IsBlocked = false; // Ensure they aren't blocked by default
-            await _users.InsertOneAsync(user);
-            return Ok(new { message = "User saved successfully!" });
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new { message = "Secure token is missing!" });
+            }
+
+            // 1. Get the user with the matching verification token from the database
+            var user = await _users.Find(u => u.VerificationToken == token).FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return BadRequest(new { message = "The verification link is invalid or has expired." });
+            }
+
+            // 2. Check if the token has expired
+            if (user.TokenExpiry < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "This verification link has expired. Please register again." });
+            }
+
+            // 3. Update the user's record to set IsVerified to true and clear token metadata
+            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+            var update = Builders<User>.Update
+                .Set(u => u.IsVerified, true)
+                .Set(u => u.Status, "Approved") 
+                .Unset(u => u.VerificationToken) 
+                .Unset(u => u.TokenExpiry);
+
+            await _users.UpdateOneAsync(filter, update);
+
+            Console.WriteLine($"✅ USER VERIFIED SUCCESSFULLY IN DB: {user.Email}");
+
+            return Ok(new { message = "Email verified successfully!" });
+        }
+        
+        // forgot password endpoint
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var user = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
+    
+            if (user == null)
+            {
+                return NotFound(new { message = "User with this email does not exist." });
+            }
+
+            // 1. Generate Secure Reset Token
+            var resetToken = Guid.NewGuid().ToString();
+    
+           // 2. Set Token and Expiry (Valid for 1 Hour)
+           var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+           var update = Builders<User>.Update
+             .Set(u => u.PasswordResetToken, resetToken)
+             .Set(u => u.ResetTokenExpiry, DateTime.UtcNow.AddHours(1));
+
+           await _users.UpdateOneAsync(filter, update);
+
+           // 3. Send Email via EmailService
+           try
+          {
+            var resetLink = $"http://localhost:4200/reset-password?token={resetToken}";
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, resetLink);
+        
+          return Ok(new { message = "Password reset link has been sent to your email." });
+         }
+         catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Failed to send email: {ex.Message}" });
+        }
+      }
+         
+         // reset password endpoint
+         [HttpPost("reset-password")]
+         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+        if (string.IsNullOrEmpty(model.Token))
+        {
+           return BadRequest(new { message = "Reset token is missing!" });
         }
 
+         // 1. Find user with the matching reset token
+        var user = await _users.Find(u => u.PasswordResetToken == model.Token).FirstOrDefaultAsync();
+
+        if (user == null)
+       {
+        return BadRequest(new { message = "Invalid or expired password reset token." });
+       }
+
+       // 2. Check if token has expired
+       if (user.ResetTokenExpiry < DateTime.UtcNow)
+      {
+        return BadRequest(new { message = "This reset link has expired. Please request a new one." });
+     }
+
+    // 3. Hash new password and clear token fields
+    string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+
+    var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+    var update = Builders<User>.Update
+        .Set(u => u.PasswordHash, newPasswordHash)
+        .Unset(u => u.PasswordResetToken)
+        .Unset(u => u.ResetTokenExpiry);
+
+    await _users.UpdateOneAsync(filter, update);
+
+    return Ok(new { message = "Password has been reset successfully! You can now login with your new password." });
+}
+
+
+        /**
+         * Generates a signed JWT containing localized user data claims for authorization handling.
+         */
         private string CreateToken(User user) 
         {
             var claims = new List<Claim>
             {
-                // ✅ Using Null-Forgiving operator or fallback for strings that might be null
                 new Claim(ClaimTypes.Name, user.FullName ?? "User"), 
                 new Claim(ClaimTypes.Email, user.Email ?? ""),
                 new Claim(ClaimTypes.Role, user.UserType ?? "Traveller"),
                 new Claim("userId", user.Id?.ToString() ?? ""),
-                // Check if user is Admin for frontend role guards
                 new Claim("isBlocked", user.IsBlocked.ToString())
             };
 
-            // ✅ FIXED: Null-safe key retrieval to resolve CS8604
             var jwtKey = _configuration["Jwt:Key"] ?? "YourFallbackVeryLongSecretKeyHere_MustBe32Chars!";
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             
@@ -127,4 +284,3 @@ namespace SmartJourneyPlanner.API.Controllers
         }
     }
 }
-

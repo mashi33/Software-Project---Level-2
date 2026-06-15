@@ -161,3 +161,9 @@ input{
     margin-bottom: 15px;
     background-color: white;
 }
+
+
+input.ng-invalid.ng-dirty {
+  border: 1px solid #ff4d4d !important;
+  background-color: #fff5f5;
+}

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { WeatherService } from '../services/weather.service';
 
 @Component({
   selector: 'app-trip-summary',
@@ -17,6 +18,7 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
   userRole: string = 'owner'; 
+ 
 
   tripId: string = '';
   // Filtered lists separated from savedPlaces array
@@ -24,19 +26,35 @@ export class TripSummaryComponent implements OnInit {
   savedRestaurants: any[] = [];
   
 
+  // =========================
+// SUMMARY PAGE WEATHER
+// =========================
+
+summaryWeather: any = null;
+
+summarySuggestion: any = null;
+
+forecastDays: any[] = [];
+
+loadingWeather = false;
+isLastYearWeather: boolean = false;
+
   constructor(
     private tripService: TripService,
     private route: ActivatedRoute,
     private router: Router,
+    private weatherService: WeatherService
   ) {}
 
   ngOnInit(): void {
     // 1. Get the trip ID from the URL parameters to know which trip's details to fetch
+     //this.tripId = this.route.snapshot.paramMap.get('id') || '';
+    //const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
+    
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
     const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
     
-    // FIXED: Correctly mapping the variable extracted from route parameters
-    this.tripId = tripIdFromUrl || ''; 
+    this.tripId = tripIdFromUrl || '';
     
     if (roleFromUrl) {
       this.userRole = roleFromUrl;
@@ -47,16 +65,21 @@ export class TripSummaryComponent implements OnInit {
 
       this.tripService.getTripById(this.tripId).subscribe({
         next: (data: any) => {
-          this.tripDetails = data;
+      this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          // Call filterSavedPlaces() after data is loaded
+          // FIX: Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
 
+          this.loadTripWeather();
+
+          //check if edit history is already included in the main trip data, if not then make a separate call to fetch it. This is to optimize data loading and avoid unnecessary calls if history is already present.
+          this.tripDetails = data;
           if (data.editHistory && data.editHistory.length > 0) {
             this.editHistory = data.editHistory;
           } else {
             this.loadHistory(this.tripId);
+            this.filterSavedPlaces();
           }
         },
         error: (err) => {
@@ -65,10 +88,84 @@ export class TripSummaryComponent implements OnInit {
         }
       });
     } else {
-      // Fallback if no tripId is present in URL
       this.loadFromTemp();
     }
   }
+
+// =========================
+  // LOAD TRIP WEATHER
+  // =========================
+ loadTripWeather() {
+  const destination = this.tripDetails?.Destination || this.tripDetails?.destination;
+  const rawDate = this.tripDetails?.StartDate || this.tripDetails?.startDate;
+
+  if (!destination || !rawDate) {
+    return;
+  }
+
+  // 1. Clean the incoming date format safely
+  let startDateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : new Date(rawDate).toISOString().split('T')[0];
+
+  // Reset the fallback tracker flag on execution
+  this.isLastYearWeather = false;
+
+  // 2. Calculate thresholds to detect deep-future timelines
+  const today = new Date();
+  const maxForecastDate = new Date();
+  maxForecastDate.setDate(today.getDate() + 14); // Open-Meteo's absolute maximum limit
+
+  const targetTripDate = new Date(startDateStr);
+
+  // === HIGHLIGHTED LOGIC: SHIFT TIMELINE IF OUTSIDE FORECAST WINDOW ===
+  if (targetTripDate > maxForecastDate) {
+    this.isLastYearWeather = true;
+    
+    // Subtract exactly 1 year from the target trip date
+    const lastYear = targetTripDate.getFullYear() - 1;
+    const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetTripDate.getDate()).padStart(2, '0');
+    
+    startDateStr = `${lastYear}-${month}-${day}`; // Changes target route request parameter string
+  }
+
+  this.loadingWeather = true;
+
+  // 3. Acquire location details
+  this.weatherService.getCoordinates(destination).subscribe({
+    next: (geoRes) => {
+      if (!geoRes?.length) {
+        this.loadingWeather = false;
+        return;
+      }
+
+      const latStr = geoRes[0].lat.toString();
+      const lonStr = geoRes[0].lon.toString();
+
+      // 4. Fetch the weather data matrix
+      this.weatherService.getProcessedWeather(latStr, lonStr, startDateStr).subscribe({
+        next: (weather) => {
+          this.summaryWeather = weather;
+
+          // 5. Fetch recommendations using the calculated weather metrics
+          this.weatherService.getSuggestions(
+            Number(weather.avgTemp),
+            weather.condition,
+            startDateStr
+          ).subscribe({
+            next: (suggestion) => {
+              this.summarySuggestion = suggestion;
+              this.loadingWeather = false;
+            },
+            error: () => { this.loadingWeather = false; }
+          });
+        },
+        error: () => { this.loadingWeather = false; }
+      });
+    },
+    error: () => { this.loadingWeather = false; }
+  });
+}
+
 
   // Links to Budget Dashboard
   navigateToBudget() {
@@ -122,8 +219,12 @@ export class TripSummaryComponent implements OnInit {
       };
     }
     this.filterSavedPlaces();
+
+    this.loadTripWeather();
   }
 
+
+ 
   navigateToChat() {
     if (this.tripId) {
       this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
@@ -133,23 +234,27 @@ export class TripSummaryComponent implements OnInit {
   }
 
   navigateToRouteOptimization() {
-    this.router.navigate(['/explore/route-optimization'], {
-      queryParams: {
-        start: this.tripDetails?.departFrom, 
-        end: this.tripDetails?.destination   
-      }
-    });
-  }
+  this.router.navigate(['/explore/route-optimization'], {
+    //Autofill on route optimization page using query parameters to pass 
+    // the departure and destination locations from the current trip details. 
+    queryParams: {
+      start: this.tripDetails?.departFrom, 
+      end: this.tripDetails?.destination   
+    }
+  });
+}
 
-  navigateToHotels() {
-    this.router.navigate(['/explore/hotel-restaurant-finder'], { 
-      queryParams: { 
-        city: this.tripDetails?.destination 
-      } 
-    });
-  }
+navigateToHotels() {
+  this.router.navigate(['/explore/hotel-restaurant-finder'], { 
+    // Autofill on hotel finder page using query parameters
+    //  to pass the destination location from the current trip details.
+    queryParams: { 
+      city: this.tripDetails?.destination 
+    } 
+  });
+}
 
-  navigateToWeather() {
+ navigateToWeather() {
     this.router.navigate(['/weather']);
   }
 }

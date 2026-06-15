@@ -67,3 +67,4 @@ environments/
 
 
 appsettings.Development.json
+SmartJourneyPlanner.API/appsettings.toml

@@ -13,17 +13,45 @@ export interface PlacesResult {
 export class PlacesService {
   private apiUrl = 'http://localhost:5233/api/places/search';
 
-  // Search results as list
   private placesSource = new BehaviorSubject<PlacesResult | null>(null);
   currentPlaces = this.placesSource.asObservable();
 
-  // For selecting a place to highlight in both map and card components
   private selectedPlaceSource = new BehaviorSubject<string | null>(null);
   selectedPlaceId = this.selectedPlaceSource.asObservable();
+
+  //isLoading state for skeleton loader
+  private isLoadingSource = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.isLoadingSource.asObservable();
+  
+  private frontendCache = new Map<string, { data: any, timestamp: number }>();
+  private readonly CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
   constructor(private http: HttpClient) {}
 
   fetchPlacesByCity(city: string, filters: any, token: string) {
+    // FIX: city+category cache key 
+    const cacheKey = `${city.toLowerCase()}_${filters.category.toLowerCase()}`;
+    const cached = this.frontendCache.get(cacheKey);
+    const now = Date.now();
+
+    // FIX: Cache hit —Do not send backend request 
+    if (cached && (now - cached.timestamp) < this.CACHE_TTL_MS) {
+      console.log(`[PlacesService] Frontend cache hit for '${cacheKey}'`);
+
+      // Filter cached data in memory — No API call 
+      const filtered = this.applyFilters(cached.data, filters);
+      this.placesSource.next({
+        places: filtered,
+        centerLat: cached.data.centerLat,
+        centerLon: cached.data.centerLon
+      });
+      return;
+    }
+    
+    //start loading state for skeleton loader 
+     this.isLoadingSource.next(true);
+
+    // Cache miss — send backend request 
     let params = new HttpParams()
       .set('city', city)
       .set('category', filters.category)
@@ -37,19 +65,57 @@ export class PlacesService {
       .pipe(
         catchError(err => {
           console.error('[PlacesService] Failed to fetch places:', err);
+          //stop loading state on error 
+          this.isLoadingSource.next(false);
           return of({ fullDetails: [], centerLat: 0, centerLon: 0 });
         })
       )
       .subscribe(response => {
+        // FIX: Frontend cache save — Cache results based on city+category
+        this.frontendCache.set(cacheKey, {
+          data: {
+            fullDetails: response.fullDetails ?? [],
+            centerLat: response.centerLat,
+            centerLon: response.centerLon
+          },
+          timestamp: now
+        });
+
+        const filtered = this.applyFilters(
+          { fullDetails: response.fullDetails ?? [], centerLat: response.centerLat, centerLon: response.centerLon },
+          filters
+        );
+
         this.placesSource.next({
-          places: response.fullDetails ?? [],
+          places: filtered,
           centerLat: response.centerLat,
           centerLon: response.centerLon
         });
+        
+        //stop loading state after data is set
+        this.isLoadingSource.next(false);
       });
   }
 
-  // When click marker or card, set the selected place ID to highlight in both components
+  // FIX: Filter in memory — filter without API call
+  private applyFilters(data: any, filters: any): any[] {
+    let places: any[] = data.fullDetails ?? [];
+
+    if (filters.budget) {
+      places = places.filter(p => p.priceLevel <= filters.budget);
+    }
+
+    if (filters.rating) {
+      places = places.filter(p => p.rating >= filters.rating);
+    }
+
+    if (filters.maxDistance) {
+      places = places.filter(p => p.distanceFromUser <= filters.maxDistance);
+    }
+
+    return places;
+  }
+
   selectPlace(id: string | null) {
     this.selectedPlaceSource.next(id);
   }

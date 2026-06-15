@@ -1,50 +1,41 @@
 <div class="body">
 
-<div class="container">
-  
-  <!-- Left Login Panel -->
-  <div class="login-panel">
-    <h2>Login</h2>
+  <div class="container">
 
-    <input 
-       type="email" 
-       name="email" 
-       [(ngModel)]="loginData.email"
-       placeholder="Email">
+    <!-- Left Login Panel -->
+    <div class="login-panel">
+      <h2>Login</h2>
 
-    <input 
-       type="password" 
-       name="password" 
-       [(ngModel)]="loginData.password"
-       placeholder="Password">
+      <input type="email" name="email" [(ngModel)]="loginData.email" placeholder="Email">
 
-    <div class="options">
-      <label>
-        <input type="checkbox"> Remember
-      </label>
-      <a href="#">Forgot Password?</a>
+      <input type="password" name="password" [(ngModel)]="loginData.password" placeholder="Password">
+
+      <div class="options">
+        <label>
+          <input type="checkbox"> Remember
+        </label>
+        <a [routerLink]="['/forgot-password']" class="forgot-link">Forgot Password?</a>
+      </div>
+
+      <button class="btn-login" (click)="onLogin()">LOGIN</button>
+
+      <p class="signup">
+        Don't have an account?
+        <a [routerLink]="['/signup']"
+          [queryParams]="{ tripId: route.snapshot.queryParamMap.get('tripId'), role: route.snapshot.queryParamMap.get('role') }">
+          Sign Up
+        </a>
+      </p>
     </div>
 
-    <button class="btn-login" (click)="onLogin()">LOGIN</button>
-
-    <p class="signup">
-      Don't have an account? 
-      <a [routerLink]="['/signup']" 
-     [queryParams]="{ tripId: route.snapshot.queryParamMap.get('tripId'), role: route.snapshot.queryParamMap.get('role') }">
-     Sign Up
-  </a>
-    </p>
-  </div>
-
-  <!-- Right Image Panel -->
-  <div class="image-panel">
-    <div class="overlay-text">
-      <h3>Explore the World,<br>Beyond Boundaries!</h3>
-      <p>Start your adventure today</p>
+    <!-- Right Image Panel -->
+    <div class="image-panel">
+      <div class="overlay-text">
+        <h3>Explore the World,<br>Beyond Boundaries!</h3>
+        <p>Start your adventure today</p>
+      </div>
     </div>
+
   </div>
 
 </div>
-
-</div>
-
