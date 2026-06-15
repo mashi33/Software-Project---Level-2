@@ -1,6 +1,13 @@
 <div class="mb-container shadow-sm">
 
-  <div class="mb-list">
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="loading-wrapper">
+    <div class="spinner-premium" [class.spinner-premium-provider]="role === 'provider'"></div>
+    <div class="loading-text">Loading bookings...</div>
+    <div class="loading-subtext">Please wait while we fetch your journey details.</div>
+  </div>
+
+  <div class="mb-list" *ngIf="!loading">
     <!-- USER VIEW -->
     <ng-container *ngIf="role === 'user'">
       <!-- Empty State -->

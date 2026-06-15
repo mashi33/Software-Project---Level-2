@@ -6,5 +6,8 @@
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
         public string UserType { get; set; } = null!; // Traveller or TransportProvider
+
+        public string? TripId { get; set; } 
+        public string? Role { get; set; }
     }
 }

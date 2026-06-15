@@ -28,12 +28,21 @@
       </button>
     </div>
 
-    <div class="results" *ngIf="isLoading">
-      <h3>Finding the best routes...</h3>
-      <div class="card skeleton skeleton-card"></div>
-      <div class="card skeleton skeleton-card"></div>
-      <div class="card skeleton skeleton-card"></div>
+   <div class="results" *ngIf="isLoading">
+  <p class="loading-label">Finding the best routes...</p>
+
+  <!-- Skeleton Card x3 -->
+  <div class="card skeleton-card" *ngFor="let i of [1,2,3]">
+    <div class="card-header">
+      <div class="skel skel-circle"></div>
+      <div class="skel skel-title"></div>
     </div>
+    <div class="details-section">
+      <div class="skel skel-line"></div>
+      <div class="skel skel-line short"></div>
+    </div>
+  </div>
+</div>
 
     <div class="results" *ngIf="results && !isLoading">
       <!-- <h3>Select Your Preferred Route:</h3> -->
@@ -107,9 +116,17 @@
       
       <map-traffic-layer *ngIf="showTraffic"></map-traffic-layer>
 
-      <map-marker *ngIf="startCoords" [position]="startCoords" [options]="{label: 'A'}"></map-marker>
-      <map-marker *ngIf="endCoords" [position]="endCoords" [options]="{label: 'B'}"></map-marker>
+      <!-- Start pin — Blue -->
+      <map-marker *ngIf="startCoords"
+        [position]="startCoords"
+        [options]="startMarkerOptions">
+      </map-marker>
 
+    <!-- End pin — Red -->
+    <map-marker *ngIf="endCoords"
+      [position]="endCoords"
+      [options]="endMarkerOptions">
+    </map-marker>
       <ng-container *ngIf="selectedRouteType === 'scenic' && results?.scenicViewpoints">
         <map-advanced-marker 
           *ngFor="let point of results.scenicViewpoints"

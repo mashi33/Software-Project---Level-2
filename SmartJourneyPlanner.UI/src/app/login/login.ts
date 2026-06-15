@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -10,14 +10,16 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class LoginComponent {
-  /**
-   * Data model to store user input from the login form.
-   */
+export class LoginComponent implements OnInit {
+  // Data model to store user input from the login form
   loginData = {
     email: '',
     password: ''
   };
+
+  // Holds invitation metadata extracted from the URL to handle deep-linking
+  invitedTripId: string | null = null;
+  invitedRole: string = 'viewer';
 
   constructor(
     private authService: AuthService,
@@ -25,66 +27,56 @@ export class LoginComponent {
     public route: ActivatedRoute
   ) { }
 
+  ngOnInit() {
+    // Extract invitation parameters immediately when the component loads
+    this.invitedTripId = this.route.snapshot.queryParamMap.get('tripId');
+    this.invitedRole = this.route.snapshot.queryParamMap.get('role') || 'viewer';
+  }
+
   /**
-   * Handles the login submission.
-   * On success, manages user sessions and redirects to the appropriate dashboard or trip.
+   * Handles the login process, session persistence, and dynamic redirection.
    */
   onLogin() {
     this.authService.login(this.loginData).subscribe({
-      next: (response) => {
-        // Logging the raw response for debugging purposes
+      next: (response: any) => {
         console.log('Login Response:', response);
 
-        // Session Management: Persisting authentication and user data
-        this.authService.saveToken(response.token);
-        localStorage.setItem('userType', response.userType);
+        // 1. Persist token, user type, and full name inside AuthService
+        this.authService.saveToken(response.token, response.userType, response.username, response.profilePic);
 
-        // Store Unique Identifier for the user
+        // Store user identifier for session referencing
         const id = response.userId || response.id;
         if (id) {
           localStorage.setItem('userId', id);
         }
 
-        // Generate and store a display name based on email prefix
-        const nameFromEmail = this.loginData.email.split('@')[0];
-        localStorage.setItem('userName', nameFromEmail);
-
         console.log('Login Success!', response);
         alert('Login Successful!');
 
         /**
-         * REDIRECT LOGIC FOR INVITATIONS
-         * Extracts tripId and role from the query parameters to handle deep links.
+         * CONDITIONAL REDIRECT LOGIC
          */
-        const tripId = this.route.snapshot.queryParamMap.get('tripId');
-        const inviteRole = this.route.snapshot.queryParamMap.get('role') || 'viewer';
-
-        if (tripId) {
-          // Case 1: Redirection for users arriving via invitation links
-          console.log(`Redirecting to invited trip: ${tripId} as ${inviteRole}`);
-          this.router.navigate(['/trip-summary', tripId], {
-            queryParams: { role: inviteRole }
+        if (this.invitedTripId) {
+          console.log(`Redirecting to invited trip: ${this.invitedTripId} as ${this.invitedRole}`);
+          this.router.navigate(['/trip-summary', this.invitedTripId], { //
+            queryParams: { role: this.invitedRole }
           });
         }
         else {
-          /**
-           * STANDARD REDIRECT LOGIC
-           * Case 2: Redirection based on defined user roles (TransportProvider, Traveller, Admin)
-           */
-          if (response.userType === 'TransportProvider') {
+          const currentUserType = this.authService.getUserSystemType();
+
+          if (currentUserType === 'TransportProvider' || currentUserType === 'Provider') {
             this.router.navigate(['/provider-dashboard']);
           }
-          else if (response.userType === 'Traveller') {
+          else if (currentUserType === 'Traveller' || currentUserType === 'Traveler') {
             this.router.navigate(['/traveller-dashboard']);
-          } 
+          }
           else {
-            // Default fallback for unknown user types
             this.router.navigate(['/']);
           }
         }
       },
       error: (err) => {
-        // Log authentication error details for troubleshooting
         console.error('Login Failed', err);
         alert('Login Failed! Please check your Email and Password.');
       }

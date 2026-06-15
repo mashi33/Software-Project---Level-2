@@ -15,8 +15,9 @@ export class Signup {
     FullName: '',
     Email: '',
     Password: '',
-    UserType: 'Traveler'
-    
+    UserType: 'Traveler',
+    TripId: null as string | null, 
+    Role: null as string | null
     
   };
 
@@ -30,26 +31,34 @@ export class Signup {
    * based on whether the user was invited to a specific trip.
    */
 
-  onSignup() {
-  console.log('Signup Attempt:', this.signupData);
+ onSignup() {
+  if (!this.signupData.Password || this.signupData.Password.length < 8) {
+    alert('Password must be at least 8 characters long!');
+    return;
+  }
 
+  // when the signup form is submitted, we first check if there are any invitation parameters in the URL (like tripId and role)
+  const tripId = this.route.snapshot.queryParamMap.get('tripId');
+  const role = this.route.snapshot.queryParamMap.get('role');
+
+  // Then we attach these parameters to the signupData object, so that the backend can process the invitation context during registration
+  this.signupData.TripId = tripId;
+  this.signupData.Role = role;
+
+  console.log('Signup Attempt with Invitation Data:', this.signupData);
+
+  // call the signup method from AuthService to register the user, and handle the response accordingly
   this.authService.signup(this.signupData).subscribe({
     next: (response: any) => {
       console.log('Signup Success!', response);
       
-      // Extract optional query parameters for invitation logic
-      const tripId = this.route.snapshot.queryParamMap.get('tripId');
-      const role = this.route.snapshot.queryParamMap.get('role');
+      alert('Registration Successful! Please check your email inbox to verify your account before logging in.');
 
-      alert('Registration Successful!');
-
-      // -- Redirect Logic 
-      // If tripId exists, user was invited; redirect to that specific trip.
-      // Otherwise, redirect to the standard login page.
+      //Redirect to login page after successful registration
       if (tripId) {
-        console.log('Redirecting to invited trip:', tripId);
-        this.router.navigate(['/trip-summary', tripId], { 
-          queryParams: { role: role } 
+        console.log('Forwarding trip details to login page:', tripId);
+        this.router.navigate(['/login'], { 
+          queryParams: { tripId: tripId, role: role } 
         });
       } else {
         this.router.navigate(['/login']);

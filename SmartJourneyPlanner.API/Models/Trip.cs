@@ -28,6 +28,8 @@ namespace SmartJourneyPlanner.API.Models
         
          // Invite many members to the trip
         public List<TripMember> Members { get; set; } = new List<TripMember>();
+
+        //hotels and restaurants saved by users in the trip
         public List<TripPlace> SavedPlaces { get; set; } = new List<TripPlace>();
         public string? CreatedBy { get; set; }
         public string? CreatorEmail { get; set;}

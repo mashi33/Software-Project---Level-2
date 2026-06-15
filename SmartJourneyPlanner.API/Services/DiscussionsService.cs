@@ -54,7 +54,7 @@ namespace SmartJourneyPlanner.Services
       var discussion = await GetAsync(id);
       if (discussion == null) return false;
 
-      // If vote box confirmed or rejected, stop count votes
+      // Only block if confirmed or rejected — a tie (both false) keeps voting open
       if (discussion.IsConfirmed || discussion.IsRejected) return false;
 
       discussion.VotedUsers ??= new List<string>();
@@ -62,14 +62,15 @@ namespace SmartJourneyPlanner.Services
 
       int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 1;
 
-      // Check if this user has voted before
+      // Check if this user has voted before (case-insensitive)
       var existingVote = discussion.UserVotes.Find(v =>
-          v.UserId.Equals(userId, StringComparison.OrdinalIgnoreCase));
+          v.UserId.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase));
 
       if (existingVote == null)
       {
         // New voter — only allow if under the member limit
-        if (discussion.VotedUsers.Count >= limit) return false;
+        // Existing voters (existingVote != null) can always change their vote even during a tie
+        if (discussion.UserVotes.Count >= limit) return false;
       }
 
       if (optionIndex >= 0 && optionIndex < discussion.Options.Count)
@@ -83,8 +84,11 @@ namespace SmartJourneyPlanner.Services
         }
         else
         {
-          discussion.UserVotes.Add(new UserVoteRecord { UserId = userId, OptionText = discussion.Options[optionIndex].OptionText });
-          discussion.VotedUsers.Add(userId);
+          discussion.UserVotes.Add(new UserVoteRecord { UserId = userId.Trim(), OptionText = discussion.Options[optionIndex].OptionText });
+
+          // Sync VotedUsers consistently using the same trim + case-insensitive check
+          if (!discussion.VotedUsers.Exists(u => u.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase)))
+            discussion.VotedUsers.Add(userId.Trim());
         }
 
         discussion.Options[optionIndex].VoteCount++;

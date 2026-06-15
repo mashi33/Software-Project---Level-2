@@ -19,10 +19,15 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;
   places: any[] | null = null;
   selectedPlaceId: string | null = null;
-  addedPlaceIds: Set<string> = new Set(); // Tracks already-added places to prevent duplicates
+  addedPlaceIds: Set<string> = new Set();
+
+  //isLoading state for skeleton loader
+  isLoading = false;
+  skeletonItems = Array(5);
 
   private placesSubscription: Subscription | undefined;
   private selectionSubscription: Subscription | undefined;
+  private loadingSubscription: Subscription | undefined;
 
   constructor(
     private placesService: PlacesService,
@@ -31,7 +36,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Restore previously added places from storage so the UI reflects the correct state on reload
     const stored = localStorage.getItem('tripPlaces');
     if (stored) {
       const tripPlaces: any[] = JSON.parse(stored);
@@ -46,9 +50,13 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
       this.selectedPlaceId = id;
       if (id) this.scrollToCard(id);
     });
+
+    // Subscribe to loading state for skeleton loader
+    this.loadingSubscription = this.placesService.isLoading$.subscribe(loading => {
+      this.isLoading = loading;
+    });
   }
 
-  // Small delay gives the DOM time to render the card before scrolling to it
   scrollToCard(placeId: string) {
     setTimeout(() => {
       const element = document.getElementById('card-' + placeId);
@@ -73,7 +81,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Extract email from JWT — the claim key varies by identity provider
     const decoded: any = jwtDecode(token);
     const email = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
                   decoded['email'];
@@ -97,15 +104,13 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Format each trip as a readable label for the radio selection dialog
           const tripOptions: Record<string, string> = {};
           trips.forEach(trip => {
             const start = new Date(trip.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const end = new Date(trip.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            tripOptions[trip.id] = `${trip.tripName} — 📍${trip.destination} | 🗓️ ${start} – ${end}`;
+            tripOptions[trip.id] = `__TRIP__${trip.tripName}__DEST__${trip.destination}__DATE__${start} – ${end}`;
           });
 
-          // Inject custom styles at runtime because SweetAlert2 radio buttons can't be styled via CSS alone
           const { value: selectedTripId } = await Swal.fire({
             title: 'Select a Trip',
             input: 'radio',
@@ -121,43 +126,146 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             customClass: {
               input: 'swal-trip-radio-group'
             },
+
             didOpen: () => {
               const style = document.createElement('style');
               style.textContent = `
-                .swal-trip-radio-group {
-                  display: flex !important;
-                  flex-direction: column !important;
-                  gap: 10px !important;
-                  text-align: left !important;
-                  width: 100% !important;
+                .swal2-popup {
+                  width: 520px !important;
+                  padding: 30px !important;
+                  border-radius: 16px !important;
+                }
+                .swal2-title {
+                  font-size: 22px !important;
+                  font-weight: 700 !important;
+                  color: #1a1a2e !important;
+                  margin-bottom: 20px !important;
                 }
                 .swal2-radio {
                   display: flex !important;
                   flex-direction: column !important;
                   gap: 10px !important;
                   width: 100% !important;
+                  max-height: 380px !important;
+                  overflow-y: auto !important;
+                  padding: 4px 6px !important;
+                }
+                .swal2-radio::-webkit-scrollbar {
+                  width: 6px !important;
+                }
+                .swal2-radio::-webkit-scrollbar-track {
+                  background: #f1f1f1 !important;
+                  border-radius: 10px !important;
+                }
+                .swal2-radio::-webkit-scrollbar-thumb {
+                  background: #c0c0c0 !important;
+                  border-radius: 10px !important;
                 }
                 .swal2-radio label {
                   display: flex !important;
-                  align-items: flex-start !important;
-                  gap: 10px !important;
-                  padding: 10px 14px !important;
-                  border: 1px solid #e0e0e0 !important;
-                  border-radius: 8px !important;
+                  align-items: center !important;
+                  gap: 12px !important;
+                  padding: 14px 16px !important;
+                  border: 1.5px solid #e8e8e8 !important;
+                  border-radius: 12px !important;
                   cursor: pointer !important;
-                  font-size: 14px !important;
-                  transition: background 0.2s !important;
+                  background: #fff !important;
+                  width: 100% !important;
+                  box-sizing: border-box !important;
+                  transition: all 0.2s ease !important;
+                  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
                 }
                 .swal2-radio label:hover {
                   background: #f0f7ff !important;
                   border-color: #4A90D9 !important;
+                  box-shadow: 0 2px 8px rgba(74,144,217,0.15) !important;
+                  transform: translateY(-1px) !important;
                 }
-                .swal2-radio input[type="radio"]:checked + span {
-                  font-weight: 600 !important;
+                .swal2-radio input[type="radio"] {
+                  width: 18px !important;
+                  height: 18px !important;
+                  accent-color: #4A90D9 !important;
+                  flex-shrink: 0 !important;
+                }
+                .swal2-radio label:has(input:checked) {
+                  background: #eef6ff !important;
+                  border-color: #4A90D9 !important;
+                  box-shadow: 0 2px 10px rgba(74,144,217,0.2) !important;
+                }
+                .swal2-radio .trip-label-wrap {
+                  display: flex !important;
+                  flex-direction: column !important;
+                  gap: 3px !important;
+                  flex: 1 !important;
+                  text-align: left !important;
+                }
+                .swal2-radio .trip-label-name {
+                  font-size: 15px !important;
+                  font-weight: 700 !important;
+                  color: #1a1a2e !important;
+                }
+                .swal2-radio .trip-label-meta {
+                  font-size: 12px !important;
+                  color: #777 !important;
+                  font-weight: 400 !important;
+                }
+                .swal2-radio label:has(input:checked) .trip-label-name {
                   color: #4A90D9 !important;
+                }
+                .swal2-actions {
+                  margin-top: 24px !important;
+                  gap: 12px !important;
+                }
+                .swal2-confirm {
+                  padding: 12px 32px !important;
+                  border-radius: 10px !important;
+                  font-size: 15px !important;
+                  font-weight: 600 !important;
+                  background: #4A90D9 !important;
+                  box-shadow: 0 4px 12px rgba(74,144,217,0.35) !important;
+                  transition: all 0.2s !important;
+                }
+                .swal2-confirm:hover {
+                  background: #357abd !important;
+                  box-shadow: 0 6px 16px rgba(74,144,217,0.45) !important;
+                  transform: translateY(-1px) !important;
+                }
+                .swal2-cancel {
+                  padding: 12px 32px !important;
+                  border-radius: 10px !important;
+                  font-size: 15px !important;
+                  font-weight: 600 !important;
+                  background: #f0f0f0 !important;
+                  color: #555 !important;
+                }
+                .swal2-cancel:hover {
+                  background: #e0e0e0 !important;
+                }
+                .swal2-validation-message {
+                  border-radius: 8px !important;
+                  font-size: 13px !important;
                 }
               `;
               document.head.appendChild(style);
+
+
+              setTimeout(() => {
+                document.querySelectorAll('.swal2-radio label').forEach(label => {
+                  const span = label.querySelector('span');
+                  if (span) {
+                    const raw = span.textContent || '';
+                    const tripMatch = raw.match(/__TRIP__(.+?)__DEST__(.+?)__DATE__(.+)/);
+                    if (tripMatch) {
+                      span.innerHTML = `
+                        <div class="trip-label-wrap">
+                          <span class="trip-label-name">${tripMatch[1]}</span>
+                          <span class="trip-label-meta">📍 ${tripMatch[2]} &nbsp;|&nbsp; 🗓️ ${tripMatch[3]}</span>
+                        </div>
+                      `;
+                    }
+                  }
+                });
+              }, 0);
             }
           });
 
@@ -177,7 +285,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   }
 
   selectTrip(place: any, trip: any) {
-    // Normalize field names since the API response casing can be inconsistent
     const placeToSave = {
       placeId:        place.placeId ?? '',
       name:           place.name ?? place.Name ?? 'Unknown',
@@ -190,7 +297,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
     this.http.post(`http://localhost:5233/api/trips/${trip.id}/add-place`, placeToSave)
       .subscribe({
         next: () => {
-          // Keep localStorage in sync so the added state persists across page reloads
           const stored = localStorage.getItem('tripPlaces');
           const tripPlaces: any[] = stored ? JSON.parse(stored) : [];
           tripPlaces.push(placeToSave);
@@ -224,5 +330,7 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.placesSubscription) this.placesSubscription.unsubscribe();
     if (this.selectionSubscription) this.selectionSubscription.unsubscribe();
+    // Unsubscribe from loading state
+    if (this.loadingSubscription) this.loadingSubscription.unsubscribe();
   }
 }
