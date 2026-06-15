@@ -47,8 +47,8 @@ export const routes: Routes = [
   { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
-  { path: 'help', component: HelpComponent },
-  {path: 'memories-map-help',component: MemoriesMapHelpComponent},
+  { path: 'help', component: HelpComponent, canActivate: [authGuard] },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
