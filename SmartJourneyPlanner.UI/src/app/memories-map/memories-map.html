@@ -82,9 +82,9 @@
                 <span class="date-range">{{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}</span>
               </div>
               <span class="visibility-status">{{ memory?.isPublic ? 'Public' : 'Private' }}</span>
-              <button class="delete-overlay-btn" (click)="deleteMemory(memory.id, $event)">
-                <span class="trash-icon">🗑️</span>
-              </button>
+              <button class="delete-overlay-btn" (click)="deleteMemory(memory.id, $event)" title="Delete Memory">
+    <i class="bi bi-trash3-fill"></i>
+  </button>
             </div>
           </div>
         </div>
@@ -107,17 +107,28 @@
 
 <div class="lightbox-overlay" *ngIf="selectedMemory" (click)="selectedMemory = null">
   <div class="lightbox-content" (click)="$event.stopPropagation()">
-    <img [src]="selectedMemory.imageUrl || selectedMemory" class="lightbox-img">
+    
+    <button class="btn-close-top" (click)="selectedMemory = null" title="Close Overlay">✕</button>
+    
+    <img [src]="isObject(selectedMemory) ? selectedMemory.imageUrl : selectedMemory" class="lightbox-img" alt="Enlarged memory view">
 
-    <div class="lightbox-details" *ngIf="selectedMemory.title">
+    <div class="lightbox-details" *ngIf="isObject(selectedMemory) && selectedMemory.title; else mapImageFallback">
       <h2>{{ selectedMemory.title }}</h2>
-      <p class="date-text">{{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}</p>
+      <div class="date-text" *ngIf="selectedMemory.startDate || selectedMemory.endDate">
+        🗓️ {{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}
+      </div>
       <hr>
-      <p class="description-text">{{ selectedMemory.description || 'No description available.' }}</p>
+      <p class="description-text">{{ selectedMemory.description || 'No description provided for this memory.' }}</p>
     </div>
 
-    <div class="lightbox-actions">
-      <button class="btn-close" (click)="selectedMemory = null">Close View</button>
-    </div>
+    <ng-template #mapImageFallback>
+      <div class="lightbox-details">
+        <h2>Pinned Map Location</h2>
+        <div class="date-text">Active Pin</div>
+        <hr>
+        <p class="description-text">This item was directly loaded from your geo-coordinates pin layout.</p>
+      </div>
+    </ng-template>
+
   </div>
 </div>

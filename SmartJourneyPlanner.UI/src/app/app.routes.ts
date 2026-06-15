@@ -25,6 +25,8 @@ import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
 import { ResetPasswordComponent } from './reset-password/reset-password';
+import { HelpComponent } from './help/help';
+import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 
 export const routes: Routes = [
   //  PUBLIC ROUTES 
@@ -45,7 +47,8 @@ export const routes: Routes = [
   { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
-
+  { path: 'help', component: HelpComponent },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent},
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },

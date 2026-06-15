@@ -53,6 +53,11 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
+  // Type checker helper function for HTML template validation
+  isObject(val: any): boolean {
+    return val !== null && typeof val === 'object';
+  }
+
 onFileSelected(event: any): void {
   const file: File = event.target.files[0];
 
@@ -321,12 +326,24 @@ deleteMemory(id: string, event: Event) {
 
 
 
+  // ==========================================
+  // HIGHLIGHTED CHANGE: Look up full object from URL
+  // ==========================================
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
-    // Stores selected image for modal/lightbox display
-    this.selectedMemory = event.detail; 
+    const imageUrl = event.detail;
+    
+    // Attempt to locate the full descriptive object using the matching URL string
+    const foundMemory = this.allMemories.find(m => m.imageUrl === imageUrl);
+    
+    if (foundMemory) {
+      // Open the modal with all information available
+      this.selectedMemory = foundMemory; 
+    } else {
+      // Fallback if the collection doesn't contain the element
+      this.selectedMemory = imageUrl; 
+    }
   }
-
   closeModal() {
     this.selectedMemory = null;
   }
