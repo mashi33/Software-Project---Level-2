@@ -266,7 +266,24 @@
   margin-bottom: 2px; 
 }
 
-/* INTERACTIVE SPLIT BOX & CHART */
+.budget-remaining-status {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 12px;
+  color: #555555;
+  font-weight: 500;
+}
+
+.budget-remaining-status strong {
+  color: #4ECDC4;
+  font-size: 1rem;
+}
+
+.budget-remaining-status strong.overspent {
+  color: #FF6B6B !important;
+}
+
+/* INTERACTIVE SPLIT BOX */
 .interactive-split-box {
   background: rgba(225, 225, 225, 0.4); 
   display: inline-block;
@@ -307,21 +324,88 @@
   background-color: rgba(255, 255, 255, 0.7); 
 }
 
-.chart-container { 
-  height: 280px; 
-  width: 100%; 
-  max-width: 350px; 
-  margin: 20px auto; 
+/* 🔑 FIXED CHART & LEGEND SIDE-BY-SIDE PLATFORM MATRIX */
+.chart-and-legend-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 94%;
+  margin: 15px auto;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.chart-container-left { 
+  flex: 1;
+  height: 200px; 
+  max-width: 200px; 
   display: flex; 
   justify-content: center; 
   align-items: center; 
   position: relative;
 }
 
-.chart-container canvas {
+.chart-container-left canvas {
   height: 100% !important;
   width: 100% !important;
-  max-height: 280px;
+}
+
+.chart-legend-right {
+  flex: 1.2;
+  text-align: left;
+  padding-left: 5px;
+}
+
+.legend-title {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: #006064;
+  font-weight: bold;
+  border-bottom: 1px;
+  padding-bottom: 4px;
+}
+
+.legend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.legend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.80rem;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.legend-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.category-name {
+  font-weight: 500;
+}
+
+.category-value {
+  font-weight: bold;
+  color: #2c3e50;
 }
 
 .chart-empty-state { 
@@ -421,18 +505,22 @@
 }
 
 /* SCROLLBAR CUSTOMIZATION */
-::-webkit-scrollbar { 
+::window-webkit-scrollbar { 
   width: 8px; 
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track { 
   background: rgba(255, 255, 255, 0.1); 
 }
 ::-webkit-scrollbar-thumb { 
-  background: rgba(0, 96, 100, 0.3); 
+  background: rgba(0, 96, 100, 0.25); 
   border-radius: 10px; 
 }
 ::-webkit-scrollbar-thumb:hover { 
-  background: rgba(0, 96, 100, 0.5); 
+  background: rgba(0, 96, 100, 0.45); 
 }
 
 .sortable-header {
@@ -443,14 +531,14 @@
 }
 
 .sortable-header:hover {
-  color: #00acc1; /* Subtle contextual feedback color modification on hover state */
+  color: #00acc1; 
 }
 
 .sort-arrow {
   display: inline-block;
   font-size: 11px;
   margin-left: 4px;
-  color: #006064; /* Aligns smoothly with your dark teal text color contract */
+  color: #006064; 
   font-weight: bold;
 }
 
@@ -458,18 +546,17 @@
   display: inline-block;
   font-size: 12px;
   margin-left: 4px;
-  color: rgba(0, 96, 100, 0.25); /* Faded placeholder to prevent cluttering the view */
+  color: rgba(0, 96, 100, 0.25); 
 }
 
-/* Professional styling for restricted row action handlers */
 .disabled-action {
   cursor: not-allowed !important;
   opacity: 0.99;
   filter: grayscale(100%);
-  pointer-events: auto !important; /* Ensures the hover tooltip still pops up! */
+  pointer-events: auto !important; 
 }
 
 .disabled-action:hover {
-  background: none !important; /* Prevents the teal hover highlight on locked items */
+  background: none !important; 
   transform: none !important;
 }

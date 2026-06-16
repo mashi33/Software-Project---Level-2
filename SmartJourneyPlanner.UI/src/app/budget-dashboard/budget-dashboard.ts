@@ -176,6 +176,12 @@ private extractLoggedInUser(): void {
     }
   }
 
+  get remainingBudget(): number {
+    if (!this.budget) return this.totalAllowedBudget;
+    const remaining = this.totalAllowedBudget - (this.budget.totalSpent || 0);
+    return remaining > 0 ? remaining : 0; // Ensures it gracefully bottoms out at 0 instead of dropping negative
+  }
+
   sortTable(column: string) {
     if (this.sortColumn === column) {
       this.sortAscending = !this.sortAscending;
