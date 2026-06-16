@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
   <div class="container-fluid px-4">
 
-    <a class="navbar-brand brand-container" routerLink="/traveller-dashboard">
+    <a class="navbar-brand brand-container" [routerLink]="userRole === 'Admin' ? '/admin-panel' : (userRole === 'Provider' ? '/provider-dashboard' : '/traveller-dashboard')">
       <img src="/logo.jpg" alt="Logo" class="brand-logo">
       <div class="brand-text">
         <span class="secular one"><b>Smart</b></span>
@@ -59,7 +59,7 @@
         <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
           <a class="dropdown-toggle profile-trigger" id="profileDropdown" style="cursor: pointer;"
             (click)="toggleDropdown()">
-            <img [src]="profilePic" alt="user" class="profile-img" (error)="profilePic = 'assets/default-avatar.png'">
+            <img [src]="profilePic" alt="user" class="profile-img" (error)="profilePic = '/assets/default-avatar.png'">
             <span class="profile-name">{{ userName }}</span>
           </a>
 
