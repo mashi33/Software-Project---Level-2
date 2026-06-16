@@ -22,15 +22,23 @@ namespace SmartJourneyPlanner.API.Controllers
             => Ok(await _dashboardService.GetDashboardStats());
 
         // Provides full vehicle list for fleet management UI
+        // Provides full vehicle list for fleet management UI
         [HttpGet("vehicles")]
+        [Microsoft.AspNetCore.Authorization.Authorize] 
         public async Task<IActionResult> GetVehicles() 
-            => Ok(await _dashboardService.GetAllVehicles());
-
-        [HttpDelete("vehicles/{id}")]
-        public async Task<IActionResult> DeleteVehicle(string id)
         {
-            await _dashboardService.DeleteVehicle(id);
-            return NoContent();
+            // 🔎 Checks every standard claim path variation to guarantee we grab the right string
+            var providerIdentifier = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                                     ?? User.FindFirst("email")?.Value
+                                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // Log this to your backend console terminal window so you can see the string value!
+            System.Console.WriteLine($"⚙️ Active Authenticated Provider Token ID extracted: '{providerIdentifier}'");
+
+            if (string.IsNullOrEmpty(providerIdentifier)) return Unauthorized();
+
+            return Ok(await _dashboardService.GetAllVehicles(providerIdentifier));
         }
 
         [HttpPut("vehicles/{id}/availability")]

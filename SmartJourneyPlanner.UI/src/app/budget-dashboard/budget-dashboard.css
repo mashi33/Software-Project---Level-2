@@ -434,3 +434,42 @@
 ::-webkit-scrollbar-thumb:hover { 
   background: rgba(0, 96, 100, 0.5); 
 }
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.sortable-header:hover {
+  color: #00acc1; /* Subtle contextual feedback color modification on hover state */
+}
+
+.sort-arrow {
+  display: inline-block;
+  font-size: 11px;
+  margin-left: 4px;
+  color: #006064; /* Aligns smoothly with your dark teal text color contract */
+  font-weight: bold;
+}
+
+.sort-arrow-placeholder {
+  display: inline-block;
+  font-size: 12px;
+  margin-left: 4px;
+  color: rgba(0, 96, 100, 0.25); /* Faded placeholder to prevent cluttering the view */
+}
+
+/* Professional styling for restricted row action handlers */
+.disabled-action {
+  cursor: not-allowed !important;
+  opacity: 0.99;
+  filter: grayscale(100%);
+  pointer-events: auto !important; /* Ensures the hover tooltip still pops up! */
+}
+
+.disabled-action:hover {
+  background: none !important; /* Prevents the teal hover highlight on locked items */
+  transform: none !important;
+}
