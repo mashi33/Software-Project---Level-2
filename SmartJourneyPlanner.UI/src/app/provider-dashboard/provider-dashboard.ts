@@ -62,30 +62,32 @@ export class ProviderDashboardComponent implements OnInit {
 
   toggleAvailability(vehicle: any) {
     const targetId = vehicle.id || vehicle._id;
-    const currentStatus = vehicle.Status || vehicle.status || '';
-    const isCurrentlyAvailable = currentStatus === 'Available' || vehicle.available === true;
     
-    // 1. Invert the logical state string cleanly
-    const nextStatus = isCurrentlyAvailable ? 'Unavailable' : 'Available';
+    // 🔑 Force read both uppercase and lowercase properties cleanly
+    const currentStatus = vehicle.Status || vehicle.status || '';
+    
+    // If it's currently Available, flip it to Unavailable. Otherwise, set it to Available.
+    const nextStatus = (currentStatus === 'Available') ? 'Unavailable' : 'Available';
 
-    // 2. Optimistically update local property to prevent the toggle visual jumping out of sync
+    // Optimistically update the property value in frontend memory so the checkmark changes instantly
     if (vehicle.hasOwnProperty('Status')) {
       vehicle.Status = nextStatus;
     } else {
       vehicle.status = nextStatus;
     }
-    vehicle.available = !isCurrentlyAvailable;
 
-    // 3. 🔑 FIXED: Use vehicleService to update state string parameter
+    // Call your service to update MongoDB
     this.vehicleService.updateAvailability(targetId, nextStatus === 'Available').subscribe({
-      next: () => this.loadAll(),
+      next: () => {
+        console.log(`⚡ Availability status successfully synchronized to: ${nextStatus}`);
+        this.loadAll(); // Reload metrics and stats
+      },
       error: (err) => {
-        console.error('Error updating status:', err);
-        this.loadAll(); // Revert UI if DB write drops
+        console.error('Error saving checkbox state:', err);
+        this.loadAll(); // Revert back if database save fails
       }
     });
   }
-
   deleteVehicle(id: string) {
     if (confirm('Are you sure you want to delete this vehicle?')) {
       // 🔑 FIXED: Points directly to your TransportVehicleService api/TransportVehicles controller endpoint

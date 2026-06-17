@@ -35,16 +35,15 @@ namespace SmartJourneyPlanner.Controllers
 
         /**
          * GET: /api/TransportVehicles
-         * Returns a list of all vehicles that have been approved by the Admin.
-         * Travelers use this to search for available transport.
+         * Returns a list of all vehicles that are verified AND toggled to "Available".
          */
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
-            var approved = await _adminService.GetApprovedProvidersAsync();
-            return Ok(approved);
+            // 🔑 Hits our newly updated service rule to filter out "Unavailable" items
+            var activeVehicles = await _adminService.GetApprovedProvidersAsync();
+            return Ok(activeVehicles);
         }
-
         // --- 🚐 PROVIDER ACTIONS ---
 
         /**

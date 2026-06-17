@@ -26,18 +26,20 @@ namespace SmartJourneyPlanner.API.Services
 
         /**
          * GET APPROVED VEHICLES
-         * Used for the 'Approved' list view so the Admin can see who is currently active on the platform.
+         * 🔑 FIXED FOR TRAVELERS VIEW:
+         * This method feeds the traveler screen. It has been updated to query ONLY vehicles 
+         * that have been verified by the Admin AND are actively marked "Available" by the provider.
          */
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
-                .Find(v => v.Status == "Approved")
+                .Find(v => v.IsVerified == true && v.Status == "Available")
                 .ToListAsync();
         }
 
         /**
          * GET PENDING VEHICLES/PROVIDERS
-         * 🔑 FIXED: Fetches documents matching EITHER "Pending" OR "Pending Approval".
+         * Fetches documents matching EITHER "Pending" OR "Pending Approval".
          * This prevents new submissions from disappearing from the Admin Panel.
          */
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
@@ -66,17 +68,19 @@ namespace SmartJourneyPlanner.API.Services
 
         /**
          * UPDATE APPROVAL STATUS
-         * Executed when the Admin clicks the Green Checkmark (Approve) or Red Cross (Reject).
-         * Flips IsVerified automatically if the vehicle is approved.
+         * Executed when Sasini clicks the Green Checkmark (Approve).
+         * 🔑 FIXED STATE: Sets IsVerified to true, but initializes Status as "Unavailable".
+         * This forces Manoja to physically tick the checkbox on her dashboard before it goes live to travelers!
          */
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
 
-            // A dual-field update here
+            var isApproved = newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase);
+
             var update = Builders<TransportVehicle>.Update
-                .Set(v => v.Status, newStatus)
-                .Set(v => v.IsVerified, newStatus == "Approved");
+                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus)
+                .Set(v => v.IsVerified, isApproved);
             
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }

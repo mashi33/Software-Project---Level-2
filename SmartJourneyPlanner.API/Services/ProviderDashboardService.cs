@@ -30,21 +30,19 @@ namespace SmartJourneyPlanner.Services
         {
             var cleanEmail = ownerEmail.Trim();
 
-            // 1. Build a case-insensitive regex pattern filter for the logged-in provider's email identification
+            // 1. Filter by the logged-in provider's email (case-insensitive)
             var emailFilter = Builders<TransportVehicle>.Filter.Regex(
                 v => v.ProviderId, 
                 new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(cleanEmail)}$", "i")
             );
 
-            // 🔑 THE WHITELIST SECURITY SOLUTION: 
-            // Only allow vehicles that are explicitly marked as "Approved", "Available", or "Unavailable".
-            // Anything else (such as "Pending", "Pending Approval", or empty/null values) is completely HIDDEN by default!
-            var statusFilter = Builders<TransportVehicle>.Filter.In(v => v.Status, new[] { "Approved", "Available", "Unavailable" });
+            // 🔑 THE FLEET MANAGER WHIETLIST: Allow BOTH Available and Unavailable states to show on her dashboard!
+            // This prevents the vehicle from vanishing from her screen when she unticks the box.
+            var statusFilter = Builders<TransportVehicle>.Filter.In(v => v.Status, new[] { "Available", "Unavailable", "Approved" });
 
-            // 2. Combine both conditions using an explicit 'And' operation matrix
+            // 2. Combine both conditions together
             var combinedFilter = Builders<TransportVehicle>.Filter.And(emailFilter, statusFilter);
 
-            // 3. Query MongoDB and return only the matching verified dataset array rows
             return await _vehicleCollection.Find(combinedFilter).ToListAsync();
         }
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)

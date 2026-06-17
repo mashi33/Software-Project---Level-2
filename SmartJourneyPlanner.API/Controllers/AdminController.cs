@@ -118,14 +118,21 @@ namespace SmartJourneyPlanner.API.Controllers
             return vehicle == null ? NotFound() : Ok(vehicle);
         }
 
+        /**
+         * UPDATE STATUS FROM ADMIN PANEL
+         * Sets IsVerified to true, but initializes Status as "Unavailable" 
+         * so the provider has to tick the checkbox to publish it live!
+         */
         [HttpPut("update-status/{id}")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
 
+            var isApproved = newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase);
+
             var update = Builders<TransportVehicle>.Update
-                .Set(v => v.Status, newStatus)
-                .Set(v => v.IsVerified, newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase));
+                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus) // 🔑 Starts as "Unavailable" when approved
+                .Set(v => v.IsVerified, isApproved);
             
             await _vehicleCollection.UpdateOneAsync(filter, update);
             return Ok(new { message = "Status updated" });

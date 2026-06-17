@@ -30,12 +30,14 @@ namespace SmartJourneyPlanner.Services
                 .ToListAsync();
         }
 
-        // --- 🚐 CORE OPERATIONS ---
+        /// --- 🚐 CORE OPERATIONS ---
 
-        // Fetch all vehicles that are ready to be booked (Approved)
+        /**
+         * GET: /api/TransportVehicles
+         * 🔑 THE TRAVELER VIEW: Only display vehicles in the public market search if they are explicitly "Available"
+         */
         public async Task<List<TransportVehicle>> GetAsync() =>
-            // 🔑 THE FIX: Removed '|| v.Status == "Pending"' so unapproved assets stay invisible
-            await _vehiclesCollection.Find(v => v.Status == "Approved").ToListAsync();
+            await _vehiclesCollection.Find(v => v.Status == "Available").ToListAsync();
 
         // Get a list of all vehicles belonging to a specific transport provider excluding pending approvals
         public async Task<List<TransportVehicle>> GetByProviderAsync(string providerId) =>
