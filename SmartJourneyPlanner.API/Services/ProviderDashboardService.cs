@@ -26,17 +26,26 @@ namespace SmartJourneyPlanner.Services
             var totalBookings = await _bookingCollection.CountDocumentsAsync(_ => true);
             return new { totalVehicles, totalBookings };
         }
-        public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
+      public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
         {
             var cleanEmail = ownerEmail.Trim();
 
-            // 🔑 CHANGED: Removed the 'Approved' status filter rule so toggled vehicles don't vanish from your dashboard view
-            var filter = Builders<TransportVehicle>.Filter.Regex(
+            // 1. Build a case-insensitive regex pattern filter for the logged-in provider's email identification
+            var emailFilter = Builders<TransportVehicle>.Filter.Regex(
                 v => v.ProviderId, 
                 new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(cleanEmail)}$", "i")
             );
 
-            return await _vehicleCollection.Find(filter).ToListAsync();
+            // 🔑 THE WHITELIST SECURITY SOLUTION: 
+            // Only allow vehicles that are explicitly marked as "Approved", "Available", or "Unavailable".
+            // Anything else (such as "Pending", "Pending Approval", or empty/null values) is completely HIDDEN by default!
+            var statusFilter = Builders<TransportVehicle>.Filter.In(v => v.Status, new[] { "Approved", "Available", "Unavailable" });
+
+            // 2. Combine both conditions using an explicit 'And' operation matrix
+            var combinedFilter = Builders<TransportVehicle>.Filter.And(emailFilter, statusFilter);
+
+            // 3. Query MongoDB and return only the matching verified dataset array rows
+            return await _vehicleCollection.Find(combinedFilter).ToListAsync();
         }
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {

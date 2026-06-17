@@ -15,8 +15,8 @@ namespace SmartJourneyPlanner.API.Services
 
         public AdminService(IOptions<MongoDBSettings> settings)
         {
-            // if change the connection string in appsettings.json, 
-            // the service picks it up automatically without me touching this code.
+            // If the connection string is changed in appsettings.json, 
+            // the service picks it up automatically without touching this code.
             var client = new MongoClient(settings.Value.ConnectionString);
             var database = client.GetDatabase(settings.Value.DatabaseName);
 
@@ -24,8 +24,10 @@ namespace SmartJourneyPlanner.API.Services
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // Even though the dashboard focuses on 'Pending', we need this for the 
-        // 'Approved' list view so the Admin can see who is currently active
+        /**
+         * GET APPROVED VEHICLES
+         * Used for the 'Approved' list view so the Admin can see who is currently active on the platform.
+         */
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -33,13 +35,27 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
+        /**
+         * GET PENDING VEHICLES/PROVIDERS
+         * 🔑 FIXED: Fetches documents matching EITHER "Pending" OR "Pending Approval".
+         * This prevents new submissions from disappearing from the Admin Panel.
+         */
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
         {
+            var pendingFilter = Builders<TransportVehicle>.Filter.Or(
+                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending"),
+                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending Approval")
+            );
+
             return await _vehiclesCollection
-                .Find(v => v.Status == "Pending")
+                .Find(pendingFilter)
                 .ToListAsync();
         }
 
+        /**
+         * PROMOTE USER TO ADMIN
+         * Elevates standard platform accounts to administrative privileges.
+         */
         public async Task<bool> PromoteToAdmin(string userId)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
@@ -48,11 +64,16 @@ namespace SmartJourneyPlanner.API.Services
             return result.ModifiedCount > 0;
         }
 
+        /**
+         * UPDATE APPROVAL STATUS
+         * Executed when the Admin clicks the Green Checkmark (Approve) or Red Cross (Reject).
+         * Flips IsVerified automatically if the vehicle is approved.
+         */
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
 
-            //a dual-field update here
+            // A dual-field update here
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.Status, newStatus)
                 .Set(v => v.IsVerified, newStatus == "Approved");
@@ -60,10 +81,12 @@ namespace SmartJourneyPlanner.API.Services
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
+        /**
+         * GET VEHICLES BY PROVIDER ID
+         * Useful for viewing all vehicles owned by a specific person, ignoring status boundaries.
+         */
         public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
         {
-            // Useful for when we want to see all vehicles 
-            // owned by a specific person, rather than just filtering by status.
             return await _vehiclesCollection
                 .Find(v => v.ProviderId == providerId)
                 .ToListAsync();

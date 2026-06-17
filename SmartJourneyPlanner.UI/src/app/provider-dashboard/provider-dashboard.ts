@@ -34,17 +34,24 @@ export class ProviderDashboardComponent implements OnInit {
     // 1. Leave your stats method completely untouched
     this.vehicleService.getStats().subscribe(data => this.stats = data);
     
-    // 2. 🔑 THE CORE FIX: Safely map MongoDB _id fields directly to frontend id properties!
+    // 2. 🔑 THE FRONTEND UI PROTECTION FILTER
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
-        this.vehicles = data.map((vehicle: any) => ({
+        // Drop any vehicle whose status matches "Pending Approval" right at the UI gateway
+        const approvedFleetOnly = data.filter((vehicle: any) => {
+          const currentStatus = vehicle.Status || vehicle.status || '';
+          return currentStatus.trim() !== 'Pending Approval';
+        });
+
+        // Map the filtered array onto your component template state structure
+        this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
           ...vehicle,
           id: vehicle.id || vehicle._id // Maps MongoDB native _id onto standard id property
         }));
       } else {
         this.vehicles = [];
       }
-      console.log("📊 Cleaned Vehicles state loaded into Dashboard UI:", this.vehicles);
+      console.log("📊 Strictly Filtered Approved Vehicles loaded into Dashboard UI:", this.vehicles);
     });
     
     // 3. Leave your bookings method completely untouched
