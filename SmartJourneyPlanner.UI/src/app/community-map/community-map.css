@@ -284,3 +284,147 @@
     transform: scale(1) translateY(0); 
   }
 }
+
+
+/* ==========================================================================
+   💙 LIKE FEATURE CORE STYLES - BLUE THEME (GALLERY, OVERLAY & MAP POPUP)
+   ========================================================================== */
+
+/* පොදුවේ HTML සහ TS ෆයිල් දෙකේම තියෙන Thumbs Up අයිකන සමපාත කිරීමට */
+.thumbs-up-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   1. SIDEBAR GALLERY LIKE BUTTON (`.gallery-like-btn`)
+-------------------------------------------------------------------------- */
+.thumb-likes {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.gallery-like-btn {
+  /* මූලික පෙනුම සහ පසුබිම (ලා නිල්) */
+  background-color: rgba(24, 119, 242, 0.08);
+  color: #1877f2; /* Facebook Blue */
+  border: 1px solid rgba(24, 119, 242, 0.15);
+  
+  /* ප්‍රමාණය සහ හැඩය */
+  padding: 6px 14px;
+  border-radius: 20px; /* Pill-shaped design */
+  font-size: 0.82rem;
+  font-weight: 600;
+  
+  /* Interactive හැසිරීම් */
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover Effect */
+.gallery-like-btn:hover {
+  background-color: #1877f2;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Click/Active Effect */
+.gallery-like-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* --------------------------------------------------------------------------
+   2. LIGHTBOX OVERLAY LIKE BUTTON (`.modal-like-btn`)
+-------------------------------------------------------------------------- */
+.lightbox-like-container {
+  margin: 16px 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.modal-like-btn {
+  /* මූලික පෙනුම (තද නිල් පැහැයෙන්) */
+  background-color: #1877f2;
+  color: #ffffff;
+  border: none;
+  outline: none;
+  
+  /* ප්‍රමාණය සහ හැඩය */
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  
+  /* Interactive හැසිරීම් */
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Hover Effect */
+.modal-like-btn:hover {
+  background-color: #145dbf; /* තද නිල් පැහැයක් */
+  box-shadow: 0 6px 20px rgba(24, 119, 242, 0.35);
+  transform: translateY(-1.5px);
+}
+
+/* Click/Active Effect */
+.modal-like-btn:active {
+  transform: scale(0.97);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. LEAFLET MAP DYNAMIC POPUP LIKE BUTTON (`.popup-like-btn`)
+-------------------------------------------------------------------------- */
+:host ::ng-deep .popup-like-section {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 6px;
+}
+
+:host ::ng-deep .popup-like-btn {
+  /* මූලික පෙනුම (සිතියමේ ඇති කළු බෝඩරය සම්පූර්ණයෙන්ම ඉවත් කර ඇත) */
+  background-color: rgba(24, 119, 242, 0.08);
+  color: #1877f2;
+  border: none;
+  outline: none;
+  
+  /* ප්‍රමාණය සහ හැඩය */
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  
+  /* Interactive හැසිරීම් */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover Effect */
+:host ::ng-deep .popup-like-btn:hover {
+  background-color: #1877f2;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(24, 119, 242, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Click/Active Effect */
+:host ::ng-deep .popup-like-btn:active {
+  transform: scale(0.95);
+}
