@@ -508,6 +508,32 @@
   transform: scale(0.95);
 }
 
+.like-badge-sidebar {
+  font-size: 13px;
+  background: #eef5ff;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex; 
+  align-items: center; 
+  gap: 6px; 
+  margin: 5px 0;
+  color: #145dbf; 
+  font-weight: 600;
+}
+
+.thumbs-up-icon {
+  fill: currentColor; 
+}
+
+.like-badge-lightbox{
+  color: #145dbf;
+  font-weight: 600;
+  margin: 10px 0;
+  display: flex;
+  align-items: center; 
+  gap: 8px;
+}
+
 /* 6. High Fidelity Timing Core Micro-interactions */
 @keyframes premiumFadeIn {
   from { opacity: 0; }
