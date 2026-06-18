@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+//import { HomeComponent } from './home/home';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form';
 import { MemoriesMapComponent } from './memories-map/memories-map';
@@ -38,6 +39,7 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
 
   //  PROTECTED ROUTES 
+  //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
