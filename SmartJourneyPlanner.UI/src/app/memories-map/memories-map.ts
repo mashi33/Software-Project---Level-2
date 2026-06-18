@@ -97,7 +97,8 @@ removeImage(fileInput: HTMLInputElement): void {
       locationName: memory.locationName || memory.LocationName || 'Unknown Location',
       startDate:  memory.startDate, 
        endDate:  memory.endDate,
-       isPublic: memory.isPublic || memory.IsPublic || false
+       isPublic: memory.isPublic || memory.IsPublic || false,
+       likeCount: memory.likeCount || 0
     };
   }
   
@@ -213,6 +214,14 @@ toggleSeeMore() {
 
 
   private getPopupHtml(memory: any): string {
+    // Public නම් විතරක් Like Count එක පෙන්වන කොටස සෑදීම
+  const likeHtml = memory.isPublic 
+    ? `<div style="margin-top: 8px; font-weight: bold; color: #145dbf;">
+    <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
+            </svg> 
+    ${memory.likeCount || 0}</div>` 
+    : '';
     return `
       <div class="popup-container">
         <h6 class="popup-title">${memory.title}</h6>
@@ -221,7 +230,8 @@ toggleSeeMore() {
              class="popup-image view-big-image"
              data-img="${memory.imageUrl}" />
 
-        <p class="popup-location">${memory.locationName}</p>
+        <p class="popup-location"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>${memory.locationName}</p>
+        ${likeHtml}
       </div>
     `;
   }
