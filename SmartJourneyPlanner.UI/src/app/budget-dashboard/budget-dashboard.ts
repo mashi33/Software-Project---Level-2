@@ -31,10 +31,7 @@ export class BudgetDashboard implements OnInit {
 
   sortColumn: string = '';
   sortAscending: boolean = true;
-
   userTripsList: any[] = [];
-
-  // Tracks the active traveler context to resolve the TS2339 template compilation error
   currentUserEmail: string = '';
 
   public doughnutChartType: ChartType = 'pie';
@@ -52,33 +49,26 @@ export class BudgetDashboard implements OnInit {
   ) { }
 
   ngOnInit() {
-    // Extract the logged-in user identity token email right on load initialization
     this.extractLoggedInUser();
-    // 1. Fetch your user-specific filtered list for your dropdown layout
-    this.tripService.getUserTrips().subscribe({
+    
+    // 🔑 FIXED: Point to the new dropdown list endpoint method cleanly
+    this.budgetService.getUserTripsForDropdown().subscribe({
       next: (data: any[]) => {
-        // Filter duplicates and store your isolated list context safely
-        this.userTripsList = Array.from(new Map(data.map(trip => [trip._id || trip.id, trip])).values());
+        this.userTripsList = Array.from(new Map(data.map(trip => [trip.id, trip])).values());
 
-        // 2. Load all trips (Team workflow logic loop maintained 100% unchanged)
         this.tripService.getAllTrips().subscribe({ 
           next: (res: any[]) => {
             this.allTrips = Array.from(new Map(res.map(trip => [trip._id || trip.id, trip])).values());
 
-            // 3. Coordinate initial route parameter selection safely to fix initial blank drop-down display
             this.route.queryParams.subscribe(params => {
               if (params['tripId']) {
-                // If linked from an external component via URL bridge, use that ID
                 this.tripId = params['tripId'];
               } else if (this.userTripsList.length > 0) {
-                // DEFAULT MATCH: If loading fresh, always fall back to the user's first personal trip
-                this.tripId = this.userTripsList[0]._id || this.userTripsList[0].id || '';
+                this.tripId = this.userTripsList[0].id || '';
               } else {
-                // Absolute global fallback if the user has no trips assigned yet
                 this.tripId = (this.allTrips.length > 0 ? (this.allTrips[0]._id || this.allTrips[0].id) : '');
               }
 
-              // Fire the data fetch once the correct ID contract has been settled
               if (this.tripId) {
                 this.loadBudget();
               }
@@ -91,17 +81,11 @@ export class BudgetDashboard implements OnInit {
     });
   }
 
-  // Helper method to safely pull current session identities
-private extractLoggedInUser(): void {
+  private extractLoggedInUser(): void {
     try {
-      // 1. Fetch the real encrypted JWT token your authentication module saved on login
       const token = localStorage.getItem('token');
-      
       if (token) {
-        // 2. Dynamically decode the token payload without any external libraries
         const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        
-        // 3. Inspect standard .NET identity claim keys automatically
         this.currentUserEmail = 
           tokenPayload.email || 
           tokenPayload.unique_name || 
@@ -109,22 +93,16 @@ private extractLoggedInUser(): void {
           tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
           tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 
           '';
-
-        console.log("🔒 Row Security Status: Logged in user identified as ->", this.currentUserEmail);
-      } else {
-        console.warn("⚠️ Row Security Warning: No active login session token discovered in localStorage.");
-        this.currentUserEmail = '';
+        console.log("🔒 Security Payload Active Session Email Context Discovered ->", this.currentUserEmail);
       }
     } catch (e) {
-      console.error("❌ Row Security Error: Encountered issues decoding identity tokens:", e);
-      this.currentUserEmail = '';
+      console.error("Row Security Error parsing profile identities:", e);
     }
   }
   
   onTripDropdownChange(newTripId: string): void {
     if (!newTripId) return;
     this.tripId = newTripId;
-    console.log('Dropdown changed state context. Loading data boundaries for Trip ID:', this.tripId);
     this.loadBudget();
   }
 
@@ -133,7 +111,6 @@ private extractLoggedInUser(): void {
     
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
-      // Parse the limit from the selected Trip
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
       this.membersCount = (selectedTrip.members?.length || 1) + 1;
     }
@@ -148,7 +125,6 @@ private extractLoggedInUser(): void {
       },
       error: (err) => {
         console.error("Failed loading budget dataset node context:", err);
-        // Clean dynamic reset fallbacks so chart views don't show trailing data lines
         this.budget = null;
         this.expenses = [];
         this.costPerPerson = 0;
@@ -179,7 +155,7 @@ private extractLoggedInUser(): void {
   get remainingBudget(): number {
     if (!this.budget) return this.totalAllowedBudget;
     const remaining = this.totalAllowedBudget - (this.budget.totalSpent || 0);
-    return remaining > 0 ? remaining : 0; // Ensures it gracefully bottoms out at 0 instead of dropping negative
+    return remaining > 0 ? remaining : 0;
   }
 
   sortTable(column: string) {
@@ -238,55 +214,46 @@ private extractLoggedInUser(): void {
         description: item.description, 
         amount: item.amount, 
         category: item.category,
-        addedBy: item.addedBy // Passes validation checks securely to form scopes
+        addedBy: item.addedBy 
       }
     });
   }
 
   exportToPDF() {
-  const doc = new jsPDF();
-  
-  // Add Title
-  doc.setFontSize(18);
-  doc.text('Trip Budget Report', 14, 22);
-  
-  // Add Trip Name
-  const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
-  doc.setFontSize(11);
-  doc.setTextColor(100);
-  doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Trip Budget Report', 14, 22);
+    
+    const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
 
-  // Prepare the data rows
-  const tableData = this.expenses.map(e => [
-    e.category, 
-    'Rs. ' + Number(e.amount).toFixed(2), 
-    new Date(e.date).toLocaleDateString(), 
-    e.description
-  ]);
-
-  // Add the Total Spent row at the bottom of the data array
-  if (this.budget) {
-    tableData.push([
-      { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
-      { content: 'Rs. ' + Number(this.budget.totalSpent).toFixed(2), styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
-      '',
-      ''
+    const tableData = this.expenses.map(e => [
+      e.category, 
+      'Rs. ' + Number(e.amount).toFixed(2), 
+      new Date(e.date).toLocaleDateString(), 
+      e.description
     ]);
-  }
 
-  // Generate the table
-  autoTable(doc, {
-    startY: 35,
-    head: [['Category', 'Amount', 'Date', 'Description']],
-    body: tableData,
-    theme: 'grid',
-    headStyles: { fillColor: [0, 131, 143] }, 
-    columnStyles: {
-      1: { halign: 'right' }, 
+    if (this.budget) {
+      tableData.push([
+        { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+        { content: 'Rs. ' + Number(this.budget.totalSpent).toFixed(2), styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
+        '',
+        ''
+      ]);
     }
-  });
 
-  // Save
-  doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
-}
+    autoTable(doc, {
+      startY: 35,
+      head: [['Category', 'Amount', 'Date', 'Description']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 131, 143] }, 
+      columnStyles: { 1: { halign: 'right' } }
+    });
+
+    doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
+  }
 }

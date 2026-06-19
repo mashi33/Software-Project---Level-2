@@ -134,5 +134,23 @@ namespace SmartJourneyPlanner.API.Controllers
             await _budgetService.CreateBudgetAsync(newBudget);
             return Ok(newBudget);
         }
+
+        // DROPDOWN TRIP SELECTOR LOGIC
+
+        [HttpGet("user-trips")]
+        [Authorize] // 🛡️ Restricts route execution to validated traveler sessions
+        public async Task<IActionResult> GetUserTripsForSelector()
+        {
+            // Read the logged in user's email dynamically from their JWT identity token payload map
+            var loggedInUserEmail = User.FindFirst(ClaimTypes.Email)?.Value 
+                                    ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(loggedInUserEmail)) return Unauthorized();
+
+            // Fetch the trips matching 'gamini.tickson07@gmail.com' out of the Trips collection
+            var tripsList = await _budgetService.GetUserTripsFromTripsCollectionAsync(loggedInUserEmail);
+            
+            return Ok(tripsList);
+        }
     }
 }

@@ -59,7 +59,7 @@
         <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
           <a class="dropdown-toggle profile-trigger" id="profileDropdown" style="cursor: pointer;"
             (click)="toggleDropdown()">
-            <img [src]="profilePic" alt="user" class="profile-img" (error)="profilePic = '/assets/default-avatar.png'">
+          <img [src]="profilePic || 'profilePic.jpg'" alt="user" class="profile-img" (error)="profilePic = 'profilePic.jpg'">
             <span class="profile-name">{{ userName }}</span>
           </a>
 

@@ -6,8 +6,8 @@
         <h2 class="header-title">Budget Planner for</h2>
         <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="onTripDropdownChange(tripId)">
           <option value="" disabled>Select a Trip</option>
-          <option *ngFor="let t of userTripsList" [value]="t._id || t.id">
-            {{ t.tripName || t.destination }}
+          <option *ngFor="let t of userTripsList" [value]="t.id">
+            {{ t.tripName }}
           </option>
         </select>
       </div>
