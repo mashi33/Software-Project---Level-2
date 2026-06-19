@@ -21,6 +21,12 @@ getPublicMemories(): Observable<TripMemory[]> {
     );
   }
 
+  // Inside MemoryService class
+public getAccessibleTrips(): Observable<any[]> {
+  // Replace the URL with your actual endpoint
+  return this.http.get<any[]>(`${this.apiUrl}/trips`); //?????????????????????????
+}
+
   addMemory(memory: TripMemory): Observable<TripMemory> {
     return this.http.post<TripMemory>(this.apiUrl, memory).pipe(
       timeout(5000)

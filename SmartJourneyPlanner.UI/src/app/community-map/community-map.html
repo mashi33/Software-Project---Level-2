@@ -25,6 +25,11 @@
 
         <div class="thumb-info">
           <p class="thumb-text">{{ memory?.title || 'Untitled' }}</p>
+
+          <!--<div class="thumb-trip" *ngIf="memory?.tripName">
+              Trip: {{ memory.tripName }}
+              </div>-->
+
           <div class="thumb-dates" *ngIf="memory?.startDate || memory?.endDate">
             <span class="date-range">
               {{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}
@@ -63,6 +68,9 @@
 
     <div class="lightbox-details" *ngIf="isObject(selectedMemory) && selectedMemory.title; else mapImageFallback">
       <h2>{{ selectedMemory.title }}</h2>
+      <!--<div class="trip-name-badge" *ngIf="selectedMemory.tripName">
+    <i class="bi bi-briefcase-fill"></i> Trip: {{ selectedMemory.tripName }}
+  </div>-->
       <div class="date-text" *ngIf="selectedMemory.startDate || selectedMemory.endDate">
         🗓️ {{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}
       </div>
