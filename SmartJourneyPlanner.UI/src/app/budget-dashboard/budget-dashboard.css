@@ -324,7 +324,7 @@
   background-color: rgba(255, 255, 255, 0.7); 
 }
 
-/* 🔑 FIXED CHART & LEGEND SIDE-BY-SIDE PLATFORM MATRIX */
+/* CHART & LEGEND SIDE-BY-SIDE PLATFORM MATRIX */
 .chart-and-legend-wrapper {
   display: flex;
   align-items: center;

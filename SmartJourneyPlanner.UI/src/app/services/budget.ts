@@ -30,7 +30,7 @@ export class BudgetService {
   }
 
   /**
-   * 🔑 FIXED: Pulls direct items belonging to the active user profile 
+   * Pulls direct items belonging to the active user profile 
    * straight out from the correct collection pipeline.
    */
   getUserTripsForDropdown(): Observable<any[]> {

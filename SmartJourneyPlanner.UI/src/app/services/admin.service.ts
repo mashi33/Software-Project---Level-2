@@ -12,16 +12,15 @@ export class AdminService {
 
   constructor() { }
 
-  // --- 📊 New Dashboard Metrics Method ---
   /**
-   * 🔑 THE FIX: Hits our new summary calculation gateway method inside AdminController
+   * Hits new summary calculation gateway method inside AdminController
    * to bring home unified analytics, counters, and tracking statistics metrics.
    */
   getDashboardStats(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
   }
 
-  // --- Provider Methods ---
+  // Provider Methods
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -35,7 +34,7 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // --- User Management Methods ---
+  // User Management Methods
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }

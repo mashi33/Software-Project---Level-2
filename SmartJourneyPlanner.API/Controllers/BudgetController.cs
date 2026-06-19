@@ -38,7 +38,7 @@ namespace SmartJourneyPlanner.API.Controllers
 
         // ADD EXPENSE
         [HttpPost("add-expense/{tripId}")]
-        [Authorize] // Requires valid authentication to track who is saving data
+        [Authorize] 
         public async Task<IActionResult> AddExpense(string tripId, [FromBody] Expense expense)
         {
             //Validation check here to catch empty payloads before hitting the service.
@@ -53,7 +53,7 @@ namespace SmartJourneyPlanner.API.Controllers
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(currentUserEmail))
             {
-                expense.AddedBy = currentUserEmail; // Links data entry right to your frontend row constraints
+                expense.AddedBy = currentUserEmail; 
             }
             
             await _budgetService.AddExpenseAsync(tripId, expense);
@@ -62,43 +62,42 @@ namespace SmartJourneyPlanner.API.Controllers
 
         // DELETE EXPENSE
         [HttpDelete("delete-expense/{tripId}/{expenseId}")]
-        [Authorize] // 🆕 ADDED: Protects API route from manual tampering via Postman/Insomnia bypasses
+        [Authorize] 
         public async Task<IActionResult> DeleteExpense(string tripId, string expenseId)
         {
-            // 1. Grab the email of the person making the request from the security token
+            // Grab the email of the person making the request from the security token
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserEmail)) return Unauthorized(new { message = "User identity context invalid." });
 
-            // 2. Fetch the target sub-document tree through your teammate's existing service abstraction
             var budget = await _budgetService.GetBudgetByTripIdAsync(tripId);
             if (budget == null) return NotFound(new { message = "Budget tracker not found." });
 
             var existingExpense = budget.Expenses?.FirstOrDefault(e => e.Id == expenseId);
             if (existingExpense == null) return NotFound(new { message = "Target expense record not found in system." });
 
-            // 3. 🛡️ ROW-LEVEL ACCESS AUDIT CHECK: Block if non-owner modifies records
+            // Block if non-owner modifies records
             if (existingExpense.AddedBy != currentUserEmail)
             {
                 return StatusCode(403, new { message = "Access Denied: You cannot delete an expense created by another member." });
             }
 
-            // 4. If authorization validation succeeds, allow your teammate's exact execution logic to run
+            // If authorization validation succeeds, allow your teammate's exact execution logic to run
             await _budgetService.DeleteExpenseAsync(tripId, expenseId);
             return Ok(new { message = "Expense removed successfully." });
         }
 
         // UPDATE EXPENSE
         [HttpPut("update-expense/{tripId}/{expenseId}")]
-        [Authorize] // 🆕 ADDED: Protects record update lifecycle pipeline
+        [Authorize] 
         public async Task<IActionResult> UpdateExpense(string tripId, string expenseId, [FromBody] Expense updatedExpense)
         {
             if (updatedExpense == null) return BadRequest("Updated data is required.");
 
-            // 1. Extract email token claim signature
+            // Extract email token claim signature
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserEmail)) return Unauthorized(new { message = "User identity context invalid." });
 
-            // 2. Pull down original baseline dataset
+            // Pull down original baseline dataset
             var budget = await _budgetService.GetBudgetByTripIdAsync(tripId);
             if (budget == null) return NotFound("Budget container not found.");
 
@@ -106,7 +105,7 @@ namespace SmartJourneyPlanner.API.Controllers
             var existingExpense = budget.Expenses?.FirstOrDefault(e => e.Id == expenseId);
             if (existingExpense == null) return NotFound("Specific expense not found.");
 
-            // 3. 🛡️ ROW-LEVEL ACCESS AUDIT CHECK: Block if non-owner modifies records
+            // Block if non-owner modifies records
             if (existingExpense.AddedBy != currentUserEmail)
             {
                 return StatusCode(403, new { message = "Access Denied: You cannot modify an expense created by another member." });
@@ -138,7 +137,7 @@ namespace SmartJourneyPlanner.API.Controllers
         // DROPDOWN TRIP SELECTOR LOGIC
 
         [HttpGet("user-trips")]
-        [Authorize] // 🛡️ Restricts route execution to validated traveler sessions
+        [Authorize] 
         public async Task<IActionResult> GetUserTripsForSelector()
         {
             // Read the logged in user's email dynamically from their JWT identity token payload map
@@ -147,7 +146,6 @@ namespace SmartJourneyPlanner.API.Controllers
 
             if (string.IsNullOrEmpty(loggedInUserEmail)) return Unauthorized();
 
-            // Fetch the trips matching 'gamini.tickson07@gmail.com' out of the Trips collection
             var tripsList = await _budgetService.GetUserTripsFromTripsCollectionAsync(loggedInUserEmail);
             
             return Ok(tripsList);

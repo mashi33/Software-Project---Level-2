@@ -68,9 +68,7 @@ namespace SmartJourneyPlanner.API.Services
 
         /**
          * UPDATE APPROVAL STATUS
-         * Executed when Sasini clicks the Green Checkmark (Approve).
-         * 🔑 FIXED STATE: Sets IsVerified to true, but initializes Status as "Unavailable".
-         * This forces Manoja to physically tick the checkbox on her dashboard before it goes live to travelers!
+         * Sets IsVerified to true, but initializes Status as "Unavailable".
          */
         public async Task UpdateStatusAsync(string id, string newStatus)
         {

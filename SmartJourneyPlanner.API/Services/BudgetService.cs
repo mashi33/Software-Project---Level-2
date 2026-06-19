@@ -28,7 +28,6 @@ namespace SmartJourneyPlanner.API.Services
         {
             var cleanEmail = userEmail.Trim();
 
-            // ⚡ THE FIX: Combine both creator checks and nested sub-document array evaluations
             var filter = Builders<BsonDocument>.Filter.Or(
                 Builders<BsonDocument>.Filter.Eq("CreatorEmail", cleanEmail),
                 Builders<BsonDocument>.Filter.ElemMatch<BsonDocument>("Members", Builders<BsonDocument>.Filter.Eq("Email", cleanEmail))
@@ -47,7 +46,7 @@ namespace SmartJourneyPlanner.API.Services
             }
             return tripDropdownList;
         }
-        // --- CORE BUDGET OPERATIONS ---
+        // CORE BUDGET OPERATIONS
         public async Task<TripBudget> GetBudgetByTripIdAsync(string tripId)
         {
             var budget = await _budgetCollection.Find(x => x.TripId == tripId).FirstOrDefaultAsync();

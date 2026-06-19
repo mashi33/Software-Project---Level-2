@@ -51,7 +51,7 @@ export class BudgetDashboard implements OnInit {
   ngOnInit() {
     this.extractLoggedInUser();
     
-    // 🔑 FIXED: Point to the new dropdown list endpoint method cleanly
+    // Point to the new dropdown list endpoint method cleanly
     this.budgetService.getUserTripsForDropdown().subscribe({
       next: (data: any[]) => {
         this.userTripsList = Array.from(new Map(data.map(trip => [trip.id, trip])).values());

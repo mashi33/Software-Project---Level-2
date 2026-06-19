@@ -22,7 +22,6 @@ export class AdminDashboardComponent implements OnInit {
   // View Switcher
   view: 'stats' | 'providers' | 'users' = 'stats';
 
-  // 🔑 NEW: Stats Object Binding Properties for KPI Summary Cards
   stats: any = { pendingProvidersCount: 0, platformUsers: 0 };
 
   // Data Lists
@@ -54,7 +53,6 @@ export class AdminDashboardComponent implements OnInit {
   refreshDashboard() {
     this.errorMessage = '';
     
-    // 🔑 THE EXACT CONNECTIVITY FIX:
     // Fetches the counter metrics and assigns them straight to our summary layout parameters
     this.adminService.getDashboardStats().subscribe({
       next: (data: any) => {

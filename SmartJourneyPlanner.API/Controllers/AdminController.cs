@@ -29,31 +29,27 @@ namespace SmartJourneyPlanner.API.Controllers
             _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        // --- 📊 NEW DASHBOARD METRICS GATEWAY ---
-        
-        /**
-         * GET: /api/Admin/dashboard-stats
-         * 🔑 FIXED: Calculates pending counters straight from your vehicle collection
-         * so the Admin Home Center numbers dynamically match real form submissions!
-         */
+        // NEW DASHBOARD METRICS GATEWAY 
+        // Calculates pending counters straight from your vehicle collection
+
         [HttpGet("dashboard-stats")]
         public async Task<IActionResult> GetDashboardStats()
         {
-            // 1. Calculate how many platform log-in accounts exist
+            // Calculate how many platform log-in accounts exist
             var totalUsers = await _userCollection.CountDocumentsAsync(_ => true);
 
-            // 2. Count vehicles that are waiting under either pending status variation string
+            // Count vehicles that are waiting under either pending status variation string
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v => 
                 v.Status == "Pending" || v.Status == "Pending Approval");
 
             return Ok(new 
             { 
-                pendingProvidersCount = pendingVehicles, // Updates your UI metric summary card
+                pendingProvidersCount = pendingVehicles, 
                 platformUsers = totalUsers 
             });
         }
 
-        // --- 👥 DASHBOARD HOME & USERS ---
+        // DASHBOARD HOME & USERS 
         
         [HttpGet("all-users")]
         public async Task<IActionResult> GetAllUsers()
@@ -92,13 +88,9 @@ namespace SmartJourneyPlanner.API.Controllers
             return result.DeletedCount == 0 ? NotFound() : Ok(new { message = "User deleted" });
         }
 
-        // --- 🚐 MANAGE PROVIDERS ---
-        
-        /**
-         * GET: /api/Admin/pending-providers
-         * 🔑 FIXED: Uses a dual-filter condition array lookup matching both "Pending" and "Pending Approval"
-         * strings so unapproved vehicles show up inside the Admin Panel requests view table!
-         */
+        // MANAGE PROVIDERS         
+        // Uses a dual-filter condition array lookup matching both "Pending" and "Pending Approval"
+
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
         {
@@ -119,9 +111,8 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         /**
-         * UPDATE STATUS FROM ADMIN PANEL
          * Sets IsVerified to true, but initializes Status as "Unavailable" 
-         * so the provider has to tick the checkbox to publish it live!
+         * so the provider has to tick the checkbox to publish it live
          */
         [HttpPut("update-status/{id}")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
@@ -131,7 +122,7 @@ namespace SmartJourneyPlanner.API.Controllers
             var isApproved = newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase);
 
             var update = Builders<TransportVehicle>.Update
-                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus) // 🔑 Starts as "Unavailable" when approved
+                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus) //  Starts as "Unavailable" when approved
                 .Set(v => v.IsVerified, isApproved);
             
             await _vehicleCollection.UpdateOneAsync(filter, update);
