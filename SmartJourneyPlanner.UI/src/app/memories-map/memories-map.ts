@@ -245,6 +245,7 @@ toggleSeeMore() {
 
 
   private getPopupHtml(memory: any): string {
+    if (!memory) return '<div class="popup-container">No data available</div>';
     // Public නම් විතරක් Like Count එක පෙන්වන කොටස සෑදීම
   const likeHtml = memory.isPublic 
     ? `<div style="margin-top: 8px; font-weight: bold; color: #145dbf;">
@@ -255,13 +256,15 @@ toggleSeeMore() {
     : '';
     return `
       <div class="popup-container">
-        <h6 class="popup-title">${memory.title}</h6>
+        <h6 class="popup-title">${memory.title || 'Untitled'}</h6>
 
         <img src="${memory.imageUrl}" 
              class="popup-image view-big-image"
              data-img="${memory.imageUrl}" />
 
-        <p class="popup-location"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>${memory.locationName}</p>
+        <p class="popup-location">
+        <i class="bi bi-geo-alt-fill me-2 text-danger"></i>${memory.locationName || 'Unknown'}
+      </p>
         ${likeHtml}
       </div>
     `;
@@ -289,7 +292,7 @@ toggleSeeMore() {
             // Broadcasts an event to trigger image viewing without tying it to the map.
             window.dispatchEvent(
               new CustomEvent('viewBig', {
-                detail: memory.imageUrl
+                detail: memory.id
               })
             );
           });
@@ -372,17 +375,17 @@ deleteMemory(id: string, event: Event) {
   // ==========================================
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
-    const imageUrl = event.detail;
+    const memoryId = event.detail;
     
     // Attempt to locate the full descriptive object using the matching URL string
-    const foundMemory = this.allMemories.find(m => m.imageUrl === imageUrl);
+    const foundMemory = this.allMemories.find(m => m.id === memoryId);
     
     if (foundMemory) {
       // Open the modal with all information available
       this.selectedMemory = foundMemory; 
     } else {
       // Fallback if the collection doesn't contain the element
-      this.selectedMemory = imageUrl; 
+      console.error("Memory not found for ID:", memoryId);
     }
   }
   closeModal() {
