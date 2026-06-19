@@ -127,7 +127,8 @@ removeImage(fileInput: HTMLInputElement): void {
       startDate:  memory.startDate, 
        endDate:  memory.endDate,
        isPublic: memory.isPublic || memory.IsPublic || false,
-       likeCount: memory.likeCount || 0
+       likeCount: memory.likeCount || 0,
+       tripName: memory.tripName || memory.TripName || null
     };
   }
   
@@ -137,7 +138,13 @@ removeImage(fileInput: HTMLInputElement): void {
     const userId = localStorage.getItem('userId');
     this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
         next: (data) => {
-            this.allMemories = data.map(m => this.formatData(m));
+            this.allMemories = data.map(m => {
+        const formatted = this.formatData(m);
+        // Find the matching trip name from your allTrips list
+        const trip = this.allTrips.find(t => t.id === m.tripId);
+        formatted.tripName = trip ? trip.tripName : 'No Trip Assigned';
+        return formatted;
+      });
             this.myRecentUploads = [...this.allMemories].reverse();
 
             this.refreshMapMarkers();
@@ -381,6 +388,7 @@ deleteMemory(id: string, event: Event) {
     const foundMemory = this.allMemories.find(m => m.id === memoryId);
     
     if (foundMemory) {
+      console.log("Memory Object Details:", foundMemory);
       // Open the modal with all information available
       this.selectedMemory = foundMemory; 
     } else {
