@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 import * as leaflet from 'leaflet';
 
 @Component({
@@ -41,12 +42,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   allMemories: any[] = [];
   myRecentUploads: any[] = []; 
   selectedMemory: any | null = null;
+  allTrips: any[] = [];
+selectedTrip: any = null;
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
     this.loadMyMemories(); 
+    this.loadAccessibleTrips();
   }
 
   ngAfterViewInit(): void {
@@ -77,7 +81,32 @@ onFileSelected(event: any): void {
   }
 }
 
+// In your Angular service or component
+loadAccessibleTrips() {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
+  // This one call gets both "Created by me" and "Member of"
+  this.http.get<any[]>(`http://localhost:5233/api/trips/user-accessible`, { headers })
+    .subscribe({
+      next: (data) => {
+        // 'data' now contains all trips the user is authorized to see
+        this.allTrips = data; 
+        console.log("Combined list of trips:", this.allTrips);
+      },
+      error: (err) => console.error("Error fetching trips:", err)
+    });
+}
+
+// Handler for the select dropdown
+onTripChange(event: any) {
+    const tripId = event.target.value;
+    // Find the trip based on the id
+    this.selectedTrip = this.allTrips.find(t => t.id == tripId);
+    
+    // Debug to ensure selectedTrip is being set correctly
+    console.log("Selected Trip Object:", this.selectedTrip);
+}
 
 removeImage(fileInput: HTMLInputElement): void {
   this.newMemory.imageUrl = '';
@@ -186,7 +215,9 @@ toggleSeeMore() {
  const body = { 
     ...this.newMemory,
     userId: userId, 
-    isPublic: this.newMemory.isPublic 
+    isPublic: this.newMemory.isPublic, 
+    tripId: this.selectedTrip?.id || null,
+        tripName: this.selectedTrip?.name || null
   };
  this.http.post(this.apiUrl, body).subscribe({
  next: (response: any) => {
