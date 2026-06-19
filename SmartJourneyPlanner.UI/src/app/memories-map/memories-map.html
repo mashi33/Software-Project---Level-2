@@ -5,6 +5,13 @@
       <h4 class="sidebar-title">
         <span class="icon">📸</span> Upload New Memories
       </h4>
+
+      <select id="tripSelect" class="form-input" (change)="onTripChange($event)">
+    <option value="">-- Select a Trip --</option>
+    <option *ngFor="let trip of allTrips" [value]="trip.id">
+        {{ trip.tripName }} 
+    </option>
+</select>
       
       <label>Location:</label>
       <div class="search-group">
