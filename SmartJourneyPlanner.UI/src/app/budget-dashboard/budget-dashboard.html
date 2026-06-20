@@ -1,166 +1,224 @@
-<div class="main-container background-container">
-  <div class="content-wrapper">
-    
-    <div class="header-section glass-header">
-      <div class="header-flex">
-        <h2 class="header-title">Budget Planner for</h2>
-        <select class="trip-selector inline-selector" [(ngModel)]="tripId" (change)="onTripDropdownChange(tripId)">
+<h2 class="sr-only">Budget Planner Dashboard for {{ tripDetails?.tripName || 'Trip' }}</h2>
+
+<div class="bp-root fade-in">
+  
+  <div class="summary-spacing" *ngIf="expenses && expenses.length > 0">
+    <div *ngIf="budgetPercentage >= 100" class="alert-box creative-danger-alert fade-in">
+      <div class="alert-left">
+        <div class="alert-icon-circle bg-danger-solid"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <span><strong>Over Budget:</strong> You have gone over budget by <strong>Rs. {{ budget.totalSpent - totalAllowedBudget | number : '1.2-2' }}</strong></span>
+      </div>
+      <span class="alert-badge solid-danger-badge">Critical Action Required</span>
+    </div>
+    <div *ngIf="budgetPercentage >= 80 && budgetPercentage < 100" class="alert-box creative-warning-alert fade-in">
+      <div class="alert-left">
+        <div class="alert-icon-circle bg-warning-solid"><i class="bi bi-bell-fill"></i></div>
+        <span><strong>Approaching Limit:</strong> You have used {{ budgetPercentage | number : '1.0-0' }}% of your total trip budget.</span>
+      </div>
+      <span class="alert-badge solid-warning-badge">Cap Warning</span>
+    </div>
+  </div>
+
+  <div class="bp-top-belt">
+    <div class="bp-belt-left">
+      <div class="bp-selector-wrapper">
+        <i class="bi bi-briefcase-fill bp-belt-icon"></i>
+        <select class="bp-belt-select" [(ngModel)]="tripId" (change)="onTripDropdownChange(tripId)">
           <option value="" disabled>Select a Trip</option>
-          <option *ngFor="let t of userTripsList" [value]="t.id">
-            {{ t.tripName }}
-          </option>
+          <option *ngFor="let t of userTripsList" [value]="t.id">{{ t.tripName }}</option>
         </select>
+        <i class="bi bi-chevron-down bp-belt-arrow"></i>
+      </div>
+      <div class="bp-destination-badge" *ngIf="tripDetails?.tripName">
+        <i class="bi bi-geo-alt-fill"></i> {{ tripDetails?.tripName }}
       </div>
     </div>
+    
+    <div class="bp-belt-right" *ngIf="expenses && expenses.length > 0">
+      <button class="bp-belt-export-btn" (click)="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Export Report</button>
+    </div>
+  </div>
 
-    <div class="content-grid">
-      <div class="card table-card">
-        <div class="card-header-blue">
-          <h3>Current Trip Expenses</h3>
+  <div class="bp-metrics-sheet">
+    <div class="metric-block hero-metric">
+      <div class="m-label">Total Spent</div>
+      <div class="m-value core-text">Rs. {{ budget?.totalSpent | number:'1.2-2' }}</div>
+      <div class="m-sub">{{ expenses.length }} expenses added</div>
+    </div>
+
+    <div class="metric-block">
+      <div class="m-label">Cost Per Person</div>
+      <div class="m-value split-text">Rs. {{ costPerPerson | number:'1.2-2' }}</div>
+      <div class="m-sub">Split equally among {{ membersCount }} people</div>
+    </div>
+
+    <div class="metric-block progress-block full-width-progress">
+      <div class="progress-header-split">
+        <div class="m-label">Budget Usage</div>
+        <div class="m-limit-badge">Limit: Rs. {{ totalAllowedBudget | number:'1.0-0' }}</div>
+      </div>
+      <div class="progress-container-mini">
+        <div class="bp-bar-bg">
+          <div class="bp-bar-fill" [style.width.%]="budgetPercentage > 100 ? 100 : budgetPercentage"
+               [ngClass]="{'warning': budgetPercentage >= 80 && budgetPercentage < 100, 'danger': budgetPercentage >= 100}">
+          </div>
         </div>
-
-        <div class="table-container">
-          <div *ngIf="expenses && expenses.length > 0">
-            <table class="custom-table">
-              <thead>
-                <tr class="table-header-row">
-                  <th (click)="sortTable('category')" class="sortable-header">
-                    Category
-                    <span class="sort-arrow" *ngIf="sortColumn === 'category'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
-                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'category'"> ↕</span>
-                  </th>
-                  <th (click)="sortTable('amount')" class="sortable-header">
-                    Amount
-                    <span class="sort-arrow" *ngIf="sortColumn === 'amount'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
-                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'amount'"> ↕</span>
-                  </th>
-                  <th (click)="sortTable('date')" class="sortable-header">
-                    Date
-                    <span class="sort-arrow" *ngIf="sortColumn === 'date'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
-                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'date'"> ↕</span>
-                  </th>
-                  <th (click)="sortTable('description')" class="sortable-header">
-                    Note
-                    <span class="sort-arrow" *ngIf="sortColumn === 'description'">{{ sortAscending ? ' ▲' : ' ▼' }}</span>
-                    <span class="sort-arrow-placeholder" *ngIf="sortColumn !== 'description'"> ↕</span>
-                  </th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of expenses">
-                  <td><span class="category-pill">{{ item.category }}</span></td>
-                  <td class="amount-bold">Rs. {{ item.amount | number:'1.2-2' }}</td>
-                  <td>{{ item.date | date:'MMM d, y' }}</td>
-                  <td class="note-text">{{ item.description }}</td>
-                  
-                  <td>
-                    <ng-container *ngIf="item.addedBy === currentUserEmail">
-                      <button class="btn-edit" (click)="editExpense(item)" title="Edit Expense">✏️</button>
-                      <button class="btn-delete" (click)="deleteExpense(item.id)" title="Delete Expense">🗑️</button>
-                    </ng-container>
-                    
-                    <ng-container *ngIf="item.addedBy !== currentUserEmail">
-                      <button class="btn-edit disabled-action" disabled title="Only the creator can modify this expense">✏️</button>
-                      <button class="btn-delete disabled-action" disabled title="Only the creator can delete this expense">🗑️</button>
-                    </ng-container>
-                  </td>
-                  
-                </tr>
-                <tr class="total-row" *ngIf="budget">
-                  <td>Total</td>
-                  <td class="total-spent-cell">
-                    Rs. {{ budget.totalSpent | number:'1.2-2' }}
-                  </td>
-                  <td colspan="3"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div *ngIf="expenses.length === 0" class="empty-state">
-            <div class="empty-icon">🚀</div>
-            <h3>Ready to start?</h3>
-            <p>{{ tripId ? 'Add your first expense for this trip!' : 'Select a trip above to manage your budget.' }}</p>
-          </div>
-
-          <div class="add-btn-wrapper action-bar">
-            <button class="btn-export-pdf" (click)="exportToPDF()" *ngIf="expenses.length > 0">📄 Export to PDF</button>
-            <a [routerLink]="['/add-expense']" [queryParams]="{ tripId: tripId }" class="btn-add-teal">+ Add New Expense</a>
-          </div>
+        <div class="progress-footer-split">
+          <span class="m-sub">
+            Money Left: <strong [ngClass]="(totalAllowedBudget - budget?.totalSpent) < 0 ? 'neg' : 'pos'">Rs. {{ (totalAllowedBudget - budget?.totalSpent) | number:'1.0-0' }}</strong>
+          </span>
+          <span class="progress-txt">{{ budgetPercentage | number:'1.0-0' }}% Used</span>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="card chart-card">
-        <div class="card-header-white"><h3>Financial Summary</h3></div>
-        <div class="chart-content-wrapper">
-          
-          <div *ngIf="expenses && expenses.length > 0" class="summary-content">
-            
-            <div class="warning-container summary-spacing">
-              <div *ngIf="budgetPercentage >= 100" class="alert-box danger-alert fade-in">
-                <span>⚠️ <strong>Overbudget!</strong> Exceeded by Rs. {{ (budget.totalSpent - totalAllowedBudget) | number:'1.0-0' }}</span>
-              </div>
-              <div *ngIf="budgetPercentage >= 80 && budgetPercentage < 100" class="alert-box warning-alert fade-in">
-                <span>🔔 <strong>Warning:</strong> You have used {{ budgetPercentage | number:'1.0-0' }}% of budget.</span>
-              </div>
-            </div>
+  <div class="bp-grid">
+    
+    <div class="bp-card structure-table-card">
+      <div class="bp-card-head-modern">
+        <div>
+          <h3 class="bp-card-title">Expense History</h3>
+          <p class="bp-card-subtitle-sub">Manage and audit your individual travel transaction logs.</p>
+        </div>
+        <button class="bp-add-btn-premium-blue" [routerLink]="['/add-expense']" [queryParams]="{ tripId: tripId }">
+          <i class="bi bi-plus-lg"></i> Add Expense
+        </button>
+      </div>
 
-            <div class="budget-tracker">
-              <div class="tracker-labels">
-                <span>Spent: Rs. {{ budget?.totalSpent | number:'1.0-0' }}</span>
-                <span>Limit: Rs. {{ totalAllowedBudget | number:'1.0-0' }}</span>
-              </div>
-              <div class="progress-bar-bg">
-                <div class="progress-bar-fill" 
-                     [style.width.%]="budgetPercentage > 100 ? 100 : budgetPercentage"
-                     [ngClass]="{'danger': budgetPercentage >= 100, 'warning': budgetPercentage >= 80}">
+      <div class="bp-table-wrap">
+        <table *ngIf="expenses && expenses.length > 0" class="bp-creative-table">
+          <thead>
+            <tr class="bp-thead-row">
+              <th class="sortable-header" (click)="sortTable('category')">
+                <div class="header-sort-content">
+                  Category
+                  <i class="bi" [ngClass]="sortColumn === 'category' ? (sortAscending ? 'bi-sort-alpha-down active-sort' : 'bi-sort-alpha-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
                 </div>
-              </div>
-              <div class="budget-remaining-status">
-                Remaining: <strong [class.overspent]="budgetPercentage >= 100">Rs. {{ remainingBudget | number:'1.2-2' }}</strong>
-              </div>
-            </div>
+              </th>
+              <th class="sortable-header" (click)="sortTable('amount')">
+                <div class="header-sort-content">
+                  Amount
+                  <i class="bi" [ngClass]="sortColumn === 'amount' ? (sortAscending ? 'bi-sort-numeric-down active-sort' : 'bi-sort-numeric-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
+                </div>
+              </th>
+              <th class="sortable-header" (click)="sortTable('date')">
+                <div class="header-sort-content">
+                  Date
+                  <i class="bi" [ngClass]="sortColumn === 'date' ? (sortAscending ? 'bi-sort-down active-sort' : 'bi-sort-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
+                </div>
+              </th>
+              <th class="center-align-heading">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of expenses" 
+                class="ledger-row-hover"
+                [ngClass]="{'teammate-row-tint': item.addedBy !== currentUserEmail}">
+              <td>
+                <div class="pill-badge-combo" [ngClass]="{
+                  'badge-meals': item.category?.toLowerCase() === 'meals',
+                  'badge-transport': item.category?.toLowerCase() === 'transport' || item.category?.toLowerCase() === 'transportation',
+                  'badge-stay': item.category?.toLowerCase() === 'stay' || item.category?.toLowerCase() === 'accommodation' || item.category?.toLowerCase() === 'lodging',
+                  'badge-others': item.category?.toLowerCase() === 'others',
+                  'badge-shopping': item.category?.toLowerCase() === 'shopping'
+                }">
+                  <span class="badge-dot-node"></span>
+                  <div class="badge-text-stack">
+                    <span class="badge-main-title">{{ item.category }}</span>
+                    <span class="badge-sub-note" *ngIf="item.description">{{ item.description }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="amt-field-bold">Rs. {{ item.amount | number : '1.2-2' }}</td>
+              <td class="date-field-muted">{{ item.date | date : 'MMM d, y' }}</td>
+              <td>
+                <div class="action-flex-deck">
+                  <ng-container *ngIf="item.addedBy === currentUserEmail">
+                    <button class="btn-ctrl-vibrant btn-edit-ink" (click)="editExpense(item)" title="Edit your expense">
+                      <i class="bi bi-pencil-square"></i> Edit
+                    </button>
+                    <button class="btn-ctrl-vibrant btn-delete-ink" (click)="deleteExpense(item.id)" title="Delete your expense">
+                      <i class="bi bi-trash3-fill"></i> Delete
+                    </button>
+                  </ng-container>
 
-            <h2 class="spent-display">
-              <span class="spent-label">Total Spent</span> 
-              Rs. {{ budget?.totalSpent | number:'1.2-2' }}
-            </h2>
+                  <ng-container *ngIf="item.addedBy !== currentUserEmail">
+                    <div class="tooltip-container">
+                      <button class="btn-ctrl-vibrant btn-teammate-disabled" disabled>
+                        <i class="bi bi-pencil-fill"></i> Edit
+                      </button>
+                      <span class="tooltip-box align-right-edge">Cannot edit this, it was added by: {{ resolveMemberName(item.addedBy) }}</span>
+                    </div>
+                    <div class="tooltip-container">
+                      <button class="btn-ctrl-vibrant btn-teammate-disabled" disabled>
+                        <i class="bi bi-trash-fill"></i> Delete
+                      </button>
+                      <span class="tooltip-box align-right-edge">Cannot delete this, it was added by: {{ resolveMemberName(item.addedBy) }}</span>
+                    </div>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-            <div class="interactive-split-box">
-              <span class="per-person-text">Per Person: Rs. {{ costPerPerson | number:'1.2-2' }}</span>
-              <div class="member-input-wrapper">
-                <label class="input-sub-label">Split between</label>
-                <input type="number" min="1" class="member-input" [(ngModel)]="membersCount" (change)="calculateTotal()">
-                <label class="input-sub-label">members</label>
+        <div class="bp-table-footer-summary" *ngIf="budget && expenses.length > 0">
+          <span class="summary-label-text">Aggregate Sum Total</span>
+          <span class="summary-value-text">Rs. {{ budget.totalSpent | number : '1.2-2' }}</span>
+        </div>
+
+        <div class="empty-ledger-box" *ngIf="expenses.length === 0">
+          <i class="bi bi-wallet2 empty-ledger-icon"></i>
+          <h5>No Expenses Logged</h5>
+          <p>Click "Add Expense" above to add your first cost item to this journey profile.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="side-card">
+      <div class="side-section-split">
+        
+        <div class="split-card-deck-sidebar" *ngIf="expenses && expenses.length > 0">
+          <h4 class="side-title"><i class="bi bi-people-fill"></i> Split Bill Between Members</h4>
+          <div class="split-box-modern-sidebar">
+            <div class="split-input-row-sidebar">
+              <span>Divide overall bill among</span>
+              <div class="input-badge-wrapper">
+                <input class="member-inp pure-numeric-inp" type="number" min="1" [(ngModel)]="membersCount" (change)="calculateTotal()">
               </div>
+              <span>people sharing costs</span>
             </div>
           </div>
+        </div>
 
-          <div class="chart-and-legend-wrapper" *ngIf="expenses && expenses.length > 0">
-            <div class="chart-container-left">
-                <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
-            </div>
-
-            <div class="chart-legend-right">
-              <h4 class="legend-title">Category Breakdown</h4>
-              <ul class="legend-list">
-                <li *ngFor="let label of doughnutChartLabels; let i = index" class="legend-item">
-                  <div class="legend-left">
-                    <span class="color-dot" [style.background-color]="chartColors[i % chartColors.length]"></span>
-                    <span class="category-name">{{ label }}</span>
-                  </div>
-                  <span class="category-value">Rs. {{ doughnutChartData.datasets[0].data[i] | number:'1.2-2' }}</span>
-                </li>
-              </ul>
+        <div class="analytics-card-deck">
+          <h4 class="side-title">Category Breakdown</h4>
+          
+          <div *ngIf="expenses && expenses.length > 0" class="chart-canvas-box">
+            <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
+          </div>
+          
+          <div class="legend-wrap-modern" *ngIf="expenses && expenses.length > 0">
+            <div *ngFor="let label of doughnutChartLabels; let i = index" 
+                 class="legend-row-modern" 
+                 [style.border-left-color]="chartColors[i % chartColors.length]">
+              <div class="legend-left-block">
+                <span class="legend-indicator-dot" [style.background-color]="chartColors[i % chartColors.length]"></span>
+                <span class="legend-label-txt">{{ label }}</span>
+              </div>
+              <span class="legend-numeric-val">Rs. {{ doughnutChartData.datasets[0].data[i] | number : '1.2-2' }}</span>
             </div>
           </div>
 
           <div *ngIf="!tripId || expenses.length === 0" class="chart-empty-state">
-              <p>{{ tripId ? 'Add expenses to see the financial chart' : 'Please select a trip to view summary' }}</p>
+            <i class="bi bi-pie-chart-combined empty-icon-graphic"></i>
+            <p>Select a trip above to look at your categorical charts view.</p>
           </div>
         </div>
+
       </div>
     </div>
+
   </div>
 </div>

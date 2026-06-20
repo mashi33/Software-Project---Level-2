@@ -8,6 +8,7 @@ import { BudgetService } from '../services/budget';
 import { TripService } from '../services/trip.service'; 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Swal from 'sweetalert2';
 
 Chart.register(...registerables); 
 
@@ -33,6 +34,7 @@ export class BudgetDashboard implements OnInit {
   sortAscending: boolean = true;
   userTripsList: any[] = [];
   currentUserEmail: string = '';
+  tripDetails: any = null;
 
   public doughnutChartType: ChartType = 'pie';
   public chartColors: string[] = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#1A535C', '#88D49E', '#FF9F1C'];
@@ -51,7 +53,6 @@ export class BudgetDashboard implements OnInit {
   ngOnInit() {
     this.extractLoggedInUser();
     
-    // Point to the new dropdown list endpoint method cleanly
     this.budgetService.getUserTripsForDropdown().subscribe({
       next: (data: any[]) => {
         this.userTripsList = Array.from(new Map(data.map(trip => [trip.id, trip])).values());
@@ -77,7 +78,7 @@ export class BudgetDashboard implements OnInit {
           error: (err) => console.error("Global trips failed to load", err)
         });
       },
-      error: (err: any) => console.error('Failed to load isolated dropdown options:', err)
+      error: (err: any) => console.error('Failed to load dropdown options:', err)
     });
   }
 
@@ -92,7 +93,7 @@ export class BudgetDashboard implements OnInit {
           tokenPayload.sub || 
           tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
           tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 
-          '';
+           '';
         console.log("🔒 Security Payload Active Session Email Context Discovered ->", this.currentUserEmail);
       }
     } catch (e) {
@@ -111,6 +112,7 @@ export class BudgetDashboard implements OnInit {
     
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
+      this.tripDetails = selectedTrip;
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
       this.membersCount = (selectedTrip.members?.length || 1) + 1;
     }
@@ -129,6 +131,7 @@ export class BudgetDashboard implements OnInit {
         this.expenses = [];
         this.costPerPerson = 0;
         this.budgetPercentage = 0;
+        this.tripDetails = null; 
         this.updateChartData();
         this.cd.detectChanges();
       }
@@ -198,11 +201,43 @@ export class BudgetDashboard implements OnInit {
   }
 
   deleteExpense(expenseId: string) {
-    if (confirm(`Delete this expense?`)) {
-      this.budgetService.deleteExpense(this.tripId, expenseId).subscribe({
-        next: () => this.loadBudget()
-      });
-    }
+    Swal.fire({
+      title: 'Delete this expense?',
+      text: "This item will be permanently removed from your trip's budget tracking.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#64748b',  
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Keep it',
+      background: '#ffffff',
+      customClass: {
+        popup: 'swal2-premium-popup',
+        title: 'swal2-premium-title'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.budgetService.deleteExpense(this.tripId, expenseId).subscribe({
+          next: () => {
+            this.loadBudget();
+            
+            Swal.fire({
+              position: 'top-end', 
+              icon: 'success',
+              title: 'Expense removed',
+              showConfirmButton: false, 
+              timer: 1200, 
+              toast: true, 
+              background: '#ffffff'
+            });
+          },
+          error: (err) => {
+            Swal.fire('Error!', 'Could not remove this expense entry.', 'error');
+            console.error(err);
+          }
+        });
+      }
+    });
   }
 
   editExpense(item: any) {
@@ -219,41 +254,148 @@ export class BudgetDashboard implements OnInit {
     });
   }
 
-  exportToPDF() {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Trip Budget Report', 14, 22);
+  // 🔑 MONGO REFERENCE LOOKUP: Case-insensitive dynamic user record mapping
+  resolveMemberName(email: string): string {
+    if (!email) return 'Teammate';
     
-    const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Trip: ${selectedTrip?.tripName || 'N/A'}`, 14, 30);
-
-    const tableData = this.expenses.map(e => [
-      e.category, 
-      'Rs. ' + Number(e.amount).toFixed(2), 
-      new Date(e.date).toLocaleDateString(), 
-      e.description
-    ]);
-
-    if (this.budget) {
-      tableData.push([
-        { content: 'TOTAL SPENT', styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
-        { content: 'Rs. ' + Number(this.budget.totalSpent).toFixed(2), styles: { fontWeight: 'bold', fillColor: [240, 240, 240] } },
-        '',
-        ''
-      ]);
+    const searchEmail = email.trim().toLowerCase();
+    
+    if (searchEmail === this.currentUserEmail?.trim().toLowerCase()) {
+      return 'You';
     }
+    
+    // Cross-reference safely against MongoDB collection structures
+    if (this.tripDetails && this.tripDetails.members) {
+      const foundMember = this.tripDetails.members.find((m: any) => {
+        const memberEmail = (m.email || m.Email || '').trim().toLowerCase();
+        return memberEmail === searchEmail;
+      });
 
-    autoTable(doc, {
-      startY: 35,
-      head: [['Category', 'Amount', 'Date', 'Description']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [0, 131, 143] }, 
-      columnStyles: { 1: { halign: 'right' } }
+      if (foundMember) {
+        const fullName = foundMember.fullName || foundMember.FullName;
+        if (fullName) return fullName;
+      }
+    }
+    
+    // Safe procedural string slice formatting fallback rule
+    const fallbackPrefix = email.split('@')[0].split(/[\._0-9]/)[0];
+    return fallbackPrefix.charAt(0).toUpperCase() + fallbackPrefix.slice(1) || 'Teammate';
+  }
+
+  exportToPDF() {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
 
-    doc.save(`Budget_Report_${selectedTrip?.tripName || 'Trip'}.pdf`);
+    const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+    const tripName = selectedTrip?.tripName || 'Trip Workspace';
+    
+    doc.setFillColor(37, 99, 235); 
+    doc.rect(0, 0, 210, 4, 'F');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42); 
+    doc.text('Smart Journey Planner', 14, 20);
+
+    doc.setFontSize(13);
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(71, 85, 105); 
+    doc.text('Expense Allocation & Budget Report', 14, 26);
+
+    doc.setDrawColor(226, 232, 240); 
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, 196, 32);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); 
+    doc.text('Target Destination:', 14, 42);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(tripName, 48, 42);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text('Report Generated:', 130, 42);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 164, 42);
+
+    const tableBodyRows = this.expenses.map(e => [
+      e.category, 
+      'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
+      new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), 
+      e.description || '-'
+    ]);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['Category', 'Amount', 'Date Logged', 'Description']],
+      body: tableBodyRows,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [15, 23, 42], 
+        textColor: [248, 250, 252], 
+        fontStyle: 'bold',
+        fontSize: 10,
+        cellPadding: 5
+      },
+      bodyStyles: {
+        fontSize: 10,
+        textColor: [51, 65, 85], 
+        cellPadding: 5,
+        lineColor: [241, 245, 249]
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252] 
+      },
+      columnStyles: {
+        0: { cellWidth: 35, fontStyle: 'bold' },
+        1: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }, 
+        2: { cellWidth: 35, halign: 'center' }, 
+        3: { cellWidth: 'auto' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'head' && data.column.index === 1) {
+          data.cell.styles.halign = 'right';
+        }
+      },
+      didDrawPage: (data) => {
+        doc.setFontSize(8);
+        doc.setFont('Helvetica', 'italic');
+        doc.setTextColor(148, 163, 184); 
+        doc.text('Thank you for choosing Smart Journey Planner for your travels.', 14, doc.internal.pageSize.height - 10);
+      }
+    });
+
+    if (this.budget) {
+      const finalY = (doc as any).lastAutoTable.finalY || 60;
+      const boxWidth = 182;
+      const boxHeight = 16;
+      const boxX = 14;
+      const boxY = finalY + 6;
+
+      doc.setFillColor(240, 253, 244); 
+      doc.setDrawColor(187, 247, 208); 
+      doc.setLineWidth(0.5);
+      
+      doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 3, 3, 'FD');
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(22, 101, 52); 
+      doc.text('AGGREGATE SUM TOTAL SPENT', boxX + 6, boxY + 10.5);
+
+      const dynamicSum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const formattedTotal = 'Rs. ' + dynamicSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      doc.setFontSize(13);
+      doc.setTextColor(21, 128, 61); 
+      doc.text(formattedTotal, boxX + boxWidth - 6, boxY + 10.5, { align: 'right' });
+    }
+
+    const sanitizedName = tripName.replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Budget_Report_${sanitizedName}.pdf`);
   }
 }

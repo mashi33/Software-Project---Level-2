@@ -75,47 +75,67 @@
       </table>
     </div>
 
-    <div class="verification-section shadow-sm" *ngIf="view === 'users'">
-      <div class="section-header">
-        <h2>👥 User Login & Role Control</h2>
+    <div class="verification-section border-0 bg-transparent p-0 shadow-none" *ngIf="view === 'users'">
+      <div class="panel-header-wrapper mb-4">
+        <h2 class="fw-bold text-dark m-0">User Login & Role Control</h2>
+        <p class="text-muted small m-0">Manage system permission tiers, account active statuses, and authentications.</p>
       </div>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Email Address</th>
-            <th>Current Role</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of allUsers" class="table-row">
-            <td>
-              <div class="user-info-cell">
-                <div class="user-avatar">
-                  {{ u.fullName?.charAt(0) || u.name?.charAt(0) }}
-                </div>
-                <span>{{ u.fullName || u.name }}</span>
-              </div>
-            </td>
-            <td>{{ u.email }}</td>
-            <td><span class="role-badge" [ngClass]="u.role">{{ u.role }}</span></td>
-            <td>
-              <span class="status-badge" [ngClass]="u.isBlocked ? 'blocked' : 'active'">
+
+      <div class="user-cards-stack">
+        <div *ngFor="let u of allUsers" class="user-management-card-grid">
+          
+          <div class="grid-profile-col">
+            <div class="user-avatar-circle" [ngClass]="{
+              'av-provider': u.role === 'TransportProvider' || u.role === 'Transportprovider',
+              'av-traveller': u.role === 'Traveller',
+              'av-admin': u.role === 'Admin'
+            }">
+              <span>{{ u.fullName?.charAt(0) || u.name?.charAt(0) || 'U' }}</span>
+            </div>
+            
+            <div class="user-profile-details">
+              <h5 class="user-display-name m-0">{{ u.fullName || u.name || 'System User' }}</h5>
+              <span class="user-email-text text-muted"><i class="bi bi-envelope"></i> {{ u.email }}</span>
+            </div>
+          </div>
+
+          <div class="grid-meta-col">
+            <span class="text-overline">Current Role</span>
+            <div class="badge-pill-container">
+              <span class="role-pill" [ngClass]="{
+                'pill-provider': u.role === 'TransportProvider',
+                'pill-traveller': u.role === 'Traveller',
+                'pill-admin': u.role === 'Admin'
+              }">
+                {{ u.role }}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid-meta-col">
+            <span class="text-overline">Status</span>
+            <div class="badge-pill-container">
+              <span class="status-dot-pill" [ngClass]="u.isBlocked ? 'bg-danger-subtle text-danger' : 'status-active'">
+                <span class="pulse-dot" [style.background]="u.isBlocked ? '#e53e3e' : '#10b981'" [style.animation]="u.isBlocked ? 'none' : ''"></span> 
                 {{ u.isBlocked ? 'Blocked' : 'Active' }}
               </span>
-            </td>
-            <td>
-              <button *ngIf="u.role !== 'Admin'" (click)="changeRole(u.id || u._id, 'Admin')" class="btn-promote">Promote</button>
-              <button class="btn-icon" [title]="u.isBlocked ? 'Unblock User' : 'Block User'" (click)="toggleBlock(u)">
-                {{ u.isBlocked ? '✅' : '🚫' }}
-              </button>
-              <button class="btn-icon reject" (click)="deleteUser(u.id || u._id)" title="Delete User">🗑️</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+
+          <div class="grid-actions-col">
+            <button *ngIf="u.role !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')" title="Promote User Privilege Level">
+              <i class="bi bi-shield-arrow"></i> Promote
+            </button>
+            <button class="btn-action-smart btn-suspend" [style.background]="u.isBlocked ? '#fed7d7' : ''" (click)="toggleBlock(u)" [title]="u.isBlocked ? 'Unblock User' : 'Block User'">
+              <i class="bi" [ngClass]="u.isBlocked ? 'bi-check-circle-fill' : 'bi-slash-circle'"></i>
+            </button>
+            <button class="btn-action-smart btn-delete-account" (click)="deleteUser(u.id || u._id)" title="Permanently Terminate Records">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
     </div>
   </main>
 
