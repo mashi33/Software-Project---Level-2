@@ -1,15 +1,16 @@
 import { Routes } from '@angular/router';
-import { BudgetDashboard } from './budget-dashboard/budget-dashboard'; 
-import { ExpenseForm } from './expense-form/expense-form'; 
+//import { HomeComponent } from './home/home';
+import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
+import { ExpenseForm } from './expense-form/expense-form';
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { CommunityMapComponent } from './community-map/community-map';
 import { WeatherSuggestionComponent } from './weather/weather';
 import { LoginComponent } from './login/login';
-import { Signup } from './signup/signup'; 
+import { Signup } from './signup/signup';
 import { RouteOptimization } from './route-optimization/route-optimization';
-import { DiscussionComponent } from './Discussion/discussion'; 
+import { DiscussionComponent } from './Discussion/discussion';
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
-import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard'; 
+import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard';
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
@@ -23,6 +24,10 @@ import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dash
 import { VerifyEmailComponent } from './verify-email/verify-email';
 import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password';
+import { ResetPasswordComponent } from './reset-password/reset-password';
+import { HelpComponent } from './help/help';
+import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 
 export const routes: Routes = [
   //  PUBLIC ROUTES 
@@ -30,8 +35,11 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
   { path: 'verify-email', component: VerifyEmailComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
 
   //  PROTECTED ROUTES 
+  //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
@@ -41,16 +49,17 @@ export const routes: Routes = [
   { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
-  
-  
+  { path: 'help', component: HelpComponent, canActivate: [authGuard] },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
+
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
   { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
 
-  
-  { 
-    path: 'explore', 
+
+  {
+    path: 'explore',
     canActivate: [authGuard],
     children: [
       { path: '', component: ExploreWelcome },
@@ -61,27 +70,27 @@ export const routes: Routes = [
 
   { path: 'transport', component: TransportProvider, canActivate: [authGuard] },
   { path: 'register-vehicle', component: RegisterVehicleComponent, canActivate: [authGuard] },
-  { 
-    path: 'vehicle/:id', 
+  {
+    path: 'vehicle/:id',
     canActivate: [authGuard],
     loadComponent: () => import('./transport-provider/vehicle-detail/vehicle-detail')
-      .then(m => m.VehicleDetailComponent) 
+      .then(m => m.VehicleDetailComponent)
   },
 
   // Admin Control Center
   { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
 
   // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
-  { 
-    path: 'provider-dashboard', 
-    component: ProviderDashboardComponent, 
+  {
+    path: 'provider-dashboard',
+    component: ProviderDashboardComponent,
     canActivate: [authGuard, roleGuard],
-    data: { expectedRoles: ['Provider', 'TransportProvider'] } 
+    data: { expectedRoles: ['Provider', 'TransportProvider'] }
   },
-  { 
-    path: 'traveller-dashboard', 
-    component: TravelerDashboardComponent, 
+  {
+    path: 'traveller-dashboard',
+    component: TravelerDashboardComponent,
     canActivate: [authGuard, roleGuard],
-    data: { expectedRoles: ['Traveller', 'Traveler'] } 
+    data: { expectedRoles: ['Traveller', 'Traveler'] }
   }
 ];

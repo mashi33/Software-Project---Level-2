@@ -50,15 +50,22 @@ namespace SmartJourneyPlanner.Controllers
         /**
          * POST: /api/TransportVehicles
          * Saves a new vehicle to the database.
-         * IMPORTANT: New vehicles start as "Pending" and "Unverified" 
-         * until an Admin reviews and approves them.
          */
         [HttpPost]
+        [Microsoft.AspNetCore.Authorization.Authorize] // 🛡️ Secures the route and reads incoming user JWT login tokens
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
             try 
             {
-                // Force new vehicles to be Pending for security
+                // 🔑 THE TARGET FIX: Extract the logged-in provider's real email from token attributes dynamically
+                var loggedInUserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                                        ?? User.FindFirst("email")?.Value 
+                                        ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(loggedInUserEmail)) return Unauthorized();
+
+                // Force new vehicles to be Pending and bind directly to this real account identity string
+                vehicleInfo.ProviderId = loggedInUserEmail.Trim();
                 vehicleInfo.Status = "Pending";
                 vehicleInfo.IsVerified = false;
 

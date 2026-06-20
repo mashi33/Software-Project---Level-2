@@ -16,9 +16,42 @@
     </div>
     <!-- Each vehicle is rendered independently to allow per-item actions (toggle/delete) -->
     <div *ngFor="let vehicle of vehicles" class="item-card">
-      <span>{{vehicle.name}}</span>
-      <input type="checkbox" [checked]="vehicle.available" (change)="toggleAvailability(vehicle)">
-      <button (click)="deleteVehicle(vehicle.id)">🗑️</button>
+      
+      <div class="vehicle-main-details">
+        <span class="vehicle-title">{{ vehicle.ModelName || vehicle.modelName }}</span>
+        <span class="vehicle-subtitle">{{ vehicle.VehicleClass || vehicle.vehicleClass }} • {{ vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A' }}</span>
+      </div>
+
+      <div class="vehicle-specs-group">
+        <div class="spec-column">
+          <span class="spec-lbl">Capacity</span>
+          <span class="spec-val"> {{ vehicle.SeatCount || vehicle.seatCount || '4' }} Seats</span>
+        </div>
+        <div class="spec-column">
+          <span class="spec-lbl">Fuel Type</span>
+          <span class="spec-val">⛽ {{ vehicle.FuelType || vehicle.fuelType || 'Petrol' }}</span>
+        </div>
+        <div class="spec-column">
+          <span class="spec-lbl">Gearbox</span>
+          <span class="spec-val">⚙️ {{ vehicle.Transmission || vehicle.transmission || 'Auto' }}</span>
+        </div>
+      </div>
+
+      <div class="vehicle-pricing-group">
+        <span class="spec-lbl">Daily Rate</span>
+        <span class="price-val">LKR {{ vehicle.StandardDailyRate || vehicle.standardDailyRate }}</span>
+      </div>
+
+      <div class="vehicle-actions-group">
+        <div class="toggle-wrapper">
+          <span class="spec-lbl">Available</span>
+          <input type="checkbox" 
+                 [checked]="(vehicle.Status || vehicle.status) === 'Available' || vehicle.available" 
+                 (change)="toggleAvailability(vehicle)">
+        </div>
+        <button (click)="deleteVehicle(vehicle.id || vehicle._id)" title="Delete Vehicle">🗑️</button>
+      </div>
+
     </div>
   </section>
   </div>
