@@ -1,0 +1,56 @@
+.verify-container {
+  text-align: center;
+  margin: 120px auto;
+  font-family: sans-serif;
+  min-height: 400px;
+  max-width: 500px;
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.loading-box h2 {
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+.success-box h2 {
+  color: #28a745;
+  margin-bottom: 15px;
+}
+
+.redirect-text {
+  color: #007bff;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.error-box h2 {
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.error-message {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.btn-login {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-login:hover {
+  background: #0056b3;
+}
+
+p {
+  color: #666;
+}

@@ -45,3 +45,31 @@
 </section>
   </aside>
 </div>
+
+<div class="lightbox-overlay" *ngIf="selectedMemory" (click)="selectedMemory = null">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    
+    <button class="btn-close-top" (click)="selectedMemory = null" title="Close Overlay">✕</button>
+    
+    <img [src]="isObject(selectedMemory) ? selectedMemory.imageUrl : selectedMemory" class="lightbox-img" alt="Enlarged memory view">
+
+    <div class="lightbox-details" *ngIf="isObject(selectedMemory) && selectedMemory.title; else mapImageFallback">
+      <h2>{{ selectedMemory.title }}</h2>
+      <div class="date-text" *ngIf="selectedMemory.startDate || selectedMemory.endDate">
+        🗓️ {{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}
+      </div>
+      <hr>
+      <p class="description-text">{{ selectedMemory.description || 'No description provided for this memory.' }}</p>
+    </div>
+
+    <ng-template #mapImageFallback>
+      <div class="lightbox-details">
+        <h2>Pinned Map Location</h2>
+        <div class="date-text">Active Pin</div>
+        <hr>
+        <p class="description-text">This item was directly loaded from your geo-coordinates pin layout.</p>
+      </div>
+    </ng-template>
+
+  </div>
+</div>

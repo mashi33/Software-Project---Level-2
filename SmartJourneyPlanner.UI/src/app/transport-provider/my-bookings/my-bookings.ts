@@ -23,6 +23,7 @@ export class MyBookings implements OnInit {
   
   userBookings: Booking[] = [];      // Trips booked by the traveler
   providerBookings: Booking[] = [];  // Requests received by the vehicle owner
+  loading: boolean = true;           // Loading indicator state
 
   // --- Rating Modal State ---
   showRatingModal: boolean = false;
@@ -49,17 +50,30 @@ export class MyBookings implements OnInit {
    * Fetches the correct list of bookings from the database based on who is logged in.
    */
   loadBookings() {
+    this.loading = true;
     if (this.role === 'user') {
       // Load trips for the traveler (using mock user ID 'u1')
-      this.transportBookingService.getUserBookings('u1').subscribe(res => {
-        this.userBookings = res;
-        this.enrichBookings(this.userBookings);
+      this.transportBookingService.getUserBookings('u1').subscribe({
+        next: (res) => {
+          this.userBookings = res;
+          this.enrichBookings(this.userBookings);
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        }
       });
     } else {
       // Load trip requests for the vehicle owner (using mock provider ID 'p1')
-      this.transportBookingService.getProviderBookings('p1').subscribe(res => {
-        this.providerBookings = res;
-        this.enrichBookings(this.providerBookings);
+      this.transportBookingService.getProviderBookings('p1').subscribe({
+        next: (res) => {
+          this.providerBookings = res;
+          this.enrichBookings(this.providerBookings);
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        }
       });
     }
   }
