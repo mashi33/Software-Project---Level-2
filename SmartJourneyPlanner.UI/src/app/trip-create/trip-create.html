@@ -1,88 +1,212 @@
-<div class="page-container">
-  
-  <div class="trip-card">
-   <div class="text-center mb-4">
-    <h1 class="display-5 fw-bold text-dark mb-2">Plan Your Next Adventure</h1>
-    
-    <p class="text-muted fs-5">Fill in the details and let the magic begin. Your dream vacation is just a few clicks away.</p>
-    
-    <div class="mx-auto custom-divider"></div>
-   </div>
-    
-   <!-- Form starts here -->
-   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
-      
-      <div class="form-container">
+<div class="dashboard-wrapper">
 
-        <div class="left-form">
-                     <input type="text" formControlName="tripName" placeholder="Trip name" />
+  <!-- ==========================================================================
+       👑 1. FULL WIDTH HEADER CARD (යට තියෙන ඒවාට උඩින් මුළු පළලින්ම තියෙන කොටස)
+       ========================================================================== -->
+  <div class="header-card-fullwidth">
+    <div class="header-left-content">
+      <div class="header-icon-square">
+        <i class="bi bi-airplane-fill"></i>
+      </div>
+      <div class="header-text-block">
+        <h1>Create New Trip</h1>
+        <p>Plan your next Sri Lankan adventure and create unforgettable memories</p>
+      </div>
+    </div>
 
-                     <div class="row">
-                         <input type="text" formControlName="departFrom" placeholder="Depart from" />
-                         <input type="text" formControlName="destination" placeholder="Destination" />
-                     </div>
+    <!-- ✈️ FLIGHT PATH ANIMATION (right side empty space එක fill කරන කොටස) -->
+    <div class="flight-path">
+      <i class="bi bi-airplane-fill plane-icon"></i>
+    </div>
 
-                    <div class="row">
-                        <span class="date-label">Start Date :</span>
-                        <input type="date" formControlName="startDate" placeholder="Start date" [min]="todayDate" #sDate />
-                        <span class="date-label">End Date :</span>
-                        <input type="date" formControlName="endDate" placeholder="End date" [min]="sDate.value || todayDate" />
-                     </div>
+  </div>
 
-                     <div class="budget-section">
-                           <select class="form-select" formControlName="budgetLimit">
-                           <option value="" disabled selected>Select budget limit</option>
-                           <option value="5000-10000">Below 5000</option>
-                           <option value="5000-10000">5000 - 10000</option>
-                           <option value="10000-20000">10000 - 20000</option>
-                           <option value="20000-30000">20000 - 30000</option>
-                           <option value="30000-40000">30000 - 40000</option>
-                           <option value="above 50000">Above 50000</option>
-                          </select>
-                       </div>
+  <!-- ==========================================================================
+       📦 2. TWO-COLUMN CONTENT GRID (පහළින් පැත්තෙන් පැත්තට බෙදෙන කොටස)
+       ========================================================================== -->
+  <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+    <div class="main-grid-layout">
 
-                    <textarea formControlName="description" placeholder="Trip description..."></textarea>
+      <!-- 🔵 LEFT COLUMN: TRIP DETAILS CARD -->
+      <div class="column-left-trip-details">
+        <div class="trip-card blue-indicator-card">
+
+          <div class="card-title-section">
+            <div class="card-icon-badge blue-badge">
+              <i class="bi bi-suitcase-lg-fill"></i>
+            </div>
+            <div class="card-text-block">
+              <h3>Trip Details</h3>
+              <p>Tell us about your upcoming adventure</p>
+            </div>
+          </div>
+
+          <div class="card-form-body">
+            <!-- Trip Name -->
+            <div class="form-field-group">
+              <label>Trip Name</label>
+              <div class="input-with-icon">
+                <i class="bi bi-pencil-square field-icon"></i>
+                <input type="text" formControlName="tripName" placeholder="Enter a memorable trip name" />
+              </div>
+            </div>
+
+            <!-- Depart From & Destination Row -->
+            <div class="form-flex-row">
+              <div class="form-field-group flex-fill-1">
+                <label>Depart From</label>
+                <div class="input-with-icon">
+                  <i class="bi bi-geo-alt field-icon"></i>
+                  <input type="text" formControlName="departFrom" placeholder="Where are you leaving from?" />
+                </div>
+              </div>
+
+              <div class="swap-icon-container">
+                <i class="bi bi-arrow-left-right"></i>
+              </div>
+
+              <div class="form-field-group flex-fill-1">
+                <label>Destination</label>
+                <div class="input-with-icon">
+                  <i class="bi bi-map field-icon"></i>
+                  <input type="text" formControlName="destination" placeholder="Where are you going?" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Start Date & End Date Row -->
+            <div class="form-flex-row">
+              <div class="form-field-group flex-fill-1">
+                <label>Start Date</label>
+                <div class="input-with-icon">
+                  <i class="bi bi-calendar-event field-icon"></i>
+                  <input type="date" formControlName="startDate" [min]="todayDate" #sDate />
+                </div>
+              </div>
+
+              <div class="form-field-group flex-fill-1">
+                <label>End Date</label>
+                <div class="input-with-icon">
+                  <i class="bi bi-calendar-check field-icon"></i>
+                  <input type="date" formControlName="endDate" [min]="sDate.value || todayDate" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Budget Limit -->
+            <div class="form-field-group">
+              <label>Budget Limit</label>
+              <div class="input-with-icon select-box-wrapper">
+                <i class="bi bi-cash-coin field-icon"></i>
+                <select formControlName="budgetLimit">
+                  <option value="" disabled selected>Set your budget limit</option>
+                  <option value="Below 5000">Below 5000</option>
+                  <option value="5000-10000">5000 - 10000</option>
+                  <option value="10000-20000">10000 - 20000</option>
+                  <option value="20000-30000">20000 - 30000</option>
+                  <option value="30000-40000">30000 - 40000</option>
+                  <option value="Above 50000">Above 50000</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-field-group">
+              <label>Trip Description (Optional)</label>
+              <div class="input-with-icon alignment-textarea">
+                <i class="bi bi-text-paragraph field-icon textarea-icon-top"></i>
+                <textarea formControlName="description"
+                  placeholder="Describe your trip, places, activities..."></textarea>
+              </div>
+            </div>
+          </div>
+
         </div>
-        
-        <!-- Right side for member invitations -->
-        <div class="members-box">
-          <h3>Add Members</h3>
-          <input type="email" formControlName="memberEmail" placeholder="Enter email" />
-          <select formControlName="memberRole">
-            <option value="Editor">Editor</option>
-            <option value="Viewer">Viewer</option>
-          </select>
-          <button type="button" class="invite-btn" (click)="onInvite()">Invite</button>
-        </div>
+      </div>
 
-      </div> <!-- form-container CLOSE -->
-      
-      <!-- Invited Members Section -->
-      <div *ngIf="invitedMembers.length > 0" class="invited-members-section mt-4">
-        <h4 class="fw-bold mb-3">Invited Members</h4>
-    
-       <div class="d-flex flex-wrap gap-2">
-         <div *ngFor="let m of invitedMembers; let i = index" class="member-chip">
-            <i class="bi bi-person-fill me-2 text-primary"></i>
-            
-            <span class="member-text">
-                {{ m.email }} <span class="badge-role">{{ m.role }}</span>
-            </span>
+      <!-- 🟢 RIGHT COLUMN: SIDE CARDS PANEL -->
+      <div class="column-right-side-panel">
 
-            <span class="remove-btn" (click)="removeMember(i)" title="Remove member">
-                <i class="bi bi-x"></i>
-            </span>
+        <!-- Invite Card -->
+        <div class="trip-card green-indicator-card">
+          <div class="card-title-section">
+            <div class="card-icon-badge green-badge">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="card-text-block">
+              <h3>Invite Members</h3>
+              <p>Add your travel buddies</p>
+            </div>
+          </div>
+
+          <div class="card-form-body">
+            <div class="form-field-group">
+              <label>Email Address</label>
+              <div class="input-with-icon">
+                <i class="bi bi-envelope field-icon"></i>
+                <input type="email" formControlName="memberEmail" placeholder="Enter email address" />
+              </div>
+            </div>
+
+            <div class="form-field-group">
+              <label>Role</label>
+              <div class="input-with-icon select-box-wrapper">
+                <i class="bi bi-shield-lock field-icon"></i>
+                <select formControlName="memberRole">
+                  <option value="Viewer">Viewer</option>
+                  <option value="Editor">Editor</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" class="action-btn-invite" (click)="onInvite()">
+              <i class="bi bi-send-fill"></i> Invite Member
+            </button>
           </div>
         </div>
+
+        <!-- Members List Card -->
+        <div class="trip-card slate-indicator-card">
+          <h3 class="member-list-title">Members List ({{ invitedMembers.length }})</h3>
+
+          <!-- Empty State Container -->
+          @if (invitedMembers.length === 0) {
+          <div class="blank-state-wrapper">
+            <i class="bi bi-backpack empty-state-icon"></i>
+            <p class="title-text">No members added yet.</p>
+            <p class="desc-text">Invite people to start planning together!</p>
+          </div>
+          }
+
+          <!-- Active Chip List -->
+          @if (invitedMembers.length > 0) {
+          <div class="active-chips-layout">
+            <div *ngFor="let m of invitedMembers; let i = index" class="custom-member-chip">
+              <div class="chip-details-left">
+                <i class="bi bi-person-circle chip-user-icon"></i>
+                <span class="user-email-text">{{ m.email }}</span>
+                <span class="role-tag" [class.is-editor]="m.role === 'Editor'">{{ m.role }}</span>
+              </div>
+              <span class="delete-chip-trigger" (click)="removeMember(i)">
+                <i class="bi bi-x"></i>
+              </span>
+            </div>
+          </div>
+          }
+        </div>
+
       </div>
+    </div>
 
-      <div class="bottom-buttons">
-        <button type="button" class="cancel-btn">Cancel</button>
-        <button type="submit" class="submit-btn">Submit</button>
-      </div>
+    <!-- 🏁 BOTTOM ACTIONS BAR -->
+    <div class="form-action-footer-bar">
+      <button type="button" class="footer-cancel-btn">
+        <i class="bi bi-x-circle"></i> Cancel
+      </button>
+      <button type="submit" class="footer-save-btn">
+        <i class="bi bi-check-circle-fill"></i> Create Trip
+      </button>
+    </div>
+  </form>
 
-    </form>
-
-  </div> 
-
-</div> 
+</div>

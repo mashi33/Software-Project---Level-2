@@ -1,41 +1,60 @@
-<div class="body">
+<div class="login-wrapper">
+  <div class="bg-overlay"></div>
 
-  <div class="container">
+  <div class="login-card">
+    <div class="brand-header">
+      <span class="logo-text">SJP</span>
+      <h2>Smart Journey Planner</h2>
+      <p class="subtitle">Welcome Back! Please Sign In</p>
+    </div>
 
-    <!-- Left Login Panel -->
-    <div class="login-panel">
-      <h2>Login</h2>
+    <div class="login-form">
 
-      <input type="email" name="email" [(ngModel)]="loginData.email" placeholder="Email">
+      <!-- Email Field -->
+      <div class="input-group">
+        <label>Email Address</label>
+        <div class="input-field">
+          <!-- Bootstrap Email Icon -->
+          <i class="bi bi-envelope input-icon"></i>
+          <input type="email" name="email" [(ngModel)]="loginData.email" placeholder="Enter your email" />
+        </div>
+      </div>
 
-      <input type="password" name="password" [(ngModel)]="loginData.password" placeholder="Password">
+      <!-- Password Field -->
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-field">
+          <!-- Bootstrap Lock Icon -->
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" name="password" [(ngModel)]="loginData.password" placeholder="Enter your password" />
+        </div>
+      </div>
 
-      <div class="options">
-        <label>
-          <input type="checkbox"> Remember
+      <div class="form-actions">
+        <label class="remember-me">
+          <input type="checkbox" />
+          <span>Remember me</span>
         </label>
         <a [routerLink]="['/forgot-password']" class="forgot-link">Forgot Password?</a>
       </div>
 
-      <button class="btn-login" (click)="onLogin()">LOGIN</button>
+      <!-- Sign In Button -->
+      <button class="btn-login" (click)="onLogin()">
+        <span>Sign In</span>
+        <!-- Bootstrap Arrow Right Icon -->
+        <i class="bi bi-arrow-right btn-icon"></i>
+      </button>
 
-      <p class="signup">
+      <p class="signup-prompt">
         Don't have an account?
-        <a [routerLink]="['/signup']"
-          [queryParams]="{ tripId: route.snapshot.queryParamMap.get('tripId'), role: route.snapshot.queryParamMap.get('role') }">
+        <a [routerLink]="['/signup']" [queryParams]="{
+            tripId: route.snapshot.queryParamMap.get('tripId'),
+            role: route.snapshot.queryParamMap.get('role')
+          }">
           Sign Up
         </a>
       </p>
-    </div>
 
-    <!-- Right Image Panel -->
-    <div class="image-panel">
-      <div class="overlay-text">
-        <h3>Explore the World,<br>Beyond Boundaries!</h3>
-        <p>Start your adventure today</p>
-      </div>
     </div>
-
   </div>
-
 </div>

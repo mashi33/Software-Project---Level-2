@@ -1,95 +1,281 @@
-*{
-  margin:0;
-  padding:50;
-  box-sizing:border-box;
-  font-family: Arial, Helvetica, sans-serif;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
 }
 
-.body{
-  height:100vh;
+.login-wrapper {
+  position: relative;
   width: 100%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#a7d6e5;
-  
+  height: 100vh;
+
+  background: url('/Sigiriya.png');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-.container{
-  display:flex;
-  width:850px;
-  height:500px;
-  background:#a7d6e5;
-  border-radius:15px;
-  overflow:hidden;
+.bg-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(135deg,
+      rgba(13, 71, 161, 0.30),
+      rgba(0, 0, 0, 0.45));
+
+  z-index: 1;
+  pointer-events: none;
 }
 
-/* LEFT PANEL */
-.login-panel{
-  width:45%;
-  padding:50px 40px;
-  background:#f5f5f5;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
+.login-card {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 450px;
+
+  padding: 40px;
+
+  border-radius: 24px;
+
+  background: rgba(255, 255, 255, 0.12);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+  color: #fff;
 }
 
-.login-panel h2{
-  text-align:center;
-  margin-bottom:30px;
+.brand-header {
+  text-align: center;
+  margin-bottom: 35px;
 }
 
-.login-panel input{
-  padding:12px;
-  margin-bottom:15px;
-  border-radius:8px;
-  border:1px solid #ccc;
+.logo-text {
+  display: inline-block;
+
+  background: #1a73e8;
+  color: #fff;
+
+  padding: 8px 14px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.options{
-  display:flex;
-  justify-content:space-between;
-  font-size:14px;
-  margin-bottom:20px;
+.brand-header h2 {
+  margin-top: 15px;
+
+  font-size: 38px;
+  font-weight: 600;
+
+  color: #fff;
 }
 
-button{
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#1976d2;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-  margin-bottom:15px;
+.subtitle {
+  margin-top: 8px;
+  color: #e8e8e8;
+  font-size: 14px;
 }
 
-button:hover{
-  background:#125aa0;
+
+
+.input-group {
+  margin-bottom: 24px;
+  text-align: left;
+  width: 100%;
 }
 
-.signup{
-  text-align:center;
-  font-size:14px;
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-/* RIGHT PANEL */
-.image-panel{
-  width:57%;
-  background:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center/cover;
-  position:relative;
-  display:flex;
-  align-items:flex-end;
-  padding:0px;
-  color:white;
+.input-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
-.overlay-text{
-  background:rgba(0,0,0,0.3);
-  padding:15px;
-  border-radius:10px;
+.input-field .input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.75);
+  z-index: 2;
+  pointer-events: none;
 }
 
-.overlay-text h3{
-  margin-bottom:5px;
+.input-field input:focus~.input-icon {
+  color: #1a73e8;
+}
+
+.input-field input {
+  width: 100%;
+  height: 52px;
+  padding: 0 15px 0 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 15px;
+  transition: all .3s ease;
+}
+
+
+.input-field input:focus {
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.15);
+
+  border-color: #1a73e8;
+
+  box-shadow: 0 0 15px rgba(26, 115, 232, 0.4);
+}
+
+.input-field input::placeholder {
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-top: 5px;
+  margin-bottom: 25px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 14px;
+  color: #fff;
+
+  cursor: pointer;
+}
+
+.remember-me input {
+  width: 16px;
+  height: 16px;
+
+  accent-color: #1a73e8;
+}
+
+.forgot-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-link:hover {
+  color: #4da3ff;
+}
+
+.btn-login {
+  width: 100%;
+  height: 54px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: linear-gradient(135deg,
+      #1a73e8,
+      #0d47a1);
+
+  color: #fff;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  transition: .3s;
+}
+
+.btn-login .btn-icon {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.btn-login:hover {
+  transform: translateY(4px);
+
+  box-shadow: 0 8px 20px rgba(26, 115, 232, .45);
+}
+
+.signup-prompt {
+  text-align: center;
+
+  margin-top: 25px;
+
+  color: #e8e8e8;
+  font-size: 14px;
+}
+
+.signup-prompt a {
+  color: #4da3ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.signup-prompt a:hover {
+  text-decoration: underline;
+}
+
+@media(max-width:768px) {
+
+  .login-card {
+    width: 90%;
+    padding: 30px 25px;
+  }
+
+  .brand-header h2 {
+    font-size: 28px;
+  }
+}
+
+/* SweetAlert Modern Customization */
+.modern-alert {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  /* Glass effect එකක් එනවා */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+  padding: 10px !important;
+}
+
+.swal2-toast {
+  padding: 15px !important;
+  font-family: 'Segoe UI', sans-serif !important;
 }
