@@ -26,17 +26,24 @@ namespace SmartJourneyPlanner.Services
             var totalBookings = await _bookingCollection.CountDocumentsAsync(_ => true);
             return new { totalVehicles, totalBookings };
         }
-        public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
+      public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
         {
             var cleanEmail = ownerEmail.Trim();
 
-            // 🔑 CHANGED: Removed the 'Approved' status filter rule so toggled vehicles don't vanish from your dashboard view
-            var filter = Builders<TransportVehicle>.Filter.Regex(
+            // 1. Filter by the logged-in provider's email (case-insensitive)
+            var emailFilter = Builders<TransportVehicle>.Filter.Regex(
                 v => v.ProviderId, 
                 new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(cleanEmail)}$", "i")
             );
 
-            return await _vehicleCollection.Find(filter).ToListAsync();
+            // 🔑 THE FLEET MANAGER WHIETLIST: Allow BOTH Available and Unavailable states to show on her dashboard!
+            // This prevents the vehicle from vanishing from her screen when she unticks the box.
+            var statusFilter = Builders<TransportVehicle>.Filter.In(v => v.Status, new[] { "Available", "Unavailable", "Approved" });
+
+            // 2. Combine both conditions together
+            var combinedFilter = Builders<TransportVehicle>.Filter.And(emailFilter, statusFilter);
+
+            return await _vehicleCollection.Find(combinedFilter).ToListAsync();
         }
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {

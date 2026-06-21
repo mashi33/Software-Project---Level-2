@@ -38,7 +38,6 @@ namespace SmartJourneyPlanner.API.Models
         public string Category { get; set; } = "General";
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
-        // Row-level authentication validation field
         // Ties database record logs to the traveler who created them
         public string AddedBy { get; set; } = string.Empty;
     }

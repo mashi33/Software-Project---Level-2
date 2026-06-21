@@ -262,7 +262,11 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 new Claim(ClaimTypes.Name, user.FullName ?? "User"), 
                 new Claim(ClaimTypes.Email, user.Email ?? ""),
+                
+                // 🔑 THE FIX: Read directly from the fresh user instance variable data field object
                 new Claim(ClaimTypes.Role, user.UserType ?? "Traveller"),
+                new Claim("UserType", user.UserType ?? "Traveller"), 
+                
                 new Claim("userId", user.Id?.ToString() ?? ""),
                 new Claim("isBlocked", user.IsBlocked.ToString())
             };

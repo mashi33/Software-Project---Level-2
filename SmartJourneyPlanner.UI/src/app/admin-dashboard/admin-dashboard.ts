@@ -22,6 +22,8 @@ export class AdminDashboardComponent implements OnInit {
   // View Switcher
   view: 'stats' | 'providers' | 'users' = 'stats';
 
+  stats: any = { pendingProvidersCount: 0, platformUsers: 0 };
+
   // Data Lists
   pendingProviders: any[] = [];
   allUsers: any[] = [];
@@ -46,10 +48,22 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchAllUsers();
   }
 
-  /* DEDICED REFRESH LOGIC
+  /* DEDICATED REFRESH LOGIC
      Updates all counts and lists simultaneously */
   refreshDashboard() {
     this.errorMessage = '';
+    
+    // Fetches the counter metrics and assigns them straight to our summary layout parameters
+    this.adminService.getDashboardStats().subscribe({
+      next: (data: any) => {
+        this.stats = data;
+        console.log("📊 Unified Dashboard Counters Synchronized:", this.stats);
+      },
+      error: (err: any) => {
+        console.error("Could not populate metric stats cards", err);
+      }
+    });
+
     this.fetchPendingProviders();
     this.fetchAllUsers();
     
@@ -115,6 +129,10 @@ export class AdminDashboardComponent implements OnInit {
           next: () => {
             this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
             this.selectedProvider = null; // Automatically close the detail modal
+            
+            // Recalculate KPI summary counters instantly so the home cards stay in sync
+            this.refreshDashboard();
+            
             Swal.fire({
               title: 'Success',
               text: `Provider has been ${status}`,
@@ -227,6 +245,10 @@ export class AdminDashboardComponent implements OnInit {
         this.adminService.deleteUser(userId).subscribe({
           next: () => {
             this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
+            
+            // Recalculate stats cards to reflect total population reduction
+            this.refreshDashboard();
+
             Swal.fire({
               title: 'Deleted!',
               text: 'User has been removed.',

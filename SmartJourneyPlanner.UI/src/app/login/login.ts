@@ -50,25 +50,32 @@ export class LoginComponent implements OnInit {
           localStorage.setItem('userId', id);
         }
 
-        console.log('Login Success!', response);
+        //console.log('Login Success!', response);
         alert('Login Successful!');
 
         /**
-         * CONDITIONAL REDIRECT LOGIC
+         * 🔑 UPDATED CONDITIONAL REDIRECT LOGIC
+         * Safely processes deep links first, then dynamically checks all roles including Admin.
          */
         if (this.invitedTripId) {
           console.log(`Redirecting to invited trip: ${this.invitedTripId} as ${this.invitedRole}`);
-          this.router.navigate(['/trip-summary', this.invitedTripId], { //
+          this.router.navigate(['/trip-summary', this.invitedTripId], {
             queryParams: { role: this.invitedRole }
           });
         }
         else {
-          const currentUserType = this.authService.getUserSystemType();
+          // Check both the backend response payload or your local AuthService storage state
+          const currentUserType = response.userType || response.UserType || this.authService.getUserSystemType();
 
-          if (currentUserType === 'TransportProvider' || currentUserType === 'Provider') {
+          if (currentUserType === 'Admin') {
+            console.log('Admin detected. Navigating to Admin Panel...');
+            this.router.navigate(['/admin-dashboard']);
+          }
+          else if (currentUserType === 'TransportProvider' || currentUserType === 'Provider') {
             this.router.navigate(['/provider-dashboard']);
           }
           else if (currentUserType === 'Traveller' || currentUserType === 'Traveler') {
+            console.log('Traveller detected. Navigating to Traveller Dashboard...');
             this.router.navigate(['/traveller-dashboard']);
           }
           else {
