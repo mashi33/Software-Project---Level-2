@@ -14,6 +14,7 @@ export interface TripMemory {
     userId: string;
     likeCount: number;       
   likedByUsers: string[];
+  fullName?: string;
 }
 export interface LikeResponse {
   id: string;

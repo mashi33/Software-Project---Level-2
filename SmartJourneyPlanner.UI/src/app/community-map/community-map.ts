@@ -1,11 +1,12 @@
 import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule,Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import * as Leaflet from 'leaflet';
+import * as L from 'leaflet';
 import {MemoryService} from '../services/memory';
 import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
+import 'leaflet.markercluster';
 
 @Component({
   selector: 'app-community-map',
@@ -16,11 +17,20 @@ import { AuthService } from '../services/auth.service';
 })
 export class CommunityMapComponent implements OnInit, AfterViewInit {
   private map!: L.Map;
-  private markersLayer: L.LayerGroup = Leaflet.layerGroup();
+    private markersLayer = (L as any).markerClusterGroup({
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
+          className: 'my-cluster-wrapper',
+          iconSize: L.point(40, 40)
+        });
+      }
+    });
   
-  private readonly sriLankaBounds = Leaflet.latLngBounds(
-    Leaflet.latLng(5.0, 78.0), 
-    Leaflet.latLng(10.5, 83.5)
+  private readonly sriLankaBounds = L.latLngBounds(
+    L.latLng(5.0, 78.0), 
+    L.latLng(10.5, 83.5)
   );
 
   public searchQuery: string = '';
@@ -29,7 +39,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   public selectedMemory: TripMemory | null = null;
   public showMax: number = 3;
 
-  constructor(private readonly memoryService: MemoryService, private readonly authService: AuthService) {}
+  constructor(private readonly memoryService: MemoryService, private readonly authService: AuthService,private readonly location: Location) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
@@ -83,6 +93,10 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
+  goBack(): void {
+  this.location.back();
+}
+
   public loadCommunityMemories(): void {
     this.memoryService.getPublicMemories().subscribe({
       next: (data: TripMemory[]) => {
@@ -120,7 +134,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       if (!memory.latitude || !memory.longitude) return;
 
       const iconConfig = this.getMarkerIconConfiguration(memory.likeCount);
-      const customIcon = Leaflet.icon({
+      const customIcon = L.icon({
         iconUrl: iconConfig.url,
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         iconSize: iconConfig.size,
@@ -129,12 +143,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         shadowSize: iconConfig.size
       });
 
-      const marker = Leaflet.marker([memory.latitude, memory.longitude], { icon: customIcon });
+      const marker = L.marker([memory.latitude, memory.longitude], { icon: customIcon });
       const popupHtml = this.generatePopupHtml(memory);
 
       marker
         .bindPopup(popupHtml)
-        .on('popupopen', (e: Leaflet.LeafletEvent) => {
+        .on('popupopen', (e: L.LeafletEvent) => {
           const popupEl = e.target.getPopup().getElement();
           
           popupEl?.querySelector('.view-big-image')?.addEventListener('click', () => {
@@ -145,7 +159,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
             if (memory.id) this.toggleLike(memory.id);
           });
         })
-        .addTo(this.markersLayer);
+        this.markersLayer.addLayer(marker);
     });
   }
 
@@ -188,7 +202,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
     private initMap(): void {
-      this.map = Leaflet.map('map', {
+      this.map = L.map('map', {
         center: [7.8731, 80.7718],
         zoom: 8,
         minZoom: 7,
@@ -196,7 +210,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         maxBoundsViscosity: 1.0
     });
 
-    Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(this.map);
 
@@ -204,7 +218,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
     private fixLeafletIcons() {
-      const iconDefault = Leaflet.icon({
+      const iconDefault = L.icon({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -213,7 +227,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         popupAnchor: [1, -34],
         shadowSize: [41, 41]
     });
-      Leaflet.Marker.prototype.options.icon = iconDefault;
+      L.Marker.prototype.options.icon = iconDefault;
   }
 
   // පැරාමීටර් එක Event ලෙස ගෙන ඇතුළතදී CustomEvent ලෙස පාවිච්චි කළා

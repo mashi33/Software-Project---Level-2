@@ -15,6 +15,10 @@ public class TripMemory
     [BsonElement("userId")]
     [JsonPropertyName("userId")]
     public string UserId { get; set; } = string.Empty;
+    
+    [BsonElement("fullName")]
+    [JsonPropertyName("fullName")]
+    public string FullName { get; set; } = string.Empty;
 
     [BsonElement("title")]
     [JsonPropertyName("title")]
