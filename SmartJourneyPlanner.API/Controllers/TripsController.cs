@@ -153,25 +153,19 @@ public async Task<IActionResult> GetDashboardData()
 
         // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 
         // 2. If that fails or fetches an email, try checking for your custom 'userId' claim key payload
-        if (string.IsNullOrEmpty(userId) || userId.Contains("@"))
-        {
-            userId = User.FindFirst("userId")?.Value ?? User.FindFirst("sub")?.Value;
-        }
+        if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(userEmail))
+            return Unauthorized(new { message = "Invalid user identity." });
 
-        // 🔍 DEBUG PRINT: Look at your backend terminal console to see what string value is actually inside your token!
-        Console.WriteLine($"--- 🔐 DASHBOARD REQUEST SECURITY LOG ---");
-        Console.WriteLine($"Extracted User ID from JWT Token: '{userId}'");
-        Console.WriteLine($"-----------------------------------------");
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(new { message = "Invalid user session context." });
-        }
-        // 🔥 FIX 1: Use case-insensitive Regex filter to guarantee a match against "createdBy" or "CreatedBy" fields in MongoDB
-                var userFilter = Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i"));
-
+        var builder = Builders<Trip>.Filter;
+       // 🔥 FIX: This filter now includes Creator (ID or Email) OR Member status
+        var userFilter = builder.Or(
+            builder.Eq(t => t.CreatedBy, userId),
+            builder.Eq(t => t.CreatorEmail, userEmail),
+            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
+        );
                 var userTrips = await _tripsCollection
                     .Find(userFilter)
                     .ToListAsync();
@@ -180,7 +174,7 @@ public async Task<IActionResult> GetDashboardData()
                 var today = DateTime.Today;
         // Upcoming trips
         var upcomingTrips = userTrips
-            .Where(t => t.StartDate.Date >= today)
+            .Where(t => t.StartDate.Date > today)
             .ToList();
 
         // Completed trips
@@ -316,6 +310,47 @@ public async Task<IActionResult> GetDashboardData()
                 return BadRequest(new { message = "Error creating trip: " + ex.Message });
             }
         }
+
+        // =========================================================================================
+// === ADD THIS NEW ENDPOINT TO YOUR TRIPSCONTROLLER ===
+// =========================================================================================
+[Authorize]
+[HttpGet("user-accessible")]
+public async Task<ActionResult<List<Trip>>> GetUserAccessibleTrips()
+{
+    try
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+        if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(userEmail))
+            return Unauthorized(new { message = "Invalid token claims." });
+
+        var builder = Builders<Trip>.Filter;
+
+        // Create a flexible filter:
+        // 1. You are the creator (by ID)
+        // 2. You are the creator (by Email)
+        // 3. Your email is in the Members list
+        var finalFilter = builder.Or(
+            builder.Eq(t => t.CreatedBy, userId),
+            builder.Eq(t => t.CreatorEmail, userEmail),
+            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
+        );
+
+        // Simple fallback to see the filter structure
+Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
+
+        var trips = await _tripsCollection.Find(finalFilter).ToListAsync();
+        
+        return Ok(trips);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error: " + ex.Message });
+    }
+}
+// =========================================================================================
 
         // Add a new place to an existing trip's saved places list
         [HttpPost("{tripId}/add-place")]

@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 import * as leaflet from 'leaflet';
 
 @Component({
@@ -41,12 +42,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   allMemories: any[] = [];
   myRecentUploads: any[] = []; 
   selectedMemory: any | null = null;
+  allTrips: any[] = [];
+selectedTrip: any = null;
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
     this.loadMyMemories(); 
+    this.loadAccessibleTrips();
   }
 
   ngAfterViewInit(): void {
@@ -77,7 +81,32 @@ onFileSelected(event: any): void {
   }
 }
 
+// In your Angular service or component
+loadAccessibleTrips() {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
+  // This one call gets both "Created by me" and "Member of"
+  this.http.get<any[]>(`http://localhost:5233/api/trips/user-accessible`, { headers })
+    .subscribe({
+      next: (data) => {
+        // 'data' now contains all trips the user is authorized to see
+        this.allTrips = data; 
+        console.log("Combined list of trips:", this.allTrips);
+      },
+      error: (err) => console.error("Error fetching trips:", err)
+    });
+}
+
+// Handler for the select dropdown
+onTripChange(event: any) {
+    const tripId = event.target.value;
+    // Find the trip based on the id
+    this.selectedTrip = this.allTrips.find(t => t.id == tripId);
+    
+    // Debug to ensure selectedTrip is being set correctly
+    console.log("Selected Trip Object:", this.selectedTrip);
+}
 
 removeImage(fileInput: HTMLInputElement): void {
   this.newMemory.imageUrl = '';
@@ -97,7 +126,9 @@ removeImage(fileInput: HTMLInputElement): void {
       locationName: memory.locationName || memory.LocationName || 'Unknown Location',
       startDate:  memory.startDate, 
        endDate:  memory.endDate,
-       isPublic: memory.isPublic || memory.IsPublic || false
+       isPublic: memory.isPublic || memory.IsPublic || false,
+       likeCount: memory.likeCount || 0,
+       tripName: memory.tripName || memory.TripName || null
     };
   }
   
@@ -107,7 +138,13 @@ removeImage(fileInput: HTMLInputElement): void {
     const userId = localStorage.getItem('userId');
     this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
         next: (data) => {
-            this.allMemories = data.map(m => this.formatData(m));
+            this.allMemories = data.map(m => {
+        const formatted = this.formatData(m);
+        // Find the matching trip name from your allTrips list
+        const trip = this.allTrips.find(t => t.id === m.tripId);
+        formatted.tripName = trip ? trip.tripName : 'No Trip Assigned';
+        return formatted;
+      });
             this.myRecentUploads = [...this.allMemories].reverse();
 
             this.refreshMapMarkers();
@@ -185,7 +222,9 @@ toggleSeeMore() {
  const body = { 
     ...this.newMemory,
     userId: userId, 
-    isPublic: this.newMemory.isPublic 
+    isPublic: this.newMemory.isPublic, 
+    tripId: this.selectedTrip?.id || null,
+        tripName: this.selectedTrip?.name || null
   };
  this.http.post(this.apiUrl, body).subscribe({
  next: (response: any) => {
@@ -213,15 +252,27 @@ toggleSeeMore() {
 
 
   private getPopupHtml(memory: any): string {
+    if (!memory) return '<div class="popup-container">No data available</div>';
+    // Public නම් විතරක් Like Count එක පෙන්වන කොටස සෑදීම
+  const likeHtml = memory.isPublic 
+    ? `<div style="margin-top: 8px; font-weight: bold; color: #145dbf;">
+    <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
+            </svg> 
+    ${memory.likeCount || 0}</div>` 
+    : '';
     return `
       <div class="popup-container">
-        <h6 class="popup-title">${memory.title}</h6>
+        <h6 class="popup-title">${memory.title || 'Untitled'}</h6>
 
         <img src="${memory.imageUrl}" 
              class="popup-image view-big-image"
              data-img="${memory.imageUrl}" />
 
-        <p class="popup-location">${memory.locationName}</p>
+        <p class="popup-location">
+        <i class="bi bi-geo-alt-fill me-2 text-danger"></i>${memory.locationName || 'Unknown'}
+      </p>
+        ${likeHtml}
       </div>
     `;
   }
@@ -248,7 +299,7 @@ toggleSeeMore() {
             // Broadcasts an event to trigger image viewing without tying it to the map.
             window.dispatchEvent(
               new CustomEvent('viewBig', {
-                detail: memory.imageUrl
+                detail: memory.id
               })
             );
           });
@@ -331,17 +382,18 @@ deleteMemory(id: string, event: Event) {
   // ==========================================
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) { 
-    const imageUrl = event.detail;
+    const memoryId = event.detail;
     
     // Attempt to locate the full descriptive object using the matching URL string
-    const foundMemory = this.allMemories.find(m => m.imageUrl === imageUrl);
+    const foundMemory = this.allMemories.find(m => m.id === memoryId);
     
     if (foundMemory) {
+      console.log("Memory Object Details:", foundMemory);
       // Open the modal with all information available
       this.selectedMemory = foundMemory; 
     } else {
       // Fallback if the collection doesn't contain the element
-      this.selectedMemory = imageUrl; 
+      console.error("Memory not found for ID:", memoryId);
     }
   }
   closeModal() {

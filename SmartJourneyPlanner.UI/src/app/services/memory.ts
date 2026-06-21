@@ -6,25 +6,37 @@ import { TripMemory } from '../models/memory.model';
 
 @Injectable({ providedIn: 'root' })
 export class MemoryService {
-  private apiUrl = 'http://localhost:5233/api/memories';
-  constructor(private http: HttpClient) {}
+  private readonly apiUrl = 'http://localhost:5233/api/memories';
+  private readonly requestTimeout = 5000;
+
+  constructor(private readonly http: HttpClient) {}
 
   getMemories(userId: string): Observable<TripMemory[]> {
     return this.http.get<TripMemory[]>(`${this.apiUrl}/user/${userId}`);
   }
 
 getPublicMemories(): Observable<TripMemory[]> {
-  // Query parameter used to let backend handle filtering instead of frontend processing
-    const params = new HttpParams().set('publicOnly', 'true');
-    
-    return this.http.get<TripMemory[]>(this.apiUrl, { params }).pipe(
-      timeout(5000)
+    return this.http.get<TripMemory[]>(this.apiUrl).pipe(
+      timeout(this.requestTimeout)
     );
   }
+
+  // Inside MemoryService class
+public getAccessibleTrips(): Observable<any[]> {
+  // Replace the URL with your actual endpoint
+  return this.http.get<any[]>(`${this.apiUrl}/trips`); //?????????????????????????
+}
 
   addMemory(memory: TripMemory): Observable<TripMemory> {
     return this.http.post<TripMemory>(this.apiUrl, memory).pipe(
       timeout(5000)
+    );
+  }
+
+  toggleLike(memoryId: string, userId: string): Observable<TripMemory> {
+    const payload = { userId };
+    return this.http.post<TripMemory>(`${this.apiUrl}/${memoryId}/like`, payload).pipe(
+      timeout(this.requestTimeout)
     );
   }
 }
