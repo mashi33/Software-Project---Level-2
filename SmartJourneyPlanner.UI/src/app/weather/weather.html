@@ -1,175 +1,330 @@
-<div class="background-container">
-  <div class="weather-shapes">
+<!-- ================= FULL PAGE LAYOUT ================= -->
+<div class="app-shell">
 
-  <!-- SMALL CLOUDS -->
-  <div class="cloud cloud1"></div>
-  <div class="cloud cloud2"></div>
-  <div class="cloud cloud3"></div>
+  <!-- decorative ambient background (purely visual, fills empty space) -->
+  <div class="bg-orb bg-orb-a"></div>
+  <div class="bg-orb bg-orb-b"></div>
+  <div class="bg-orb-c"></div>
 
-  <!-- SUN -->
-  <div class="sun-glow"></div>
-
-  <!-- RAIN -->
-  <div class="rain r1"></div>
-  <div class="rain r2"></div>
-  <div class="rain r3"></div>
-  <div class="rain r4"></div>
-  <div class="rain r5"></div>
-  <div class="rain r6"></div>
-  <div class="rain r7"></div>
-  <div class="rain r8"></div>
-  <div class="rain r9"></div>
-  <div class="rain r10"></div>
-
-  <!-- WAVES -->
-  <div class="wave"></div>
-  <div class="wave2"></div>
-
-</div>
-<div class="weather-page-wrapper">
+  <!-- =================== LEFT SIDEBAR =================== -->
   <aside class="left-panel">
-    <div class="panel-top-content">
-    <h2>Plan with the Past</h2>
-    <div class="input-group">
-      <input type="text" (keyup.enter)="searchWeather()" [(ngModel)]="city" placeholder="Search City">
-    </div>
-    <div class="input-group">
-      <input type="date" [(ngModel)]="selectedDate">
-    </div>
-    <button class="btn-fetch" (click)="searchWeather()" [disabled]="loading">
-      {{ loading ? 'Loading...' : 'Fetch Weather' }}
-    </button>
 
-    </div>
-
-    <div class="sidebar-calendar-wrapper" *ngIf="monthDays.length > 0">
-  <div class="calendar-sidebar-header">
-    <h4>{{ currentMonthName }}</h4>
-  </div>
-  
-  <div class="calendar-weekdays-grid">
-    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-  </div>
-
-  <div class="calendar-days-matrix">
-  <div 
-    *ngFor="let day of monthDays" 
-    class="calendar-day-tile"
-    [ngClass]="{ 
-      'selected-day': day.dayNumber === searchedDayNumber && day.dayNumber !== null, 
-      'empty-tile': !day.dayNumber 
-    }">
-    
-    <!-- Only show contents if dayNumber is valid -->
-    <span class="day-num" *ngIf="day.dayNumber">{{ day.dayNumber }}</span>
-  </div>
-</div>
-</div>
-
-      <!-- RECENT SEARCHES: CONTEXTUAL SUBSECTION (POST-SEARCH STATE) -->
-      <div class="recent-sidebar-container" *ngIf="weatherData && recentSearches.length > 0">
-        <h3 class="sidebar-subheading">Recent Searches</h3>
-        <ul class="recent-list-sidebar">
-          <li *ngFor="let item of recentSearches" (click)="selectRecentSearch(item)">
-            <span class="history-icon">🕒</span>
-            <span class="city-name">{{ item }}</span>
-            <span class="action-arrow">→</span>
-          </li>
-        </ul>
+    <!-- BRAND -->
+    <div class="brand reveal">
+      <span class="brand-mark">☀️</span>
+      <div>
+        <h2 class="brand-title">WeatherWise</h2>
+        <p class="brand-sub">Plan smarter with the forecast</p>
       </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="glass-card search-card reveal">
+      <h3 class="card-title">Search Location</h3>
+      <div class="search-row">
+        <span class="search-ico">⌕</span>
+        <input type="text" [(ngModel)]="city" placeholder="Enter a city..."
+               (keyup.enter)="searchWeather()" />
+      </div>
+      <label class="field-label">Select Date</label>
+      <input class="date-input" type="date" [(ngModel)]="selectedDate" />
+
+      <!-- Temperature unit toggle -->
+      <label class="field-label">Temperature Unit</label>
+      <div class="unit-toggle" role="group" aria-label="Temperature unit">
+        <button type="button"
+                class="unit-btn"
+                [class.active]="unit === 'C'"
+                (click)="setUnit('C')">°C</button>
+        <button type="button"
+                class="unit-btn"
+                [class.active]="unit === 'F'"
+                (click)="setUnit('F')">°F</button>
+      </div>
+
+      <button class="primary-btn" (click)="searchWeather()" [disabled]="loading">
+        {{ loading ? 'Loading...' : 'Fetch Weather' }}
+      </button>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="glass-card calendar-card reveal">
+      <div class="calendar-head">
+        <h3 class="card-title">Calendar</h3>
+        <div class="cal-nav">
+          <button (click)="changeMonth(-1)">‹</button>
+          <button (click)="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <p class="cal-month">{{ currentMonthName }}</p>
+
+      <div class="cal-grid cal-weekdays">
+        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span>
+        <span>Th</span><span>Fr</span><span>Sa</span>
+      </div>
+
+      <div class="cal-grid cal-days">
+        <button *ngFor="let d of monthDays"
+                class="cal-day"
+                [class.empty]="d.dayNumber === null"
+                [class.active]="d.dayNumber === searchedDayNumber"
+                [disabled]="d.dayNumber === null"
+                (click)="selectDay(d.dayNumber)">
+          {{ d.dayNumber }}
+        </button>
+      </div>
+    </div>
+
+    <!-- RECENT SEARCHES -->
+    <div class="glass-card recent-card reveal">
+      <h3 class="card-title">Recent Searches</h3>
+      <ul class="recent-list">
+        <li *ngFor="let item of recentSearches"
+            (click)="selectRecentSearch(item)">
+          <span class="recent-ico">🕓</span>
+          <span class="recent-name">{{ item }}</span>
+          <span class="recent-arrow">→</span>
+        </li>
+      </ul>
+    </div>
 
   </aside>
 
-  <!-- RIGHT MAIN WINDOW AREA -->
-    <main class="right-panel">
-      
-      <div class="initial-welcome-card" *ngIf="!weatherData">
-        <div class="welcome-header">
-          <div class="brand-badge">Enterprise Weather Analytics</div>
-          <h1>Predictive Weather Horizon Engine</h1>
-          <p>Please type your requested destination city name and schedule your targeting context matrix in the sidebar panel to render historical parameters and actionable insight recommendations.</p>
-        </div>
+  <!-- =================== RIGHT COLUMN =================== -->
+  <main class="right-panel">
 
-        <div class="initial-history-section" *ngIf="recentSearches.length > 0">
-          <h3>Your Recent Search Logs</h3>
-          <div class="history-welcome-grid">
-            <div class="history-chip-large" *ngFor="let item of recentSearches" (click)="selectRecentSearch(item)">
-              <div class="chip-icon">🏙️</div>
-              <div class="chip-info">
-                <span class="chip-label">Analyze Target</span>
-                <span class="chip-title">{{ item }}</span>
-              </div>
-              <div class="chip-arrow">↗</div>
-            </div>
-          </div>
+    <!-- ===================================================== -->
+    <!-- EMPTY STATE (shown before a search)                   -->
+    <!-- ===================================================== -->
+    <div class="empty-hero" *ngIf="!weatherData && !loading">
+      <div class="hero-top reveal">
+        <div class="hero-icon">🌤️</div>
+        <h1 class="hero-title">Know Before You Go</h1>
+        <p class="hero-sub">
+          Search any city to get accurate weather, a 7-day outlook, and smart
+          packing &amp; activity suggestions — all in one place.
+        </p>
+      </div>
+
+      <!-- trust / capability highlight strip -->
+      <div class="hero-stats reveal">
+        <div class="hero-stat">
+          <span class="hs-num">200k+</span>
+          <span class="hs-key">Cities Covered</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hs-num">7 Days</span>
+          <span class="hs-key">Forecast Range</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hs-num">Smart</span>
+          <span class="hs-key">Packing Tips</span>
         </div>
       </div>
 
-      <div class="weather-display-contents" *ngIf="weatherData">
-        <div class="weather-header">
-          <h1>{{ city | titlecase }}</h1>
-          <p>Date: {{ selectedDate | date:'longDate' }}</p>
+      <!--<div class="glass-card reveal" style="height: 400px; padding: 0; overflow: hidden;">
+  <div id="map" style="width: 100%; height: 100%; border-radius: 18px;"></div>
+</div>
+-->
+
+      <!-- feature highlights -->
+      <div class="feature-grid">
+        <div class="feature-card reveal">
+          <div class="feature-ico">📅</div>
+          <h4>Any Date</h4>
+          <p>Check the forecast for any day using the calendar.</p>
         </div>
-        
-        <div class="weather-details">
-          <div class="weather-icon">
+        <div class="feature-card reveal">
+          <div class="feature-ico">📊</div>
+          <h4>7-Day Outlook</h4>
+          <p>See temperature, condition &amp; humidity trends ahead.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-ico">🎒</div>
+          <h4>Smart Packing</h4>
+          <p>Get outfit &amp; packing tips tailored to the weather.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-ico">🏃</div>
+          <h4>Activities</h4>
+          <p>Discover the best things to do in any condition.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- LOADING STATE                                         -->
+    <!-- ===================================================== -->
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Fetching the latest weather...</p>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- RESULTS                                               -->
+    <!-- ===================================================== -->
+    <ng-container *ngIf="weatherData && !loading">
+
+      <!-- CURRENT WEATHER (HERO) -->
+      <div class="glass-card current-card reveal">
+        <div class="cw-main">
+          <div class="cw-icon">
             {{ weatherCategory === 'Sunny' ? '☀️' : (weatherCategory === 'Cloudy' ? '☁️' : '🌧️') }}
           </div>
-          <div>
-            <h2>{{ weatherCategory }}</h2>
-            <p>Avg Temp: {{ weatherData.avgTemp }}°C</p>
-            <p>Humidity: {{ weatherData.humidity }}%</p> 
+          <div class="cw-headline">
+            <p class="cw-label">Current Weather</p>
+            <h1 class="cw-city">{{ city | titlecase }}</h1>
+            <p class="cw-date">{{ selectedDate | date:'fullDate' }}</p>
+          </div>
+          <div class="cw-temp-wrap">
+            <h2 class="cw-temp">{{ displayTemp(weatherData.avgTemp) }}°{{ unit }}</h2>
+            <span class="cw-cond-pill">{{ weatherCategory }}</span>
           </div>
         </div>
 
-        <section class="forecast-section" *ngIf="weatherRange.length > 0">
-          <div class="forecast-header">
-            <h3>3 Days Before & After</h3>
-            <div class="forecast-buttons">
-              <button class="nav-btn" (click)="scrollForecast('left')">←</button>
-              <button class="nav-btn" (click)="scrollForecast('right')">→</button>
-            </div>
+        <!-- weather stat strip -->
+        <div class="stat-strip">
+          <div class="stat">
+            <span class="stat-ico">🌡️</span>
+            <div><p class="stat-val">{{ displayTemp(weatherData.avgTemp) }}°{{ unit }}</p><p class="stat-key">Avg Temp</p></div>
           </div>
-
-          <div class="forecast-scroll" #forecastSlider>
-            <div class="forecast-slider">
-              <div class="forecast-card" *ngFor="let day of weatherRange">
-                <h4>{{ day.date | date:'EEE' }}</h4>
-                <p class="forecast-date">{{ day.date | date:'MMM d' }}</p>
-                <div class="forecast-icon">{{ day.emoji }}</div>
-                <h2>{{ day.avgTemp }}°C</h2>
-                <p class="forecast-condition">{{ day.condition }}</p>
-                <small>Humidity: {{ day.humidity }}%</small>
-              </div>
-            </div>
+          <div class="stat">
+            <span class="stat-ico">💧</span>
+            <div><p class="stat-val">{{ weatherData.humidity }}%</p><p class="stat-key">Humidity</p></div>
           </div>
-        </section>
-
-        <section class="suggestions-card" *ngIf="suggestionResult">
-          <h3>Suggestions for {{ weatherCategory }} Weather</h3>
-          <div class="suggestions-grid">
-            <div class="col">
-              <h4>Packing List</h4>
-              <ul>
-                <li *ngFor="let item of suggestionResult.packing">{{ item }}</li>
-              </ul>
-            </div>
-            <div class="col">
-              <h4>Outfit</h4>
-              <ul>
-                <li *ngFor="let item of suggestionResult.outfit">{{ item }}</li>
-              </ul>
-            </div>
-            <div class="col">
-              <h4>Activity</h4>
-              <ul>
-                <li *ngFor="let item of suggestionResult.activity">{{ item }}</li>
-              </ul>
-            </div>
+          <div class="stat">
+            <span class="stat-ico">💨</span>
+            <div><p class="stat-val">{{ weatherCategory }}</p><p class="stat-key">Wind</p></div>
           </div>
-        </section>
+          <div class="stat">
+            <span class="stat-ico">☔</span>
+            <div><p class="stat-val">{{ selectedDate | date:'MMM d' }}</p><p class="stat-key">Rain Total</p></div>
+          </div>
+        </div>
       </div>
 
-    </main>
-</div>
+      <!-- ADVISORY BANNER ("Grab an Umbrella!" style) -->
+      <div class="advisory-card reveal" *ngIf="advisoryTitle"
+           [class.adv-rain]="weatherCategory === 'Rainy'"
+           [class.adv-cloud]="weatherCategory === 'Cloudy'"
+           [class.adv-sun]="weatherCategory === 'Sunny'">
+        <div class="adv-icon">{{ advisoryIcon }}</div>
+        <div class="adv-body">
+          <h3 class="adv-title">{{ advisoryTitle }}</h3>
+          <p class="adv-msg">{{ advisoryMsg }}</p>
+        </div>
+        <div class="adv-metric">
+          <span class="adv-num">{{ totalMm }}</span>
+          <span class="adv-unit">mm</span>
+        </div>
+      </div>
+
+      <!-- CONDITION DETAILS GRID --><!--
+      <div class="glass-card details-card reveal">
+        <h3 class="card-title">Conditions Detail</h3>
+        <div class="details-grid">-->
+          <!-- feels-like respects the unit toggle -->
+          <!--<div class="detail-tile">
+            <span class="detail-ico">🌡️</span>
+            <p class="detail-val">{{ displayTemp(feelsLikeC) }}°{{ unit }}</p>
+            <p class="detail-key">Feels Like</p>
+          </div>
+          <div class="detail-tile" *ngFor="let d of weatherDetails">
+            <span class="detail-ico">{{ d.ico }}</span>
+            <p class="detail-val">{{ d.value }}</p>
+            <p class="detail-key">{{ d.label }}</p>
+          </div>
+        </div>
+      </div>-->
+
+      <!-- HOURLY FORECAST (temp trend + rain probability) -->
+      <div class="glass-card hourly-card reveal" *ngIf="hourlyForecast.length > 0">
+        <h3 class="card-title">Hourly Forecast</h3>
+        <div class="hourly-wrap">
+          <!-- temperature trend line overlay -->
+          <svg class="trend-svg" viewBox="0 0 100 40" preserveAspectRatio="none"
+               aria-hidden="true">
+            <polyline class="trend-line" [attr.points]="tempTrendPoints" />
+          </svg>
+
+          <div class="hourly-grid">
+            <div class="hour-col" *ngFor="let h of hourlyForecast">
+              <span class="hour-time">{{ h.time }}</span>
+              <span class="hour-emoji">{{ h.emoji }}</span>
+              <span class="hour-temp">{{ displayTemp(h.temp) }}°</span>
+              <span class="hour-dot"></span>
+              <span class="hour-rain">💧 {{ h.rain }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOURLY PRECIPITATION CHART (mm) --><!--
+      <div class="glass-card precip-card reveal" *ngIf="hourlyForecast.length > 0">
+        <div class="precip-head">
+          <h3 class="card-title">Precipitation</h3>
+          <span class="precip-total">Total {{ totalMm }} mm</span>
+        </div>
+        <div class="precip-chart">
+          <div class="precip-col" *ngFor="let h of hourlyForecast">
+            <span class="precip-mm">{{ h.mm }}</span>
+            <div class="precip-track">
+              <div class="precip-bar" [style.height.%]="h.height"></div>
+            </div>
+            <span class="precip-time">{{ h.time }}</span>
+          </div>
+        </div>
+      </div>
+      -->
+
+      <!-- 7-DAY FORECAST -->
+      <div class="glass-card forecast-card reveal" *ngIf="weatherRange.length > 0">
+        <div class="forecast-header">
+          <h3 class="card-title">7-Day Weather Details</h3>
+          <div class="forecast-buttons">
+            <button class="nav-btn" (click)="scrollForecast('left')">←</button>
+            <button class="nav-btn" (click)="scrollForecast('right')">→</button>
+          </div>
+        </div>
+
+        <div class="forecast-scroll" #forecastSlider>
+          <div class="forecast-slider">
+            <div class="forecast-card-item" *ngFor="let day of weatherRange">
+              <h4>{{ day.date | date:'EEE' }}</h4>
+              <p class="forecast-date">{{ day.date | date:'MMM d' }}</p>
+              <div class="forecast-icon">{{ day.emoji }}</div>
+              <h2>{{ displayTemp(day.avgTemp) }}°{{ unit }}</h2>
+              <p class="forecast-condition">{{ day.condition }}</p>
+              <small>💧 {{ day.humidity }}%</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUGGESTIONS -->
+      <div class="glass-card suggest-card reveal" *ngIf="suggestionResult">
+        <h3 class="card-title">Suggestions for {{ weatherCategory }} Weather</h3>
+        <p class="suggest-msg" *ngIf="suggestionResult.message">{{ suggestionResult.message }}</p>
+        <div class="suggest-grid">
+          <div class="suggest-section">
+            <h4><span class="ss-ico">🎒</span> Packing List</h4>
+            <ul><li *ngFor="let item of suggestionResult.packing">{{ item }}</li></ul>
+          </div>
+          <div class="suggest-section">
+            <h4><span class="ss-ico">👕</span> Outfit</h4>
+            <ul><li *ngFor="let item of suggestionResult.outfit">{{ item }}</li></ul>
+          </div>
+          <div class="suggest-section">
+            <h4><span class="ss-ico">🏃</span> Activity</h4>
+            <ul><li *ngFor="let item of suggestionResult.activity">{{ item }}</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+  </main>
+
 </div>

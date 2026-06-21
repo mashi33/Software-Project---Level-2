@@ -1,6 +1,13 @@
 /*  add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+@import "../node_modules/leaflet/dist/leaflet.css";
+
+#map {
+  width: 100%;
+  height: 500px; 
+  z-index: 1;
+}
 /* Ensure the page takes up at least 100% of the screen height */
 html, body {
   height: 100%;
@@ -99,3 +106,67 @@ app-root {
 .popup-like-btn:active {
   transform: scale(0.95); /* බටන් එක මඳක් කුඩා වී Tactile Feedback එකක් ලබා දේ */
 }
+
+
+/* Cluster එකේ අංකය පෙන්වන ප්‍රධාන කවය */
+.custom-cluster-icon {
+  background: #2779b5;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.9); /* සුදු පැහැති මායිමක් */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* සෙවනැල්ලක් (Shadow) */
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Cluster එක මත මවුස් එක තැබූ විට (Hover) එය තරමක් විශාල වීම */
+.custom-cluster-icon:hover {
+  transform: scale(1.1);
+  background: #1e6396;
+}
+
+/* අයිකනය වටා ඇති wrapper එක */
+.my-cluster-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* කුඩා අංකයට සෙවනැල්ලක් (Shadow) එකතු කිරීම */
+.custom-cluster-icon span {
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+
+
+
+:root {
+  --brand:        #2563eb;
+  --brand-dark:   #1d4ed8;
+  --brand-soft:   #eff4ff;
+  --ink:          #0f172a;
+  --ink-soft:     #475569;
+  --muted:        #94a3b8;
+  --line:         #e2e8f0;
+  --line-soft:    #eef2f6;
+  --surface:      #ffffff;
+  --canvas:       #f4f6fb;
+  --danger:       #ef4444;
+  --danger-soft:  #fef2f2;
+  --success:      #16a34a;
+  --radius:       14px;
+  --radius-sm:    10px;
+  --shadow-sm:    0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+  --shadow-md:    0 4px 12px rgba(15,23,42,.08);
+  --shadow-lg:    0 18px 40px rgba(15,23,42,.18);
+  --font:         "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+

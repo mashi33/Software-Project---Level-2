@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 //import { HomeComponent } from './home/home';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form';
+import { MemoriesWelcomeComponent } from './memory-welcome/welcome';
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { CommunityMapComponent } from './community-map/community-map';
 import { WeatherSuggestionComponent } from './weather/weather';
@@ -29,6 +30,7 @@ import { ResetPasswordComponent } from './reset-password/reset-password';
 import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 
+
 export const routes: Routes = [
   //  PUBLIC ROUTES 
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -43,6 +45,7 @@ export const routes: Routes = [
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
+  { path: 'memories-welcome', component: MemoriesWelcomeComponent, canActivate: [authGuard] },
   { path: 'memories', component: MemoriesMapComponent, canActivate: [authGuard] },
   { path: 'community', component: CommunityMapComponent, canActivate: [authGuard] },
   { path: 'weather', component: WeatherSuggestionComponent, canActivate: [authGuard] },

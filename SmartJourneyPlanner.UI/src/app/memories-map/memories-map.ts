@@ -1,9 +1,10 @@
-import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, HostListener, AfterViewInit,ChangeDetectorRef } from '@angular/core';
+import { CommonModule,Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { HttpHeaders } from '@angular/common/http';
 import * as leaflet from 'leaflet';
+import 'leaflet.markercluster';
 
 @Component({
     selector: 'app-memories-map',
@@ -14,7 +15,16 @@ import * as leaflet from 'leaflet';
 })
 export class MemoriesMapComponent implements OnInit, AfterViewInit {
   private map!: leaflet.Map;
-  private markersLayer: leaflet.LayerGroup = leaflet.layerGroup();
+  private markersLayer = (leaflet as any).markerClusterGroup({
+    iconCreateFunction: (cluster: any) => {
+      const count = cluster.getChildCount();
+      return leaflet.divIcon({
+        html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
+        className: 'my-cluster-wrapper',
+        iconSize: leaflet.point(40, 40)
+      });
+    }
+  });
   
   
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -31,8 +41,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     locationName: '', 
     imageUrl: '', 
     description: '', 
-    startDate: '',
-    endDate: '',
     latitude: 0, 
     longitude: 0,
     isPublic: true
@@ -44,8 +52,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   selectedMemory: any | null = null;
   allTrips: any[] = [];
 selectedTrip: any = null;
+groupedAlbums: any[] = [];
+selectedAlbum: any | null = null;
+currentMemoryIndex: number = 0;
+isLightboxOpen = false;
+showMax: number = 3;
+showAllAlbums: boolean = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient,private location: Location,private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
@@ -55,6 +69,13 @@ selectedTrip: any = null;
 
   ngAfterViewInit(): void {
     this.initMap();
+  }
+
+  activeTab: 'upload' | 'albums' = 'upload'; 
+
+  // You can also add a helper method to make switching tabs cleaner
+  setActiveTab(tab: 'upload' | 'albums') {
+    this.activeTab = tab;
   }
 
   // Type checker helper function for HTML template validation
@@ -80,6 +101,44 @@ onFileSelected(event: any): void {
     reader.readAsDataURL(file); 
   }
 }
+
+goBack(): void {
+  this.location.back();
+}
+
+// ==================== LIGHTBOX METHODS ====================
+  openAlbum(album: any) {
+    this.selectedAlbum = album;
+    this.currentMemoryIndex = 0;
+    this.selectedMemory =album.memories[0] || null;
+    this.isLightboxOpen = true;
+  }
+
+  nextMemory() {
+    if (!this.selectedAlbum) return;
+    this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
+    this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+  }
+
+  prevMemory() {
+    if (!this.selectedAlbum) return;
+    this.currentMemoryIndex = (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) % this.selectedAlbum.memories.length;
+    this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+  }
+
+  closeLightbox() {
+    this.isLightboxOpen = false;
+    this.selectedAlbum = null;
+    this.selectedMemory = null;
+  }
+
+  toggleMemoryVisibility(memory: any) {
+    if (!memory) return;
+    memory.isPublic = !memory.isPublic;
+    this.http.patch(`${this.apiUrl}/${memory.id}`, { isPublic: memory.isPublic }).subscribe({
+      error: () => console.error('Failed to update visibility')
+    });
+  }
 
 // In your Angular service or component
 loadAccessibleTrips() {
@@ -128,11 +187,39 @@ removeImage(fileInput: HTMLInputElement): void {
        endDate:  memory.endDate,
        isPublic: memory.isPublic || memory.IsPublic || false,
        likeCount: memory.likeCount || 0,
-       tripName: memory.tripName || memory.TripName || null
+       tripName: memory.tripName || memory.TripName || null,
+       createdAt: memory.createdAt || memory.CreatedAt
     };
   }
   
+  // ==================== GROUPING LOGIC (Improved) ====================
+  groupMemoriesByTrip() {
+    const groups = new Map();
 
+    this.allMemories.forEach(memory => {
+      const tripName = memory.tripName || 'No Trip';
+
+      if (!groups.has(tripName)) {
+        groups.set(tripName, {
+          tripName: tripName,
+          memories: [],
+          latestImage: memory.imageUrl,
+          latestDate: memory.startDate || memory.endDate
+        });
+      }
+
+      const album = groups.get(tripName);
+      album.memories.push(memory);
+
+      // Keep the most recent image as thumbnail
+      if (new Date(memory.startDate || memory.endDate) > new Date(album.latestDate)) {
+        album.latestImage = memory.imageUrl;
+        album.latestDate = memory.startDate || memory.endDate;
+      }
+    });
+
+    this.groupedAlbums = Array.from(groups.values());
+  }
 
   loadMyMemories() {
     const userId = localStorage.getItem('userId');
@@ -145,20 +232,24 @@ removeImage(fileInput: HTMLInputElement): void {
         formatted.tripName = trip ? trip.tripName : 'No Trip Assigned';
         return formatted;
       });
-            this.myRecentUploads = [...this.allMemories].reverse();
+            this.groupMemoriesByTrip();
 
             this.refreshMapMarkers();
         }
     });
 }
 
-
-showMax: number = 3;
-
-
-
 toggleSeeMore() {
-  this.showMax = (this.showMax === 3) ? this.myRecentUploads.length : 3;
+  this.showAllAlbums = !this.showAllAlbums;
+  this.cdr.detectChanges(); // This forces Angular to refresh the view
+  console.log("showAllAlbums is now:", this.showAllAlbums);
+}
+
+// Add this getter inside your MemoriesMapComponent class
+get displayedAlbums() {
+  // If showAllAlbums is true, return the whole array.
+  // Otherwise, return only the first 3 items.
+  return this.showAllAlbums ? this.groupedAlbums : this.groupedAlbums.slice(0, 3);
 }
 
 
@@ -205,18 +296,18 @@ toggleSeeMore() {
         return;
     }
 
-    if (!this.newMemory.startDate || !this.newMemory.endDate) {
-    alert("Please select both start and end dates");
-    return;
-  }
+    //if (!this.newMemory.startDate || !this.newMemory.endDate) {
+    //alert("Please select both start and end dates");
+    //return;
+  //}
 
-  const start = new Date(this.newMemory.startDate);
-  const end = new Date(this.newMemory.endDate);
+  //const start = new Date(this.newMemory.startDate);
+  //const end = new Date(this.newMemory.endDate);
 
-  if (end < start) {
-    alert("End date cannot be before start date");
-    return;
-  }
+  //if (end < start) {
+   // alert("End date cannot be before start date");
+    //return;
+  //}
   
     this.newMemory.isPublic = (this.visibilityStatus === 'public');
  const body = { 
@@ -241,7 +332,7 @@ toggleSeeMore() {
  this.refreshMapMarkers();
 
  // Reset form state after successful save to prevent duplicate submissions
- this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', startDate: '', endDate: '', latitude: 0, longitude: 0,isPublic: true };
+ this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', latitude: 0, longitude: 0,isPublic: true };
  this.visibilityStatus = 'public';
  this.searchQuery = '';
  alert("Memory pinned successfully!");
@@ -283,13 +374,12 @@ toggleSeeMore() {
     this.markersLayer.clearLayers();
 
     this.allMemories.forEach((memory) => {
-
+      if (memory.latitude && memory.longitude) {
       const marker = leaflet.marker([memory.latitude, memory.longitude]);
 
       const popupHtml = this.getPopupHtml(memory);
 
-      marker
-        .bindPopup(popupHtml)
+      marker.bindPopup(popupHtml)
         // Waits for the popup to load because the HTML doesn't exist until then.
         .on('popupopen', (e: any) => {
           const popupEl = e.popup.getElement();
@@ -304,10 +394,29 @@ toggleSeeMore() {
             );
           });
         })
-        .addTo(this.markersLayer);
+        this.markersLayer.addLayer(marker);
+      }
     });
   }
 
+  // 1. Initialize: Add a property to your album objects to track the index
+// When you fetch your albums, ensure each has: currentDisplayImage: string, slideIndex: number
+
+startSlideshow(album: any) {
+  if (album.memories.length <= 1) return; // Don't animate if only 1 image
+
+  album.slideIndex = 0;
+  album.slideshowInterval = setInterval(() => {
+    album.slideIndex = (album.slideIndex + 1) % album.memories.length;
+    album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
+  }, 2000); // Change image every 2 seconds
+}
+
+stopSlideshow(album: any) {
+  clearInterval(album.slideshowInterval);
+  // Reset back to the first image or keep the last one shown
+  album.currentDisplayImage = album.memories[0].imageUrl;
+}
 
 
   private initMap(): void {
@@ -375,6 +484,32 @@ deleteMemory(id: string, event: Event) {
   }
 }
 
+// In memories-map.ts
+getTotalLikes(album: any): number {
+  return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
+}
+
+// Get the oldest creation date in the album
+getOldestCreatedAt(album: any): Date | null {
+  if (!album.memories || album.memories.length === 0) return null;
+  
+  const dates = album.memories
+    .map((m: any) => new Date(m.createdAt))
+    .filter((d: Date) => !isNaN(d.getTime()));
+    
+  return dates.length ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
+}
+
+// Get the newest creation date in the album
+getNewestCreatedAt(album: any): Date | null {
+  if (!album.memories || album.memories.length === 0) return null;
+  
+  const dates = album.memories
+    .map((m: any) => new Date(m.createdAt))
+    .filter((d: Date) => !isNaN(d.getTime()));
+    
+  return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+}
 
 
   // ==========================================
@@ -396,6 +531,14 @@ deleteMemory(id: string, event: Event) {
       console.error("Memory not found for ID:", memoryId);
     }
   }
+
+  openLightboxById(id: string) {
+  const foundMemory = this.allMemories.find(m => m.id === id);
+  if (foundMemory) {
+    this.selectedMemory = foundMemory;
+    this.isLightboxOpen = true;
+  }
+}
   closeModal() {
     this.selectedMemory = null;
   }
