@@ -24,6 +24,8 @@ export class TripSummaryComponent implements OnInit {
   // Filtered lists separated from savedPlaces array
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
+   // NEW — confirmed vote places from group chat discussions
+  savedVotedPlaces: any[] = [];
   
 
   // =========================
@@ -203,6 +205,10 @@ isLastYearWeather: boolean = false;
     this.savedRestaurants = places.filter((p: any) => {
       const cat = (p.category || p.Category || '').toLowerCase();
       return cat.includes('restaurant') || cat.includes('food');
+    });
+    this.savedVotedPlaces = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('confirmed') || cat.includes('vote');
     });
   }
 

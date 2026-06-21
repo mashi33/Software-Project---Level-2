@@ -32,7 +32,7 @@
             (blur)="showSuggestions = false"
             autocomplete="off">
 
-          <!-- Valid / invalid badge — Trip type ේදී පමණයි -->
+          <!-- Valid / invalid badge — Trip type only -->
           <span
             *ngIf="newTrip.type === 'Trip' && newTrip.title"
             style="position: absolute; right: 10px; top: 50%;
@@ -67,7 +67,7 @@
           ⚠ Please enter a meaningful title (At least 3 letters and 1 vowel).
         </div>
 
-        <!-- Place not selected warning — Trip type ේදී පමණයි -->
+        <!-- Place not selected warning — Trip type only -->
         <div *ngIf="newTrip.type === 'Trip' && newTrip.title && validateTitle(newTrip.title) && !isPlaceValid"
              style="color: #f59e0b; font-size: 11px; margin-top: 4px; margin-bottom: 6px; padding-left: 5px;">
           ⚠ Please select a valid place from the suggestions.
@@ -96,7 +96,7 @@
           <button type="button" (click)="addOptionField()" class="btn-add-option">+ Add Option</button>
         </div>
 
-        <!-- isReadyToPost() use කරනවා — Trip නම් valid place ද check කරනවා -->
+        <!-- isReadyToPost()  — If Trip option check validation of place  -->
         <button (click)="addNewTrip()" 
                 class="btn-post-main" 
                 [disabled]="!isReadyToPost()">
@@ -105,7 +105,7 @@
       </div>
 
       <div class="discussion-list">
-        <div *ngFor="let item of discussions">
+        <div *ngFor="let item of sortedDiscussions">
           <div class="card glass-card vote-display" 
                [ngClass]="{'locked-card': item.isConfirmed, 'rejected-card': item.isRejected}"
                *ngIf="item && item.title">
@@ -134,7 +134,7 @@
               <div class="vote-action-container">
                 <button class="vote-btn agree" 
                         [disabled]="isVotingDisabled(item)"
-                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Agree'}"
+                        [ngClass]="{'active': getMyVote(item) === 'Agree'}"
                         (click)="castVote(item.id, 'Agree')">
                   <span class="btn-label">Agree</span>
                   <span class="vote-count-label">{{ item.options[0]?.voteCount || 0 }} votes</span>
@@ -142,7 +142,7 @@
                 
                 <button class="vote-btn disagree" 
                         [disabled]="isVotingDisabled(item)"
-                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Disagree'}"
+                        [ngClass]="{'active': getMyVote(item) === 'Disagree'}"
                         (click)="castVote(item.id, 'Disagree')">
                   <span class="btn-label">Disagree</span>
                   <span class="vote-count-label">{{ item.options[1]?.voteCount || 0 }} votes</span>
@@ -163,7 +163,7 @@
               <div *ngFor="let opt of item.options; let i = index" 
                    (click)="!isVotingDisabled(item) && castVote(item.id, opt.optionText)" 
                    class="poll-bar-wrapper" 
-                   [ngClass]="{'active': item.userVotes?.[0]?.optionText === opt.optionText, 'poll-locked': isVotingDisabled(item)}"
+                   [ngClass]="{'active': getMyVote(item) === opt.optionText, 'poll-locked': isVotingDisabled(item)}"
                    style="cursor: pointer;">
                 <div class="poll-bar-info">
                   <div class="opt-left-content" style="display: flex; align-items: center; gap: 10px;">
@@ -206,9 +206,9 @@
   </div>
 
   <div class="navigation-footer">
-    <button class="nav-btn" (click)="showNotReadyAlert()">
+    <button class="nav-btn" (click)="navigateToDashboard()">
       <i class="material-icons">dashboard</i> Back to Dashboard
-    </button>
+  </button>
     <button class="nav-btn" (click)="navigateToSummary()">
       <i class="material-icons">summarize</i> View Summary
     </button>

@@ -138,8 +138,13 @@
             <div class="d-flex justify-content-between align-items-center">
               <label class="text-muted small m-0">Places</label>
               <select class="form-select form-select-sm summary-dropdown shadow-sm">
-                <option selected disabled>View Places List</option>
-                <option *ngFor="let place of (tripDetails.places || tripDetails.Places)">{{ place }}</option>
+                <option selected disabled>
+                  View Places List {{ (savedVotedPlaces && savedVotedPlaces.length > 0) ? '(' + savedVotedPlaces.length + ')' : '' }}
+                </option>
+                <option *ngFor="let place of savedVotedPlaces" [value]="place.placeId || place.PlaceId">
+                  {{ place.name || place.Name }}
+                </option>
+                <option *ngIf="savedVotedPlaces?.length === 0" disabled>No confirmed places yet</option>
               </select>
             </div>
           </div>

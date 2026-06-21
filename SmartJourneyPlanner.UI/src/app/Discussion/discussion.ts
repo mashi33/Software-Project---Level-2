@@ -81,9 +81,17 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     if (this.newDiscussionSub) this.newDiscussionSub.unsubscribe();
   }
 
-  // Load trips associated with the user
+  // Load trips associated with the user — filters by the logged-in user's email
+  // so the trip dropdown only shows trips the user created or was invited to
   loadUserTrips() {
-    this.tripService.getTripById('').subscribe({ 
+    const email = localStorage.getItem('email') ?? '';
+
+    if (!email) {
+      console.error('No user email found in localStorage — cannot load trips.');
+      return;
+    }
+
+    this.tripService.getTripsByEmail(email).subscribe({ 
       next: (data) => {
         this.userTrips = Array.isArray(data) ? data : [data]; 
         
@@ -120,7 +128,7 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   loadInitialData() {
     if (!this.selectedTripId) return;
 
-    this.discussionService.getDiscussionsByTrip(this.selectedTripId).subscribe({
+    this.discussionService.getDiscussionsByTrip(this.selectedTripId, this.currentUser).subscribe({
       next: (data) => {
         this.zone.run(() => {
           this.discussions = data;
@@ -138,6 +146,18 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       return !!(item.isConfirmed || item.isRejected);
     }
     return false; // Other type — no confirmed/rejected 
+  }
+
+  // ── NEW — finds the CURRENT logged-in user's own vote in the userVotes array.
+  // Used by the template instead of userVotes?.[0], which always read the
+  // first voter in the array regardless of who is actually viewing the page.
+  getMyVote(item: any): string | null {
+    if (!item?.userVotes) return null;
+    const myVote = item.userVotes.find((v: any) => {
+      const id = v.userId ?? v.UserId ?? '';
+      return id.trim().toLowerCase() === this.currentUser.trim().toLowerCase();
+    });
+    return myVote ? myVote.optionText : null;
   }
 
   // Listen for real-time events from SignalR (votes, deletions, new posts)
@@ -258,13 +278,20 @@ export class DiscussionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.discussionService.vote(discussionId, optionText, this.currentUser).subscribe({
+    // userEmail is read separately from userName — userName stays the display
+    // name shown in the UI, userEmail is only used by the backend to verify
+    // this person is actually a member of the trip (security check).
+    const userEmail = localStorage.getItem('email') ?? '';
+
+    this.discussionService.vote(discussionId, optionText, this.currentUser, userEmail).subscribe({
       next: (updatedItem: any) => {
         console.log('Vote processed');
       },
       error: (err) => {
         console.error('Voting failed:', err);
-        if (err.status === 400) {
+        if (err.status === 403) {
+          Swal.fire('Not Allowed', 'Only trip members can vote on this proposal.', 'error');
+        } else if (err.status === 400) {
           Swal.fire('Info', err.error?.message || 'Voting is closed.', 'info');
         } else {
           Swal.fire('Error', 'Vote cast failed.', 'error');
@@ -396,7 +423,10 @@ export class DiscussionComponent implements OnInit, OnDestroy {
           options: options,
           comments: [],
           memberLimit: dynamicLimit, 
-          tripId: this.selectedTripId 
+          tripId: this.selectedTripId,
+          // NEW — place info so backend can push it into Trip.SavedPlaces once confirmed
+          placeId: this.newTrip.type === 'Trip' ? this.selectedPlaceId : null,
+          placeName: this.newTrip.type === 'Trip' ? title : null
         };
 
         this.discussionService.createDiscussion(item).subscribe({
@@ -438,6 +468,25 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     });
   }
 
+  // NEW — returns discussions sorted by status priority: Pending first, then Confirmed, then Rejected.
+  // Within each status group, newest first (by createdAt).
+  // 'Other' type polls (no confirm/reject state) are treated as Pending.
+  get sortedDiscussions(): DiscussionItem[] {
+    const statusRank = (item: any): number => {
+      if (item.type !== 'Trip') return 0;       // polls — treat like Pending
+      if (!item.isConfirmed && !item.isRejected) return 0; // Pending
+      if (item.isConfirmed) return 1;            // Confirmed
+      return 2;                                  // Rejected
+    };
+
+    return [...this.discussions].sort((a: any, b: any) => {
+      const rankDiff = statusRank(a) - statusRank(b);
+      if (rankDiff !== 0) return rankDiff;
+      // Same status group — newest first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }
+
   // UI Helpers: reset form, manage dynamic poll options, and calculate percentages
   resetForm() {
     this.newTrip = { title: '', description: '', type: 'Trip', customOptions: ['', ''] };
@@ -457,9 +506,9 @@ export class DiscussionComponent implements OnInit, OnDestroy {
     return total === 0 ? 0 : Math.round(((item.options[index].voteCount || 0) / total) * 100);
   }
 
-  // Navigation and alerts
-  showNotReadyAlert() {
-    Swal.fire({ title: 'Coming Soon!', text: 'This page is currently under development.', icon: 'info', confirmButtonColor: '#6e8efb' });
+  // Navigate back to the traveller dashboard
+  navigateToDashboard() {
+    this.router.navigate(['/traveller-dashboard']);
   }
 
   navigateToSummary() {
