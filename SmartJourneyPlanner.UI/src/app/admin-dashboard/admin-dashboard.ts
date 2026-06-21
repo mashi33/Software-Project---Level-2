@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../services/admin.service';
-import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -14,272 +13,91 @@ import Swal from 'sweetalert2';
 })
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
-  private authService = inject(AuthService);
+  private cd = inject(ChangeDetectorRef);
 
-  // System Data
   currentDate = new Date();
-  
-  // View Switcher
-  view: 'stats' | 'providers' | 'users' = 'stats';
-
-  stats: any = { pendingProvidersCount: 0, platformUsers: 0 };
-
-  // Data Lists
+  view: 'stats' | 'providers' | 'memories' | 'users' = 'stats';
+  stats: any = { totalExpenditure: 0 };
   pendingProviders: any[] = [];
   allUsers: any[] = [];
+  allMemories: any[] = []; 
   selectedProvider: any = null;
-  
-  // States
-  errorMessage: string = '';
 
-  ngOnInit() {
-    this.refreshDashboard();
-  }
+  ngOnInit() { this.refreshDashboard(); }
 
-  // DASHBOARD HOME & VIEW HANDLERS
+  // View switchers
+  onReviewProviders() { this.view = 'providers'; this.fetchPendingProviders(); }
+  onReviewMemories() { this.view = 'memories'; this.fetchPlatformMemories(); }
+  onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
 
-  onReviewNow() {
-    this.view = 'providers';
-    this.fetchPendingProviders();
-  }
-
-  onManageLogins() {
-    this.view = 'users';
-    this.fetchAllUsers();
-  }
-
-  /* DEDICATED REFRESH LOGIC
-     Updates all counts and lists simultaneously */
   refreshDashboard() {
-    this.errorMessage = '';
-    
-    // Fetches the counter metrics and assigns them straight to our summary layout parameters
-    this.adminService.getDashboardStats().subscribe({
-      next: (data: any) => {
-        this.stats = data;
-        console.log("📊 Unified Dashboard Counters Synchronized:", this.stats);
-      },
-      error: (err: any) => {
-        console.error("Could not populate metric stats cards", err);
-      }
-    });
-
+    this.adminService.getDashboardStats().subscribe(data => this.stats = data);
     this.fetchPendingProviders();
     this.fetchAllUsers();
-    
-    // Optional toast notification
-    Swal.fire({
-      title: 'Dashboard Refreshed',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      icon: 'success'
-    });
+    this.fetchPlatformMemories();
   }
 
-  // DATA FETCHING
+  fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
+  fetchAllUsers() { this.adminService.getAllUsers().subscribe(data => this.allUsers = data); }
+  fetchPlatformMemories() { this.adminService.getAllUploadedMemories().subscribe(data => this.allMemories = data); }
 
-  fetchPendingProviders() {
-    this.adminService.getPendingProviders().subscribe({
-      next: (data: any[]) => {
-        this.pendingProviders = data;
-        this.errorMessage = '';
-      },
-      error: (err: any) => {
-        console.error("Fetch error:", err);
-        this.errorMessage = "Failed to load providers.";
-      }
-    });
-  }
+  confirmApproval(provider: any) {
+  Swal.fire({
+    title: 'Approve Fleet Item?',
+    text: `Verify ${provider.vehicleClass}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
+}
 
-  fetchAllUsers() {
-    this.adminService.getAllUsers().subscribe({
-      next: (data: any[]) => this.allUsers = data,
-      error: (err: any) => console.error("Could not load users", err)
-    });
-  }
+confirmReject(provider: any) {
+  Swal.fire({
+    title: 'Reject Request?',
+    text: `Decline ${provider.vehicleClass}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
+}
 
-  // MANAGE PROVIDERS ACTIONS
-
-  /* Approves or Rejects a transport provider */
-  updateProviderStatus(provider: any, status: string) {
+  updateStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
-
-    if (!id) {
-      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
-      return;
-    }
-
-    Swal.fire({
-      title: `Confirm ${status}?`,
-      text: `Are you sure you want to set this provider to ${status}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
-      confirmButtonText: 'Yes, proceed',
-      cancelButtonText: 'No, cancel',
-      heightAuto: false,
-      focusConfirm: true,
-      returnFocus: true,
-      target: document.querySelector('.modal-card') as HTMLElement || document.body
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.updateProviderStatus(id, status).subscribe({
-          next: () => {
-            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-            this.selectedProvider = null; // Automatically close the detail modal
-            
-            // Recalculate KPI summary counters instantly so the home cards stay in sync
-            this.refreshDashboard();
-            
-            Swal.fire({
-              title: 'Success',
-              text: `Provider has been ${status}`,
-              icon: 'success',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          },
-          error: (err: any) => {
-            console.error("Update failed", err);
-            Swal.fire({
-              title: 'Error',
-              text: 'Update failed. Backend might be down.',
-              icon: 'error',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          }
-        });
-      }
+    this.adminService.updateProviderStatus(id, status).subscribe(() => {
+      this.selectedProvider = null;
+      this.refreshDashboard();
+      Swal.fire('Success', `Vehicle ${status}`, 'success');
     });
   }
 
-  /* Opens the detail modal for a specific provider and fetches full data */
-  viewDetails(provider: any) {
-    const id = provider._id || provider.id;
-    this.adminService.getProviderById(id).subscribe({
-      next: (fullData: any) => {
-        this.selectedProvider = fullData;
-      },
-      error: (err: any) => {
-        console.error("Could not fetch details", err);
-        Swal.fire({
-          title: 'Error',
-          text: 'Failed to load vehicle documents.',
-          icon: 'error',
-          heightAuto: false
-        });
-      }
-    });
-  }
-
-  // USER MANAGEMENT ACTIONS 
-
-  /* Promotes a regular user to an Admin role */
-  changeRole(userId: string, newRole: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
-    this.adminService.updateUserRole(userId, newRole).subscribe({
-      next: (res: any) => {
-        const user = this.allUsers.find(u => (u._id || u.id) === userId);
-        if (user) user.role = newRole;
-        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-      },
-      error: (err: any) => {
-        console.error("Server error:", err);
-        Swal.fire('Error', 'Role update failed.', 'error');
-      }
-    });
-  }
-
-  /* Toggle Block status for users */
-  toggleBlock(user: any) {
-    const userId = user.id || user._id;
-    const newBlockStatus = !user.isBlocked;
-    const action = newBlockStatus ? 'block' : 'unblock';
-
-    Swal.fire({
-      title: `Confirm ${action}?`,
-      text: `Do you want to ${action} ${user.fullName || user.name}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: newBlockStatus ? '#ef4444' : '#10b981',
-      confirmButtonText: `Yes, ${action}`,
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.toggleBlockUser(userId, newBlockStatus).subscribe({
-          next: () => {
-            user.isBlocked = newBlockStatus;
-            Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
-          },
-          error: (err) => console.error("Block/Unblock failed:", err)
-        });
-      }
-    });
-  }
-
-  /* Permanently deletes a user */
-  deleteUser(userId: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "This user will be permanently removed from the system!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete!',
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.deleteUser(userId).subscribe({
-          next: () => {
-            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
-            
-            // Recalculate stats cards to reflect total population reduction
-            this.refreshDashboard();
-
-            Swal.fire({
-              title: 'Deleted!',
-              text: 'User has been removed.',
-              icon: 'success',
-              heightAuto: false
-            });
-          },
-          error: (err) => {
-            console.error("Delete failed:", err);
-            Swal.fire('Error', 'Failed to delete user.', 'error');
-          }
-        });
-      }
-    });
-  }
-
-  // DOCUMENT UTILITIES
-
+  viewDetails(p: any) { this.adminService.getProviderById(p._id || p.id).subscribe(data => this.selectedProvider = data); }
+  deleteMemory(id: string) { this.adminService.deleteMemoryPost(id).subscribe(() => this.refreshDashboard()); }
+  changeRole(id: string, role: string) { this.adminService.updateUserRole(id, role).subscribe(() => this.refreshDashboard()); }
+  toggleBlock(u: any) { this.adminService.toggleBlockUser(u.id || u._id, !u.isBlocked).subscribe(() => this.refreshDashboard()); }
+  deleteUser(id: string) { this.adminService.deleteUser(id).subscribe(() => this.refreshDashboard()); }
   openImage(base64Data: string | undefined) {
-    if (!base64Data) {
-      Swal.fire({ title: 'Error', text: 'No document found.', icon: 'error', heightAuto: false });
-      return;
-    }
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(`
-        <title>Document Viewer</title>
-        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
-          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+  if (!base64Data) {
+    Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
+    return;
+  }
+  
+  // නව වින්ඩෝ එකක් ඇරලා image එක ඒකේ පෙන්නන්න
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(`
+      <html>
+        <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#333;">
+          <img src="${base64Data}" style="max-width:100%; max-height:100vh; border: 5px solid #fff;">
         </body>
-      `);
-    }
+      </html>
+    `);
+  } else {
+    Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
   }
 }
+}
+

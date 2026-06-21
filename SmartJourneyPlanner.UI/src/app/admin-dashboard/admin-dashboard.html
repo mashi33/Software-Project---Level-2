@@ -1,17 +1,22 @@
+<h2 class="sr-only">Admin Control Center</h2>
+
 <div class="admin-layout">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h2>⚙️ Admin Panel</h2>
+      <h2>⚙️ Control Center</h2>
     </div>
     <ul>
       <li [class.active]="view === 'stats'" (click)="view = 'stats'">
-        📊 Dashboard Home
+        📊 Overview Metrics
       </li>
-      <li [class.active]="view === 'providers'" (click)="onReviewNow()">
-        🚐 Manage Providers ({{pendingProviders.length}})
+      <li [class.active]="view === 'providers'" (click)="onReviewProviders()">
+        🚐 Vehicle Fleet Documents
+      </li>
+      <li [class.active]="view === 'memories'" (click)="onReviewMemories()">
+        📸 Uploaded Trip Memories
       </li>
       <li [class.active]="view === 'users'" (click)="onManageLogins()">
-        👥 User Management
+        👥 User Access Control
       </li>
     </ul>
   </aside>
@@ -19,11 +24,11 @@
   <main class="content">
     <header class="main-header header-container">
       <div class="header-content">
-        <h1>Smart Journey Control Center</h1>
-        <p class="date-text">System Overview — {{ currentDate | date:'fullDate' }}</p>
+        <h1>System Control Grid</h1>
+        <p class="date-text">Global Monitoring — {{ currentDate | date:'fullDate' }}</p>
       </div>
       <button (click)="refreshDashboard()" class="btn-refresh-fancy">
-        <span>🔄</span> Refresh Dashboard
+        <span>🔄</span> Force Sync
       </button>
     </header>
 
@@ -31,10 +36,10 @@
       <div class="card warning-card">
         <div class="card-icon">🚐</div>
         <div class="card-data">
-          <h3>Pending Providers</h3>
+          <h3>Pending Vehicles</h3>
           <h1>{{ pendingProviders.length }}</h1>
         </div>
-        <button class="btn-action-primary" (click)="onReviewNow()">Review Now</button>
+        <button class="btn-action-primary" (click)="onReviewProviders()">Review Documents</button>
       </div>
 
       <div class="card success-card">
@@ -43,36 +48,103 @@
           <h3>Platform Users</h3>
           <h1>{{ allUsers.length }}</h1>
         </div>
-        <button class="btn-action-success" (click)="onManageLogins()">Manage Logins</button>
+        <button class="btn-action-success" (click)="onManageLogins()">Manage Access</button>
+      </div>
+
+      <div class="card income-card" style="background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%); border-left: 5px solid #10b981;">
+        <div class="card-icon" style="color: #10b981;">📸</div>
+        <div class="card-data">
+          <h3>Global Memory Shares</h3>
+          <h1>{{ allMemories.length }}</h1>
+        </div>
+        <button class="btn-action-success" style="background-color: #10b981;" (click)="onReviewMemories()">Audit Media</button>
+      </div>
+
+      <div class="card expense-card" style="background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); border-left: 5px solid #2563eb;">
+        <div class="card-icon" style="color: #2563eb;">💰</div>
+        <div class="card-data">
+          <h3>Total Tracked Costs</h3>
+          <h1 style="font-size: 1.6rem; margin-top: 4px;">Rs. {{ stats?.totalExpenditure || 0 | number : '1.0-0' }}</h1>
+        </div>
+        <div class="small text-muted" style="font-size: 0.75rem; margin-top: 8px;">System budget footprint totals.</div>
       </div>
     </div>
 
     <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
       <div class="section-header">
-        <h2>📋 Pending Vehicle Approvals</h2>
+        <h2>📋 Fleet Verification Desk</h2>
+        <p class="text-muted small">Review incoming transport fleet registration requests waiting for background validation.</p>
       </div>
+      
       <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Owner</th>
-            <th>Vehicle Type</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of pendingProviders" class="table-row">
-            <td class="font-bold">{{ p.providerProfile?.name || p.fullName || 'No Name' }}</td>
-            <td>{{ p.type || p.vehicleClass }}</td>
-            <td><span class="badge-pending">Pending Approval</span></td>
-            <td>
-              <button class="btn-icon view" (click)="viewDetails(p)" title="View Details">🔍</button>
-              <button class="btn-icon approve" (click)="updateProviderStatus(p, 'Approved')" title="Approve">✅</button>
-              <button class="btn-icon reject" (click)="updateProviderStatus(p, 'Rejected')" title="Reject">❌</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <thead>
+    <tr>
+      <th>Provider & Vehicle</th>
+      <th>Registered Origin Location</th>
+      <th>Daily Rental Value</th>
+      <th style="text-align: center;">Actions Control</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of pendingProviders" class="table-row">
+      <td>
+        <div style="font-weight: 700; color: #1e293b;">{{ p.providerProfile?.name || 'Unknown Provider' }}</div>
+        <div style="font-size: 13px; color: #64748b;">
+          <i class="bi bi-car-front-fill"></i> {{ p.vehicleClass }} 
+          <span class="role-pill pill-provider">{{ p.type }}</span>
+        </div>
+      </td>
+      
+      <td>
+        <i class="bi bi-geo-alt-fill text-danger"></i>
+        {{ p.location || p.providerProfile?.location || 'Not Specified' }}
+      </td>
+
+      <td class="font-bold">Rs. {{ p.standardDailyRate | number:'1.0-0' }}</td>
+      
+      <td>
+        <div class="action-btn-group">
+          <button class="btn-ctrl-action btn-view" (click)="viewDetails(p)">View</button>
+          <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p)">Approve</button>
+          <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p)">Reject</button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+      <div *ngIf="pendingProviders.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+        <i class="bi bi-shield-check-fill" style="font-size: 3rem; color: #10b981; display: block; margin-bottom: 16px;"></i>
+        <h5>Fleet Registry Clear</h5>
+        <p>No pending car or van provider verification applications require system processing currently.</p>
+      </div>
+    </div>
+
+    <div class="verification-section shadow-sm" *ngIf="view === 'memories'">
+      <div class="section-header mb-4">
+        <h2>📸 Uploaded Trip Memories & Storyboards</h2>
+        <p class="text-muted small">Monitor, audit, and manage media uploaded across shared travel groups.</p>
+      </div>
+
+      <div *ngIf="allMemories.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+        <i class="bi bi-images empty-ledger-icon" style="font-size: 3rem; color: #cbd5e1; display: block; margin-bottom: 16px;"></i>
+        <h5 style="font-weight: 700; color: #1e293b; margin-bottom: 6px;">No Shared Memories Discovered</h5>
+        <p style="color: #64748b; font-size: 0.88rem; max-width: 340px; margin: 0 auto;">Platform user log captures will show up here once travel groups publish logs.</p>
+      </div>
+
+      <div class="user-cards-stack" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+        <div *ngFor="let m of allMemories" class="bp-card" style="overflow: hidden; border-radius: 16px; border: 1px solid #e2e8f0;">
+          <div style="height: 180px; background-size: cover; background-position: center;" [style.background-image]="'url(' + (m.imageUrl || m.imageBase64 || 'assets/placeholder-travel.jpg') + ')'"></div>
+          <div style="padding: 16px;">
+            <span class="role-pill pill-traveller" style="font-size: 11px;">{{ m.tripName || 'Itinerary Log' }}</span>
+            <h4 style="margin: 10px 0 4px 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">{{ m.caption || m.title }}</h4>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 14px;">Shared by: <strong>{{ m.authorName || m.addedBy }}</strong></p>
+            <button class="btn-ctrl-vibrant btn-delete-ink" style="width: 100%; justify-content: center;" (click)="deleteMemory(m.id || m._id)">
+              <i class="bi bi-trash3-fill"></i> Remove Memory Post
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="verification-section border-0 bg-transparent p-0 shadow-none" *ngIf="view === 'users'">
@@ -83,7 +155,6 @@
 
       <div class="user-cards-stack">
         <div *ngFor="let u of allUsers" class="user-management-card-grid">
-          
           <div class="grid-profile-col">
             <div class="user-avatar-circle" [ngClass]="{
               'av-provider': u.role === 'TransportProvider' || u.role === 'Transportprovider',
@@ -92,7 +163,6 @@
             }">
               <span>{{ u.fullName?.charAt(0) || u.name?.charAt(0) || 'U' }}</span>
             </div>
-            
             <div class="user-profile-details">
               <h5 class="user-display-name m-0">{{ u.fullName || u.name || 'System User' }}</h5>
               <span class="user-email-text text-muted"><i class="bi bi-envelope"></i> {{ u.email }}</span>
@@ -106,9 +176,7 @@
                 'pill-provider': u.role === 'TransportProvider',
                 'pill-traveller': u.role === 'Traveller',
                 'pill-admin': u.role === 'Admin'
-              }">
-                {{ u.role }}
-              </span>
+              }">{{ u.role }}</span>
             </div>
           </div>
 
@@ -123,90 +191,135 @@
           </div>
 
           <div class="grid-actions-col">
-            <button *ngIf="u.role !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')" title="Promote User Privilege Level">
+            <button *ngIf="u.role !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')">
               <i class="bi bi-shield-arrow"></i> Promote
             </button>
-            <button class="btn-action-smart btn-suspend" [style.background]="u.isBlocked ? '#fed7d7' : ''" (click)="toggleBlock(u)" [title]="u.isBlocked ? 'Unblock User' : 'Block User'">
+            <button class="btn-action-smart btn-suspend" [style.background]="u.isBlocked ? '#fed7d7' : ''" (click)="toggleBlock(u)">
               <i class="bi" [ngClass]="u.isBlocked ? 'bi-check-circle-fill' : 'bi-slash-circle'"></i>
             </button>
-            <button class="btn-action-smart btn-delete-account" (click)="deleteUser(u.id || u._id)" title="Permanently Terminate Records">
+            <button class="btn-action-smart btn-delete-account" (click)="deleteUser(u.id || u._id)">
               <i class="bi bi-trash3"></i>
             </button>
           </div>
-
         </div>
       </div>
     </div>
   </main>
 
   <div class="modal-overlay" *ngIf="selectedProvider" (click)="selectedProvider = null">
-    <div class="modal-card shadow-lg" (click)="$event.stopPropagation()">
-      <div class="modal-header">
+    <div class="modal-card shadow-lg" style="max-width: 900px; width: 90%; border-radius: 24px;" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header" style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0;">
         <div class="header-title">
-          <span class="tag">{{ selectedProvider.type }}</span>
-          <h2>Reviewing: {{ selectedProvider.vehicleClass }}</h2>
+          <span class="tag" style="background: #eff6ff; color: #1e40af; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; text-transform: uppercase;">
+            Classification: {{ selectedProvider.type || 'Fleet Asset' }}
+          </span>
+          <h2 style="margin: 8px 0 0 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">
+            Asset Details: {{ selectedProvider.vehicleClass }}
+          </h2>
         </div>
-        <button class="close-pill" (click)="selectedProvider = null">&times;</button>
+        <button class="close-pill" style="font-size: 1.5rem; color: #94a3b8; background: transparent; border: none; cursor: pointer;" (click)="selectedProvider = null">&times;</button>
       </div>
 
-      <div class="modal-body">
-        <div class="modal-grid-layout">
+      <div class="modal-body" style="padding: 32px; max-height: 65vh; overflow-y: auto;">
+        <div class="modal-grid-layout" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px;">
+          
           <div class="modal-col specs-container">
-            <div class="section-title">
-              <span class="icon">📋</span>
-              <h3>Specifications</h3>
+            <div class="section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+              <span class="icon" style="font-size: 1.2rem;">📋</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Technical Specifications</h3>
             </div>
-            <div class="specs-list">
-              <div class="spec-row"><span class="label">Owner</span><span class="val">{{ selectedProvider.providerProfile?.name }}</span></div>
-              <div class="spec-row"><span class="label">Phone</span><span class="val">{{ selectedProvider.providerProfile?.phone }}</span></div>
-              <div class="spec-row"><span class="label">Daily Rate</span><span class="val highlight">Rs. {{ selectedProvider.standardDailyRate }}</span></div>
-              <div class="spec-row"><span class="label">Seats</span><span class="val">{{ selectedProvider.seatCount }}</span></div>
-              <div class="spec-row"><span class="label">Transmission</span><span class="val">{{ selectedProvider.transmission }}</span></div>
+            <div class="specs-list" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Vehicle Name & Brand</span>
+                <span class="val" style="color: #2563eb; font-weight: 800;">{{ selectedProvider.vehicleClass }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Registered Origin Location</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.location || selectedProvider.providerProfile?.location || 'Not Specified' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Owner Registration</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.providerProfile?.name || selectedProvider.fullName }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Contact Hotline</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.providerProfile?.phone || 'N/A' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Standard Daily Value</span>
+                <span class="val highlight" style="color: #10b981; font-weight: 800; font-size: 1.05rem;">Rs. {{ selectedProvider.standardDailyRate | number:'1.2-2' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Seating Capacity</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.seatCount || '4' }} Seats</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Transmission Config</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.transmission || 'Automatic' }}</span>
+              </div>
             </div>
           </div>
 
           <div class="modal-col docs-container">
-            <div class="section-title">
-              <span class="icon">🆔</span>
-              <h3>Verification Documents</h3>
+            <div class="section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+              <span class="icon" style="font-size: 1.2rem;">🆔</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Compliance Document Previews</h3>
             </div>
-            <div class="docs-stack">
-              <div class="doc-card" (click)="openImage(selectedProvider.driverLicenseUrl)">
-                <div class="d-icon license">📄</div>
-                <div class="d-content">
-                  <span class="d-title">Driver License</span>
-                  <span class="d-status">✅ Available</span>
+            
+            <div class="docs-stack" style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">📄</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">Driver's License</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.driverLicenseUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
-              <div class="doc-card" (click)="openImage(selectedProvider.driverNicUrl)">
-                <div class="d-icon nic">🪪</div>
-                <div class="d-content">
-                  <span class="d-title">NIC / Identity Card</span>
-                  <span class="d-status">✅ Available</span>
+
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">🪪</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">NIC / Identity Document</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.driverNicUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
-              <div class="doc-card" (click)="openImage(selectedProvider.revenueLicenseUrl)">
-                <div class="d-icon revenue">📝</div>
-                <div class="d-content">
-                  <span class="d-title">Revenue License</span>
-                  <span class="d-status">✅ Available</span>
+
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">📝</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">Revenue License Receipt</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.revenueLicenseUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-cancel" (click)="selectedProvider = null">Cancel</button>
-        <div class="action-group">
-          <button class="btn-reject-main" (click)="updateProviderStatus(selectedProvider, 'Rejected')">Reject</button>
-          <button class="btn-approve-main" (click)="updateProviderStatus(selectedProvider, 'Approved')">Approve Provider</button>
+      <div class="modal-footer" style="background: #f8fafc; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
+        <button class="btn-cancel" style="background: #ffffff; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 10px; font-weight: 600;" (click)="selectedProvider = null">Close Review</button>
+        <div class="action-group" style="display: flex; gap: 12px;">
+          <button class="btn-ctrl-vibrant btn-delete-ink" style="padding: 10px 22px; font-size: 0.9rem;" (click)="confirmReject(selectedProvider)">Reject Request</button>
+          <button class="btn-ctrl-vibrant" style="background-color: #10b981; color: #ffffff; padding: 10px 22px; font-size: 0.9rem; border: none; border-radius: 10px;" (click)="confirmApproval(selectedProvider)">Approve Vehicle</button>
         </div>
       </div>
+
     </div>
   </div>
 </div>

@@ -20,7 +20,10 @@ export class AdminService {
     return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
   }
 
-  // Provider Methods
+  // ==========================================================================
+  // 🚐 PROVIDER MANAGEMENT METHODS
+  // ==========================================================================
+
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -34,7 +37,28 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // User Management Methods
+  // ==========================================================================
+  // 📸 TRIP MEMORIES AUDITING METHODS
+  // ==========================================================================
+
+  /**
+   * Fetches all published storyboard elements from the trip memories module.
+   */
+  getAllUploadedMemories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-memories`);
+  }
+
+  /**
+   * Removes a published public travel post from the database system.
+   */
+  deleteMemoryPost(memoryId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/Admin/delete-memory/${memoryId}`);
+  }
+
+  // ==========================================================================
+  // 👥 USER ACCESS & MANAGEMENT METHODS
+  // ==========================================================================
+
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }

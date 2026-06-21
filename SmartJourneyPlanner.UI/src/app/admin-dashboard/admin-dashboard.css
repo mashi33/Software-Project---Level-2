@@ -598,3 +598,56 @@
 :host ::ng-deep .swal2-container {
   position: absolute !important;
 }
+
+/* Table Action Buttons */
+.btn-approve-row { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.btn-reject-row { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.btn-doc-view { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; background: #fff; }
+.btn-doc-view:hover { background: #f1f5f9; }
+.action-flex-deck { display: flex; gap: 8px; justify-content: center; }
+
+/* Modal එකට වඩා උඩින් SweetAlert පෙන්වීමට */
+.swal2-container {
+  z-index: 20000 !important;
+}
+
+/* Fleet Verification Action Buttons */
+.action-btn-group {
+  display: flex;
+  gap: 8px; /* බොත්තම් අතර පරතරය */
+  justify-content: center;
+}
+
+.btn-ctrl-action {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+}
+
+/* View Details Button */
+.btn-view { color: #374151; }
+.btn-view:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* Approve Button */
+.btn-approve { color: #065f46; border-color: #a7f3d0; background: #f0fdf4; }
+.btn-approve:hover { background: #dcfce7; }
+
+/* Reject Button */
+.btn-reject { color: #991b1b; border-color: #fecaca; background: #fef2f2; }
+.btn-reject:hover { background: #fee2e2; }
+.vehicle-cell { display: flex; align-items: center; }
+.vehicle-model { font-weight: 800; color: #0f172a; font-size: 15px; }
+.owner-name { font-weight: 700; color: #1e293b; }
+
+.admin-table th { padding: 16px; }
+.admin-table td { padding: 16px; }
+/* Provider name එක bold කරලා පෙන්වන්න */
+.font-bold { font-weight: 700; color: #0f172a; }
