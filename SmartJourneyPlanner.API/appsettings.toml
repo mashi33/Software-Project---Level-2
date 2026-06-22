@@ -1,0 +1,41 @@
+# Global Settings
+AllowedHosts = "*"
+
+[Logging.LogLevel]
+Default = "Information"
+"Microsoft.AspNetCore" = "Warning"
+
+[GoogleApi]
+ApiKey = "my_api_key"
+
+[MongoDBSettings]
+ConnectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?appName=Cluster-1"
+DatabaseName = "SmartJourneyDb"
+CollectionName = "Users"
+TimelineCollectionName = "TripTimelines"
+HistoryCollectionName = "TripHistories"
+
+[DatabaseSettings]
+ConnectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?appName=Cluster-1"
+DatabaseName = "SmartJourneyDb"
+CollectionName = "Discussions"
+MemoryCollectionName = "TripMemories"
+WeatherCollectionName= "WeatherRules"
+TransportVehiclesCollectionName = "TransportVehicles"
+TransportBookingsCollectionName = "TransportBookings"
+
+[BudgetDatabaseSettings]
+ConnectionString = "mongodb+srv://sasini20:SmartJourneyPlanner43@cluster-1.kyuo2xt.mongodb.net/?appName=Cluster-1"
+DatabaseName = "SmartJourneyDb"
+CollectionName = "Budgets"
+
+[Jwt]
+Key = "your_Very_Long_Super_Secret_Key_1234567890"
+Issuer = "smart-journey-api"
+Audience = "smart-journey-users"
+
+[EmailSettings]
+SmtpServer = "smtp.gmail.com"
+Port = 587
+SenderEmail = "dinuriththsarani@gmail.com"
+AppPassword = "ejuh wevn elec dkpn"

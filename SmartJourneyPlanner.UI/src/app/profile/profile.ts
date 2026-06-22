@@ -4,7 +4,14 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router'; 
+import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { TravellerDashboardService } from '../services/travellerDashboard';
+import { MemoryService } from '../services/memory';
+import { TransportBookingService } from '../services/transport-booking.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-profile',
@@ -20,11 +27,17 @@ export class ProfileComponent implements OnInit {
   user: any = null;
   userId: string | null = null;
   isEditMode: boolean = false;
-
-  // This flag controls the visibility of the password change section within the profile edit modal
   showPasswordSection: boolean = false;
+  loadingStats = true;
 
-  // structure to hold editable profile data, initialized with empty/default values
+  stats = {
+    upcomingTrips: 0,
+    memories: 0,
+    vehicles: 0,
+    bookings: 0,
+    averageRating: 0
+  };
+
   editData: any = {
     fullName: '',
     email: '',
@@ -35,7 +48,6 @@ export class ProfileComponent implements OnInit {
     profilePictureUrl: ''
   };
 
-  // 0bject to hold password change form data, initialized with empty strings
   passwordData = {
     currentPassword: '',
     newPassword: '',
@@ -48,41 +60,106 @@ export class ProfileComponent implements OnInit {
     private userService: UserService,
     private authService: AuthService,
     private http: HttpClient,
-    private router: Router
-  ) {}
+    private router: Router,
+    private dashboardService: TravellerDashboardService,
+    private memoryService: MemoryService,
+    private bookingService: TransportBookingService
+  ) { }
 
   ngOnInit(): void {
     this.userId = this.authService.getUserId();
+    if (!this.userId) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadUserProfile();
   }
-  // Method to load the user's profile data from the backend and set up the component state accordingly
-  loadUserProfile() {
-    if (this.userId) {
-      this.userService.getUserProfile(this.userId).subscribe({
-        next: (data) => {
-          this.user = data;
 
-          if (this.user?.role === 'Provider' || this.user?.role === 'TransportProvider') {
-            this.availableInterests = [
-              'Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road'
-            ];
-          } else {
-            this.availableInterests = [
-              'Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'
-            ];
-          }
-        },
-        error: (err) => console.error('Error fetching profile:', err)
-      });
-    }
+  get userRole(): string {
+    return this.user?.userType || this.user?.role || '';
   }
-  
-  // Method to initialize the profile edit mode, pre-filling the form with existing user data and resetting password fields
+
+  isProvider(): boolean {
+    return this.userRole === 'Provider' || this.userRole === 'TransportProvider';
+  }
+
+  showSuccess(message: string) {
+    Swal.fire({ icon: 'success', title: 'Success', text: message, timer: 2500, timerProgressBar: true });
+  }
+
+  showError(message: string) {
+    Swal.fire({ icon: 'error', title: 'Oops...', text: message });
+  }
+
+  loadUserProfile() {
+    if (!this.userId) return;
+
+    this.userService.getUserProfile(this.userId).subscribe({
+      next: (data) => {
+        this.user = data;
+        this.availableInterests = this.isProvider()
+          ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
+          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'];
+        this.loadProfileStats();
+      },
+      error: (err) => console.error('Error fetching profile:', err)
+    });
+  }
+
+  loadProfileStats() {
+    if (!this.userId) return;
+    this.loadingStats = true;
+
+    if (this.isProvider()) {
+      forkJoin({
+        vehicles: this.http.get<any[]>(`${environment.apiUrl}/TransportVehicles/my-vehicles/${this.userId}`).pipe(
+          catchError(() => of([]))
+        ),
+        bookings: this.bookingService.getProviderBookings(this.userId).pipe(
+          catchError(() => of([]))
+        )
+      }).subscribe({
+        next: ({ vehicles, bookings }) => {
+          this.stats.vehicles = vehicles?.length || 0;
+          this.stats.bookings = bookings?.length || 0;
+          this.stats.averageRating = this.calculateAverageRating(vehicles || []);
+          this.loadingStats = false;
+        },
+        error: () => { this.loadingStats = false; }
+      });
+      return;
+    }
+
+    forkJoin({
+      dashboard: this.dashboardService.getDashboardData().pipe(catchError(() => of({ upcomingCount: 0 }))),
+      memories: this.memoryService.getMemoryCount(this.userId!).pipe(catchError(() => of({ count: 0 })))
+    }).subscribe({
+      next: ({ dashboard, memories }) => {
+        this.stats.upcomingTrips = dashboard?.upcomingCount || 0;
+        this.stats.memories = memories?.count || 0;
+        this.loadingStats = false;
+      },
+      error: () => { this.loadingStats = false; }
+    });
+  }
+
+  calculateAverageRating(vehicles: any[]): number {
+    const allRatings: number[] = [];
+    vehicles.forEach(vehicle => {
+      const reviews = vehicle.reviews || vehicle.Reviews || [];
+      reviews.forEach((review: any) => {
+        const rating = review.rating ?? review.Rating;
+        if (typeof rating === 'number') allRatings.push(rating);
+      });
+    });
+    if (!allRatings.length) return 0;
+    const avg = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
+    return Math.round(avg * 10) / 10;
+  }
+
   onEditProfile() {
     this.isEditMode = true;
-    this.showPasswordSection = false; 
-
-    //loading existing user data into the editData structure to pre-fill the form fields when the user enters edit mode
+    this.showPasswordSection = false;
     this.editData = {
       fullName: this.user?.fullName || this.user?.username || '',
       email: this.user?.email || '',
@@ -92,32 +169,21 @@ export class ProfileComponent implements OnInit {
       profilePictureUrl: this.user?.profilePictureUrl || '',
       interests: [...(this.user?.interests || [])]
     };
-
-    //Password change fields are reset to empty every time the user enters edit mode to ensure security and prevent accidental password changes
     this.passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
   }
-  
-  // Method to exit the profile edit mode without saving changes, simply toggling the isEditMode flag back to false
-  onCancel() {
-    this.isEditMode = false;
-  }
-  // Method to toggle the presence of an interest in the user's profile, adding it if it's not already there or removing it if it is
+
+  onCancel() { this.isEditMode = false; }
+
   toggleInterest(interest: string) {
     const index = this.editData.interests.indexOf(interest);
-    if (index > -1) {
-      this.editData.interests.splice(index, 1);
-    } else {
-      this.editData.interests.push(interest);
-    }
+    index > -1 ? this.editData.interests.splice(index, 1) : this.editData.interests.push(interest);
   }
-  
-  //Method to handle the profile changes
+
   onSaveProfile() {
     if (!this.userId) return;
-    // Storing the old email before making any changes to compare later for security purposes
     const oldEmail = this.user?.email;
-
     const formData = new FormData();
+
     formData.append('fullName', this.editData.fullName || '');
     formData.append('email', this.editData.email || '');
     formData.append('bio', this.editData.bio || '');
@@ -130,106 +196,62 @@ export class ProfileComponent implements OnInit {
       formData.append('profilePictureUrl', this.editData.profilePictureUrl || '');
     }
 
-    //calling the user service to update the profilewith the new form data
     this.userService.updateProfile(this.userId, formData).subscribe({
       next: (updatedUser: any) => {
-        console.log('Profile updated successfully in Backend:', updatedUser);
+        this.user = { ...this.user, ...this.editData };
+        if (updatedUser?.profilePictureUrl) this.user.profilePictureUrl = updatedUser.profilePictureUrl;
 
-        //updating the local user object with the new changes
-        this.user.fullName = this.editData.fullName;
-        this.user.bio = this.editData.bio;
-        this.user.location = this.editData.location;
-        this.user.interests = [...this.editData.interests];
-        
-        if (updatedUser && updatedUser.profilePictureUrl) {
-          this.user.profilePictureUrl = updatedUser.profilePictureUrl;
-        }
-
-        // logout the user if they changed their email
         if (this.editData.email !== oldEmail) {
-          alert('Email updated successfully! Please login again with your new email.');
-          
-          localStorage.clear(); // clear old session data including token and user info to prevent any security issues
-          this.isEditMode = false;
-          
-          // Redirecting to login page after email change to ensure the user re-authenticates with the new email address
-          this.router.navigate(['/login']); 
-          return; 
+          Swal.fire('Email Updated', 'Please login again with your new email.', 'info').then(() => {
+            localStorage.clear();
+            this.router.navigate(['/login']);
+          });
+          return;
         }
 
         if (this.showPasswordSection && this.passwordData.newPassword) {
           this.changePasswordLogic();
         } else {
           this.isEditMode = false;
-          alert('Profile updated successfully!');
+          this.showSuccess('Profile updated successfully!');
         }
       },
-      error: (err: any) => {
-        console.error('Profile Update API Error:', err);
-        alert('Failed to update profile. Please try again.');
-      }
+      error: () => this.showError('Failed to update profile.')
     });
   }
 
- // Method to handle the password change process, including validation and API interaction 
- changePasswordLogic() {
-   
+  changePasswordLogic() {
     if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
-      alert('New password and confirm password do not match!');
+      this.showError('New password and confirm password do not match!');
       return;
     }
 
-    // checking for minimum password length requirement
-    const passwordPayload = {
+    this.http.put(`${environment.apiUrl}/users/change-password/${this.userId}`, {
       currentPassword: this.passwordData.currentPassword,
       newPassword: this.passwordData.newPassword
-    };
-
-    console.log('Sending Password Payload:', passwordPayload);
-
-    // calling the backend API to change the password, passing the userId and the new password details
-    this.http.put(`http://localhost:5233/api/users/change-password/${this.userId}`, passwordPayload)
-      .subscribe({
-        next: (res: any) => {
-          this.isEditMode = false;
-          this.passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
-          this.showPasswordSection = false;
-          
-          alert('Password changed successfully! Please login again with your new password.');
-          
-          localStorage.clear(); 
-          this.router.navigate(['/login']); 
-        },
-        error: (err: any) => {
-          console.error('Password API Error:', err);
-          const errorMsg = err.error?.message || err.error || 'Failed to change password.';
-          alert(errorMsg);
-        }
-      });
+    }).subscribe({
+      next: () => {
+        Swal.fire('Password Changed', 'Please login again with your new password.', 'success').then(() => {
+          localStorage.clear();
+          this.router.navigate(['/login']);
+        });
+      },
+      error: (err) => this.showError(err.error?.message || 'Failed to change password.')
+    });
   }
-  
-  // Method to programmatically trigger the hidden file input when the user clicks on the "Change Photo" button, allowing them to select a new profile picture
-  triggerFileInput() {
-    if (this.fileInput && this.fileInput.nativeElement) {
-      this.fileInput.nativeElement.click();
-    }
-  }
-  
-  // Method to handle the file selection event when the user chooses a new profile picture, updating the editData with the selected file and generating a preview URL for immediate display
+
+  triggerFileInput() { this.fileInput.nativeElement.click(); }
+
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
       this.editData.profileImageFile = file;
-
       const reader = new FileReader();
-      reader.onload = () => {
-        this.editData.profilePictureUrl = reader.result as string;
-      };
+      reader.onload = () => { this.editData.profilePictureUrl = reader.result as string; };
       reader.readAsDataURL(file);
     }
   }
-  
-  //Method to remove the current profile picture
+
   onRemovePhoto() {
     this.editData.profilePictureUrl = '';
     this.editData.profileImageFile = null;

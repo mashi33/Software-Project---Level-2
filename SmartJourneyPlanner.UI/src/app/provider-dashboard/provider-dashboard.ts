@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 import { TransportBookingService } from '../services/transport-booking.service';
+import { AuthService } from '../services/auth.service';
 import { TransportVehicleService } from '../services/transport-vehicle.service'; // 🔑 ADD THIS LINE
 import { Booking } from '../models/transport.model';
 
@@ -18,15 +19,22 @@ export class ProviderDashboardComponent implements OnInit {
   stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
+  providerId: string | null = null;
 
   constructor(
     private vehicleService: VehicleService,
     private transportVehicleService: TransportVehicleService,
     private bookingService: TransportBookingService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
+    this.providerId = this.authService.getUserId();
+    if (!this.providerId) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadAll();
   }
 
@@ -34,6 +42,7 @@ export class ProviderDashboardComponent implements OnInit {
     // 1. Leave your stats method completely untouched
     this.vehicleService.getStats().subscribe(data => this.stats = data);
     
+    this.bookingService.getProviderBookings(this.providerId).subscribe(data => {
     // 2. 🔑 THE FRONTEND UI PROTECTION FILTER
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
@@ -129,8 +138,7 @@ export class ProviderDashboardComponent implements OnInit {
 
   
   viewBookingDetails(id: string | undefined) {
-  if (!id) return;
-
-  this.router.navigate(['', id]);
-}
+    if (!id) return;
+    this.router.navigate(['/booking-details', id]);
+  }
 }

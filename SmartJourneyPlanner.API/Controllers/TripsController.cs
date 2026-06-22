@@ -433,5 +433,24 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
             }
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTrip(string id)
+        {
+            try
+            {
+                var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+                if (trip == null) return NotFound(new { message = "Trip not found!" });
+
+                await _tripsCollection.DeleteOneAsync(t => t.Id == id);
+                await _historyCollection.DeleteManyAsync(h => h.TripId == id);
+
+                return Ok(new { message = "Trip deleted successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error deleting trip: " + ex.Message });
+            }
+        }
+
     }
 }

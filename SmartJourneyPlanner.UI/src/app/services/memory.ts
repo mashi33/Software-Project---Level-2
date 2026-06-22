@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { timeout } from 'rxjs/operators'; 
+import { timeout } from 'rxjs/operators';
 import { TripMemory } from '../models/memory.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MemoryService {
+  private apiUrl = `${environment.apiUrl}/memories`;
+  constructor(private http: HttpClient) {}
   private readonly apiUrl = 'http://localhost:5233/api/memories';
   private readonly requestTimeout = 5000;
 
@@ -13,6 +16,10 @@ export class MemoryService {
 
   getMemories(userId: string): Observable<TripMemory[]> {
     return this.http.get<TripMemory[]>(`${this.apiUrl}/user/${userId}`);
+  }
+
+  getMemoryCount(userId: string): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/user/${userId}/count`);
   }
 
 getPublicMemories(): Observable<TripMemory[]> {
