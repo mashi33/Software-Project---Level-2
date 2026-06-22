@@ -5,6 +5,7 @@ import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-signup',
+  standalone: true,
   imports: [FormsModule, RouterLink],
   templateUrl: './signup.html',
   styleUrl: './signup.css'
@@ -32,6 +33,11 @@ export class Signup {
   */
 
   onSignup() {
+    if (!this.signupData.UserType) {
+      alert('Please select your role!');
+      return;
+    }
+
     if (!this.signupData.Password || this.signupData.Password.length < 8) {
       alert('Password must be at least 8 characters long!');
       return;

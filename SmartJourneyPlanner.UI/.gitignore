@@ -66,5 +66,8 @@ src/environments/environment.development.ts
 environments/
 
 
-appsettings.Development.json
+
 SmartJourneyPlanner.API/appsettings.toml
+# Ignore configuration files
+appsettings.Development.json
+*.toml

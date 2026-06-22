@@ -5,7 +5,13 @@ import { AuthService } from '../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { TravellerDashboardService } from '../services/travellerDashboard';
+import { MemoryService } from '../services/memory';
+import { TransportBookingService } from '../services/transport-booking.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-profile',
@@ -22,6 +28,15 @@ export class ProfileComponent implements OnInit {
   userId: string | null = null;
   isEditMode: boolean = false;
   showPasswordSection: boolean = false;
+  loadingStats = true;
+
+  stats = {
+    upcomingTrips: 0,
+    memories: 0,
+    vehicles: 0,
+    bookings: 0,
+    averageRating: 0
+  };
 
   editData: any = {
     fullName: '',
@@ -45,15 +60,29 @@ export class ProfileComponent implements OnInit {
     private userService: UserService,
     private authService: AuthService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private dashboardService: TravellerDashboardService,
+    private memoryService: MemoryService,
+    private bookingService: TransportBookingService
   ) { }
 
   ngOnInit(): void {
     this.userId = this.authService.getUserId();
+    if (!this.userId) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadUserProfile();
   }
 
-  // --- Helper Alert Functions ---
+  get userRole(): string {
+    return this.user?.userType || this.user?.role || '';
+  }
+
+  isProvider(): boolean {
+    return this.userRole === 'Provider' || this.userRole === 'TransportProvider';
+  }
+
   showSuccess(message: string) {
     Swal.fire({ icon: 'success', title: 'Success', text: message, timer: 2500, timerProgressBar: true });
   }
@@ -62,22 +91,72 @@ export class ProfileComponent implements OnInit {
     Swal.fire({ icon: 'error', title: 'Oops...', text: message });
   }
 
-  // Load user profile from backend
   loadUserProfile() {
-    if (this.userId) {
-      this.userService.getUserProfile(this.userId).subscribe({
-        next: (data) => {
-          this.user = data;
-          this.availableInterests = (this.user?.role === 'Provider' || this.user?.role === 'TransportProvider')
-            ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
-            : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'];
-        },
-        error: (err) => console.error('Error fetching profile:', err)
-      });
-    }
+    if (!this.userId) return;
+
+    this.userService.getUserProfile(this.userId).subscribe({
+      next: (data) => {
+        this.user = data;
+        this.availableInterests = this.isProvider()
+          ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
+          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'];
+        this.loadProfileStats();
+      },
+      error: (err) => console.error('Error fetching profile:', err)
+    });
   }
 
-  // Initialize edit mode with current user data
+  loadProfileStats() {
+    if (!this.userId) return;
+    this.loadingStats = true;
+
+    if (this.isProvider()) {
+      forkJoin({
+        vehicles: this.http.get<any[]>(`${environment.apiUrl}/TransportVehicles/my-vehicles/${this.userId}`).pipe(
+          catchError(() => of([]))
+        ),
+        bookings: this.bookingService.getProviderBookings(this.userId).pipe(
+          catchError(() => of([]))
+        )
+      }).subscribe({
+        next: ({ vehicles, bookings }) => {
+          this.stats.vehicles = vehicles?.length || 0;
+          this.stats.bookings = bookings?.length || 0;
+          this.stats.averageRating = this.calculateAverageRating(vehicles || []);
+          this.loadingStats = false;
+        },
+        error: () => { this.loadingStats = false; }
+      });
+      return;
+    }
+
+    forkJoin({
+      dashboard: this.dashboardService.getDashboardData().pipe(catchError(() => of({ upcomingCount: 0 }))),
+      memories: this.memoryService.getMemoryCount(this.userId!).pipe(catchError(() => of({ count: 0 })))
+    }).subscribe({
+      next: ({ dashboard, memories }) => {
+        this.stats.upcomingTrips = dashboard?.upcomingCount || 0;
+        this.stats.memories = memories?.count || 0;
+        this.loadingStats = false;
+      },
+      error: () => { this.loadingStats = false; }
+    });
+  }
+
+  calculateAverageRating(vehicles: any[]): number {
+    const allRatings: number[] = [];
+    vehicles.forEach(vehicle => {
+      const reviews = vehicle.reviews || vehicle.Reviews || [];
+      reviews.forEach((review: any) => {
+        const rating = review.rating ?? review.Rating;
+        if (typeof rating === 'number') allRatings.push(rating);
+      });
+    });
+    if (!allRatings.length) return 0;
+    const avg = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
+    return Math.round(avg * 10) / 10;
+  }
+
   onEditProfile() {
     this.isEditMode = true;
     this.showPasswordSection = false;
@@ -100,7 +179,6 @@ export class ProfileComponent implements OnInit {
     index > -1 ? this.editData.interests.splice(index, 1) : this.editData.interests.push(interest);
   }
 
-  // Handle profile update logic
   onSaveProfile() {
     if (!this.userId) return;
     const oldEmail = this.user?.email;
@@ -123,7 +201,6 @@ export class ProfileComponent implements OnInit {
         this.user = { ...this.user, ...this.editData };
         if (updatedUser?.profilePictureUrl) this.user.profilePictureUrl = updatedUser.profilePictureUrl;
 
-        // If email changed, force relogin
         if (this.editData.email !== oldEmail) {
           Swal.fire('Email Updated', 'Please login again with your new email.', 'info').then(() => {
             localStorage.clear();
@@ -143,14 +220,13 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // Handle password change process
   changePasswordLogic() {
     if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
       this.showError('New password and confirm password do not match!');
       return;
     }
 
-    this.http.put(`http://localhost:5233/api/users/change-password/${this.userId}`, {
+    this.http.put(`${environment.apiUrl}/users/change-password/${this.userId}`, {
       currentPassword: this.passwordData.currentPassword,
       newPassword: this.passwordData.newPassword
     }).subscribe({
