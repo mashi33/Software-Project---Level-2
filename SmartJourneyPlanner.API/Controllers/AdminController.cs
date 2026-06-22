@@ -7,6 +7,7 @@ using SmartJourneyPlanner.API.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 using MongoDB.Bson; 
 
 namespace SmartJourneyPlanner.API.Controllers
@@ -45,17 +46,17 @@ namespace SmartJourneyPlanner.API.Controllers
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v => 
                 v.Status == "Pending" || v.Status == "Pending Approval");
 
-        // දැන් _database මෙතැනදී නිවැරදිව භාවිත කළ හැක
-    var expensesCollection = _database.GetCollection<Expense>("Expenses"); 
-    var allExpenses = await expensesCollection.Find(_ => true).ToListAsync();
-    var budgetsCollection = _database.GetCollection<BsonDocument>("Budgets");
-var totalBudgets = await budgetsCollection.CountDocumentsAsync(_ => true);
+        var budgetsCollection = _database.GetCollection<TripBudget>("Budgets");
+        var totalBudgets = await budgetsCollection.CountDocumentsAsync(_ => true);
+        var allBudgets = await budgetsCollection.Find(_ => true).ToListAsync();
+        var totalExpenditure = allBudgets.Sum(b => b.TotalSpent);
 
             return Ok(new 
             { 
                 pendingProvidersCount = pendingVehicles, 
-                platformUsers = totalUsers ,
-                totalBudgets = totalBudgets
+                platformUsers = totalUsers,
+                totalBudgets = totalBudgets,
+                totalExpenditure = totalExpenditure
             });
         }
 
@@ -154,49 +155,96 @@ public async Task<IActionResult> GetAllExpenses()
 [HttpGet("budget-details")]
 public async Task<IActionResult> GetDetailedBudget()
 {
-    try 
+    try
     {
-        // 1. සියලුම Budgets ලබාගන්න
-        var budgets = await _database.GetCollection<BsonDocument>("Budgets").Find(_ => true).ToListAsync();
-        var resultList = new List<object>();
+        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
+        var tripsCollection = _database.GetCollection<Trip>("Trips");
 
-        foreach (var b in budgets)
+        var tripDtos = new List<AdminBudgetTripDto>();
+        var categoryTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        double totalSpend = 0;
+        double totalLimit = 0;
+        var overBudgetCount = 0;
+
+        foreach (var budget in budgets)
         {
-            // TripId String එකක් හෝ ObjectId එකක් ලෙස ලබාගන්න
-            var tripId = b.Contains("TripId") ? b["TripId"] : null;
-            if (tripId == null) continue;
+            var trip = await tripsCollection.Find(t => t.Id == budget.TripId).FirstOrDefaultAsync();
 
-            // 2. අදාළ Trip එක සොයාගන්න
-            FilterDefinition<BsonDocument> filter;
-            if (tripId.IsObjectId)
-                filter = Builders<BsonDocument>.Filter.Eq("_id", tripId.AsObjectId);
-            else
-                filter = Builders<BsonDocument>.Filter.Eq("_id", new ObjectId(tripId.AsString));
-
-            var trip = await _database.GetCollection<BsonDocument>("Trips").Find(filter).FirstOrDefaultAsync();
-
-            // 3. දත්ත සැකසීම
-            double budgetLimit = 0.0;
-            if (trip != null && trip.Contains("BudgetLimit")) {
-                var bl = trip["BudgetLimit"];
-                if (bl.IsString) double.TryParse(bl.AsString, out budgetLimit);
-                else if (bl.IsDouble || bl.IsInt32) budgetLimit = bl.AsDouble;
+            double budgetLimit = 0;
+            if (trip != null && !string.IsNullOrWhiteSpace(trip.BudgetLimit))
+            {
+                double.TryParse(trip.BudgetLimit, out budgetLimit);
             }
 
-            // 4. Result List එකට එකතු කිරීම
-            resultList.Add(new {
-                TripName = trip != null && trip.Contains("TripName") ? trip["TripName"].AsString : "Unknown",
-                TripId = tripId.ToString(),
-                CreatedBy = trip != null && trip.Contains("CreatedEmail") ? trip["CreatedEmail"].AsString : "Unknown",
-                ExpectedBudget = budgetLimit,
-                TotalSpent = b.Contains("TotalSpent") ? b["TotalSpent"].AsDouble : 0.0
+            var spent = budget.TotalSpent;
+            totalSpend += spent;
+            if (budgetLimit > 0) totalLimit += budgetLimit;
+            if (budgetLimit > 0 && spent > budgetLimit) overBudgetCount++;
+
+            foreach (var expense in budget.Expenses ?? new List<Expense>())
+            {
+                var category = string.IsNullOrWhiteSpace(expense.Category) ? "General" : expense.Category;
+                var amount = (double)expense.Amount;
+                categoryTotals[category] = categoryTotals.GetValueOrDefault(category) + amount;
+            }
+
+            var createdBy = trip?.CreatorEmail ?? trip?.CreatedBy ?? "Unknown";
+            var status = budgetLimit <= 0
+                ? "No Limit"
+                : spent > budgetLimit
+                    ? "Over Budget"
+                    : spent >= budgetLimit * 0.85
+                        ? "Near Limit"
+                        : "On Track";
+
+            tripDtos.Add(new AdminBudgetTripDto
+            {
+                TripName = trip?.TripName ?? "Unknown Trip",
+                TripId = budget.TripId,
+                CreatedBy = createdBy,
+                ExpectedBudget = (decimal)budgetLimit,
+                TotalSpent = (decimal)spent,
+                RemainingBudget = budgetLimit > 0 ? (decimal)(budgetLimit - spent) : 0,
+                UsagePercent = budgetLimit > 0 ? Math.Round(spent / budgetLimit * 100, 1) : 0,
+                ExpenseCount = budget.Expenses?.Count ?? 0,
+                Status = status,
+                Expenses = (budget.Expenses ?? new List<Expense>())
+                    .Select(e => new AdminExpenseLineDto
+                    {
+                        Id = e.Id,
+                        Description = e.Description,
+                        Category = e.Category,
+                        Amount = e.Amount,
+                        Date = e.Date,
+                        AddedBy = e.AddedBy
+                    })
+                    .OrderByDescending(e => e.Date)
+                    .ToList()
             });
         }
-        return Ok(resultList);
+
+        var overview = new AdminBudgetOverviewDto
+        {
+            Summary = new AdminBudgetSummaryDto
+            {
+                TotalTrackedSpend = (decimal)totalSpend,
+                TotalBudgetsTracked = budgets.Count,
+                TotalBudgetLimit = (decimal)totalLimit,
+                OverBudgetTrips = overBudgetCount,
+                AverageSpendPerTrip = budgets.Count > 0 ? (decimal)(totalSpend / budgets.Count) : 0
+            },
+            Trips = tripDtos.OrderByDescending(t => t.TotalSpent).ToList(),
+            CategoryBreakdown = categoryTotals
+                .Select(kv => new AdminCategorySpendDto { Category = kv.Key, Amount = (decimal)kv.Value })
+                .OrderByDescending(c => c.Amount)
+                .ToList()
+        };
+
+        return Ok(overview);
     }
     catch (Exception ex)
     {
-        return BadRequest(ex.Message);
+        return BadRequest(new { message = ex.Message });
     }
 }
         // MANAGE PROVIDERS         

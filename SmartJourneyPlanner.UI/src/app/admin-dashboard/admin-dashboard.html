@@ -4,6 +4,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <h2>⚙️ Control Center</h2>
+      <p class="sidebar-subtitle">Welcome, {{ adminName }}</p>
     </div>
     <ul>
       <li [class.active]="view === 'stats'" (click)="view = 'stats'">
@@ -21,12 +22,20 @@
       <li [class.active]="view === 'fleet-detailed'" (click)="onReviewFleet()">
   📋 Detailed Fleet View
 </li>
-<li [class.active]="view === 'costs'" (click)="view = 'costs'">💰 Total Tracked Costs</li>
+<li [class.active]="view === 'costs'" (click)="viewExpenditureDetails()">💰 Total Tracked Costs</li>
     </ul>
+    <div class="sidebar-footer">
+      <button class="sidebar-btn" (click)="refreshCurrentView()">🔄 Sync Data</button>
+      <button class="sidebar-btn sidebar-btn-danger" (click)="logout()">Sign Out</button>
+    </div>
   </aside>
 
   <main class="content">
     <header class="main-header header-container">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="date-text">{{ currentDate | date:'fullDate' }}</p>
+      </div>
       <button (click)="refreshCurrentView()" class="btn-refresh-fancy">
         <span>🔄</span> Force Sync
       </button>
@@ -39,7 +48,7 @@
     <div class="card-icon1">🚐</div>
     <div class="card-data">
       <h3>Pending Vehicles</h3>
-      <h1>{{ pendingProviders.length }}</h1>
+      <h1>{{ stats?.pendingProvidersCount ?? pendingProviders.length }}</h1>
     </div>
     <button class="btn-action1" (click)="onReviewProviders()">Review Documents</button>
   </div>
@@ -49,7 +58,7 @@
     <div class="card-icon2">👥</div>
     <div class="card-data">
       <h3>Platform Users</h3>
-      <h1>{{ allUsers.length }}</h1>
+      <h1>{{ stats?.platformUsers ?? allUsers.length }}</h1>
     </div>
     <button class="btn-action2" (click)="onManageLogins()">Manage Access</button>
   </div>
@@ -76,13 +85,14 @@
 
   <!-- 5. Total Tracked Costs -->
   <div class="card expense-card">
-  <div class="card-icon5">💰</div>
-  <div class="card-data">
-    <h3>Tracked Budgets</h3> 
-    <h1>{{ stats?.totalBudgets || 0 }}</h1> 
+    <div class="card-icon5">💰</div>
+    <div class="card-data">
+      <h3>Total Tracked Spend</h3>
+      <h1>Rs. {{ (costSummary.totalTrackedSpend || stats?.totalExpenditure || 0) | number:'1.0-0' }}</h1>
+      <p class="card-sub-stat">{{ costSummary.totalBudgetsTracked || stats?.totalBudgets || 0 }} trip budgets</p>
+    </div>
+    <button class="btn-action5" (click)="viewExpenditureDetails()">View Details</button>
   </div>
-  <button class="btn-action5" (click)="viewExpenditureDetails()">View Details</button>
-</div>
 
 </div>
     <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
@@ -186,50 +196,155 @@
 
   <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
     <div *ngFor="let v of allVehicles" class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-      <img [src]="v.ExteriorPhoto || 'assets/placeholder-car.jpg'" 
+      <img [src]="v.exteriorPhoto || v.ExteriorPhoto || 'assets/placeholder-car.jpg'" 
      style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
       
-      <h4 class="mt-3">{{ v.vehicleClass }}</h4>
+      <h4 class="mt-3">{{ v.vehicleClass || v.VehicleClass }} · {{ v.modelName || v.ModelName }}</h4>
       
       <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
-        <span class="badge" [ngClass]="v.status === 'Approved' ? 'bg-success' : 'bg-warning'">{{ v.status }}</span>
-        <span class="badge" [ngClass]="v.isBooked ? 'bg-danger' : 'bg-primary'">{{ v.isBooked ? 'Has Booking' : 'Available' }}</span>
+        <span class="badge" [ngClass]="(v.status || v.Status) === 'Approved' || (v.status || v.Status) === 'Unavailable' ? 'bg-success' : 'bg-warning'">{{ v.status || v.Status }}</span>
+        <span class="badge" [ngClass]="isVehicleBooked(v) ? 'bg-danger' : 'bg-primary'">{{ isVehicleBooked(v) ? 'Has Booking' : 'Available' }}</span>
       </div>
 
       <div class="provider-info" style="font-size: 0.85rem; color: #64748b;">
-        <p><strong>Provider:</strong> {{ v.providerProfile?.name }}</p>
-        <p><strong>Location:</strong> {{ v.location }}</p>
+        <p><strong>Provider:</strong> {{ v.providerProfile?.name || v.ProviderProfile?.Name }}</p>
+        <p><strong>Location:</strong> {{ v.providerProfile?.location || v.ProviderProfile?.Location || 'Not specified' }}</p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="verification-section shadow-sm" *ngIf="view === 'costs'">
-  <div class="section-header mb-4">
-    <h2>💰 Detailed Financial Breakdown</h2>
-    <p class="text-muted">Summary of all tracked expenditures in the system.</p>
+<div class="verification-section shadow-sm costs-panel" *ngIf="view === 'costs'">
+  <div class="section-header">
+    <div>
+      <h2>💰 Total Tracked Costs</h2>
+      <p class="text-muted">Platform-wide financial overview across all trip budgets and expense logs.</p>
+    </div>
   </div>
 
-  <table class="admin-table">
-  <thead>
-    <tr>
-      <th>Trip Name</th>
-      <th>Trip ID</th>
-      <th>Created By</th>
-      <th>Expected Budget Limit</th>
-      <th>Sub-Total</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let ex of expenses" class="table-row">
-  <td>{{ ex.tripName || ex.TripName }}</td> 
-  <td>{{ ex.tripId || ex.TripId }}</td>
-  <td><i class="bi bi-envelope-at"></i> {{ ex.CreatedBy }}</td>
-  <td>{{ ex.ExpectedBudget > 0 ? ('Rs. ' + (ex.ExpectedBudget | number:'1.2-2')) : 'Not Set' }}</td>
-  <td style="font-weight: 700;">Rs. {{ (ex.totalSpent || ex.TotalSpent) | number:'1.2-2' }}</td>
-</tr>
-  </tbody>
-</table>
+  <div class="costs-summary-grid">
+    <div class="cost-stat-card cost-stat-primary">
+      <span class="cost-stat-label">Total Platform Spend</span>
+      <span class="cost-stat-value">Rs. {{ costSummary.totalTrackedSpend | number:'1.2-2' }}</span>
+    </div>
+    <div class="cost-stat-card">
+      <span class="cost-stat-label">Trips Tracked</span>
+      <span class="cost-stat-value">{{ costSummary.totalBudgetsTracked }}</span>
+    </div>
+    <div class="cost-stat-card">
+      <span class="cost-stat-label">Combined Budget Limit</span>
+      <span class="cost-stat-value">Rs. {{ costSummary.totalBudgetLimit | number:'1.2-2' }}</span>
+    </div>
+    <div class="cost-stat-card" [class.cost-stat-danger]="costSummary.overBudgetTrips > 0">
+      <span class="cost-stat-label">Over-Budget Trips</span>
+      <span class="cost-stat-value">{{ costSummary.overBudgetTrips }}</span>
+    </div>
+    <div class="cost-stat-card">
+      <span class="cost-stat-label">Avg. Spend / Trip</span>
+      <span class="cost-stat-value">Rs. {{ costSummary.averageSpendPerTrip | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <div class="costs-breakdown-row" *ngIf="categoryBreakdown.length > 0">
+    <h3 class="costs-subheading">Spend by Category</h3>
+    <div class="category-breakdown-list">
+      <div *ngFor="let cat of categoryBreakdown" class="category-breakdown-item">
+        <div class="category-breakdown-header">
+          <span class="category-pill" [ngClass]="getCategoryClass(cat.category || cat.Category)">
+            {{ cat.category || cat.Category }}
+          </span>
+          <span class="category-amount">Rs. {{ (cat.amount || cat.Amount) | number:'1.2-2' }}</span>
+        </div>
+        <div class="category-bar-track">
+          <div class="category-bar-fill" [ngClass]="getCategoryClass(cat.category || cat.Category)"
+               [style.width.%]="getCategoryPercent(cat)"></div>
+        </div>
+        <span class="category-percent">{{ getCategoryPercent(cat) | number:'1.1-1' }}% of total</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="costs-toolbar">
+    <input type="text" class="costs-search" placeholder="Search by trip name or creator email..."
+           [(ngModel)]="costSearch">
+    <select class="costs-filter" [(ngModel)]="costStatusFilter">
+      <option value="all">All statuses</option>
+      <option value="on track">On Track</option>
+      <option value="near limit">Near Limit</option>
+      <option value="over budget">Over Budget</option>
+      <option value="no limit">No Limit</option>
+    </select>
+  </div>
+
+  <div *ngIf="costsLoading" class="costs-loading">Loading financial data...</div>
+
+  <table class="admin-table costs-table" *ngIf="!costsLoading && filteredBudgetTrips.length > 0">
+    <thead>
+      <tr>
+        <th>Trip</th>
+        <th>Created By</th>
+        <th>Budget Limit</th>
+        <th>Total Spent</th>
+        <th>Remaining</th>
+        <th>Usage</th>
+        <th>Status</th>
+        <th style="text-align: center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let trip of filteredBudgetTrips" class="table-row">
+        <td>
+          <div class="trip-name-cell">{{ trip.tripName || trip.TripName }}</div>
+          <div class="trip-meta-cell">{{ (trip.expenseCount ?? trip.ExpenseCount ?? 0) }} expense(s)</div>
+        </td>
+        <td><i class="bi bi-envelope-at"></i> {{ trip.createdBy || trip.CreatedBy }}</td>
+        <td>{{ getTripBudget(trip) > 0 ? ('Rs. ' + (getTripBudget(trip) | number:'1.2-2')) : 'Not Set' }}</td>
+        <td class="font-bold">Rs. {{ getTripSpent(trip) | number:'1.2-2' }}</td>
+        <td [ngClass]="getTripRemaining(trip) < 0 ? 'text-danger' : 'text-success'">
+          {{ getTripBudget(trip) > 0 ? ('Rs. ' + (getTripRemaining(trip) | number:'1.2-2')) : '—' }}
+        </td>
+        <td>
+          <div class="usage-cell" *ngIf="getTripBudget(trip) > 0; else noLimitUsage">
+            <div class="usage-bar-track">
+              <div class="usage-bar-fill"
+                   [class.usage-over]="getTripUsage(trip) > 100"
+                   [class.usage-near]="getTripUsage(trip) >= 85 && getTripUsage(trip) <= 100"
+                   [style.width.%]="getTripUsage(trip) > 100 ? 100 : getTripUsage(trip)"></div>
+            </div>
+            <span class="usage-label">{{ getTripUsage(trip) | number:'1.0-1' }}%</span>
+          </div>
+          <ng-template #noLimitUsage><span class="text-muted">—</span></ng-template>
+        </td>
+        <td>
+          <span class="cost-status-pill" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">
+            {{ getTripStatus(trip) }}
+          </span>
+        </td>
+        <td>
+          <div class="action-btn-group">
+            <button class="btn-ctrl-action btn-view" (click)="viewBudgetTripDetails(trip)">View Expenses</button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="costs-total-row">
+        <td colspan="3"><strong>Filtered Totals</strong></td>
+        <td class="font-bold">Rs. {{ filteredTripsTotalSpend | number:'1.2-2' }}</td>
+        <td colspan="4"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div *ngIf="!costsLoading && budgetTrips.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+    <h5>No budget records yet</h5>
+    <p>Tracked trip budgets will appear here once travellers start using the budget feature.</p>
+  </div>
+
+  <div *ngIf="!costsLoading && budgetTrips.length > 0 && filteredBudgetTrips.length === 0" class="empty-ledger-box" style="padding: 40px 24px;">
+    <h5>No matching trips</h5>
+    <p>Try adjusting your search or status filter.</p>
+  </div>
 </div>
 
     <div class="verification-section border-0 bg-transparent p-0 shadow-none" *ngIf="view === 'users'">
@@ -242,9 +357,9 @@
         <div *ngFor="let u of allUsers" class="user-management-card-grid">
           <div class="grid-profile-col">
             <div class="user-avatar-circle" [ngClass]="{
-              'av-provider': u.role === 'TransportProvider' || u.role === 'Transportprovider',
-              'av-traveller': u.role === 'Traveller',
-              'av-admin': u.role === 'Admin'
+              'av-provider': getUserRole(u) === 'TransportProvider' || getUserRole(u) === 'Transportprovider',
+              'av-traveller': getUserRole(u) === 'Traveller' || getUserRole(u) === 'Traveler',
+              'av-admin': getUserRole(u) === 'Admin'
             }">
               <span>{{ u.fullName?.charAt(0) || u.name?.charAt(0) || 'U' }}</span>
             </div>
@@ -258,10 +373,10 @@
             <span class="text-overline">Current Role</span>
             <div class="badge-pill-container">
               <span class="role-pill" [ngClass]="{
-                'pill-provider': u.role === 'TransportProvider',
-                'pill-traveller': u.role === 'Traveller',
-                'pill-admin': u.role === 'Admin'
-              }">{{ u.role }}</span>
+                'pill-provider': getUserRole(u) === 'TransportProvider',
+                'pill-traveller': getUserRole(u) === 'Traveller' || getUserRole(u) === 'Traveler',
+                'pill-admin': getUserRole(u) === 'Admin'
+              }">{{ getUserRole(u) }}</span>
             </div>
           </div>
 
@@ -276,7 +391,7 @@
           </div>
 
           <div class="grid-actions-col">
-            <button *ngIf="u.role !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')">
+            <button *ngIf="getUserRole(u) !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')">
               <i class="bi bi-shield-arrow"></i> Promote
             </button>
             <button class="btn-action-smart btn-suspend" [style.background]="u.isBlocked ? '#fed7d7' : ''" (click)="toggleBlock(u)">
@@ -287,6 +402,11 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <div *ngIf="allUsers.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+        <h5>No users found</h5>
+        <p>Registered platform accounts will appear here.</p>
       </div>
     </div>
     
@@ -406,6 +526,79 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="selectedBudgetTrip" (click)="selectedBudgetTrip = null">
+    <div class="modal-card shadow-lg budget-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="tag">Trip Budget Audit</span>
+          <h2>{{ selectedBudgetTrip.tripName || selectedBudgetTrip.TripName }}</h2>
+          <p class="modal-subtitle">Created by {{ selectedBudgetTrip.createdBy || selectedBudgetTrip.CreatedBy }}</p>
+        </div>
+        <button class="close-pill" (click)="selectedBudgetTrip = null">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="budget-modal-summary">
+          <div class="budget-modal-stat">
+            <span>Budget Limit</span>
+            <strong>{{ getTripBudget(selectedBudgetTrip) > 0 ? ('Rs. ' + (getTripBudget(selectedBudgetTrip) | number:'1.2-2')) : 'Not Set' }}</strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Total Spent</span>
+            <strong>Rs. {{ getTripSpent(selectedBudgetTrip) | number:'1.2-2' }}</strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Remaining</span>
+            <strong [ngClass]="getTripRemaining(selectedBudgetTrip) < 0 ? 'text-danger' : 'text-success'">
+              {{ getTripBudget(selectedBudgetTrip) > 0 ? ('Rs. ' + (getTripRemaining(selectedBudgetTrip) | number:'1.2-2')) : '—' }}
+            </strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Status</span>
+            <span class="cost-status-pill" [ngClass]="getBudgetStatusClass(getTripStatus(selectedBudgetTrip))">
+              {{ getTripStatus(selectedBudgetTrip) }}
+            </span>
+          </div>
+        </div>
+
+        <table class="admin-table" *ngIf="(selectedBudgetTrip.expenses || selectedBudgetTrip.Expenses)?.length; else noExpenses">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Added By</th>
+              <th>Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of (selectedBudgetTrip.expenses || selectedBudgetTrip.Expenses)">
+              <td>
+                <span class="category-pill" [ngClass]="getCategoryClass(item.category || item.Category)">
+                  {{ item.category || item.Category || 'General' }}
+                </span>
+              </td>
+              <td>{{ item.description || item.Description || '—' }}</td>
+              <td>{{ item.addedBy || item.AddedBy }}</td>
+              <td>{{ item.date || item.Date | date:'MMM d, y' }}</td>
+              <td class="font-bold">Rs. {{ (item.amount ?? item.Amount) | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noExpenses>
+          <div class="empty-ledger-box" style="padding: 32px;">
+            <h5>No individual expenses logged</h5>
+            <p>This trip budget exists but has no line-item expenses yet.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="selectedBudgetTrip = null">Close</button>
+      </div>
     </div>
   </div>
 </div>

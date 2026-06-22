@@ -64,9 +64,8 @@ getAllExpenses(): Observable<any[]> {
   return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
 }
 
-// src/app/services/admin.service.ts ගොනුවට මෙය එකතු කරන්න
-getBudgetDetails(): Observable<any[]> {
-  return this.http.get<any[]>(`${this.baseUrl}/Admin/budget-details`);
+getBudgetDetails(): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
 }
 
   // ==========================================================================

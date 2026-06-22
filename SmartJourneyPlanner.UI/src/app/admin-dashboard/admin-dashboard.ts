@@ -1,7 +1,9 @@
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../services/admin.service';
+import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -13,10 +15,13 @@ import Swal from 'sweetalert2';
 })
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
   private cd = inject(ChangeDetectorRef);
 
   currentDate = new Date();
-view: 'stats' | 'providers' | 'memories' | 'users' | 'fleet-detailed' | 'costs' = 'stats';
+  adminName = '';
+  view: 'stats' | 'providers' | 'memories' | 'users' | 'fleet-detailed' | 'costs' = 'stats';
   stats: any = { totalExpenditure: 0 };
   pendingProviders: any[] = [];
   allUsers: any[] = [];
@@ -24,11 +29,106 @@ view: 'stats' | 'providers' | 'memories' | 'users' | 'fleet-detailed' | 'costs' 
   selectedProvider: any = null;
   allVehicles: any[] = [];
   expenses: any[] = [];
+  budgetTrips: any[] = [];
+  costSummary: any = {
+    totalTrackedSpend: 0,
+    totalBudgetsTracked: 0,
+    totalBudgetLimit: 0,
+    overBudgetTrips: 0,
+    averageSpendPerTrip: 0
+  };
+  categoryBreakdown: any[] = [];
+  costSearch = '';
+  costStatusFilter = 'all';
+  selectedBudgetTrip: any = null;
+  costsLoading = false;
 
-  ngOnInit() { 
+  ngOnInit() {
+    this.adminName = this.authService.getUserName() || 'Admin';
     this.refreshDashboard();
     this.fetchExpenseList();
+  }
+
+  getUserRole(user: any): string {
+    return user?.userType || user?.UserType || user?.role || 'Unknown';
+  }
+
+  isVehicleBooked(vehicle: any): boolean {
+    const dates = vehicle?.bookedDates || vehicle?.BookedDates;
+    return Array.isArray(dates) && dates.length > 0;
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  get filteredBudgetTrips(): any[] {
+    return this.budgetTrips.filter(trip => {
+      const query = this.costSearch.trim().toLowerCase();
+      const tripName = (trip.tripName || trip.TripName || '').toLowerCase();
+      const createdBy = (trip.createdBy || trip.CreatedBy || '').toLowerCase();
+      const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query);
+
+      const status = (trip.status || trip.Status || '').toLowerCase();
+      const filter = this.costStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  getTripSpent(trip: any): number {
+    return trip.totalSpent ?? trip.TotalSpent ?? 0;
+  }
+
+  getTripBudget(trip: any): number {
+    return trip.expectedBudget ?? trip.ExpectedBudget ?? 0;
+  }
+
+  getTripRemaining(trip: any): number {
+    return trip.remainingBudget ?? trip.RemainingBudget ?? (this.getTripBudget(trip) - this.getTripSpent(trip));
+  }
+
+  getTripUsage(trip: any): number {
+    return trip.usagePercent ?? trip.UsagePercent ?? 0;
+  }
+
+  getTripStatus(trip: any): string {
+    return trip.status || trip.Status || 'On Track';
+  }
+
+  getCategoryPercent(category: any): number {
+    const total = this.costSummary.totalTrackedSpend || 0;
+    const amount = category.amount ?? category.Amount ?? 0;
+    return total > 0 ? (amount / total) * 100 : 0;
+  }
+
+  getBudgetStatusClass(status: string): string {
+    switch (status) {
+      case 'Over Budget': return 'cost-status-over';
+      case 'Near Limit': return 'cost-status-near';
+      case 'No Limit': return 'cost-status-none';
+      default: return 'cost-status-ok';
     }
+  }
+
+  getCategoryClass(category: string): string {
+    const key = (category || 'general').toLowerCase();
+    if (key.includes('meal') || key.includes('food')) return 'cat-meals';
+    if (key.includes('transport')) return 'cat-transport';
+    if (key.includes('stay') || key.includes('accommodation') || key.includes('lodg')) return 'cat-stay';
+    if (key.includes('shop')) return 'cat-shopping';
+    return 'cat-general';
+  }
+
+  viewBudgetTripDetails(trip: any) {
+    this.selectedBudgetTrip = trip;
+  }
+
+  get filteredTripsTotalSpend(): number {
+    return this.filteredBudgetTrips.reduce((sum, trip) => sum + this.getTripSpent(trip), 0);
+  }
 
   // View switchers
   onReviewProviders() { this.view = 'providers'; this.fetchPendingProviders(); }
@@ -151,12 +251,30 @@ fetchAllVehicles() {
 
 // Component එකේ දත්ත ලබාගන්නා ආකාරය
 fetchExpenseList() {
-  this.adminService.getBudgetDetails().subscribe((data: any[]) => {
-    console.log("API Response:", data); // මෙය Console එකේ පේනවාද?
-    this.expenses = data;
-    
-    // දත්ත තිබේ නම් total එක අලුත් කරගන්න
-    this.stats.totalExpenditure = data.reduce((sum, item) => sum + (item.TotalSpent || 0), 0);
+  this.costsLoading = true;
+  this.adminService.getBudgetDetails().subscribe({
+    next: (data: any) => {
+      const summary = data?.summary || data?.Summary || {};
+      this.costSummary = {
+        totalTrackedSpend: summary.totalTrackedSpend ?? summary.TotalTrackedSpend ?? 0,
+        totalBudgetsTracked: summary.totalBudgetsTracked ?? summary.TotalBudgetsTracked ?? 0,
+        totalBudgetLimit: summary.totalBudgetLimit ?? summary.TotalBudgetLimit ?? 0,
+        overBudgetTrips: summary.overBudgetTrips ?? summary.OverBudgetTrips ?? 0,
+        averageSpendPerTrip: summary.averageSpendPerTrip ?? summary.AverageSpendPerTrip ?? 0
+      };
+
+      this.budgetTrips = data?.trips || data?.Trips || (Array.isArray(data) ? data : []);
+      this.categoryBreakdown = data?.categoryBreakdown || data?.CategoryBreakdown || [];
+      this.expenses = this.budgetTrips;
+
+      this.stats.totalExpenditure = this.costSummary.totalTrackedSpend;
+      this.stats.totalBudgets = this.costSummary.totalBudgetsTracked;
+      this.costsLoading = false;
+    },
+    error: (err) => {
+      console.error('Error loading budget details:', err);
+      this.costsLoading = false;
+    }
   });
 }
 
@@ -186,18 +304,67 @@ viewVehicleDetails(vehicle: any) {
 
 // Memory සඳහා පමණක් භාවිතා කරන්න
 viewMemoryDetails(memory: any) {
-  console.log("Viewing Memory:", memory);
-  // ඔබ Memory සඳහා වෙනම Modal එකක් භාවිතා කරන්නේ නම් මෙහි දත්ත ලබා ගන්න
-  // නැත්නම් මෙය දැනට හිස්ව තබන්න
+  Swal.fire({
+    title: memory.title || 'Trip Memory',
+    html: `
+      <p style="text-align:left;margin-bottom:8px;"><strong>By:</strong> ${memory.fullName || 'Unknown'}</p>
+      <p style="text-align:left;margin-bottom:8px;"><strong>Location:</strong> ${memory.locationName || 'N/A'}</p>
+      <p style="text-align:left;margin-bottom:12px;">${memory.description || 'No description provided.'}</p>
+      ${memory.imageUrl ? `<img src="${memory.imageUrl}" style="max-width:100%;border-radius:12px;" />` : ''}
+    `,
+    width: 640,
+    confirmButtonText: 'Close',
+    confirmButtonColor: '#2563eb'
+  });
 }
 
 viewExpenditureDetails() {
   this.view = 'costs';
+  this.fetchExpenseList();
 }
 
-  changeRole(id: string, role: string) { this.adminService.updateUserRole(id, role).subscribe(() => this.refreshDashboard()); }
-  toggleBlock(u: any) { this.adminService.toggleBlockUser(u.id || u._id, !u.isBlocked).subscribe(() => this.refreshDashboard()); }
-  deleteUser(id: string) { this.adminService.deleteUser(id).subscribe(() => this.refreshDashboard()); }
+  changeRole(id: string, role: string) {
+    Swal.fire({
+      title: 'Update user role?',
+      text: `Promote this account to ${role}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.updateUserRole(id, role).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Updated', 'User role changed successfully.', 'success');
+        });
+      }
+    });
+  }
+
+  toggleBlock(u: any) {
+    const id = u.id || u._id;
+    const block = !u.isBlocked;
+    this.adminService.toggleBlockUser(id, block).subscribe(() => {
+      this.refreshDashboard();
+      Swal.fire('Updated', block ? 'User blocked.' : 'User unblocked.', 'success');
+    });
+  }
+
+  deleteUser(id: string) {
+    Swal.fire({
+      title: 'Delete user?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.deleteUser(id).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Deleted', 'User removed from the platform.', 'success');
+        });
+      }
+    });
+  }
   openImage(base64Data: string | undefined) {
   if (!base64Data) {
     Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
