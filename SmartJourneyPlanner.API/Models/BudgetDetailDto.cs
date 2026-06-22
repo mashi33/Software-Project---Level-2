@@ -15,7 +15,11 @@ namespace SmartJourneyPlanner.API.Models
         public string TripName { get; set; } = string.Empty;
         public string TripId { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
-        public decimal ExpectedBudget { get; set; }
+        public string DepartFrom { get; set; } = string.Empty;
+        public string Destination { get; set; } = string.Empty;
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public decimal BudgetLimit { get; set; }
         public decimal TotalSpent { get; set; }
         public decimal RemainingBudget { get; set; }
         public double UsagePercent { get; set; }
@@ -26,23 +30,15 @@ namespace SmartJourneyPlanner.API.Models
 
     public class AdminBudgetSummaryDto
     {
-        public decimal TotalTrackedSpend { get; set; }
-        public int TotalBudgetsTracked { get; set; }
-        public decimal TotalBudgetLimit { get; set; }
+        public int TotalTrips { get; set; }
         public int OverBudgetTrips { get; set; }
-        public decimal AverageSpendPerTrip { get; set; }
-    }
-
-    public class AdminCategorySpendDto
-    {
-        public string Category { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
+        public int OnTrackTrips { get; set; }
+        public int NearLimitTrips { get; set; }
     }
 
     public class AdminBudgetOverviewDto
     {
         public AdminBudgetSummaryDto Summary { get; set; } = new();
         public List<AdminBudgetTripDto> Trips { get; set; } = new();
-        public List<AdminCategorySpendDto> CategoryBreakdown { get; set; } = new();
     }
 }

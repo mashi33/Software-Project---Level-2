@@ -46,17 +46,29 @@ namespace SmartJourneyPlanner.API.Controllers
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v => 
                 v.Status == "Pending" || v.Status == "Pending Approval");
 
-        var budgetsCollection = _database.GetCollection<TripBudget>("Budgets");
-        var totalBudgets = await budgetsCollection.CountDocumentsAsync(_ => true);
-        var allBudgets = await budgetsCollection.Find(_ => true).ToListAsync();
-        var totalExpenditure = allBudgets.Sum(b => b.TotalSpent);
+        var tripsCollection = _database.GetCollection<Trip>("Trips");
+        var totalTrips = await tripsCollection.CountDocumentsAsync(_ => true);
+
+        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
+        var budgetByTripId = budgets.ToDictionary(b => b.TripId, b => b);
+        var allTrips = await tripsCollection.Find(_ => true).ToListAsync();
+
+        var overBudgetTrips = 0;
+        foreach (var trip in allTrips)
+        {
+            if (string.IsNullOrWhiteSpace(trip.BudgetLimit)) continue;
+            if (!double.TryParse(trip.BudgetLimit, out var limit) || limit <= 0) continue;
+
+            budgetByTripId.TryGetValue(trip.Id ?? string.Empty, out var budget);
+            if ((budget?.TotalSpent ?? 0) > limit) overBudgetTrips++;
+        }
 
             return Ok(new 
             { 
                 pendingProvidersCount = pendingVehicles, 
                 platformUsers = totalUsers,
-                totalBudgets = totalBudgets,
-                totalExpenditure = totalExpenditure
+                totalTrips = totalTrips,
+                overBudgetTrips = overBudgetTrips
             });
         }
 
@@ -157,58 +169,66 @@ public async Task<IActionResult> GetDetailedBudget()
 {
     try
     {
-        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
         var tripsCollection = _database.GetCollection<Trip>("Trips");
+        var trips = await tripsCollection.Find(_ => true).ToListAsync();
+        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
+        var budgetByTripId = budgets.ToDictionary(b => b.TripId, b => b);
 
         var tripDtos = new List<AdminBudgetTripDto>();
-        var categoryTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-        double totalSpend = 0;
-        double totalLimit = 0;
         var overBudgetCount = 0;
+        var onTrackCount = 0;
+        var nearLimitCount = 0;
 
-        foreach (var budget in budgets)
+        foreach (var trip in trips)
         {
-            var trip = await tripsCollection.Find(t => t.Id == budget.TripId).FirstOrDefaultAsync();
+            budgetByTripId.TryGetValue(trip.Id ?? string.Empty, out var budget);
 
             double budgetLimit = 0;
-            if (trip != null && !string.IsNullOrWhiteSpace(trip.BudgetLimit))
+            if (!string.IsNullOrWhiteSpace(trip.BudgetLimit))
             {
                 double.TryParse(trip.BudgetLimit, out budgetLimit);
             }
 
-            var spent = budget.TotalSpent;
-            totalSpend += spent;
-            if (budgetLimit > 0) totalLimit += budgetLimit;
-            if (budgetLimit > 0 && spent > budgetLimit) overBudgetCount++;
+            var spent = budget?.TotalSpent ?? 0;
+            var createdBy = trip.CreatorEmail ?? trip.CreatedBy ?? "Unknown";
 
-            foreach (var expense in budget.Expenses ?? new List<Expense>())
+            string status;
+            if (budgetLimit <= 0)
             {
-                var category = string.IsNullOrWhiteSpace(expense.Category) ? "General" : expense.Category;
-                var amount = (double)expense.Amount;
-                categoryTotals[category] = categoryTotals.GetValueOrDefault(category) + amount;
+                status = "No Limit Set";
             }
-
-            var createdBy = trip?.CreatorEmail ?? trip?.CreatedBy ?? "Unknown";
-            var status = budgetLimit <= 0
-                ? "No Limit"
-                : spent > budgetLimit
-                    ? "Over Budget"
-                    : spent >= budgetLimit * 0.85
-                        ? "Near Limit"
-                        : "On Track";
+            else if (spent > budgetLimit)
+            {
+                status = "Over Budget";
+                overBudgetCount++;
+            }
+            else if (spent >= budgetLimit * 0.85)
+            {
+                status = "Near Limit";
+                nearLimitCount++;
+            }
+            else
+            {
+                status = "On Track";
+                onTrackCount++;
+            }
 
             tripDtos.Add(new AdminBudgetTripDto
             {
-                TripName = trip?.TripName ?? "Unknown Trip",
-                TripId = budget.TripId,
+                TripName = trip.TripName,
+                TripId = trip.Id ?? string.Empty,
                 CreatedBy = createdBy,
-                ExpectedBudget = (decimal)budgetLimit,
+                DepartFrom = trip.DepartFrom,
+                Destination = trip.Destination,
+                StartDate = trip.StartDate,
+                EndDate = trip.EndDate,
+                BudgetLimit = (decimal)budgetLimit,
                 TotalSpent = (decimal)spent,
                 RemainingBudget = budgetLimit > 0 ? (decimal)(budgetLimit - spent) : 0,
                 UsagePercent = budgetLimit > 0 ? Math.Round(spent / budgetLimit * 100, 1) : 0,
-                ExpenseCount = budget.Expenses?.Count ?? 0,
+                ExpenseCount = budget?.Expenses?.Count ?? 0,
                 Status = status,
-                Expenses = (budget.Expenses ?? new List<Expense>())
+                Expenses = (budget?.Expenses ?? new List<Expense>())
                     .Select(e => new AdminExpenseLineDto
                     {
                         Id = e.Id,
@@ -227,16 +247,15 @@ public async Task<IActionResult> GetDetailedBudget()
         {
             Summary = new AdminBudgetSummaryDto
             {
-                TotalTrackedSpend = (decimal)totalSpend,
-                TotalBudgetsTracked = budgets.Count,
-                TotalBudgetLimit = (decimal)totalLimit,
+                TotalTrips = trips.Count,
                 OverBudgetTrips = overBudgetCount,
-                AverageSpendPerTrip = budgets.Count > 0 ? (decimal)(totalSpend / budgets.Count) : 0
+                OnTrackTrips = onTrackCount,
+                NearLimitTrips = nearLimitCount
             },
-            Trips = tripDtos.OrderByDescending(t => t.TotalSpent).ToList(),
-            CategoryBreakdown = categoryTotals
-                .Select(kv => new AdminCategorySpendDto { Category = kv.Key, Amount = (decimal)kv.Value })
-                .OrderByDescending(c => c.Amount)
+            Trips = tripDtos
+                .OrderByDescending(t => t.Status == "Over Budget")
+                .ThenByDescending(t => t.UsagePercent)
+                .ThenBy(t => t.TripName)
                 .ToList()
         };
 

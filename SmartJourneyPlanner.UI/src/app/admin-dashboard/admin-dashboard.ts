@@ -31,13 +31,11 @@ export class AdminDashboardComponent implements OnInit {
   expenses: any[] = [];
   budgetTrips: any[] = [];
   costSummary: any = {
-    totalTrackedSpend: 0,
-    totalBudgetsTracked: 0,
-    totalBudgetLimit: 0,
+    totalTrips: 0,
     overBudgetTrips: 0,
-    averageSpendPerTrip: 0
+    onTrackTrips: 0,
+    nearLimitTrips: 0
   };
-  categoryBreakdown: any[] = [];
   costSearch = '';
   costStatusFilter = 'all';
   selectedBudgetTrip: any = null;
@@ -68,7 +66,8 @@ export class AdminDashboardComponent implements OnInit {
       const query = this.costSearch.trim().toLowerCase();
       const tripName = (trip.tripName || trip.TripName || '').toLowerCase();
       const createdBy = (trip.createdBy || trip.CreatedBy || '').toLowerCase();
-      const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query);
+      const route = this.getTripRoute(trip).toLowerCase();
+      const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query) || route.includes(query);
 
       const status = (trip.status || trip.Status || '').toLowerCase();
       const filter = this.costStatusFilter.toLowerCase();
@@ -83,7 +82,24 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getTripBudget(trip: any): number {
-    return trip.expectedBudget ?? trip.ExpectedBudget ?? 0;
+    return trip.budgetLimit ?? trip.BudgetLimit ?? trip.expectedBudget ?? trip.ExpectedBudget ?? 0;
+  }
+
+  getTripRoute(trip: any): string {
+    const from = trip.departFrom || trip.DepartFrom || '';
+    const to = trip.destination || trip.Destination || '';
+    if (from && to) return `${from} → ${to}`;
+    return from || to || '—';
+  }
+
+  getTripDates(trip: any): string {
+    const start = trip.startDate || trip.StartDate;
+    const end = trip.endDate || trip.EndDate;
+    if (!start) return '—';
+    const startStr = new Date(start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (!end) return startStr;
+    const endStr = new Date(end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${startStr} – ${endStr}`;
   }
 
   getTripRemaining(trip: any): number {
@@ -98,17 +114,11 @@ export class AdminDashboardComponent implements OnInit {
     return trip.status || trip.Status || 'On Track';
   }
 
-  getCategoryPercent(category: any): number {
-    const total = this.costSummary.totalTrackedSpend || 0;
-    const amount = category.amount ?? category.Amount ?? 0;
-    return total > 0 ? (amount / total) * 100 : 0;
-  }
-
   getBudgetStatusClass(status: string): string {
     switch (status) {
       case 'Over Budget': return 'cost-status-over';
       case 'Near Limit': return 'cost-status-near';
-      case 'No Limit': return 'cost-status-none';
+      case 'No Limit Set': return 'cost-status-none';
       default: return 'cost-status-ok';
     }
   }
@@ -124,10 +134,6 @@ export class AdminDashboardComponent implements OnInit {
 
   viewBudgetTripDetails(trip: any) {
     this.selectedBudgetTrip = trip;
-  }
-
-  get filteredTripsTotalSpend(): number {
-    return this.filteredBudgetTrips.reduce((sum, trip) => sum + this.getTripSpent(trip), 0);
   }
 
   // View switchers
@@ -256,19 +262,14 @@ fetchExpenseList() {
     next: (data: any) => {
       const summary = data?.summary || data?.Summary || {};
       this.costSummary = {
-        totalTrackedSpend: summary.totalTrackedSpend ?? summary.TotalTrackedSpend ?? 0,
-        totalBudgetsTracked: summary.totalBudgetsTracked ?? summary.TotalBudgetsTracked ?? 0,
-        totalBudgetLimit: summary.totalBudgetLimit ?? summary.TotalBudgetLimit ?? 0,
+        totalTrips: summary.totalTrips ?? summary.TotalTrips ?? 0,
         overBudgetTrips: summary.overBudgetTrips ?? summary.OverBudgetTrips ?? 0,
-        averageSpendPerTrip: summary.averageSpendPerTrip ?? summary.AverageSpendPerTrip ?? 0
+        onTrackTrips: summary.onTrackTrips ?? summary.OnTrackTrips ?? 0,
+        nearLimitTrips: summary.nearLimitTrips ?? summary.NearLimitTrips ?? 0
       };
 
-      this.budgetTrips = data?.trips || data?.Trips || (Array.isArray(data) ? data : []);
-      this.categoryBreakdown = data?.categoryBreakdown || data?.CategoryBreakdown || [];
+      this.budgetTrips = data?.trips || data?.Trips || [];
       this.expenses = this.budgetTrips;
-
-      this.stats.totalExpenditure = this.costSummary.totalTrackedSpend;
-      this.stats.totalBudgets = this.costSummary.totalBudgetsTracked;
       this.costsLoading = false;
     },
     error: (err) => {
