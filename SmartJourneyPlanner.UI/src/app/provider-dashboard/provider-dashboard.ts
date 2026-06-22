@@ -39,34 +39,29 @@ export class ProviderDashboardComponent implements OnInit {
   }
 
   loadAll() {
-    // 1. Leave your stats method completely untouched
     this.vehicleService.getStats().subscribe(data => this.stats = data);
-    
-    this.bookingService.getProviderBookings(this.providerId).subscribe(data => {
-    // 2. 🔑 THE FRONTEND UI PROTECTION FILTER
+
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
-        // Drop any vehicle whose status matches "Pending Approval" right at the UI gateway
         const approvedFleetOnly = data.filter((vehicle: any) => {
           const currentStatus = vehicle.Status || vehicle.status || '';
           return currentStatus.trim() !== 'Pending Approval';
         });
 
-        // Map the filtered array onto your component template state structure
         this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
           ...vehicle,
-          id: vehicle.id || vehicle._id // Maps MongoDB native _id onto standard id property
+          id: vehicle.id || vehicle._id
         }));
       } else {
         this.vehicles = [];
       }
-      console.log("📊 Strictly Filtered Approved Vehicles loaded into Dashboard UI:", this.vehicles);
     });
-    
-    // 3. Leave your bookings method completely untouched
-    this.bookingService.getProviderBookings('p1').subscribe(data => {
-      this.bookings = data;
-    });
+
+    if (this.providerId) {
+      this.bookingService.getProviderBookings(this.providerId).subscribe(data => {
+        this.bookings = data;
+      });
+    }
   }
 
   toggleAvailability(vehicle: any) {

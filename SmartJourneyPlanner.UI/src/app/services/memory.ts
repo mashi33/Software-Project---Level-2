@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { TripMemory } from '../models/memory.model';
@@ -7,9 +7,7 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MemoryService {
-  private apiUrl = `${environment.apiUrl}/memories`;
-  constructor(private http: HttpClient) {}
-  private readonly apiUrl = 'http://localhost:5233/api/memories';
+  private readonly apiUrl = `${environment.apiUrl}/memories`;
   private readonly requestTimeout = 5000;
 
   constructor(private readonly http: HttpClient) {}
@@ -22,17 +20,15 @@ export class MemoryService {
     return this.http.get<{ count: number }>(`${this.apiUrl}/user/${userId}/count`);
   }
 
-getPublicMemories(): Observable<TripMemory[]> {
+  getPublicMemories(): Observable<TripMemory[]> {
     return this.http.get<TripMemory[]>(this.apiUrl).pipe(
       timeout(this.requestTimeout)
     );
   }
 
-  // Inside MemoryService class
-public getAccessibleTrips(): Observable<any[]> {
-  // Replace the URL with your actual endpoint
-  return this.http.get<any[]>(`${this.apiUrl}/trips`); //?????????????????????????
-}
+  getAccessibleTrips(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/trips`);
+  }
 
   addMemory(memory: TripMemory): Observable<TripMemory> {
     return this.http.post<TripMemory>(this.apiUrl, memory).pipe(

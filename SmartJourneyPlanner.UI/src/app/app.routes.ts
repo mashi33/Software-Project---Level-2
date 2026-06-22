@@ -81,7 +81,13 @@ export const routes: Routes = [
   },
 
   // Admin Control Center
-  { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
+  {
+    path: 'admin-dashboard',
+    component: AdminDashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { expectedRoles: ['Admin'] }
+  },
+  { path: 'admin-panel', redirectTo: 'admin-dashboard', pathMatch: 'full' },
 
   // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
   {

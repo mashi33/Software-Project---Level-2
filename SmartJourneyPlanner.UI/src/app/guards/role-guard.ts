@@ -8,10 +8,10 @@ export const roleGuard: CanActivateFn = (route, state) => {
   
   //get expected roles from route data
   const expectedRoles = route.data['expectedRoles'] as Array<string>;
-  const userRole = authService.getUserSystemType();
+  const userRole = authService.getUserRole();
+  const userType = authService.getUserSystemType();
 
-  // check if user role is in expected roles
-  if (userRole && expectedRoles.includes(userRole)) {
+  if (expectedRoles.some(r => r === userRole || r === userType)) {
     return true;
   } else {
     alert('Unauthorized Access! You do not have permission to view this page.');

@@ -36,13 +36,9 @@ export class TripSummaryComponent implements OnInit {
 // =========================
 
 summaryWeather: any = null;
-
 summarySuggestion: any = null;
-
 forecastDays: any[] = [];
 
-  summaryWeather: any = null;
-  summarySuggestion: any = null;
   loadingWeather = false;
   isLastYearWeather = false;
 

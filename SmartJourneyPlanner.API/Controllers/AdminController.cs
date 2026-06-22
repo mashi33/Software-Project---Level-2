@@ -7,6 +7,8 @@ using SmartJourneyPlanner.API.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
+using MongoDB.Bson; 
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -19,14 +21,17 @@ namespace SmartJourneyPlanner.API.Controllers
     {
         private readonly IMongoCollection<User> _userCollection;
         private readonly IMongoCollection<TransportVehicle> _vehicleCollection;
+        private readonly IMongoCollection<TripMemory> _memoryCollection;
+        private readonly IMongoDatabase _database;
+        private readonly UserBlockService _userBlockService;
 
-        public AdminController(IMongoClient mongoClient)
+        public AdminController(IMongoClient mongoClient, UserBlockService userBlockService)
         {
-            // using direct mongoClient here to save bit of time
-            // instead of making a whole new service just for admin tasks
-            var database = mongoClient.GetDatabase("SmartJourneyDb");
-            _userCollection = database.GetCollection<User>("Users");
-            _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
+            _database = mongoClient.GetDatabase("SmartJourneyDb");
+            _userCollection = _database.GetCollection<User>("Users");
+            _vehicleCollection = _database.GetCollection<TransportVehicle>("TransportVehicles");
+            _memoryCollection = _database.GetCollection<TripMemory>("TripMemories");
+            _userBlockService = userBlockService;
         }
 
         // NEW DASHBOARD METRICS GATEWAY 
@@ -42,10 +47,29 @@ namespace SmartJourneyPlanner.API.Controllers
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v => 
                 v.Status == "Pending" || v.Status == "Pending Approval");
 
+        var tripsCollection = _database.GetCollection<Trip>("Trips");
+        var totalTrips = await tripsCollection.CountDocumentsAsync(_ => true);
+
+        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
+        var budgetByTripId = budgets.ToDictionary(b => b.TripId, b => b);
+        var allTrips = await tripsCollection.Find(_ => true).ToListAsync();
+
+        var overBudgetTrips = 0;
+        foreach (var trip in allTrips)
+        {
+            if (string.IsNullOrWhiteSpace(trip.BudgetLimit)) continue;
+            if (!double.TryParse(trip.BudgetLimit, out var limit) || limit <= 0) continue;
+
+            budgetByTripId.TryGetValue(trip.Id ?? string.Empty, out var budget);
+            if ((budget?.TotalSpent ?? 0) > limit) overBudgetTrips++;
+        }
+
             return Ok(new 
             { 
                 pendingProvidersCount = pendingVehicles, 
-                platformUsers = totalUsers 
+                platformUsers = totalUsers,
+                totalTrips = totalTrips,
+                overBudgetTrips = overBudgetTrips
             });
         }
 
@@ -54,9 +78,55 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpGet("all-users")]
         public async Task<IActionResult> GetAllUsers()
         {
+            await _userBlockService.ExpireTemporaryBlocksAsync();
             var users = await _userCollection.Find(_ => true).ToListAsync();
             return Ok(users);
         }
+
+[HttpGet("all-vehicles-detailed")]
+public async Task<IActionResult> GetAllVehiclesDetailed()
+{
+    var vehicles = await _vehicleCollection.Find(_ => true).ToListAsync();
+    return Ok(vehicles);
+}
+        [HttpGet("all-memories")]
+        public async Task<IActionResult> GetAllMemories()
+        {
+            // ඔබේ database එකේ memory collection එකේ නම මෙතනට දෙන්න
+            var memories = await _memoryCollection.Find(_ => true).ToListAsync();
+            return Ok(memories);
+        }
+
+        [HttpDelete("delete-memory/{id}")]
+public async Task<IActionResult> DeleteMemory(string id)
+{
+    try 
+    {
+        // 1. Convert the string ID to a MongoDB ObjectId
+        var objectId = new ObjectId(id);
+
+        // 2. Filter using the ObjectId
+        var filter = Builders<TripMemory>.Filter.Eq(m => m.Id, id); 
+
+        // Note: If your model uses string Id but maps to BsonType.ObjectId, 
+        // the filter above is usually correct. If it still fails, use:
+        // var filter = Builders<TripMemory>.Filter.Eq("_id", objectId);
+
+        var result = await _memoryCollection.DeleteOneAsync(filter);
+        
+        if (result.DeletedCount == 0)
+        {
+            return NotFound(new { message = "Memory not found in database." });
+        }
+        
+        return Ok(new { message = "Memory permanently removed." });
+    }
+    catch (Exception ex)
+    {
+        // This catches cases where the ID format is invalid
+        return BadRequest(new { message = "Invalid ID format.", error = ex.Message });
+    }
+}
 
         [HttpPut("promote-user/{id}")]
         public async Task<IActionResult> PromoteUser(string id, [FromBody] string newRole)
@@ -71,14 +141,54 @@ namespace SmartJourneyPlanner.API.Controllers
             return result.MatchedCount == 0 ? NotFound() : Ok(new { message = "Role updated" });
         }
 
+        [HttpPut("block-user/{id}")]
+        public async Task<IActionResult> BlockUser(string id, [FromBody] BlockUserRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.BlockType))
+                return BadRequest(new { message = "Block type is required." });
+
+            try
+            {
+                User? user = request.BlockType.Equals("Permanent", StringComparison.OrdinalIgnoreCase)
+                    ? await _userBlockService.BlockUserPermanentAsync(id)
+                    : request.BlockType.Equals("Temporary", StringComparison.OrdinalIgnoreCase)
+                        ? await _userBlockService.BlockUserTemporaryAsync(id)
+                        : null;
+
+                if (user == null) return NotFound(new { message = "User not found." });
+
+                return Ok(new
+                {
+                    message = request.BlockType.Equals("Permanent", StringComparison.OrdinalIgnoreCase)
+                        ? "User permanently blocked."
+                        : "User blocked for 2 weeks.",
+                    user
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("unblock-user/{id}")]
+        public async Task<IActionResult> UnblockUser(string id)
+        {
+            var user = await _userBlockService.UnblockUserAsync(id);
+            return user == null
+                ? NotFound(new { message = "User not found." })
+                : Ok(new { message = "User unblocked successfully.", user });
+        }
+
         [HttpPut("toggle-block/{id}")]
         public async Task<IActionResult> ToggleBlock(string id, [FromBody] BlockRequest request)
         {
-            var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            var update = Builders<User>.Update.Set(u => u.IsBlocked, request.IsBlocked);
-            
-            await _userCollection.UpdateOneAsync(filter, update);
-            return Ok(new { message = "Status updated" });
+            if (request.IsBlocked)
+            {
+                return await BlockUser(id, new BlockUserRequest { BlockType = "Permanent" });
+            }
+
+            return await UnblockUser(id);
         }
 
         [HttpDelete("delete-user/{id}")]
@@ -88,6 +198,116 @@ namespace SmartJourneyPlanner.API.Controllers
             return result.DeletedCount == 0 ? NotFound() : Ok(new { message = "User deleted" });
         }
 
+        // AdminController.cs තුළ
+[HttpGet("all-expenses")]
+public async Task<IActionResult> GetAllExpenses()
+{
+    var expenses = await _database.GetCollection<Expense>("Expenses").Find(_ => true).ToListAsync();
+    return Ok(expenses);
+}
+
+[HttpGet("budget-details")]
+public async Task<IActionResult> GetDetailedBudget()
+{
+    try
+    {
+        var tripsCollection = _database.GetCollection<Trip>("Trips");
+        var trips = await tripsCollection.Find(_ => true).ToListAsync();
+        var budgets = await _database.GetCollection<TripBudget>("Budgets").Find(_ => true).ToListAsync();
+        var budgetByTripId = budgets.ToDictionary(b => b.TripId, b => b);
+
+        var tripDtos = new List<AdminBudgetTripDto>();
+        var overBudgetCount = 0;
+        var onTrackCount = 0;
+        var nearLimitCount = 0;
+
+        foreach (var trip in trips)
+        {
+            budgetByTripId.TryGetValue(trip.Id ?? string.Empty, out var budget);
+
+            double budgetLimit = 0;
+            if (!string.IsNullOrWhiteSpace(trip.BudgetLimit))
+            {
+                double.TryParse(trip.BudgetLimit, out budgetLimit);
+            }
+
+            var spent = budget?.TotalSpent ?? 0;
+            var createdBy = trip.CreatorEmail ?? trip.CreatedBy ?? "Unknown";
+
+            string status;
+            if (budgetLimit <= 0)
+            {
+                status = "No Limit Set";
+            }
+            else if (spent > budgetLimit)
+            {
+                status = "Over Budget";
+                overBudgetCount++;
+            }
+            else if (spent >= budgetLimit * 0.85)
+            {
+                status = "Near Limit";
+                nearLimitCount++;
+            }
+            else
+            {
+                status = "On Track";
+                onTrackCount++;
+            }
+
+            tripDtos.Add(new AdminBudgetTripDto
+            {
+                TripName = trip.TripName,
+                TripId = trip.Id ?? string.Empty,
+                CreatedBy = createdBy,
+                DepartFrom = trip.DepartFrom,
+                Destination = trip.Destination,
+                StartDate = trip.StartDate,
+                EndDate = trip.EndDate,
+                BudgetLimit = (decimal)budgetLimit,
+                TotalSpent = (decimal)spent,
+                RemainingBudget = budgetLimit > 0 ? (decimal)(budgetLimit - spent) : 0,
+                UsagePercent = budgetLimit > 0 ? Math.Round(spent / budgetLimit * 100, 1) : 0,
+                ExpenseCount = budget?.Expenses?.Count ?? 0,
+                Status = status,
+                Expenses = (budget?.Expenses ?? new List<Expense>())
+                    .Select(e => new AdminExpenseLineDto
+                    {
+                        Id = e.Id,
+                        Description = e.Description,
+                        Category = e.Category,
+                        Amount = e.Amount,
+                        Date = e.Date,
+                        AddedBy = e.AddedBy
+                    })
+                    .OrderByDescending(e => e.Date)
+                    .ToList()
+            });
+        }
+
+        var overview = new AdminBudgetOverviewDto
+        {
+            Summary = new AdminBudgetSummaryDto
+            {
+                TotalTrips = trips.Count,
+                OverBudgetTrips = overBudgetCount,
+                OnTrackTrips = onTrackCount,
+                NearLimitTrips = nearLimitCount
+            },
+            Trips = tripDtos
+                .OrderByDescending(t => t.Status == "Over Budget")
+                .ThenByDescending(t => t.UsagePercent)
+                .ThenBy(t => t.TripName)
+                .ToList()
+        };
+
+        return Ok(overview);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = ex.Message });
+    }
+}
         // MANAGE PROVIDERS         
         // Uses a dual-filter condition array lookup matching both "Pending" and "Pending Approval"
 
@@ -133,5 +353,10 @@ namespace SmartJourneyPlanner.API.Controllers
     public class BlockRequest 
     { 
         public bool IsBlocked { get; set; } 
+    }
+
+    public class BlockUserRequest
+    {
+        public string BlockType { get; set; } = string.Empty;
     }
 }

@@ -1,23 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AdminDashboard } from './admin-dashboard';
+import { AdminDashboardComponent } from './admin-dashboard';
 
-describe('AdminDashboard', () => {
-  let component: AdminDashboard;
-  let fixture: ComponentFixture<AdminDashboard>;
+describe('AdminDashboardComponent', () => {
+  let component: AdminDashboardComponent;
+  let fixture: ComponentFixture<AdminDashboardComponent>;
 
-  /*use 'beforeEach' to reset the testing environment before every single test case.
-   This ensures that if one test fails or modifies the data, it doesn't break the others.*/
   beforeEach(async () => {
-
-    /*to simulate how the real browser handles the 
-     HTML templates and CSS styles during development.*/
     await TestBed.configureTestingModule({
-      imports: [AdminDashboard]
+      imports: [AdminDashboardComponent]
     })
     .compileComponents();
 
-    // It lets us trigger things like button clicks or check if a title is visible
-    fixture = TestBed.createComponent(AdminDashboard);
+    fixture = TestBed.createComponent(AdminDashboardComponent);
 
     //use this to check the state of variables like 'pendingProviders' or 'allUsers'
     component = fixture.componentInstance;

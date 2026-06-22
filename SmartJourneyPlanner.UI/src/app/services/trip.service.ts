@@ -53,6 +53,8 @@ export class TripService {
 
   deleteTrip(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
   getUserTrips(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/my-trips`);
   }
