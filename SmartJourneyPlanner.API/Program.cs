@@ -84,6 +84,7 @@ builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
+builder.Services.AddSingleton<AchievementService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();
 builder.Services.AddSingleton<SmartJourneyPlanner.API.Services.EmailService>();

@@ -170,6 +170,30 @@
   font-weight: 700;
 }
 
+.transport-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.transport-badge.eco-badge {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.eco-tag {
+  font-size: 0.75rem;
+  margin-left: 4px;
+}
+
 .summary-dropdown {
   max-width: 200px;
   border-radius: 8px;

@@ -101,6 +101,14 @@ export class TripSummaryComponent implements OnInit {
     return this.tripDetails?.description || this.tripDetails?.Description || 'No description available.';
   }
 
+  get transportMode(): string {
+    return this.tripDetails?.transportMode || this.tripDetails?.TransportMode || '';
+  }
+
+  get isEcoTransport(): boolean {
+    return ['Cycle', 'Public Transport', 'Walking'].includes(this.transportMode);
+  }
+
   get isOwner(): boolean {
     return this.userRole === 'owner';
   }

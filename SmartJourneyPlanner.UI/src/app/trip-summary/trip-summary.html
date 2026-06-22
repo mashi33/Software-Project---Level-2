@@ -161,6 +161,20 @@
               <span class="text-capitalize">{{ description }}</span>
             </div>
 
+            <div class="detail-item" *ngIf="transportMode">
+              <label>Transport Type</label>
+              <span class="transport-badge" [class.eco-badge]="isEcoTransport">
+                <i class="bi" [ngClass]="{
+                  'bi-bicycle': transportMode === 'Cycle',
+                  'bi-bus-front': transportMode === 'Public Transport',
+                  'bi-person-walking': transportMode === 'Walking',
+                  'bi-truck': transportMode === 'Transport Provider'
+                }"></i>
+                {{ transportMode }}
+                <span *ngIf="isEcoTransport" class="eco-tag">🌿 Eco</span>
+              </span>
+            </div>
+
             <div class="saved-places-section mt-4 pt-3 border-top">
               <h6 class="text-muted small fw-bold mb-3 text-uppercase">Saved Places</h6>
 

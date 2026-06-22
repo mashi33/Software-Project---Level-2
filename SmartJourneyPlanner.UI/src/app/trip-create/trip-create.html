@@ -110,6 +110,26 @@
               </div>
             </div>
 
+            <!-- Transport Mode -->
+            <div class="form-field-group">
+              <label>Transport Type <span class="required-star">*</span></label>
+              <div class="input-with-icon select-box-wrapper">
+                <i class="bi bi-signpost-split field-icon"></i>
+                <select formControlName="transportMode">
+                  <option value="" disabled selected>Select how you'll travel</option>
+                  <option *ngFor="let opt of transportOptions" [value]="opt.value">
+                    {{ opt.label }}{{ opt.eco ? ' 🌿' : '' }}
+                  </option>
+                </select>
+              </div>
+              <small class="field-hint" *ngIf="tripForm.get('transportMode')?.value === 'Transport Provider'">
+                After saving, you can browse and book vehicles from our transport providers.
+              </small>
+              <small class="field-hint eco-hint" *ngIf="['Cycle','Public Transport','Walking'].includes(tripForm.get('transportMode')?.value)">
+                🌿 Eco-friendly choice! Counts toward the Eco-Traveler badge.
+              </small>
+            </div>
+
             <!-- Description -->
             <div class="form-field-group">
               <label>Trip Description (Optional)</label>
