@@ -301,12 +301,15 @@
                   <h6 class="m-0 fw-bold text-dark">{{ startDate | date:'EEEE, MMM d' }}</h6>
                 </div>
                 <div class="current-temp-wrapper">
-                  <i class="weather-main-icon"
-                     [ngClass]="{
-                       'bi bi-cloud-rain-fill text-primary': summaryWeather?.condition === 'Rainy',
-                       'bi bi-brightness-high-fill text-warning': summaryWeather?.condition === 'Sunny',
-                       'bi bi-cloud-fill text-secondary': summaryWeather?.condition === 'Cloudy'
-                     }">
+                  <i
+                    class="weather-main-icon"
+                    [ngClass]="{
+                      'bi bi-cloud-rain-fill text-primary': summaryWeather?.condition === 'Rainy',
+                      'bi bi-brightness-high-fill text-warning':
+                        summaryWeather?.condition === 'Sunny',
+                      'bi bi-cloud-fill text-secondary': summaryWeather?.condition === 'Cloudy'
+                    }"
+                  >
                   </i>
                   <div class="temp-display">
                     <h1 class="temperature">

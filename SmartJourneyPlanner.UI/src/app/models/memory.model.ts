@@ -9,4 +9,15 @@ export interface TripMemory {
     startDate: Date;
     endDate: Date;
     isPublic: boolean;
+    tripId?: string; 
+  tripName?: string;
+    userId: string;
+    likeCount: number;       
+  likedByUsers: string[];
+  fullName?: string;
+}
+export interface LikeResponse {
+  id: string;
+  likeCount: number;
+  likedByUsers: string[];
 }

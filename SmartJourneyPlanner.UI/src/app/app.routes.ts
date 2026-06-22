@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
+//import { HomeComponent } from './home/home';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form';
+import { MemoriesWelcomeComponent } from './memory-welcome/welcome';
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { CommunityMapComponent } from './community-map/community-map';
 import { WeatherSuggestionComponent } from './weather/weather';
@@ -26,6 +28,9 @@ import { roleGuard } from './guards/role-guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
 import { ResetPasswordComponent } from './reset-password/reset-password';
 import { AchievementsComponent } from './achievements/achievements';
+import { HelpComponent } from './help/help';
+import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+
 
 export const routes: Routes = [
   //  PUBLIC ROUTES 
@@ -37,9 +42,11 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
 
   //  PROTECTED ROUTES 
+  //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
+  { path: 'memories-welcome', component: MemoriesWelcomeComponent, canActivate: [authGuard] },
   { path: 'memories', component: MemoriesMapComponent, canActivate: [authGuard] },
   { path: 'community', component: CommunityMapComponent, canActivate: [authGuard] },
   { path: 'weather', component: WeatherSuggestionComponent, canActivate: [authGuard] },
@@ -47,6 +54,8 @@ export const routes: Routes = [
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
   { path: 'achievements', component: AchievementsComponent, canActivate: [authGuard, roleGuard], data: { expectedRoles: ['Traveller', 'Traveler'] } },
+  { path: 'help', component: HelpComponent, canActivate: [authGuard] },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
@@ -74,7 +83,13 @@ export const routes: Routes = [
   },
 
   // Admin Control Center
-  { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
+  {
+    path: 'admin-dashboard',
+    component: AdminDashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { expectedRoles: ['Admin'] }
+  },
+  { path: 'admin-panel', redirectTo: 'admin-dashboard', pathMatch: 'full' },
 
   // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
   {

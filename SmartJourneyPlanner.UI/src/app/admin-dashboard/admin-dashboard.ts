@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
@@ -15,249 +16,474 @@ import Swal from 'sweetalert2';
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
+  private router = inject(Router);
+  private cd = inject(ChangeDetectorRef);
 
-  // System Data
   currentDate = new Date();
-  
-  // View Switcher
-  view: 'stats' | 'providers' | 'users' = 'stats';
-
-  // Data Lists
+  adminName = '';
+  view: 'stats' | 'providers' | 'memories' | 'users' | 'fleet-detailed' | 'costs' = 'stats';
+  stats: any = { totalExpenditure: 0 };
   pendingProviders: any[] = [];
   allUsers: any[] = [];
+  allMemories: any[] = []; 
   selectedProvider: any = null;
-  
-  // States
-  errorMessage: string = '';
+  allVehicles: any[] = [];
+  expenses: any[] = [];
+  budgetTrips: any[] = [];
+  costSummary: any = {
+    totalTrips: 0,
+    overBudgetTrips: 0,
+    onTrackTrips: 0,
+    nearLimitTrips: 0
+  };
+  costSearch = '';
+  costStatusFilter = 'all';
+  selectedBudgetTrip: any = null;
+  costsLoading = false;
 
   ngOnInit() {
+    this.adminName = this.authService.getUserName() || 'Admin';
     this.refreshDashboard();
+    this.fetchExpenseList();
   }
 
-  // DASHBOARD HOME & VIEW HANDLERS
-
-  onReviewNow() {
-    this.view = 'providers';
-    this.fetchPendingProviders();
+  getUserRole(user: any): string {
+    return user?.userType || user?.UserType || user?.role || 'Unknown';
   }
 
-  onManageLogins() {
-    this.view = 'users';
-    this.fetchAllUsers();
+  isUserBlocked(user: any): boolean {
+    return user?.isBlocked === true || user?.IsBlocked === true;
   }
 
-  /* DEDICED REFRESH LOGIC
-     Updates all counts and lists simultaneously */
-  refreshDashboard() {
-    this.errorMessage = '';
-    this.fetchPendingProviders();
-    this.fetchAllUsers();
-    
-    // Optional toast notification
-    Swal.fire({
-      title: 'Dashboard Refreshed',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      icon: 'success'
+  getBlockType(user: any): string {
+    return user?.blockType || user?.BlockType || '';
+  }
+
+  getBlockStatusLabel(user: any): string {
+    if (!this.isUserBlocked(user)) return 'Active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'Permanently Blocked';
+
+    if (blockType === 'Temporary') {
+      const until = user?.blockedUntil || user?.BlockedUntil;
+      if (until) {
+        const date = new Date(until).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        });
+        return `Blocked until ${date}`;
+      }
+      return 'Blocked (2 weeks)';
+    }
+
+    return 'Blocked';
+  }
+
+  getBlockStatusClass(user: any): string {
+    if (!this.isUserBlocked(user)) return 'status-active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'status-blocked-permanent';
+    if (blockType === 'Temporary') return 'status-blocked-temporary';
+    return 'bg-danger-subtle text-danger';
+  }
+
+  canManageBlock(user: any): boolean {
+    return this.getUserRole(user) !== 'Admin';
+  }
+
+  isVehicleBooked(vehicle: any): boolean {
+    const dates = vehicle?.bookedDates || vehicle?.BookedDates;
+    return Array.isArray(dates) && dates.length > 0;
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  get filteredBudgetTrips(): any[] {
+    return this.budgetTrips.filter(trip => {
+      const query = this.costSearch.trim().toLowerCase();
+      const tripName = (trip.tripName || trip.TripName || '').toLowerCase();
+      const createdBy = (trip.createdBy || trip.CreatedBy || '').toLowerCase();
+      const route = this.getTripRoute(trip).toLowerCase();
+      const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query) || route.includes(query);
+
+      const status = (trip.status || trip.Status || '').toLowerCase();
+      const filter = this.costStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      return matchesSearch && matchesStatus;
     });
   }
 
-  // DATA FETCHING
+  getTripSpent(trip: any): number {
+    return trip.totalSpent ?? trip.TotalSpent ?? 0;
+  }
 
-  fetchPendingProviders() {
-    this.adminService.getPendingProviders().subscribe({
-      next: (data: any[]) => {
-        this.pendingProviders = data;
-        this.errorMessage = '';
+  getTripBudget(trip: any): number {
+    return trip.budgetLimit ?? trip.BudgetLimit ?? trip.expectedBudget ?? trip.ExpectedBudget ?? 0;
+  }
+
+  getTripRoute(trip: any): string {
+    const from = trip.departFrom || trip.DepartFrom || '';
+    const to = trip.destination || trip.Destination || '';
+    if (from && to) return `${from} → ${to}`;
+    return from || to || '—';
+  }
+
+  getTripDates(trip: any): string {
+    const start = trip.startDate || trip.StartDate;
+    const end = trip.endDate || trip.EndDate;
+    if (!start) return '—';
+    const startStr = new Date(start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (!end) return startStr;
+    const endStr = new Date(end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${startStr} – ${endStr}`;
+  }
+
+  getTripRemaining(trip: any): number {
+    return trip.remainingBudget ?? trip.RemainingBudget ?? (this.getTripBudget(trip) - this.getTripSpent(trip));
+  }
+
+  getTripUsage(trip: any): number {
+    return trip.usagePercent ?? trip.UsagePercent ?? 0;
+  }
+
+  getTripStatus(trip: any): string {
+    return trip.status || trip.Status || 'On Track';
+  }
+
+  getBudgetStatusClass(status: string): string {
+    switch (status) {
+      case 'Over Budget': return 'cost-status-over';
+      case 'Near Limit': return 'cost-status-near';
+      case 'No Limit Set': return 'cost-status-none';
+      default: return 'cost-status-ok';
+    }
+  }
+
+  getCategoryClass(category: string): string {
+    const key = (category || 'general').toLowerCase();
+    if (key.includes('meal') || key.includes('food')) return 'cat-meals';
+    if (key.includes('transport')) return 'cat-transport';
+    if (key.includes('stay') || key.includes('accommodation') || key.includes('lodg')) return 'cat-stay';
+    if (key.includes('shop')) return 'cat-shopping';
+    return 'cat-general';
+  }
+
+  viewBudgetTripDetails(trip: any) {
+    this.selectedBudgetTrip = trip;
+  }
+
+  // View switchers
+  onReviewProviders() { this.view = 'providers'; this.fetchPendingProviders(); }
+  onReviewMemories() { this.view = 'memories'; this.fetchPlatformMemories(); }
+  onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
+
+ refreshDashboard() {
+  // 1. Stats ලබාගැනීම (නිවැරදි subscribe ක්‍රමය)
+  this.adminService.getDashboardStats().subscribe({
+    next: (data) => {
+      console.log("Stats Response:", data); // මෙතන totalExpenditure තියෙනවාද?
+      this.stats = data;
+    },
+    error: (err) => console.error("Error loading stats:", err)
+  });
+
+  // 2. අනෙකුත් දත්ත ලබාගැනීම (මෙම ශ්‍රිත ඇතුළේ refreshDashboard නැවත නොඅමතන්න!)
+  this.fetchPendingProviders();
+  this.fetchAllUsers();
+  this.fetchPlatformMemories();
+  this.fetchAllVehicles();
+}
+
+  fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
+  fetchAllUsers() { this.adminService.getAllUsers().subscribe(data => this.allUsers = data); }
+
+  // memory පැටවීමේදී වෙනත් දත්ත සමග පැටලෙන්නේ නැති බවට සහතික වන්න
+fetchPlatformMemories() {
+  this.adminService.getAllUploadedMemories().subscribe({
+    next: (data) => {
+      this.allMemories = data;
+    },
+    error: (err) => console.error("Memory Load Error:", err)
+  });
+}
+
+refreshCurrentView() {
+  // 1. කුඩා Loading alert එකක් පෙන්වන්න (Optional)
+  Swal.fire({
+    title: 'Syncing Data...',
+    text: 'Please wait while we update your current view.',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  // 2. අදාළ view එකේ දත්ත refresh කරන්න
+  switch (this.view) {
+    case 'stats':
+      this.refreshDashboard();
+      break;
+    case 'providers':
+      this.fetchPendingProviders();
+      break;
+    case 'memories':
+      this.fetchPlatformMemories();
+      break;
+    case 'users':
+      this.fetchAllUsers();
+      break;
+    case 'fleet-detailed':
+      this.fetchAllVehicles();
+      break;
+    case 'costs':
+      this.fetchExpenseList();
+      break;
+  }
+
+  // 3. Sync එක අවසන් වූ පසු සාර්ථක පණිවිඩය පෙන්වන්න
+  // (මෙය සරලව තත්පර 1කින් වසා දමන ලෙස සකසා ඇත)
+  setTimeout(() => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Sync Successful!',
+      text: 'Your current view is up to date.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }, 1000); // API එකෙන් දත්ත එන වේගය අනුව මෙය වෙනස් කළ හැක
+}
+  confirmApproval(provider: any) {
+  Swal.fire({
+    title: 'Approve Fleet Item?',
+    text: `Verify ${provider.vehicleClass}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
+}
+
+confirmReject(provider: any) {
+  Swal.fire({
+    title: 'Reject Request?',
+    text: `Decline ${provider.vehicleClass}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
+}
+
+  updateStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
+    this.adminService.updateProviderStatus(id, status).subscribe(() => {
+      this.selectedProvider = null;
+      this.refreshDashboard();
+      Swal.fire('Success', `Vehicle ${status}`, 'success');
+    });
+  }
+
+fetchAllVehicles() {
+  this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
+    this.allVehicles = data;
+  });
+}
+
+// Component එකේ දත්ත ලබාගන්නා ආකාරය
+fetchExpenseList() {
+  this.costsLoading = true;
+  this.adminService.getBudgetDetails().subscribe({
+    next: (data: any) => {
+      const summary = data?.summary || data?.Summary || {};
+      this.costSummary = {
+        totalTrips: summary.totalTrips ?? summary.TotalTrips ?? 0,
+        overBudgetTrips: summary.overBudgetTrips ?? summary.OverBudgetTrips ?? 0,
+        onTrackTrips: summary.onTrackTrips ?? summary.OnTrackTrips ?? 0,
+        nearLimitTrips: summary.nearLimitTrips ?? summary.NearLimitTrips ?? 0
+      };
+
+      this.budgetTrips = data?.trips || data?.Trips || [];
+      this.expenses = this.budgetTrips;
+      this.costsLoading = false;
+    },
+    error: (err) => {
+      console.error('Error loading budget details:', err);
+      this.costsLoading = false;
+    }
+  });
+}
+
+onReviewFleet() { 
+  this.view = 'fleet-detailed'; 
+  this.fetchAllVehicles(); 
+}
+
+  deleteMemory(id: string) {
+    // ඔබ අනිවාර්යයෙන්ම ID එකක් යවනවාදැයි මෙතන බලන්න
+    this.adminService.deleteMemoryPost(id).subscribe({
+      next: () => {
+        this.refreshDashboard();
+        Swal.fire('Deleted!', 'Memory post has been removed.', 'success');
       },
-      error: (err: any) => {
-        console.error("Fetch error:", err);
-        this.errorMessage = "Failed to load providers.";
+      error: (err) => {
+        console.error("Delete Error:", err); // Network tab එකේ එන Error එක මෙතනත් පේයි
       }
     });
   }
 
-  fetchAllUsers() {
-    this.adminService.getAllUsers().subscribe({
-      next: (data: any[]) => this.allUsers = data,
-      error: (err: any) => console.error("Could not load users", err)
-    });
-  }
+// වාහන සඳහා පමණක් භාවිතා කරන්න
+viewVehicleDetails(vehicle: any) {
+  console.log("Viewing Vehicle:", vehicle);
+  this.selectedProvider = vehicle; 
+}
 
-  // MANAGE PROVIDERS ACTIONS
+// Memory සඳහා පමණක් භාවිතා කරන්න
+viewMemoryDetails(memory: any) {
+  Swal.fire({
+    title: memory.title || 'Trip Memory',
+    html: `
+      <p style="text-align:left;margin-bottom:8px;"><strong>By:</strong> ${memory.fullName || 'Unknown'}</p>
+      <p style="text-align:left;margin-bottom:8px;"><strong>Location:</strong> ${memory.locationName || 'N/A'}</p>
+      <p style="text-align:left;margin-bottom:12px;">${memory.description || 'No description provided.'}</p>
+      ${memory.imageUrl ? `<img src="${memory.imageUrl}" style="max-width:100%;border-radius:12px;" />` : ''}
+    `,
+    width: 640,
+    confirmButtonText: 'Close',
+    confirmButtonColor: '#2563eb'
+  });
+}
 
-  /* Approves or Rejects a transport provider */
-  updateProviderStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
+viewExpenditureDetails() {
+  this.view = 'costs';
+  this.fetchExpenseList();
+}
 
-    if (!id) {
-      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
-      return;
-    }
-
+  changeRole(id: string, role: string) {
     Swal.fire({
-      title: `Confirm ${status}?`,
-      text: `Are you sure you want to set this provider to ${status}?`,
+      title: 'Update user role?',
+      text: `Promote this account to ${role}?`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
-      confirmButtonText: 'Yes, proceed',
-      cancelButtonText: 'No, cancel',
-      heightAuto: false,
-      focusConfirm: true,
-      returnFocus: true,
-      target: document.querySelector('.modal-card') as HTMLElement || document.body
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.updateProviderStatus(id, status).subscribe({
-          next: () => {
-            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-            this.selectedProvider = null; // Automatically close the detail modal
-            Swal.fire({
-              title: 'Success',
-              text: `Provider has been ${status}`,
-              icon: 'success',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          },
-          error: (err: any) => {
-            console.error("Update failed", err);
-            Swal.fire({
-              title: 'Error',
-              text: 'Update failed. Backend might be down.',
-              icon: 'error',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          }
+      confirmButtonColor: '#2563eb'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.updateUserRole(id, role).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Updated', 'User role changed successfully.', 'success');
         });
       }
     });
   }
 
-  /* Opens the detail modal for a specific provider and fetches full data */
-  viewDetails(provider: any) {
-    const id = provider._id || provider.id;
-    this.adminService.getProviderById(id).subscribe({
-      next: (fullData: any) => {
-        this.selectedProvider = fullData;
-      },
-      error: (err: any) => {
-        console.error("Could not fetch details", err);
-        Swal.fire({
-          title: 'Error',
-          text: 'Failed to load vehicle documents.',
-          icon: 'error',
-          heightAuto: false
-        });
-      }
-    });
-  }
-
-  // USER MANAGEMENT ACTIONS 
-
-  /* Promotes a regular user to an Admin role */
-  changeRole(userId: string, newRole: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
-    this.adminService.updateUserRole(userId, newRole).subscribe({
-      next: (res: any) => {
-        const user = this.allUsers.find(u => (u._id || u.id) === userId);
-        if (user) user.role = newRole;
-        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-      },
-      error: (err: any) => {
-        console.error("Server error:", err);
-        Swal.fire('Error', 'Role update failed.', 'error');
-      }
-    });
-  }
-
-  /* Toggle Block status for users */
-  toggleBlock(user: any) {
-    const userId = user.id || user._id;
-    const newBlockStatus = !user.isBlocked;
-    const action = newBlockStatus ? 'block' : 'unblock';
-
+  blockUserTemporary(user: any) {
+    const id = user.id || user._id;
     Swal.fire({
-      title: `Confirm ${action}?`,
-      text: `Do you want to ${action} ${user.fullName || user.name}?`,
+      title: 'Block for 2 weeks?',
+      text: 'This user will be suspended for 14 days and automatically unblocked afterward.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: newBlockStatus ? '#ef4444' : '#10b981',
-      confirmButtonText: `Yes, ${action}`,
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.toggleBlockUser(userId, newBlockStatus).subscribe({
+      confirmButtonColor: '#f59e0b',
+      confirmButtonText: 'Block 2 Weeks'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Temporary').subscribe({
           next: () => {
-            user.isBlocked = newBlockStatus;
-            Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User suspended for 2 weeks.', 'success');
           },
-          error: (err) => console.error("Block/Unblock failed:", err)
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
         });
       }
     });
   }
 
-  /* Permanently deletes a user */
-  deleteUser(userId: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
+  blockUserPermanent(user: any) {
+    const id = user.id || user._id;
     Swal.fire({
-      title: 'Are you sure?',
-      text: "This user will be permanently removed from the system!",
+      title: 'Permanently block user?',
+      text: 'This account will stay suspended until you manually unblock it.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete!',
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.deleteUser(userId).subscribe({
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Block Permanently'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Permanent').subscribe({
           next: () => {
-            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
-            Swal.fire({
-              title: 'Deleted!',
-              text: 'User has been removed.',
-              icon: 'success',
-              heightAuto: false
-            });
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User permanently suspended.', 'success');
           },
-          error: (err) => {
-            console.error("Delete failed:", err);
-            Swal.fire('Error', 'Failed to delete user.', 'error');
-          }
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
         });
       }
     });
   }
 
-  // DOCUMENT UTILITIES
+  unblockUserAccount(user: any) {
+    const id = user.id || user._id;
+    Swal.fire({
+      title: 'Unblock user?',
+      text: 'This will restore full access to the account immediately.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      confirmButtonText: 'Unblock'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.unblockUser(id).subscribe({
+          next: () => {
+            this.fetchAllUsers();
+            Swal.fire('Unblocked', 'User access has been restored.', 'success');
+          },
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not unblock user.', 'error')
+        });
+      }
+    });
+  }
 
+  deleteUser(id: string) {
+    Swal.fire({
+      title: 'Delete user?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.deleteUser(id).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Deleted', 'User removed from the platform.', 'success');
+        });
+      }
+    });
+  }
   openImage(base64Data: string | undefined) {
-    if (!base64Data) {
-      Swal.fire({ title: 'Error', text: 'No document found.', icon: 'error', heightAuto: false });
-      return;
-    }
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(`
-        <title>Document Viewer</title>
-        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
-          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+  if (!base64Data) {
+    Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
+    return;
+  }
+  
+  // නව වින්ඩෝ එකක් ඇරලා image එක ඒකේ පෙන්නන්න
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(`
+      <html>
+        <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#333;">
+          <img src="${base64Data}" style="max-width:100%; max-height:100vh; border: 5px solid #fff;">
         </body>
-      `);
-    }
+      </html>
+    `);
+  } else {
+    Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
   }
 }
+
+}
+

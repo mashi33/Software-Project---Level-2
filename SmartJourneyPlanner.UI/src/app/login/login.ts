@@ -136,12 +136,16 @@ export class LoginComponent implements OnInit {
           const currentUserType =
             this.authService.getUserSystemType();
 
+          // Redirect admin
+          if (currentUserType === 'Admin') {
+            this.router.navigate(['/admin-dashboard']);
+          }
+
           // Redirect transport providers
-          if (
+          else if (
             currentUserType === 'TransportProvider' ||
             currentUserType === 'Provider'
           ) {
-
             this.router.navigate(['/provider-dashboard']);
           }
 
@@ -150,13 +154,11 @@ export class LoginComponent implements OnInit {
             currentUserType === 'Traveller' ||
             currentUserType === 'Traveler'
           ) {
-
             this.router.navigate(['/traveller-dashboard']);
           }
 
           // Fallback route
           else {
-
             this.router.navigate(['/']);
           }
         });

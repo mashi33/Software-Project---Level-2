@@ -41,9 +41,12 @@ export class TransportVehicleService {
    * Sends new vehicle data to the server to be saved in the database.
    */
   createVehicle(vehicle: Vehicle): Observable<Vehicle> {
-    return this.http.post<Vehicle>(this.apiUrl, vehicle);
-  }
+    // 🔑 THE FIX: Get the active token and attach it as a secure Bearer header
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
 
+    return this.http.post<Vehicle>(this.apiUrl, vehicle, { headers });
+  }
   /**
    * Updates an existing vehicle's information (e.g. price, features).
    */

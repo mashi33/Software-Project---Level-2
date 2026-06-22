@@ -16,7 +16,7 @@ export class AppComponent {
 
     // Function to determine whether to show the navbar and footer based on the current route
     showNavbarFooter(): boolean {
-        const hiddenRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'];
+        const hiddenRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/admin-dashboard', '/admin-panel'];
 
 
         return !hiddenRoutes.some(route => this.router.url.includes(route));

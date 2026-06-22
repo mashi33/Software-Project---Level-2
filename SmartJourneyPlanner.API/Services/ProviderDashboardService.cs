@@ -12,8 +12,10 @@ namespace SmartJourneyPlanner.Services
 
         public ProviderDashboardService(IMongoClient mongoClient)
         {
-            var database = mongoClient.GetDatabase("travelPlanner");
-            _vehicleCollection = database.GetCollection<TransportVehicle>("Vehicles");
+            // 🔑 FIXED: Changed "travelPlanner" to "SmartJourneyDb" to match your Atlas layout!
+            var database = mongoClient.GetDatabase("SmartJourneyDb");
+            
+            _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
             _bookingCollection = database.GetCollection<TransportBooking>("Bookings");
         }
 
@@ -24,16 +26,25 @@ namespace SmartJourneyPlanner.Services
             var totalBookings = await _bookingCollection.CountDocumentsAsync(_ => true);
             return new { totalVehicles, totalBookings };
         }
-
-        public async Task<List<TransportVehicle>> GetAllVehicles() 
-        // Full dataset used for fleet management UI rendering
-            => await _vehicleCollection.Find(_ => true).ToListAsync();
-
-        public async Task DeleteVehicle(string vehicleId)
+      public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
         {
-            await _vehicleCollection.DeleteOneAsync(vehicle => vehicle.Id == vehicleId);
-        }
+            var cleanEmail = ownerEmail.Trim();
 
+            // 1. Filter by the logged-in provider's email (case-insensitive)
+            var emailFilter = Builders<TransportVehicle>.Filter.Regex(
+                v => v.ProviderId, 
+                new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(cleanEmail)}$", "i")
+            );
+
+            // 🔑 THE FLEET MANAGER WHIETLIST: Allow BOTH Available and Unavailable states to show on her dashboard!
+            // This prevents the vehicle from vanishing from her screen when she unticks the box.
+            var statusFilter = Builders<TransportVehicle>.Filter.In(v => v.Status, new[] { "Available", "Unavailable", "Approved" });
+
+            // 2. Combine both conditions together
+            var combinedFilter = Builders<TransportVehicle>.Filter.And(emailFilter, statusFilter);
+
+            return await _vehicleCollection.Find(combinedFilter).ToListAsync();
+        }
         public async Task UpdateVehicleAvailability(string vehicleId, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(vehicle => vehicle.Id, vehicleId);

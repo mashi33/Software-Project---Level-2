@@ -12,7 +12,18 @@ export class AdminService {
 
   constructor() { }
 
-  // --- Provider Methods ---
+  /**
+   * Hits new summary calculation gateway method inside AdminController
+   * to bring home unified analytics, counters, and tracking statistics metrics.
+   */
+  getDashboardStats(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
+  }
+
+  // ==========================================================================
+  // 🚐 PROVIDER MANAGEMENT METHODS
+  // ==========================================================================
+
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -26,7 +37,41 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // --- User Management Methods ---
+  // ==========================================================================
+  // 📸 TRIP MEMORIES AUDITING METHODS
+  // ==========================================================================
+
+  /**
+   * Fetches all published storyboard elements from the trip memories module.
+   */
+  getAllUploadedMemories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-memories`);
+  }
+
+  /**
+   * Removes a published public travel post from the database system.
+   */
+  deleteMemoryPost(memoryId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/Admin/delete-memory/${memoryId}`);
+  }
+
+  getAllVehiclesDetailed(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-vehicles-detailed`);
+}
+
+// src/app/services/admin.service.ts ගොනුවට මෙය එකතු කරන්න
+getAllExpenses(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
+}
+
+getBudgetDetails(): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
+}
+
+  // ==========================================================================
+  // 👥 USER ACCESS & MANAGEMENT METHODS
+  // ==========================================================================
+
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
@@ -37,7 +82,16 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
   }
 
-  // Added this specifically for the block button
+  blockUser(userId: string, blockType: 'Temporary' | 'Permanent'): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/block-user/${userId}`, { blockType }, { headers });
+  }
+
+  unblockUser(userId: string): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/unblock-user/${userId}`, {}, { headers });
+  }
+
   toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     return this.http.put(`${this.baseUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });
