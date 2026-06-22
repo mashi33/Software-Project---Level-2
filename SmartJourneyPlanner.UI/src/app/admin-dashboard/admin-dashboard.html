@@ -12,64 +12,79 @@
       <li [class.active]="view === 'providers'" (click)="onReviewProviders()">
         🚐 Vehicle Fleet Documents
       </li>
-      <li [class.active]="view === 'memories'" (click)="onReviewMemories()">
-        📸 Uploaded Trip Memories
-      </li>
       <li [class.active]="view === 'users'" (click)="onManageLogins()">
         👥 User Access Control
       </li>
+      <li [class.active]="view === 'memories'" (click)="onReviewMemories()">
+        📸 Uploaded Trip Memories
+      </li>
+      <li [class.active]="view === 'fleet-detailed'" (click)="onReviewFleet()">
+  📋 Detailed Fleet View
+</li>
+<li [class.active]="view === 'costs'" (click)="view = 'costs'">💰 Total Tracked Costs</li>
     </ul>
   </aside>
 
   <main class="content">
     <header class="main-header header-container">
-      <div class="header-content">
-        <h1>System Control Grid</h1>
-        <p class="date-text">Global Monitoring — {{ currentDate | date:'fullDate' }}</p>
-      </div>
-      <button (click)="refreshDashboard()" class="btn-refresh-fancy">
+      <button (click)="refreshCurrentView()" class="btn-refresh-fancy">
         <span>🔄</span> Force Sync
       </button>
     </header>
 
     <div *ngIf="view === 'stats'" class="dashboard-cards">
-      <div class="card warning-card">
-        <div class="card-icon">🚐</div>
-        <div class="card-data">
-          <h3>Pending Vehicles</h3>
-          <h1>{{ pendingProviders.length }}</h1>
-        </div>
-        <button class="btn-action-primary" (click)="onReviewProviders()">Review Documents</button>
-      </div>
-
-      <div class="card success-card">
-        <div class="card-icon">👥</div>
-        <div class="card-data">
-          <h3>Platform Users</h3>
-          <h1>{{ allUsers.length }}</h1>
-        </div>
-        <button class="btn-action-success" (click)="onManageLogins()">Manage Access</button>
-      </div>
-
-      <div class="card income-card" style="background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%); border-left: 5px solid #10b981;">
-        <div class="card-icon" style="color: #10b981;">📸</div>
-        <div class="card-data">
-          <h3>Global Memory Shares</h3>
-          <h1>{{ allMemories.length }}</h1>
-        </div>
-        <button class="btn-action-success" style="background-color: #10b981;" (click)="onReviewMemories()">Audit Media</button>
-      </div>
-
-      <div class="card expense-card" style="background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); border-left: 5px solid #2563eb;">
-        <div class="card-icon" style="color: #2563eb;">💰</div>
-        <div class="card-data">
-          <h3>Total Tracked Costs</h3>
-          <h1 style="font-size: 1.6rem; margin-top: 4px;">Rs. {{ stats?.totalExpenditure || 0 | number : '1.0-0' }}</h1>
-        </div>
-        <div class="small text-muted" style="font-size: 0.75rem; margin-top: 8px;">System budget footprint totals.</div>
-      </div>
+  
+  <!-- 1. Pending Vehicles -->
+  <div class="card warning-card">
+    <div class="card-icon1">🚐</div>
+    <div class="card-data">
+      <h3>Pending Vehicles</h3>
+      <h1>{{ pendingProviders.length }}</h1>
     </div>
+    <button class="btn-action1" (click)="onReviewProviders()">Review Documents</button>
+  </div>
 
+  <!-- 2. Platform Users -->
+  <div class="card success-card">
+    <div class="card-icon2">👥</div>
+    <div class="card-data">
+      <h3>Platform Users</h3>
+      <h1>{{ allUsers.length }}</h1>
+    </div>
+    <button class="btn-action2" (click)="onManageLogins()">Manage Access</button>
+  </div>
+
+  <!-- 3. Memory Shares -->
+  <div class="card income-card">
+    <div class="card-icon3">📸</div>
+    <div class="card-data">
+      <h3>Global Memory Shares</h3>
+      <h1>{{ allMemories.length }}</h1>
+    </div>
+    <button class="btn-action3" (click)="onReviewMemories()">Audit Media</button>
+  </div>
+
+  <!-- 4. Detailed Fleet (ඔබේ original style එක) -->
+  <div class="card fleet-card">
+    <div class="card-icon4">📋</div>
+    <div class="card-data">
+      <h3>Detailed Fleet</h3>
+      <h1>{{ allVehicles.length }}</h1>
+    </div>
+    <button class="btn-action4" (click)="onReviewFleet()">View Fleet</button>
+  </div>
+
+  <!-- 5. Total Tracked Costs -->
+  <div class="card expense-card">
+  <div class="card-icon5">💰</div>
+  <div class="card-data">
+    <h3>Tracked Budgets</h3> 
+    <h1>{{ stats?.totalBudgets || 0 }}</h1> 
+  </div>
+  <button class="btn-action5" (click)="viewExpenditureDetails()">View Details</button>
+</div>
+
+</div>
     <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
       <div class="section-header">
         <h2>📋 Fleet Verification Desk</h2>
@@ -104,7 +119,7 @@
       
       <td>
         <div class="action-btn-group">
-          <button class="btn-ctrl-action btn-view" (click)="viewDetails(p)">View</button>
+          <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p)">View</button>
           <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p)">Approve</button>
           <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p)">Reject</button>
         </div>
@@ -121,31 +136,101 @@
     </div>
 
     <div class="verification-section shadow-sm" *ngIf="view === 'memories'">
-      <div class="section-header mb-4">
-        <h2>📸 Uploaded Trip Memories & Storyboards</h2>
-        <p class="text-muted small">Monitor, audit, and manage media uploaded across shared travel groups.</p>
-      </div>
-
-      <div *ngIf="allMemories.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
-        <i class="bi bi-images empty-ledger-icon" style="font-size: 3rem; color: #cbd5e1; display: block; margin-bottom: 16px;"></i>
-        <h5 style="font-weight: 700; color: #1e293b; margin-bottom: 6px;">No Shared Memories Discovered</h5>
-        <p style="color: #64748b; font-size: 0.88rem; max-width: 340px; margin: 0 auto;">Platform user log captures will show up here once travel groups publish logs.</p>
-      </div>
-
-      <div class="user-cards-stack" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
-        <div *ngFor="let m of allMemories" class="bp-card" style="overflow: hidden; border-radius: 16px; border: 1px solid #e2e8f0;">
-          <div style="height: 180px; background-size: cover; background-position: center;" [style.background-image]="'url(' + (m.imageUrl || m.imageBase64 || 'assets/placeholder-travel.jpg') + ')'"></div>
-          <div style="padding: 16px;">
-            <span class="role-pill pill-traveller" style="font-size: 11px;">{{ m.tripName || 'Itinerary Log' }}</span>
-            <h4 style="margin: 10px 0 4px 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">{{ m.caption || m.title }}</h4>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 14px;">Shared by: <strong>{{ m.authorName || m.addedBy }}</strong></p>
-            <button class="btn-ctrl-vibrant btn-delete-ink" style="width: 100%; justify-content: center;" (click)="deleteMemory(m.id || m._id)">
-              <i class="bi bi-trash3-fill"></i> Remove Memory Post
-            </button>
-          </div>
+        <div class="section-header mb-4">
+          <h2>📸 Trip Memory Moderation</h2>
+          <p class="text-muted small">Monitor, audit, and manage media uploaded across shared travel groups.</p>
+          <div class="stats-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div class="stat-card" style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 0.75rem; color: #64748b;">Total Uploads</div>
+              <div style="font-size: 1.5rem; font-weight: 700;">{{ allMemories.length }}</div>
+            </div>
         </div>
+
+  <div class="user-cards-stack" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+  
+  <div *ngFor="let m of allMemories" class="bp-card" style="overflow: hidden; border-radius: 16px; border: 1px solid #e2e8f0; background: white;">
+    
+    <div style="height: 160px; background-size: cover; background-position: center; position: relative;" 
+         [style.background-image]="'url(' + (m.imageUrl || 'assets/placeholder-travel.jpg') + ')'">
+    </div>
+
+    <div style="padding: 16px;">
+      <h4 style="margin: 0 0 8px 0; font-size: 1.05rem; font-weight: 700;">
+        {{ m.title || 'No Caption' }}
+      </h4>
+      
+      <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px; display: flex; gap: 8px;">
+        <span><i class="bi bi-person"></i> {{ m.fullName || 'Unknown' }}</span>
+        <span>•</span>
+        <span><i class="bi bi-geo-alt"></i> {{ m.locationName || 'N/A' }}</span>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-ctrl-vibrant" style="flex: 1; padding: 8px; background: #e0f2fe; color: #0369a1; border: none; border-radius: 6px;" (click)="viewMemoryDetails(m)">
+          Review
+        </button>
+        <button class="btn-ctrl-vibrant btn-delete-ink" style="padding: 8px 12px;" (click)="deleteMemory(m.id || m._id)">
+          <i class="bi bi-trash3"></i>
+        </button>
       </div>
     </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="verification-section shadow-sm" *ngIf="view === 'fleet-detailed'">
+  <div class="section-header mb-4">
+    <h2>🚐 Full Fleet Overview</h2>
+  </div>
+
+  <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+    <div *ngFor="let v of allVehicles" class="card" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+      <img [src]="v.ExteriorPhoto || 'assets/placeholder-car.jpg'" 
+     style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+      
+      <h4 class="mt-3">{{ v.vehicleClass }}</h4>
+      
+      <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+        <span class="badge" [ngClass]="v.status === 'Approved' ? 'bg-success' : 'bg-warning'">{{ v.status }}</span>
+        <span class="badge" [ngClass]="v.isBooked ? 'bg-danger' : 'bg-primary'">{{ v.isBooked ? 'Has Booking' : 'Available' }}</span>
+      </div>
+
+      <div class="provider-info" style="font-size: 0.85rem; color: #64748b;">
+        <p><strong>Provider:</strong> {{ v.providerProfile?.name }}</p>
+        <p><strong>Location:</strong> {{ v.location }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="verification-section shadow-sm" *ngIf="view === 'costs'">
+  <div class="section-header mb-4">
+    <h2>💰 Detailed Financial Breakdown</h2>
+    <p class="text-muted">Summary of all tracked expenditures in the system.</p>
+  </div>
+
+  <table class="admin-table">
+  <thead>
+    <tr>
+      <th>Trip Name</th>
+      <th>Trip ID</th>
+      <th>Created By</th>
+      <th>Expected Budget Limit</th>
+      <th>Sub-Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let ex of expenses" class="table-row">
+  <td>{{ ex.tripName || ex.TripName }}</td> 
+  <td>{{ ex.tripId || ex.TripId }}</td>
+  <td><i class="bi bi-envelope-at"></i> {{ ex.CreatedBy }}</td>
+  <td>{{ ex.ExpectedBudget > 0 ? ('Rs. ' + (ex.ExpectedBudget | number:'1.2-2')) : 'Not Set' }}</td>
+  <td style="font-weight: 700;">Rs. {{ (ex.totalSpent || ex.TotalSpent) | number:'1.2-2' }}</td>
+</tr>
+  </tbody>
+</table>
+</div>
 
     <div class="verification-section border-0 bg-transparent p-0 shadow-none" *ngIf="view === 'users'">
       <div class="panel-header-wrapper mb-4">
@@ -204,6 +289,7 @@
         </div>
       </div>
     </div>
+    
   </main>
 
   <div class="modal-overlay" *ngIf="selectedProvider" (click)="selectedProvider = null">

@@ -55,6 +55,20 @@ export class AdminService {
     return this.http.delete<any>(`${this.baseUrl}/Admin/delete-memory/${memoryId}`);
   }
 
+  getAllVehiclesDetailed(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-vehicles-detailed`);
+}
+
+// src/app/services/admin.service.ts ගොනුවට මෙය එකතු කරන්න
+getAllExpenses(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
+}
+
+// src/app/services/admin.service.ts ගොනුවට මෙය එකතු කරන්න
+getBudgetDetails(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/budget-details`);
+}
+
   // ==========================================================================
   // 👥 USER ACCESS & MANAGEMENT METHODS
   // ==========================================================================
