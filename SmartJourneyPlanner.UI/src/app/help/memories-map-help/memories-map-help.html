@@ -1,0 +1,82 @@
+<div class="article-container">
+
+  <h1>📍 Memories Map Help</h1>
+
+  <div class="article">
+    <div class="image-gallery">
+      <img src="/memory_map_preview.png"
+           class="article-image"
+           (click)="openLightbox('/memory_map_preview.png')" 
+           alt="Memory Map Preview">
+
+      <img src="/search_city.png"
+           class="article-image"
+           (click)="openLightbox('/search_city.png')" 
+           alt="Search City">
+
+      <img src="/after_zoom.png"
+           class="article-image"
+           (click)="openLightbox('/after_zoom.png')" 
+           alt="After Zoom">
+    </div>
+    <h3>🖼️ Search City</h3>
+    <p>Search for cities and view their locations on the map.</p>
+  </div>
+
+  <div class="article">
+    <div class="image-gallery">
+      <img src="/after_fill.png"
+           class="article-image"
+           (click)="openLightbox('/after_fill.png')" 
+           alt="After Fill">
+
+      <img src="/success_msg.png"
+           class="article-image"
+           (click)="openLightbox('/success_msg.png')" 
+           alt="Success Message">
+
+      <img src="/saved_pin.png"
+           class="article-image"
+           (click)="openLightbox('/saved_pin.png')" 
+           alt="Saved Pin">
+
+      <img src="/after_save_gallery_view.png"
+           class="article-image"
+           (click)="openLightbox('/after_save_gallery_view.png')" 
+           alt="Gallery View">
+    </div>
+    <h3>📸 Uploading Photos</h3>
+    <p>Upload photos and attach them to specific locations to create lasting travel memories.</p>
+  </div>
+
+  <div class="article">
+    <div class="image-gallery">
+      <img src="/after_save_gallery_view.png"
+           class="article-image"
+           (click)="openLightbox('/after_save_gallery_view.png')" 
+           alt="Gallery View">
+    </div>
+    <h3>🗺️ Viewing Travel History</h3>
+    <p>Explore all previously visited destinations and view them on an interactive map.</p>
+  </div>
+
+  <div class="article">
+    <div class="image-gallery">
+      <img src="/delete_memory.png"
+           class="article-image"
+           (click)="openLightbox('/delete_memory.png')" 
+           alt="Delete Memory">
+    </div>
+    <h3>📍 Managing Memories</h3>
+    <p>Remove saved memory markers whenever necessary.</p>
+  </div>
+
+</div>
+
+@if (isLightboxOpen) {
+  <div class="lightbox" (click)="closeLightbox()">
+    <span class="close" (click)="closeLightbox($event)">&times;</span>
+    
+    <img class="lightbox-content" [src]="selectedImage" (click)="$event.stopPropagation()" alt="Enlarged view">
+  </div>
+}

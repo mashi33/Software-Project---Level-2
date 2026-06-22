@@ -16,6 +16,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   userName: string = 'User';
   profilePic: string = '/profilePic.jpg';
 
+  // 🔑 THE FIX: Declare the missing variable so the HTML template can find it!
+  userRole: string = 'Traveler';
+
   // 💡 [FIXED ERROR 1]: userSub වේරියබල් එක මෙතන ඩික්ලෙයාර් කළා
   private userSub!: Subscription;
 
@@ -28,7 +31,26 @@ export class NavbarComponent implements OnInit, OnDestroy {
   constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit(): void {
-    // 💡 [FIXED ERROR 2 & 3]: 'name: string' කියලා ටයිප් එක දුන්නා, එතකොට TS7006 එරර් එක නැති වෙනවා
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        
+        // 🔑 THE FIX: Comprehensive role-matching verification hierarchy 
+        this.userRole = tokenPayload.UserType || 
+                        tokenPayload.userType || 
+                        tokenPayload.role || 
+                        tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                        'Traveler';
+                        
+        console.log("Current session validation check. Decoded UserType value:", this.userRole);
+      }
+    } catch (e) {
+      console.error("Failed to extract active claim structures:", e);
+      this.userRole = 'Traveler';
+    }
+
+    // Your existing subscriptions below stay exactly the same
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {
         this.userName = name || 'User';
@@ -36,7 +58,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Navbar subscription error:', err)
     });
 
-    // ලොකල් ස්ටෝරේජ් එකෙන් ප්‍රොෆයිල් පික් එක කියවා ගැනීම
     const savedPic = localStorage.getItem('profilePic');
     if (savedPic) {
       this.profilePic = savedPic;

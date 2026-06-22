@@ -6,7 +6,8 @@ using MimeKit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.Linq; // Ensure this is present
+using System.Linq; 
+using System.Security.Claims; 
 using Microsoft.AspNetCore.Authorization;
 
 namespace SmartJourneyPlanner.API.Controllers
@@ -26,6 +27,52 @@ namespace SmartJourneyPlanner.API.Controllers
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
             _emailService = emailService;
+        }
+
+        [HttpGet("my-trips")]
+        [Authorize] // Requires a valid JWT token in the authorization header pipeline
+        public async Task<IActionResult> GetUserSpecificTrips()
+        {
+            try
+            {
+                // 1. Contextually extract BOTH Identity Claims from the logged-in JWT Token
+                // 🔑 Add "System.Security.Claims." right in front of ClaimTypes
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var currentUserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+                if (string.IsNullOrEmpty(currentUserId) && string.IsNullOrEmpty(currentUserEmail))
+                {
+                    return Unauthorized(new { message = "Invalid user identity tokens." });
+                }
+
+                // 2. Build defensive filter conditions to catch all structural variations in Atlas
+                var creatorConditions = new List<FilterDefinition<Trip>>();
+
+                // If token contains an email, check CreatedBy, creatorEmail, and the Members sub-document array
+                if (!string.IsNullOrEmpty(currentUserEmail))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq("creatorEmail", currentUserEmail));
+                    creatorConditions.Add(Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == currentUserEmail));
+                }
+
+                // If token contains a database ID string, check CreatedBy for ID matches too
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    creatorConditions.Add(Builders<Trip>.Filter.Eq(t => t.CreatedBy, currentUserId));
+                }
+
+                // Combine all conditions using a logical OR statement
+                var combinedFilter = Builders<Trip>.Filter.Or(creatorConditions);
+
+                // 3. Query your Atlas Cluster and return the user-isolated records
+                var isolatedTrips = await _tripsCollection.Find(combinedFilter).ToListAsync();
+                return Ok(isolatedTrips);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error loading secure user trip stream: " + ex.Message });
+            }
         }
 
         // Fetch all trips available in the database
@@ -106,25 +153,19 @@ public async Task<IActionResult> GetDashboardData()
 
         // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 
         // 2. If that fails or fetches an email, try checking for your custom 'userId' claim key payload
-        if (string.IsNullOrEmpty(userId) || userId.Contains("@"))
-        {
-            userId = User.FindFirst("userId")?.Value ?? User.FindFirst("sub")?.Value;
-        }
+        if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(userEmail))
+            return Unauthorized(new { message = "Invalid user identity." });
 
-        // 🔍 DEBUG PRINT: Look at your backend terminal console to see what string value is actually inside your token!
-        Console.WriteLine($"--- 🔐 DASHBOARD REQUEST SECURITY LOG ---");
-        Console.WriteLine($"Extracted User ID from JWT Token: '{userId}'");
-        Console.WriteLine($"-----------------------------------------");
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(new { message = "Invalid user session context." });
-        }
-        // 🔥 FIX 1: Use case-insensitive Regex filter to guarantee a match against "createdBy" or "CreatedBy" fields in MongoDB
-                var userFilter = Builders<Trip>.Filter.Regex(t => t.CreatedBy, new MongoDB.Bson.BsonRegularExpression($"^{userId}$", "i"));
-
+        var builder = Builders<Trip>.Filter;
+       // 🔥 FIX: This filter now includes Creator (ID or Email) OR Member status
+        var userFilter = builder.Or(
+            builder.Eq(t => t.CreatedBy, userId),
+            builder.Eq(t => t.CreatorEmail, userEmail),
+            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
+        );
                 var userTrips = await _tripsCollection
                     .Find(userFilter)
                     .ToListAsync();
@@ -133,7 +174,7 @@ public async Task<IActionResult> GetDashboardData()
                 var today = DateTime.Today;
         // Upcoming trips
         var upcomingTrips = userTrips
-            .Where(t => t.StartDate.Date >= today)
+            .Where(t => t.StartDate.Date > today)
             .ToList();
 
         // Completed trips
@@ -269,6 +310,47 @@ public async Task<IActionResult> GetDashboardData()
                 return BadRequest(new { message = "Error creating trip: " + ex.Message });
             }
         }
+
+        // =========================================================================================
+// === ADD THIS NEW ENDPOINT TO YOUR TRIPSCONTROLLER ===
+// =========================================================================================
+[Authorize]
+[HttpGet("user-accessible")]
+public async Task<ActionResult<List<Trip>>> GetUserAccessibleTrips()
+{
+    try
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+        if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(userEmail))
+            return Unauthorized(new { message = "Invalid token claims." });
+
+        var builder = Builders<Trip>.Filter;
+
+        // Create a flexible filter:
+        // 1. You are the creator (by ID)
+        // 2. You are the creator (by Email)
+        // 3. Your email is in the Members list
+        var finalFilter = builder.Or(
+            builder.Eq(t => t.CreatedBy, userId),
+            builder.Eq(t => t.CreatorEmail, userEmail),
+            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
+        );
+
+        // Simple fallback to see the filter structure
+Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
+
+        var trips = await _tripsCollection.Find(finalFilter).ToListAsync();
+        
+        return Ok(trips);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error: " + ex.Message });
+    }
+}
+// =========================================================================================
 
         // Add a new place to an existing trip's saved places list
         [HttpPost("{tripId}/add-place")]

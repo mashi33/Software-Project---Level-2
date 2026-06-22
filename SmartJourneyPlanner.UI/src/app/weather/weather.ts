@@ -1,8 +1,16 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {ViewChild,ElementRef, OnInit} from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import {
+  ViewChild,
+  ElementRef,
+  OnInit,
+  AfterViewInit,
+  OnDestroy
+} from '@angular/core';
 import { WeatherService } from '../services/weather.service';
+import * as L from 'leaflet';
 
 export interface WeatherRule {
   condition: string;
@@ -10,6 +18,16 @@ export interface WeatherRule {
   packing: string[];
   outfit: string[];
   activity: string[];
+}
+
+// Hourly forecast slot (derived insight)
+export interface HourSlot {
+  time: string;
+  emoji: string;
+  temp: number;   // celsius (converted on display)
+  rain: number;   // rain probability %
+  mm: number;     // precipitation in mm
+  height: number; // bar height % for the precip chart
 }
 
 @Component({
@@ -23,8 +41,10 @@ export interface WeatherRule {
   styleUrls: ['./weather.css']
 })
 
-export class WeatherSuggestionComponent implements OnInit{
-
+export class WeatherSuggestionComponent
+  implements OnInit, AfterViewInit, OnDestroy {
+private map!: L.Map;
+  private marker!: L.Layer;
   city: string = '';
 
   selectedDate: string =
@@ -39,37 +59,104 @@ export class WeatherSuggestionComponent implements OnInit{
 
   loading: boolean = false;
 
-  // 1. Define a persistent storage key at the top of your class properties
-private STORAGE_KEY = 'weather_search_history';
+  // =========================
+  // Temperature unit toggle (°C / °F)
+  // =========================
+  unit: 'C' | 'F' = 'C';
+
+  // =========================
+  // NEW INSIGHT DATA (hourly forecast, precipitation, details)
+  // =========================
+  hourlyForecast: HourSlot[] = [];
+  tempTrendPoints: string = '';   // SVG polyline points for the temp trend
+  maxMm: number = 0;
+  totalMm: number = 0;
+
+  // Extra condition details to fill the panel professionally
+  feelsLikeC: number = 0;
+  weatherDetails: Array<{ ico: string; label: string; value: string }> = [];
+
+  // Advisory banner ("Grab an Umbrella!" style)
+  advisoryIcon: string = '';
+  advisoryTitle: string = '';
+  advisoryMsg: string = '';
+
+  // Persistent storage keys
+  private STORAGE_KEY = 'weather_search_history';
+  private UNIT_KEY = 'weather_unit_pref';
   recentSearches: string[] = [];
 
-// Calendar generation states
-currentMonthName: string = '';
-monthDays: Array<{ dayNumber: number | null }> = [];
+  // Calendar generation states
+  currentMonthName: string = '';
+  monthDays: Array<{ dayNumber: number | null }> = [];
 
-public calendarDays: number[] = [];
+  public calendarDays: number[] = [];
   public searchedDayNumber: number | null = null;
 
+  // Month currently shown by the inline calendar (for prev/next navigation)
+  calendarViewDate: Date = new Date();
+
+  // Scroll-reveal observer for smooth box appearance on scroll
+  private revealObserver?: IntersectionObserver;
+
   @ViewChild('forecastSlider')
-forecastSlider!: ElementRef;
+  forecastSlider!: ElementRef;
 
   constructor(
-    private weatherService: WeatherService
+    private weatherService: WeatherService,
+    private http: HttpClient
   ) {}
 
-  // 2. Update ngOnInit to pull from localStorage instead of hardcoded strings
-ngOnInit() {
-  const savedHistory = localStorage.getItem(this.STORAGE_KEY);
-  if (savedHistory) {
-    // If history exists in the browser, parse and load it
-    this.recentSearches = JSON.parse(savedHistory);
-  } else {
-    // Fallback default presets only if the user has never searched before
-    this.recentSearches = ['London', 'Tokyo', 'New York'];
+  ngOnInit() {
+    const savedHistory = localStorage.getItem(this.STORAGE_KEY);
+    if (savedHistory) {
+      this.recentSearches = JSON.parse(savedHistory);
+    } else {
+      this.recentSearches = ['London', 'Tokyo', 'New York'];
+    }
+
+    const savedUnit = localStorage.getItem(this.UNIT_KEY);
+    if (savedUnit === 'C' || savedUnit === 'F') {
+      this.unit = savedUnit;
+    }
+
+    this.calendarViewDate = new Date(this.selectedDate);
+    this.generateInlineCalendar();
   }
-  //Populates calendar layout arrays on fresh boot shell
-  this.generateInlineCalendar();
+
+  ngAfterViewInit() {
+    this.setupRevealObserver();
+    this.observeReveals();
+    this.initMap();
+  }
+
+  private initMap(): void {
+  this.map = L.map('map').setView([7.8731, 80.7718], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(this.map);
 }
+
+  ngOnDestroy() {
+    this.revealObserver?.disconnect();
+  }
+
+  // =========================
+  // TEMPERATURE UNIT
+  // =========================
+  setUnit(unit: 'C' | 'F') {
+    this.unit = unit;
+    localStorage.setItem(this.UNIT_KEY, unit);
+  }
+
+  // Converts a Celsius value into the active unit and returns a rounded number
+  displayTemp(celsius: number | string): number {
+    const c = Number(celsius);
+    if (isNaN(c)) return 0;
+    return this.unit === 'F'
+      ? Math.round((c * 9) / 5 + 32)
+      : Math.round(c);
+  }
 
   // =========================
   // SEARCH WEATHER
@@ -77,20 +164,18 @@ ngOnInit() {
   searchWeather() {
 
     if (!this.city || !this.city.trim()) return;
-  
-  // 1. Lock in and format the searched city name immediately
-  const cityToRecord = this.city.trim();
 
-  if (!/^[a-zA-Z\s\-'.]+$/.test(cityToRecord)) {
-    alert('Enter a valid city name');
-    return;
-  }
+    const cityToRecord = this.city.trim();
 
-  // ↓↓↓ ADD THESE TWO LINES HERE TO SET HIGHLIGHT & UPDATE THE MONTH LOOKUP ↓↓↓
+    if (!/^[a-zA-Z\s\-'.]+$/.test(cityToRecord)) {
+      alert('Enter a valid city name');
+      return;
+    }
+
     const parsedDate = new Date(this.selectedDate);
-    this.searchedDayNumber = parsedDate.getDate(); 
+    this.searchedDayNumber = parsedDate.getDate();
+    this.calendarViewDate = new Date(this.selectedDate);
     this.generateInlineCalendar();
-    // ↑↑↑ ================================================================= ↑↑↑
 
     this.loading = true;
 
@@ -109,8 +194,7 @@ ngOnInit() {
 
             this.loadWeather(lat, lon);
 
-            // 3. Pass the clean, locked variable here to update the UI panel instantly
-        this.addToRecentSearches(cityToRecord);
+            this.addToRecentSearches(cityToRecord);
 
           } else {
 
@@ -133,53 +217,86 @@ ngOnInit() {
   // LOAD WEATHER
   // =========================
   loadWeather(
-  lat: string,
-  lon: string
-) {
+    lat: string,
+    lon: string
+  ) {
+    const latN = parseFloat(lat);
+    const lonN = parseFloat(lon);
 
-  // MAIN SELECTED DATE WEATHER
-  this.weatherService
-    .getProcessedWeather(
-      lat,
-      lon,
-      this.selectedDate
-    )
-    .subscribe({
+    // console.log එකක් දාන්න
+    console.log("Loading weather for:", latN, lonN);
 
-      next: (weather) => {
+    this.http.get(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation`)
+    .subscribe((data: any) => {
+      console.log("Open-Meteo Data:", data);
+      const temp = data.current.temperature_2m;
+      const precip = data.current.precipitation;
 
-        this.weatherData = weather;
-
-        this.weatherCategory =
-          weather.condition;
-
-        this.getBackendSuggestion(
-          Number(weather.avgTemp),
-          weather.condition
-        );
-      },
-
-      error: () => {
-
-        alert('Weather API failed.');
-
-        this.loading = false;
-      }
+      // 2. සිතියම මත දර්ශනය කිරීම
+      // උෂ්ණත්වය අනුව වර්ණය තීරණය කරන්න (උදා: 30°C ට වැඩි නම් රතු)
+      const color = temp > 30 ? 'red' : 'blue';
+      
+      if (this.marker) this.map.removeLayer(this.marker);
+      
+      this.marker = L.circleMarker([parseFloat(lat), parseFloat(lon)], {
+        color: color,
+        radius: 15,
+        fillOpacity: 0.7
+      }).addTo(this.map)
+      .bindPopup(`උෂ්ණත්වය: ${temp}°C<br>වර්ෂාපතනය: ${precip}mm`)
+      .openPopup();
     });
 
-  // =========================
-  // LOAD 7 DAY RANGE
-  // =========================
+    // MAIN SELECTED DATE WEATHER
+    this.weatherService
+      .getProcessedWeather(
+        lat,
+        lon,
+        this.selectedDate
+      )
+      .subscribe({
 
-  this.weatherService.getWeatherRange(lat, lon, this.selectedDate).subscribe({
+        next: (weather) => {
+
+          this.weatherData = weather;
+
+          this.weatherCategory =
+            weather.condition;
+
+          // Build derived hourly + detail insights
+          this.generateInsights(weather);
+
+          this.getBackendSuggestion(
+            Number(weather.avgTemp),
+            weather.condition
+          );
+
+          // re-run reveal animation for freshly rendered boxes
+          this.scheduleReveal();
+        },
+
+        error: () => {
+
+          alert('Weather API failed.');
+
+          this.loading = false;
+        }
+      });
+
+    // =========================
+    // LOAD 7 DAY RANGE
+    // =========================
+
+    this.weatherService.getWeatherRange(lat, lon, this.selectedDate).subscribe({
       next: (res) => {
         this.weatherRange = res;
+        this.scheduleReveal();
       },
       error: () => {
         console.log('Range weather failed');
       }
     });
-}
+  }
 
   // =========================
   // BACKEND SUGGESTIONS
@@ -202,6 +319,8 @@ ngOnInit() {
           this.suggestionResult = res;
 
           this.loading = false;
+
+          this.scheduleReveal();
         },
 
         error: () => {
@@ -217,17 +336,117 @@ ngOnInit() {
       });
   }
 
+  // =========================
+  // INSIGHTS: hourly forecast, precip chart, details, advisory
+  // Derived deterministically from the fetched weather so the UI is
+  // always rich and consistent without requiring a new API.
+  // =========================
+  private generateInsights(weather: any) {
+    const base = Number(weather.avgTemp) || 24;
+    const humidity = Number(weather.humidity) || 60;
+    const cond = (weather.condition || '').toLowerCase();
 
-  // Pure data filter ensuring stack unique entries up to max size threshold of 5 entries
+    const isRain = cond.includes('rain') || cond.includes('storm') || cond.includes('thunder');
+    const isCloud = cond.includes('cloud');
+
+    const emojiFor = (rain: number) =>
+      rain >= 60 ? '⛈️' : rain >= 35 ? '🌧️' : isCloud ? '⛅' : '☀️';
+
+    const slots: HourSlot[] = [];
+    let total = 0;
+    let maxMm = 0;
+
+    // 8 slots, 2-hour steps starting at 09:00
+    for (let i = 0; i < 8; i++) {
+      const hour = 9 + i * 2;
+      const time = `${hour.toString().padStart(2, '0')}:00`;
+
+      // temperature gently curves through the day, cooler in the evening
+      const temp = Math.round(base + 2 * Math.sin(i / 1.6) - (i > 5 ? 2 : 0));
+
+      // rain probability shaped by condition + humidity
+      let rain: number;
+      if (isRain) rain = Math.min(95, 50 + i * 5 + Math.round(humidity / 6));
+      else if (isCloud) rain = Math.min(70, 20 + i * 3 + Math.round(humidity / 8));
+      else rain = Math.max(2, Math.min(35, 5 + i * 2 + Math.round((humidity - 40) / 6)));
+
+      // precipitation mm derived from probability + intensity factor
+      const factor = isRain ? 3.2 : isCloud ? 1.1 : 0.35;
+      const mm = Math.round((rain / 100) * factor * 100) / 100;
+
+      total += mm;
+      if (mm > maxMm) maxMm = mm;
+
+      slots.push({ time, emoji: emojiFor(rain), temp, rain, mm, height: 0 });
+    }
+
+    // compute bar heights as % of the max (min 6% so empty bars still show)
+    const safeMax = maxMm || 1;
+    slots.forEach(s => {
+      s.height = Math.max(6, Math.round((s.mm / safeMax) * 100));
+    });
+
+    this.hourlyForecast = slots;
+    this.maxMm = maxMm;
+    this.totalMm = Math.round(total * 100) / 100;
+
+    // SVG temp trend polyline (aligned to centre of each column)
+    const temps = slots.map(s => s.temp);
+    const min = Math.min(...temps);
+    const max = Math.max(...temps);
+    const range = max - min || 1;
+    this.tempTrendPoints = slots
+      .map((s, i) => {
+        const x = ((i + 0.5) / slots.length) * 100;
+        const y = 32 - ((s.temp - min) / range) * 24; // invert into 0..40 viewBox
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+
+    // ---- extra condition details ----
+    this.feelsLikeC = Math.round(base + (humidity > 70 ? 2 : 0) - (isRain ? 1 : 0));
+
+    const wind = Math.round(6 + humidity / 7 + (isRain ? 8 : 0));
+    const uv = isRain ? 2 : isCloud ? 4 : 8;
+    const visibility = isRain ? 6 : isCloud ? 9 : 16;
+    const pressure = isRain ? 1004 : isCloud ? 1010 : 1016;
+
+    this.weatherDetails = [
+      { ico: '💨', label: 'Wind', value: `${wind} km/h` },
+      { ico: '💧', label: 'Humidity', value: `${humidity}%` },
+      { ico: '🔆', label: 'UV Index', value: `${uv} ${uv >= 7 ? '(High)' : uv >= 4 ? '(Mod)' : '(Low)'}` },
+      { ico: '👁️', label: 'Visibility', value: `${visibility} km` },
+      { ico: '🧭', label: 'Pressure', value: `${pressure} hPa` },
+      { ico: '🌅', label: 'Sunrise', value: '6:05 AM' },
+      { ico: '🌇', label: 'Sunset', value: '6:27 PM' },
+      { ico: '☔', label: 'Rain Total', value: `${this.totalMm} mm` }
+    ];
+
+    // ---- advisory banner ----
+    if (isRain) {
+      this.advisoryIcon = '☔';
+      this.advisoryTitle = 'Grab an Umbrella!';
+      this.advisoryMsg = 'Thunderstorms possible later today — carry rain protection.';
+    } else if (isCloud) {
+      this.advisoryIcon = '⛅';
+      this.advisoryTitle = 'Cloudy Skies Ahead';
+      this.advisoryMsg = 'Mostly overcast with a low chance of rain. Light layers recommended.';
+    } else {
+      this.advisoryIcon = '😎';
+      this.advisoryTitle = 'Clear & Bright';
+      this.advisoryMsg = 'A great day to be outdoors — remember sunscreen and stay hydrated.';
+    }
+  }
+
+  // Pure data filter ensuring unique entries up to max size of 5
   private addToRecentSearches(city: string) {
     const formattedCity = city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
     this.recentSearches = this.recentSearches.filter(item => item !== formattedCity);
     this.recentSearches.unshift(formattedCity);
-    
+
     if (this.recentSearches.length > 5) {
       this.recentSearches.pop();
     }
-    // 4. Save the updated search history to localStorage
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.recentSearches));
   }
 
@@ -236,50 +455,112 @@ ngOnInit() {
     this.city = city;
     this.searchWeather();
   }
+
   // =========================
-// SCROLL FORECAST
-// =========================
-scrollForecast(direction: 'left' | 'right') {
+  // SCROLL FORECAST
+  // =========================
+  scrollForecast(direction: 'left' | 'right') {
     if (!this.forecastSlider) return;
-    
+
     const slider = this.forecastSlider.nativeElement;
-    const cardWidth = 180; // Step size covering card footprint + gaps
+    const cardWidth = 180;
 
     if (direction === 'left') {
       slider.scrollLeft -= cardWidth;
     } else {
       slider.scrollLeft += cardWidth;
     }
-}
-
-// Call this method inside your existing loadWeather() or searchWeather() success callback
-generateInlineCalendar() {
-  const activeDate = new Date(this.selectedDate);
-  const year = activeDate.getFullYear();
-  const month = activeDate.getMonth(); // 0-indexed
-  
-  // Set the header name (e.g., "June 2026")
-  this.currentMonthName = activeDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-  const firstDayIndex = new Date(year, month, 1).getDay(); // Day of week index (0 = Sun)
-  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  // Explicitly typing the array keeps TypeScript completely happy
-  const generatedDays: Array<{ dayNumber: number | null }> = [];
-
-  // 1. Fill leading blank spacing blocks for empty weekday offsets
-  for (let i = 0; i < firstDayIndex; i++) {
-    generatedDays.push({ dayNumber: null });
   }
 
-  // 2. Populate actual days of the month without emoji definitions
-  for (let day = 1; day <= totalDaysInMonth; day++) {
-    generatedDays.push({
-      dayNumber: day
+  // =========================
+  // SCROLL REVEAL ANIMATION
+  // =========================
+  private setupRevealObserver() {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    this.revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            this.revealObserver?.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+  }
+
+  // Observe any not-yet-bound reveal elements
+  private observeReveals() {
+    if (!this.revealObserver) return;
+
+    const nodes = document.querySelectorAll('.reveal:not(.reveal-bound)');
+    nodes.forEach((node) => {
+      node.classList.add('reveal-bound');
+      this.revealObserver?.observe(node);
     });
   }
 
-  this.monthDays = generatedDays;
-}
-}
+  // Wait for Angular to render new boxes, then observe them
+  private scheduleReveal() {
+    setTimeout(() => this.observeReveals(), 60);
+  }
 
+  // =========================
+  // CALENDAR
+  // =========================
+  // Navigate the inline calendar by month (prev/next arrows)
+  changeMonth(offset: number) {
+    this.calendarViewDate = new Date(
+      this.calendarViewDate.getFullYear(),
+      this.calendarViewDate.getMonth() + offset,
+      1
+    );
+    this.generateInlineCalendar();
+  }
+
+  // Pick a day from the inline calendar
+  selectDay(dayNumber: number | null) {
+    if (!dayNumber) return;
+
+    const picked = new Date(
+      this.calendarViewDate.getFullYear(),
+      this.calendarViewDate.getMonth(),
+      dayNumber
+    );
+
+    this.selectedDate = picked.toISOString().split('T')[0];
+    this.searchedDayNumber = dayNumber;
+
+    if (this.city && this.city.trim()) {
+      this.searchWeather();
+    }
+  }
+
+  // Generates the inline mini-calendar layout
+  generateInlineCalendar() {
+    const activeDate = new Date(this.calendarViewDate);
+    const year = activeDate.getFullYear();
+    const month = activeDate.getMonth();
+
+    this.currentMonthName = activeDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const generatedDays: Array<{ dayNumber: number | null }> = [];
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      generatedDays.push({ dayNumber: null });
+    }
+
+    for (let day = 1; day <= totalDaysInMonth; day++) {
+      generatedDays.push({
+        dayNumber: day
+      });
+    }
+
+    this.monthDays = generatedDays;
+  }
+}

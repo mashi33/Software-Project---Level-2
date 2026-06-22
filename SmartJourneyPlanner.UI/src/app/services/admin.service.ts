@@ -12,7 +12,15 @@ export class AdminService {
 
   constructor() { }
 
-  // --- Provider Methods ---
+  /**
+   * Hits new summary calculation gateway method inside AdminController
+   * to bring home unified analytics, counters, and tracking statistics metrics.
+   */
+  getDashboardStats(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
+  }
+
+  // Provider Methods
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -26,7 +34,7 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // --- User Management Methods ---
+  // User Management Methods
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
@@ -37,7 +45,6 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
   }
 
-  // Added this specifically for the block button
   toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     return this.http.put(`${this.baseUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });

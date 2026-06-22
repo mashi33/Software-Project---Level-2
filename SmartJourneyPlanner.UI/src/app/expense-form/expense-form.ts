@@ -3,9 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BudgetService } from '../services/budget';
+// 🔑 Import SweetAlert2
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-expense-form',
+    standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './expense-form.html',
     styleUrls: ['./expense-form.css']
@@ -45,7 +48,13 @@ export class ExpenseForm implements OnInit {
         this.tripId = params['tripId'];
       } else {
         console.warn('⚠️ No Trip ID found in URL.');
-        alert('Error: Please select a trip from the Dashboard first.');
+        // 🎨 Replaced standard alert with a premium modal error
+        Swal.fire({
+          icon: 'error',
+          title: 'Trip Missing',
+          text: 'Please select a valid trip from the Dashboard first.',
+          confirmButtonColor: '#2563eb'
+        });
         this.router.navigate(['/budget']);
         return; 
       }
@@ -74,14 +83,24 @@ export class ExpenseForm implements OnInit {
   }
 
   onSubmit() {
-    // Basic frontend validation
+    // 🎨 Replaced frontend validation alerts with clean SweetAlert2 warnings
     if (!this.expense.amount || !this.expense.description) {
-      alert('Validation Error: Please fill in all required fields!');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Fields',
+        text: 'Please fill in all required fields before saving.',
+        confirmButtonColor: '#2563eb'
+      });
       return;
     }
 
     if (!this.isNoteValid(this.expense.description)) {
-      alert('Validation Error: The description must contain letters.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Description',
+        text: 'The description must contain letters.',
+        confirmButtonColor: '#2563eb'
+      });
       return;
     }
 
@@ -95,12 +114,31 @@ export class ExpenseForm implements OnInit {
       // UPDATE using unique expenseId
       this.budgetService.updateExpense(this.tripId, this.expenseId, payload).subscribe({
         next: () => {
-          alert('Expense successfully updated!');
-          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
+          // 🎨 REPLACED POPUP: Frictionless self-closing top corner toast notification
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Expense updated successfully!',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true,
+            background: '#ffffff',
+            iconColor: '#2563eb'
+          });
+
+          setTimeout(() => {
+            this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
+          }, 1500);
         },
         error: (err: any) => {
           console.error('Database Update Error:', err);
-          alert('Failed to update. Check console for 400 error details.');
+          Swal.fire({
+            icon: 'error',
+            title: 'Update Failed',
+            text: 'Failed to update. Check console for error details.',
+            confirmButtonColor: '#2563eb'
+          });
         }
       });
 
@@ -108,12 +146,31 @@ export class ExpenseForm implements OnInit {
       // ADD NEW
       this.budgetService.addExpense(this.tripId, payload).subscribe({
         next: () => {
-          alert('New expense successfully added!');
-          this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
+          // 🎨 REPLACED POPUP: Frictionless self-closing top corner toast notification
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'New expense successfully added!',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true,
+            background: '#ffffff',
+            iconColor: '#2563eb'
+          });
+
+          setTimeout(() => {
+            this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
+          }, 1500);
         },
         error: (err: any) => {
           console.error('Database Insertion Error:', err);
-          alert('Failed to save. Check the F12 Network tab Payload.');
+          Swal.fire({
+            icon: 'error',
+            title: 'Save Failed',
+            text: 'Failed to save. Check the network log payload.',
+            confirmButtonColor: '#2563eb'
+          });
         }
       });
     }

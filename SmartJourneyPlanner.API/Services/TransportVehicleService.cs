@@ -24,21 +24,25 @@ namespace SmartJourneyPlanner.Services
         // This links the controller call to the MongoDB query for provider-specific fleet
         public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
         {
+            // 🔑 THE FIX: Filter out "Pending Approval" status records from provider queries
             return await _vehiclesCollection
-                .Find(v => v.ProviderId == providerId)
+                .Find(v => v.ProviderId == providerId && v.Status != "Pending Approval")
                 .ToListAsync();
         }
 
-        // --- 🚐 CORE OPERATIONS ---
+        /// --- 🚐 CORE OPERATIONS ---
 
-        // Fetch all vehicles that are either ready to be booked (Approved) or waiting for review (Pending)
+        /**
+         * GET: /api/TransportVehicles
+         * 🔑 THE TRAVELER VIEW: Only display vehicles in the public market search if they are explicitly "Available"
+         */
         public async Task<List<TransportVehicle>> GetAsync() =>
-            await _vehiclesCollection.Find(v => v.Status == "Approved" || v.Status == "Pending").ToListAsync();
+            await _vehiclesCollection.Find(v => v.Status == "Available").ToListAsync();
 
-        // Get a list of all vehicles belonging to a specific transport provider
+        // Get a list of all vehicles belonging to a specific transport provider excluding pending approvals
         public async Task<List<TransportVehicle>> GetByProviderAsync(string providerId) =>
-            await _vehiclesCollection.Find(v => v.ProviderId == providerId).ToListAsync();
-
+            // 🔑 THE FIX: Enforce the strict non-pending constraint here as well
+            await _vehiclesCollection.Find(v => v.ProviderId == providerId && v.Status != "Pending Approval").ToListAsync();
         // Find one specific vehicle using its unique ID
         public async Task<TransportVehicle?> GetAsync(string id) =>
             await _vehiclesCollection.Find(v => v.Id == id).FirstOrDefaultAsync();

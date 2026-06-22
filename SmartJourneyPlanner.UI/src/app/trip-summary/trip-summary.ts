@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { WeatherService } from '../services/weather.service';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
+import { BudgetService } from '../services/budget';
 
 @Component({
   selector: 'app-trip-summary',
@@ -26,6 +27,19 @@ export class TripSummaryComponent implements OnInit {
   savedPlacesCount = 0;
   membersCount = 0;
   tripDurationDays = 0;
+  
+// Holds the calculated live budget sum for the UI layout display
+  liveTotalSpent: number = 0;
+
+  // =========================
+// SUMMARY PAGE WEATHER
+// =========================
+
+summaryWeather: any = null;
+
+summarySuggestion: any = null;
+
+forecastDays: any[] = [];
 
   summaryWeather: any = null;
   summarySuggestion: any = null;
@@ -34,6 +48,7 @@ export class TripSummaryComponent implements OnInit {
 
   constructor(
     private tripService: TripService,
+    private budgetService: BudgetService,
     private route: ActivatedRoute,
     private router: Router,
     private weatherService: WeatherService,
@@ -57,6 +72,27 @@ export class TripSummaryComponent implements OnInit {
           this.editHistory = data.editHistory || data.EditHistory || [];
           this.determineUserRole();
           this.computeTripMeta();
+      this.tripDetails = data;
+          console.log('Data received from database:', data);
+
+          
+          // Immediately pull down the corresponding budget payload using the validated tripId parameter contract
+          this.budgetService.getBudget(this.tripId).subscribe({
+            next: (budgetData: any) => {
+              if (budgetData) {
+                // Read from totalSpent property path or aggregate from the sub-documents array immediately
+                this.liveTotalSpent = budgetData.totalSpent || 
+                                      budgetData.TotalSpent || 
+                                      (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
+              }
+            },
+            error: (err) => {
+              console.error("Could not fetch real-time budget for summary view:", err);
+              this.liveTotalSpent = 0;
+            }
+          });
+          
+          // FIX: Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
           this.loadTripWeather();
           this.loading = false;

@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. CONFIGURATION LOADING (The .toml Integration) ---
 // This tells .NET to prioritize your appsettings.toml file
-builder.Configuration.AddTomlFile("appsettings.toml", optional: false, reloadOnChange: true);
+builder.Configuration.AddTomlFile("appsettings.toml", optional: true, reloadOnChange: true);
 
 // Extract connection values for global database registration
 var mongoSettingsSection = builder.Configuration.GetSection("MongoDBSettings");
@@ -84,6 +84,7 @@ builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
 builder.Services.AddHttpClient<PlacesService>();
 builder.Services.AddSingleton<MemoryService>();
+//builder.Services.AddSingleton<AlbumService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();
 builder.Services.AddSingleton<SmartJourneyPlanner.API.Services.EmailService>();

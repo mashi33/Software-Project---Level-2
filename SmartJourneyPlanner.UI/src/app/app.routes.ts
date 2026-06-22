@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
+//import { HomeComponent } from './home/home';
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form';
+import { MemoriesWelcomeComponent } from './memory-welcome/welcome';
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { CommunityMapComponent } from './community-map/community-map';
 import { WeatherSuggestionComponent } from './weather/weather';
@@ -25,6 +27,9 @@ import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
 import { ResetPasswordComponent } from './reset-password/reset-password';
+import { HelpComponent } from './help/help';
+import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+
 
 export const routes: Routes = [
   //  PUBLIC ROUTES 
@@ -36,16 +41,19 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
 
   //  PROTECTED ROUTES 
+  //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
+  { path: 'memories-welcome', component: MemoriesWelcomeComponent, canActivate: [authGuard] },
   { path: 'memories', component: MemoriesMapComponent, canActivate: [authGuard] },
   { path: 'community', component: CommunityMapComponent, canActivate: [authGuard] },
   { path: 'weather', component: WeatherSuggestionComponent, canActivate: [authGuard] },
   { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
-
+  { path: 'help', component: HelpComponent, canActivate: [authGuard] },
+  {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },

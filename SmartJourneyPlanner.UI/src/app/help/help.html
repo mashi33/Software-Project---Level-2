@@ -1,0 +1,101 @@
+<div class="help-header">
+  <h1>🧭 Smart Journey Planner Help Center</h1>
+  <p>Find answers, guides, and support for your travel planning needs.</p>
+
+  <div class="search-box">
+    <input
+      type="text"
+      placeholder="Search help articles..."
+      [(ngModel)]="searchText"
+    />
+  </div>
+</div>
+
+<div class="help-categories">
+
+  <div class="card">
+    <h3>🚀 Getting Started</h3>
+    <p>Learn how to create an account and begin planning your journeys.</p>
+    <button>View Articles</button>
+  </div>
+
+  <div class="card">
+    <h3>🗺️ Trip Planning</h3>
+    <p>Create, manage, and optimize your travel itineraries.</p>
+    <button>View Articles</button>
+  </div>
+
+  <div class="card">
+    <h3>☀️ Weather & Climate</h3>
+    <p>Understand weather forecasts for your destinations.</p>
+    <button>View Articles</button>
+  </div>
+
+  <div class="card">
+    <h3>📍 Memories Map</h3>
+    <p>View and manage your saved travel memories.</p>
+    <button routerLink="/memories-map-help">
+  View Articles
+</button>
+  </div>
+
+  <div class="card">
+    <h3>👤 Account & Profile</h3>
+    <p>Update profile information and account settings.</p>
+    <button>View Articles</button>
+  </div>
+
+  <div class="card">
+    <h3>⚙️ Troubleshooting</h3>
+    <p>Find solutions to common technical issues.</p>
+    <button>View Articles</button>
+  </div>
+
+</div>
+
+<div class="faq-section">
+
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item" *ngFor="let faq of faqs">
+
+    <div class="question" (click)="faq.open = !faq.open">
+      {{faq.question}}
+      <span>{{faq.open ? '-' : '+'}}</span>
+    </div>
+
+    <div class="answer" *ngIf="faq.open">
+      {{faq.answer}}
+    </div>
+
+  </div>
+
+</div>
+
+<div class="support-section">
+
+  <h2>Need More Help?</h2>
+
+  <div class="support-options">
+
+    <div class="support-card">
+      🎫
+      <h3>Submit a Ticket</h3>
+      <p>Create a support request.</p>
+    </div>
+
+    <div class="support-card">
+      💬
+      <h3>Live Chat</h3>
+      <p>Expected response within 1 hour.</p>
+    </div>
+
+    <div class="support-card">
+      📧
+      <h3>Email Support</h3>
+      <p>support@smartjourneyplanner.com</p>
+    </div>
+
+  </div>
+
+</div>

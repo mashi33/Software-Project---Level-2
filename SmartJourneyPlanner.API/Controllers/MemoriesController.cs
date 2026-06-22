@@ -1,18 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
+using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.API.Controllers;
+public record LikeRequest(
+    [property: JsonPropertyName("userId")] string UserId
+);
 
 [ApiController]
 [Route("api/[controller]")] 
 public class MemoriesController : ControllerBase
 {
     private readonly MemoryService _memoryService;
+    private readonly ILogger<MemoriesController> _logger;
 
-    public MemoriesController(MemoryService memoryService)
+    public MemoriesController(MemoryService memoryService, ILogger<MemoriesController> logger)
     {   
-        _memoryService = memoryService;
+        _memoryService = memoryService ?? throw new ArgumentNullException(nameof(memoryService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     // use to fetch all memories for the Gallery and Map
@@ -27,7 +33,8 @@ public async Task<ActionResult<List<TripMemory>>> GetPublicMemories()
     }
     catch (Exception ex)
     {
-        return StatusCode(500, ex.Message);
+        _logger.LogError(ex, "Error occurred while fetching public memories.");
+        return StatusCode(500, "An internal server error occurred.");
     }
 }
 
@@ -44,7 +51,8 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
     }
     catch (Exception ex)
     {
-        return StatusCode(500, ex.Message);
+        _logger.LogError(ex, "Error occurred while fetching user memories.");
+        return StatusCode(500, "An internal server error occurred.");
     }
 }
 
@@ -80,6 +88,47 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
         if (!result) return NotFound();
         return NoContent();
     }
+
+    [HttpPost("{id}/like")]
+public async Task<ActionResult<TripMemory>> ToggleLike([FromRoute] string id, [FromBody] LikeRequest request)
+{
+    if (string.IsNullOrWhiteSpace(id))
+    {
+        return BadRequest("Memory ID is required.");
+    }
+
+    if (request == null || string.IsNullOrWhiteSpace(request.UserId))
+    {
+        return BadRequest("User ID is required within the request body.");
+    }
+
+    try
+    {
+        _logger.LogInformation("Processing like toggle for Memory: {MemoryId} by User: {UserId}", id, request.UserId);
+        
+        // 🌐 Service එක හරහා Database එක Update කිරීම
+        var updatedMemory = await _memoryService.ToggleLikeAsync(id, request.UserId);
+
+        if (updatedMemory == null)
+        {
+            _logger.LogWarning("Memory interaction failed. Memory with ID {MemoryId} not found.", id);
+            return NotFound($"Memory with ID {id} does not exist.");
+        }
+
+        return Ok(updatedMemory); // 🔄 Update වූ නව LikeCount එක සහිත Object එක Angular එකට යවයි
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Critical failure during like toggle for Memory ID: {MemoryId}", id);
+        return StatusCode(500, "A database concurrency or server error occurred.");
+    }
+}
+
+// 📦 Request Body එක භාර ගැනීමට පාවිච්චි කරන සරල Class එක
+public class LikeRequest
+{
+    public string UserId { get; set; } = string.Empty;
+}
 
 
 // =========================================================================================

@@ -35,31 +35,38 @@ namespace SmartJourneyPlanner.Controllers
 
         /**
          * GET: /api/TransportVehicles
-         * Returns a list of all vehicles that have been approved by the Admin.
-         * Travelers use this to search for available transport.
+         * Returns a list of all vehicles that are verified AND toggled to "Available".
          */
         [HttpGet] 
         public async Task<IActionResult> GetAvailableVehicles()
         {
-            var approved = await _adminService.GetApprovedProvidersAsync();
-            return Ok(approved);
+            // 🔑 Hits our newly updated service rule to filter out "Unavailable" items
+            var activeVehicles = await _adminService.GetApprovedProvidersAsync();
+            return Ok(activeVehicles);
         }
-
         // --- 🚐 PROVIDER ACTIONS ---
 
         /**
          * POST: /api/TransportVehicles
          * Saves a new vehicle to the database.
-         * IMPORTANT: New vehicles start as "Pending" and "Unverified" 
-         * until an Admin reviews and approves them.
          */
         [HttpPost]
+        [Microsoft.AspNetCore.Authorization.Authorize] // 🛡️ Secures the route and reads incoming user JWT login tokens
         public async Task<IActionResult> CreateVehicle([FromBody] TransportVehicle vehicleInfo)
         {
             try 
             {
-                // Force new vehicles to be Pending for security
-                vehicleInfo.Status = "Pending";
+                // 🔑 THE TARGET FIX: Extract the logged-in provider's real email from token attributes dynamically
+                var loggedInUserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                                        ?? User.FindFirst("email")?.Value 
+                                        ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(loggedInUserEmail)) return Unauthorized();
+
+                // Force new vehicles to be Pending and bind directly to this real account identity string
+                vehicleInfo.ProviderId = loggedInUserEmail.Trim();
+                // Inside your CreateVehicle method, change this line:
+                vehicleInfo.Status = "Pending Approval"; 
                 vehicleInfo.IsVerified = false;
 
                 if (string.IsNullOrEmpty(vehicleInfo.Id)) vehicleInfo.Id = null;
@@ -73,25 +80,33 @@ namespace SmartJourneyPlanner.Controllers
             }
         }
 
-        /**
+       /**
          * GET: /api/TransportVehicles/my-vehicles/{providerId}
-         * Returns only the vehicles belonging to a specific provider.
-         * Used in the provider's dashboard.
+         * Returns only the vehicles belonging to a specific provider that the Admin has approved.
+         * Used in the provider's dashboard and secondary management validation lookups.
          */
         [HttpGet("my-vehicles/{providerId}")]
         public async Task<IActionResult> GetMyVehicles(string providerId)
         {
             try
             {
-                var myVehicles = await _vehicleService.GetByProviderIdAsync(providerId);
-                return Ok(myVehicles);
+                // 1. Fetch all raw data entries linked to this provider account identifier string
+                var rawVehiclesList = await _vehicleService.GetByProviderIdAsync(providerId);
+                
+                // 🔑 THE FINAL GUARD FILTER: Restrict array elements to EXCLUDE "Pending Approval" or "Pending" items
+                var approvedVehiclesOnly = rawVehiclesList
+                    .Where(v => !string.IsNullOrEmpty(v.Status) && 
+                                !v.Status.Equals("Pending Approval", StringComparison.OrdinalIgnoreCase) &&
+                                !v.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                
+                return Ok(approvedVehiclesOnly);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Error fetching your vehicles", error = ex.Message });
+                return BadRequest(new { message = "Error fetching your verified fleet records.", error = ex.Message });
             }
         }
-
         // --- 🛠️ MANAGEMENT & SEEDING ---
 
         /**
