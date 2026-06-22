@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 import { TransportBookingService } from '../services/transport-booking.service';
+import { AuthService } from '../services/auth.service';
 import { TransportVehicleService } from '../services/transport-vehicle.service'; // 🔑 ADD THIS LINE
 import { Booking } from '../models/transport.model';
 
@@ -18,46 +19,49 @@ export class ProviderDashboardComponent implements OnInit {
   stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
+  providerId: string | null = null;
 
   constructor(
     private vehicleService: VehicleService,
     private transportVehicleService: TransportVehicleService,
     private bookingService: TransportBookingService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
+    this.providerId = this.authService.getUserId();
+    if (!this.providerId) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadAll();
   }
 
   loadAll() {
-    // 1. Leave your stats method completely untouched
     this.vehicleService.getStats().subscribe(data => this.stats = data);
-    
-    // 2. 🔑 THE FRONTEND UI PROTECTION FILTER
+
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
-        // Drop any vehicle whose status matches "Pending Approval" right at the UI gateway
         const approvedFleetOnly = data.filter((vehicle: any) => {
           const currentStatus = vehicle.Status || vehicle.status || '';
           return currentStatus.trim() !== 'Pending Approval';
         });
 
-        // Map the filtered array onto your component template state structure
         this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
           ...vehicle,
-          id: vehicle.id || vehicle._id // Maps MongoDB native _id onto standard id property
+          id: vehicle.id || vehicle._id
         }));
       } else {
         this.vehicles = [];
       }
-      console.log("📊 Strictly Filtered Approved Vehicles loaded into Dashboard UI:", this.vehicles);
     });
-    
-    // 3. Leave your bookings method completely untouched
-    this.bookingService.getProviderBookings('p1').subscribe(data => {
-      this.bookings = data;
-    });
+
+    if (this.providerId) {
+      this.bookingService.getProviderBookings(this.providerId).subscribe(data => {
+        this.bookings = data;
+      });
+    }
   }
 
   toggleAvailability(vehicle: any) {
@@ -129,8 +133,7 @@ export class ProviderDashboardComponent implements OnInit {
 
   
   viewBookingDetails(id: string | undefined) {
-  if (!id) return;
-
-  this.router.navigate(['', id]);
-}
+    if (!id) return;
+    this.router.navigate(['/booking-details', id]);
+  }
 }

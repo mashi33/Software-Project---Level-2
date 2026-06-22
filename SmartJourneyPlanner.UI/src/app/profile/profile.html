@@ -28,37 +28,37 @@
         {{ user?.email }}
       </p>
 
-      <span class="traveller-badge" [class.provider-badge]="user?.role === 'Provider' || user?.role === 'TransportProvider'">
-        {{ (user?.role === 'Provider' || user?.role === 'TransportProvider') ? '🚐 Transport Provider' : '✈ Traveller' }}
+      <span class="traveller-badge" [class.provider-badge]="isProvider()">
+        {{ isProvider() ? '🚐 Transport Provider' : '✈ Traveller' }}
       </span>
 
       <hr>
 
       <div class="stats-container">
-        <ng-container *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+        <ng-container *ngIf="!isProvider()">
           <div class="stat-card">
             <i class="bi bi-briefcase"></i>
-            <h3>12</h3>
-            <span>Trips</span>
+            <h3>{{ loadingStats ? '...' : stats.upcomingTrips }}</h3>
+            <span>Upcoming Trips</span>
           </div>
 
           <div class="stat-card">
             <i class="bi bi-camera"></i>
-            <h3>32</h3>
+            <h3>{{ loadingStats ? '...' : stats.memories }}</h3>
             <span>Memories</span>
           </div>
         </ng-container>
 
-        <ng-container *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+        <ng-container *ngIf="isProvider()">
           <div class="stat-card">
             <i class="bi bi-car-front-fill text-primary"></i>
-            <h3>3</h3>
+            <h3>{{ loadingStats ? '...' : stats.vehicles }}</h3>
             <span>Vehicles</span>
           </div>
 
           <div class="stat-card">
             <i class="bi bi-calendar-check text-success"></i>
-            <h3>24</h3>
+            <h3>{{ loadingStats ? '...' : stats.bookings }}</h3>
             <span>Bookings</span>
           </div>
         </ng-container>
@@ -88,7 +88,7 @@
         </div>
 
         <div class="info-card">
-          <ng-container *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+          <ng-container *ngIf="!isProvider()">
             <div class="icon-circle status" style="background-color: #e0f2fe; color: #0284c7;">
               <i class="bi bi-check-circle-fill"></i>
             </div>
@@ -98,19 +98,24 @@
             </div>
           </ng-container>
 
-          <ng-container *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+          <ng-container *ngIf="isProvider()">
             <div class="icon-circle status" style="background-color: #fffbeb; color: #f59e0b;">
               <i class="bi bi-star-fill"></i>
             </div>
             <div>
               <small>Average Rating</small>
-              <h6 style="color: #b45309; font-weight: 600;">⭐ 4.8 / 5.0</h6>
+              <h6 style="color: #b45309; font-weight: 600;" *ngIf="!loadingStats && stats.averageRating > 0">
+                ⭐ {{ stats.averageRating }} / 5.0
+              </h6>
+              <h6 style="color: #94a3b8; font-weight: 600;" *ngIf="loadingStats || stats.averageRating === 0">
+                {{ loadingStats ? 'Loading...' : 'No ratings yet' }}
+              </h6>
             </div>
           </ng-container>
         </div>
       </div>
 
-      <div class="section-card" *ngIf="user?.role !== 'Provider' && user?.role !== 'TransportProvider'">
+      <div class="section-card" *ngIf="!isProvider()">
         <h4>
           <i class="bi bi-heart-fill text-danger"></i>
           Travel Interests
@@ -125,7 +130,7 @@
         </div>
       </div>
 
-      <div class="section-card" *ngIf="user?.role === 'Provider' || user?.role === 'TransportProvider'">
+      <div class="section-card" *ngIf="isProvider()">
         <h4>
           <i class="bi bi-truck text-primary"></i>
           Vehicles & Fleet Services
@@ -238,7 +243,7 @@
 
       <div class="form-group">
         <label class="d-block">
-          {{ (user?.role === 'Provider' || user?.role === 'TransportProvider') ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}
+          {{ isProvider() ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}
         </label>
         
         <div class="chips-container">

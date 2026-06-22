@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-verify-email',
@@ -31,7 +32,7 @@ export class VerifyEmailComponent implements OnInit {
     this.role = this.route.snapshot.queryParamMap.get('role');
 
     if (token) {
-      this.http.get(`http://localhost:5233/api/Auth/verify-email?token=${token}`).subscribe({
+      this.http.get(`${environment.apiUrl}/Auth/verify-email?token=${token}`).subscribe({
         next: (res: any) => {
           this.loading = false;
           this.success = true;
