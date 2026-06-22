@@ -23,14 +23,15 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly IMongoCollection<TransportVehicle> _vehicleCollection;
         private readonly IMongoCollection<TripMemory> _memoryCollection;
         private readonly IMongoDatabase _database;
-        public AdminController(IMongoClient mongoClient)
+        private readonly UserBlockService _userBlockService;
+
+        public AdminController(IMongoClient mongoClient, UserBlockService userBlockService)
         {
-            // using direct mongoClient here to save bit of time
-            // instead of making a whole new service just for admin tasks
             _database = mongoClient.GetDatabase("SmartJourneyDb");
             _userCollection = _database.GetCollection<User>("Users");
             _vehicleCollection = _database.GetCollection<TransportVehicle>("TransportVehicles");
             _memoryCollection = _database.GetCollection<TripMemory>("TripMemories");
+            _userBlockService = userBlockService;
         }
 
         // NEW DASHBOARD METRICS GATEWAY 
@@ -77,6 +78,7 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpGet("all-users")]
         public async Task<IActionResult> GetAllUsers()
         {
+            await _userBlockService.ExpireTemporaryBlocksAsync();
             var users = await _userCollection.Find(_ => true).ToListAsync();
             return Ok(users);
         }
@@ -139,14 +141,54 @@ public async Task<IActionResult> DeleteMemory(string id)
             return result.MatchedCount == 0 ? NotFound() : Ok(new { message = "Role updated" });
         }
 
+        [HttpPut("block-user/{id}")]
+        public async Task<IActionResult> BlockUser(string id, [FromBody] BlockUserRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.BlockType))
+                return BadRequest(new { message = "Block type is required." });
+
+            try
+            {
+                User? user = request.BlockType.Equals("Permanent", StringComparison.OrdinalIgnoreCase)
+                    ? await _userBlockService.BlockUserPermanentAsync(id)
+                    : request.BlockType.Equals("Temporary", StringComparison.OrdinalIgnoreCase)
+                        ? await _userBlockService.BlockUserTemporaryAsync(id)
+                        : null;
+
+                if (user == null) return NotFound(new { message = "User not found." });
+
+                return Ok(new
+                {
+                    message = request.BlockType.Equals("Permanent", StringComparison.OrdinalIgnoreCase)
+                        ? "User permanently blocked."
+                        : "User blocked for 2 weeks.",
+                    user
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("unblock-user/{id}")]
+        public async Task<IActionResult> UnblockUser(string id)
+        {
+            var user = await _userBlockService.UnblockUserAsync(id);
+            return user == null
+                ? NotFound(new { message = "User not found." })
+                : Ok(new { message = "User unblocked successfully.", user });
+        }
+
         [HttpPut("toggle-block/{id}")]
         public async Task<IActionResult> ToggleBlock(string id, [FromBody] BlockRequest request)
         {
-            var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-            var update = Builders<User>.Update.Set(u => u.IsBlocked, request.IsBlocked);
-            
-            await _userCollection.UpdateOneAsync(filter, update);
-            return Ok(new { message = "Status updated" });
+            if (request.IsBlocked)
+            {
+                return await BlockUser(id, new BlockUserRequest { BlockType = "Permanent" });
+            }
+
+            return await UnblockUser(id);
         }
 
         [HttpDelete("delete-user/{id}")]
@@ -311,5 +353,10 @@ public async Task<IActionResult> GetDetailedBudget()
     public class BlockRequest 
     { 
         public bool IsBlocked { get; set; } 
+    }
+
+    public class BlockUserRequest
+    {
+        public string BlockType { get; set; } = string.Empty;
     }
 }

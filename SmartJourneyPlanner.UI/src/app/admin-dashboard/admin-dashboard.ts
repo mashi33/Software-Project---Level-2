@@ -51,6 +51,47 @@ export class AdminDashboardComponent implements OnInit {
     return user?.userType || user?.UserType || user?.role || 'Unknown';
   }
 
+  isUserBlocked(user: any): boolean {
+    return user?.isBlocked === true || user?.IsBlocked === true;
+  }
+
+  getBlockType(user: any): string {
+    return user?.blockType || user?.BlockType || '';
+  }
+
+  getBlockStatusLabel(user: any): string {
+    if (!this.isUserBlocked(user)) return 'Active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'Permanently Blocked';
+
+    if (blockType === 'Temporary') {
+      const until = user?.blockedUntil || user?.BlockedUntil;
+      if (until) {
+        const date = new Date(until).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        });
+        return `Blocked until ${date}`;
+      }
+      return 'Blocked (2 weeks)';
+    }
+
+    return 'Blocked';
+  }
+
+  getBlockStatusClass(user: any): string {
+    if (!this.isUserBlocked(user)) return 'status-active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'status-blocked-permanent';
+    if (blockType === 'Temporary') return 'status-blocked-temporary';
+    return 'bg-danger-subtle text-danger';
+  }
+
+  canManageBlock(user: any): boolean {
+    return this.getUserRole(user) !== 'Admin';
+  }
+
   isVehicleBooked(vehicle: any): boolean {
     const dates = vehicle?.bookedDates || vehicle?.BookedDates;
     return Array.isArray(dates) && dates.length > 0;
@@ -341,12 +382,69 @@ viewExpenditureDetails() {
     });
   }
 
-  toggleBlock(u: any) {
-    const id = u.id || u._id;
-    const block = !u.isBlocked;
-    this.adminService.toggleBlockUser(id, block).subscribe(() => {
-      this.refreshDashboard();
-      Swal.fire('Updated', block ? 'User blocked.' : 'User unblocked.', 'success');
+  blockUserTemporary(user: any) {
+    const id = user.id || user._id;
+    Swal.fire({
+      title: 'Block for 2 weeks?',
+      text: 'This user will be suspended for 14 days and automatically unblocked afterward.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f59e0b',
+      confirmButtonText: 'Block 2 Weeks'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Temporary').subscribe({
+          next: () => {
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User suspended for 2 weeks.', 'success');
+          },
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
+        });
+      }
+    });
+  }
+
+  blockUserPermanent(user: any) {
+    const id = user.id || user._id;
+    Swal.fire({
+      title: 'Permanently block user?',
+      text: 'This account will stay suspended until you manually unblock it.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Block Permanently'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Permanent').subscribe({
+          next: () => {
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User permanently suspended.', 'success');
+          },
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
+        });
+      }
+    });
+  }
+
+  unblockUserAccount(user: any) {
+    const id = user.id || user._id;
+    Swal.fire({
+      title: 'Unblock user?',
+      text: 'This will restore full access to the account immediately.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      confirmButtonText: 'Unblock'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.unblockUser(id).subscribe({
+          next: () => {
+            this.fetchAllUsers();
+            Swal.fire('Unblocked', 'User access has been restored.', 'success');
+          },
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not unblock user.', 'error')
+        });
+      }
     });
   }
 

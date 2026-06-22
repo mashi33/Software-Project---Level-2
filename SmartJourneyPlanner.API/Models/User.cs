@@ -38,6 +38,14 @@ namespace SmartJourneyPlanner.API.Models
 
         public bool IsBlocked { get; set; } = false;
 
+        /// <summary>None, Temporary (2-week auto-unblock), or Permanent.</summary>
+        public string? BlockType { get; set; }
+
+        public DateTime? BlockedAt { get; set; }
+
+        /// <summary>When a temporary block automatically lifts.</summary>
+        public DateTime? BlockedUntil { get; set; }
+
         // [PASSWORD RESET PROPERTIES]
         public string? PasswordResetToken { get; set; }
         public DateTime? ResetTokenExpiry { get; set; }

@@ -82,6 +82,16 @@ getBudgetDetails(): Observable<any> {
     return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
   }
 
+  blockUser(userId: string, blockType: 'Temporary' | 'Permanent'): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/block-user/${userId}`, { blockType }, { headers });
+  }
+
+  unblockUser(userId: string): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/unblock-user/${userId}`, {}, { headers });
+  }
+
   toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     return this.http.put(`${this.baseUrl}/Admin/toggle-block/${userId}`, { isBlocked }, { headers });
