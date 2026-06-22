@@ -533,3 +533,20 @@
     transform: rotate(90deg);
   }
 }
+
+.required-star {
+  color: #ef4444;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.field-hint.eco-hint {
+  color: #15803d;
+  font-weight: 500;
+}

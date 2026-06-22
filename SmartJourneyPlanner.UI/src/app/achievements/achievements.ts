@@ -1,0 +1,103 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, Router } from '@angular/router';
+import { AchievementService, AchievementSummary, BadgeProgress } from '../services/achievement.service';
+import { AuthService } from '../services/auth.service';
+import Swal from 'sweetalert2';
+
+@Component({
+  selector: 'app-achievements',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './achievements.html',
+  styleUrls: ['./achievements.css']
+})
+export class AchievementsComponent implements OnInit {
+  loading = true;
+  activeTab: 'my' | 'all' = 'my';
+  summary: AchievementSummary | null = null;
+  userName = '';
+  profilePic = '';
+
+  constructor(
+    private achievementService: AchievementService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.userName = this.authService.getUserName() || 'Traveller';
+    this.profilePic = this.authService.getProfilePic();
+    this.loadAchievements();
+  }
+
+  loadAchievements(): void {
+    this.loading = true;
+    this.achievementService.getAchievements().subscribe({
+      next: (data) => {
+        this.summary = data;
+        this.loading = false;
+        this.showNewBadgeAlerts(data.newlyUnlocked || []);
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+  }
+
+  showNewBadgeAlerts(newIds: string[]): void {
+    if (!newIds.length || !this.summary) return;
+
+    const names = this.summary.badges
+      .filter(b => newIds.includes(b.id))
+      .map(b => b.name);
+
+    if (names.length === 1) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Badge Unlocked!',
+        text: `You earned "${names[0]}"! +XP added.`,
+        confirmButtonColor: '#004a99'
+      });
+    } else if (names.length > 1) {
+      Swal.fire({
+        icon: 'success',
+        title: 'New Badges Unlocked!',
+        html: names.map(n => `<span class="badge bg-primary me-1">${n}</span>`).join(''),
+        confirmButtonColor: '#004a99'
+      });
+    }
+  }
+
+  get displayedBadges(): BadgeProgress[] {
+    if (!this.summary) return [];
+    return this.activeTab === 'my'
+      ? this.summary.badges.filter(b => b.isUnlocked)
+      : this.summary.badges;
+  }
+
+  get levelProgressPercent(): number {
+    if (!this.summary) return 0;
+    const xpInLevel = this.summary.totalXp % 150;
+    return Math.round((xpInLevel / 150) * 100);
+  }
+
+  setTab(tab: 'my' | 'all'): void {
+    this.activeTab = tab;
+  }
+
+  getRankClass(rank: string): string {
+    const map: Record<string, string> = {
+      Bronze: 'rank-bronze',
+      Silver: 'rank-silver',
+      Gold: 'rank-gold',
+      Legend: 'rank-legend'
+    };
+    return map[rank] || 'rank-bronze';
+  }
+}

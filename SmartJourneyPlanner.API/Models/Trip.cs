@@ -21,6 +21,7 @@ namespace SmartJourneyPlanner.API.Models
         public DateTime StartDate { get; set; }  // Using Nullable DateTime (DateTime?) is safer in case some
         public DateTime EndDate { get; set; }    // documents in your database have missing or null dates.
         public string BudgetLimit { get; set; } = string.Empty;
+        public string TransportMode { get; set; } = string.Empty;
         public string? Description { get; set; }
 
         public double Lat { get; set; }

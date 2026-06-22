@@ -112,9 +112,11 @@ namespace SmartJourneyPlanner.API.Controllers
                     trip.StartDate,
                     trip.EndDate,
                     trip.BudgetLimit,
+                    trip.TransportMode,
                     trip.Description,
                     trip.Members,
                     trip.SavedPlaces,
+                    trip.CreatedBy,
                     EditHistory = history
                 });
             }

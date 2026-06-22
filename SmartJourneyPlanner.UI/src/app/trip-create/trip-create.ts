@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
-import Swal from 'sweetalert2'; // Import SweetAlert2 for professional notifications
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-trip-create',
@@ -16,9 +16,16 @@ export class TripCreateComponent implements OnInit {
 
   tripForm: FormGroup;
   invitedMembers: { email: string; role: string }[] = [];
-  isEditMode: boolean = false; // Flag to distinguish between Create and Edit modes
+  isEditMode: boolean = false;
   tripId: string | null = null;
-  todayDate: string = ''; // Stores today's date for date picker constraints
+  todayDate: string = '';
+
+  transportOptions = [
+    { value: 'Cycle', label: 'Cycle', icon: 'bi-bicycle', eco: true },
+    { value: 'Public Transport', label: 'Public Transport', icon: 'bi-bus-front', eco: true },
+    { value: 'Walking', label: 'Walking', icon: 'bi-person-walking', eco: true },
+    { value: 'Transport Provider', label: 'Transport Provider (from system)', icon: 'bi-truck', eco: false }
+  ];
 
   constructor(
     private tripService: TripService,
@@ -33,6 +40,7 @@ export class TripCreateComponent implements OnInit {
       startDate: new FormControl('', Validators.required),
       endDate: new FormControl('', Validators.required),
       budgetLimit: new FormControl(''),
+      transportMode: new FormControl(''),
       description: new FormControl(''),
       memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
@@ -97,6 +105,7 @@ export class TripCreateComponent implements OnInit {
       startDate: this.formatDate(data.startDate || data.StartDate),
       endDate: this.formatDate(data.endDate || data.EndDate),
       budgetLimit: data.budgetLimit || data.BudgetLimit,
+      transportMode: data.transportMode || data.TransportMode || '',
       description: data.description || data.Description
     });
     const members = data.members || data.Members;
@@ -129,6 +138,11 @@ export class TripCreateComponent implements OnInit {
 
   // Processes form submission (Create or Update)
   onSubmit() {
+    if (!this.tripForm.value.transportMode) {
+      this.showErrorAlert('Please select a transport type.');
+      return;
+    }
+
     if (this.tripForm.valid) {
       const token = localStorage.getItem('token');
       let createdBy = '', creatorEmail = '';
@@ -147,12 +161,15 @@ export class TripCreateComponent implements OnInit {
         StartDate: new Date(this.tripForm.value.startDate).toISOString(),
         EndDate: new Date(this.tripForm.value.endDate).toISOString(),
         BudgetLimit: this.tripForm.value.budgetLimit,
+        TransportMode: this.tripForm.value.transportMode,
         Description: this.tripForm.value.description,
         DepartFrom: this.tripForm.value.departFrom,
         Members: this.invitedMembers.map(m => ({ Email: m.email, Role: m.role })),
         CreatedBy: createdBy,
         CreatorEmail: creatorEmail
       };
+
+      const useTransportProvider = this.tripForm.value.transportMode === 'Transport Provider';
 
       if (this.isEditMode && this.tripId) {
         // Update existing trip
@@ -172,7 +189,24 @@ export class TripCreateComponent implements OnInit {
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
               this.showSuccessAlert("Trip saved successfully!");
-              this.router.navigate(['/trip-summary', newId]);
+              if (useTransportProvider) {
+                Swal.fire({
+                  icon: 'info',
+                  title: 'Book Transport',
+                  text: 'Your trip is saved! Browse transport providers to book a vehicle.',
+                  confirmButtonText: 'Find Transport',
+                  showCancelButton: true,
+                  cancelButtonText: 'View Summary'
+                }).then(result => {
+                  if (result.isConfirmed) {
+                    this.router.navigate(['/transport']);
+                  } else {
+                    this.router.navigate(['/trip-summary', newId]);
+                  }
+                });
+              } else {
+                this.router.navigate(['/trip-summary', newId]);
+              }
             } else {
               this.router.navigate(['/trip-summary']);
             }
