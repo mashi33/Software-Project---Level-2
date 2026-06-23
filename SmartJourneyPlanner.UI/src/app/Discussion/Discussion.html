@@ -123,7 +123,7 @@
                   {{ item.isConfirmed ? '✔ Confirmed' : (item.isRejected ? '✖ Rejected' : '🕒 Pending') }}
                 </span>
                 <small class="voted-count-tag" *ngIf="item.type === 'Trip'">
-                  Voted: {{ (item.userVotes?.length || 0) }}/{{ (item.memberLimit) }}
+                  Voted: {{ (item.votedUsers?.length || 0) }}/{{ (item.memberLimit ) }}
                 </small>
               </div>
             </div>

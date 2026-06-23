@@ -79,6 +79,7 @@ builder.Services.AddSingleton<TimelineService>();
 builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
+builder.Services.AddSingleton<FuelPriceService>();
 builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
