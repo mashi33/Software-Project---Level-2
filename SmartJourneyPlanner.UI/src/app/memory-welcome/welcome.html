@@ -1,0 +1,41 @@
+<div class="memories-welcome-container">
+  <div class="overlay"></div>
+  
+  <div class="content-wrapper">
+    <div class="top-badge">
+    ✨ Smart Journey Memories
+</div>
+<!--
+<div class="featured-cards">
+  <div class="f-card icon-photo1 wiggle-1">
+    <img src="photo1.jpg" alt="photo1">
+  </div>
+  <div class="f-card icon-photo2 wiggle-2">
+    <img src="dining.jpg" alt="photo2">
+  </div>
+  <div class="f-card icon-photo3 wiggle-3">
+    <img src="explore.jpg" alt="photo3">
+  </div>
+</div>
+-->
+
+    <h1 class="welcome-title">Relive Your Journeys</h1>
+    <p class="welcome-subtitle">Where every pinned memory tells a story.</p>
+
+    <div class="actions-wrapper">
+      <div class="action-card" (click)="navigateToMemoryMap()">
+        <div class="icon-box"> <i class="fas fa-map-marked-alt"></i></div>
+        <h3>Personal Map</h3>
+        <p>Explore your private collection of memories and pinned locations.</p>
+        <button class="btn-primary">Open My Map</button>
+      </div>
+
+      <div class="action-card" (click)="navigateToCommunityMap()">
+        <div class="icon-box"><i class="fas fa-earth-asia"></i></div>
+        <h3>Community Map</h3>
+        <p>Discover public memories shared by fellow travelers around the island.</p>
+        <button class="btn-secondary">Explore Community</button>
+      </div>
+    </div>
+  </div>
+</div>

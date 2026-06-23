@@ -15,6 +15,10 @@ public class TripMemory
     [BsonElement("userId")]
     [JsonPropertyName("userId")]
     public string UserId { get; set; } = string.Empty;
+    
+    [BsonElement("fullName")]
+    [JsonPropertyName("fullName")]
+    public string FullName { get; set; } = string.Empty;
 
     [BsonElement("title")]
     [JsonPropertyName("title")]
@@ -60,4 +64,13 @@ public class TripMemory
     [JsonPropertyName("isPublic")]
     [BsonRequired] 
     public bool IsPublic { get; set; }
+
+    [BsonElement("likeCount")]
+    [JsonPropertyName("likeCount")]
+    public int LikeCount { get; set; } = 0;
+
+    [BsonElement("likedByUsers")]
+    [JsonPropertyName("likedByUsers")]
+    public List<string> LikedByUsers { get; set; } = new List<string>();
+    public string TripId { get; set; } = string.Empty;
 }

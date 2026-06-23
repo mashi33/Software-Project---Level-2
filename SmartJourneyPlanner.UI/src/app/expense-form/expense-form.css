@@ -1,12 +1,17 @@
-/* LAYOUT & BACKGROUND */
+/* ==========================================================================
+   🏢 1. STUDIO CANVAS BACKDROP WITH TECH DOT-GRID TEXTURE
+   ========================================================================== */
 .form-background {
-  background-image: url('/Budget_bg.png');
-  background-size: cover;
-  background-position: center center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  background-color: #f8fafc;
+  
+  /* Subtle corporate tech dot matrix pattern for modern texture */
+  background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  
   min-height: 100vh;
   width: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 .page-overlay {
@@ -14,64 +19,127 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  padding: 24px;
+  position: relative;
 }
 
-/* CARD STYLING */
+/* Enhanced high-contrast color highlights to give depth behind the grid */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  z-index: 1;
+}
+
+.blob-top-left {
+  top: -60px;
+  left: -40px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
+}
+
+.blob-bottom-right {
+  bottom: -80px;
+  right: -40px;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
+}
+
+/* ==========================================================================
+   🎴 2. HIGH-END GLASSMOPHIC SHADOW FORM CARD
+   ========================================================================== */
 .form-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #ffffff;
+  padding: 44px 40px;
+  border-radius: 28px;
   width: 100%;
-  max-width: 450px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  max-width: 460px;
+  position: relative;
+  z-index: 10;
+  
+  /* Multilayer soft ambient shadow to lift the card cleanly off the dot mesh grid */
+  box-shadow: 
+    0 10px 30px -10px rgba(15, 23, 42, 0.08),
+    0 20px 50px -15px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+/* Clean blue gradient top baseline border anchor */
+.form-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
 }
 
 .form-header h2 {
   margin: 0;
-  color: #2c3e50;
+  color: #0f172a;
   font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
 }
 
-.form-header p {
-  color: #7f808d;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+.form-subtitle {
+  color: #64748b;
+  font-size: 0.88rem;
+  margin-top: 6px;
+  margin-bottom: 32px;
+  font-weight: 500;
 }
 
-/* FORM ELEMENTS & LABELS */
-.section-label, label {
+/* ==========================================================================
+   📊 3. ENTRY INPUT ELEMENTS
+   ========================================================================== */
+.section-label, .field-label {
   display: block;
-  font-weight: 600;
-  color: #34495e;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
 .input-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 input {
   width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 1rem;
-  transition: 0.3s;
+  padding: 14px 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: #0f172a;
+  background-color: #f8fafc;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
 input:focus {
-  border-color: #00ACC1;
+  border-color: #2563eb;
+  background-color: #ffffff;
   outline: none;
-  box-shadow: 0 0 8px rgba(0, 172, 193, 0.2);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
 }
 
-/* THE CATEGORY GRID */
+/* ==========================================================================
+   🍩 4. INTERACTIVE CATEGORY PILLS
+   ========================================================================== */
 .category-grid {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   justify-content: space-between;
 }
 
@@ -80,95 +148,135 @@ input:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f8faf9;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 10px;
-  width: 70px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 8px;
+  width: 78px;
   cursor: pointer;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.01);
   transition: all 0.2s ease;
 }
 
 .cat-icon {
   font-size: 1.5rem;
   margin-bottom: 4px;
+  transition: transform 0.2s ease;
 }
 
 .cat-name {
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: #555555;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
 }
 
 .cat-item:hover {
-  background: #eef2f3;
+  background: #f8fafc;
+  border-color: #cbd5e1;
   transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.04);
 }
 
 .cat-item.active {
-  border-color: #00ACC1;
-  background: #E0F7FA;
-  color: #006064;
+  border-color: #93c5fd;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeaf8 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.06);
+}
+.cat-item.active .cat-name {
+  color: #1d4ed8;
 }
 
-/* VALIDATION & ERROR STYLING */
-.validation-error {
-  color: #ff6b6b; 
-  font-size: 0.85rem; 
-  margin-top: 5px; 
-  font-weight: 500;
+/* ==========================================================================
+   🔒 5. CATEGORY INTERACTION GRID FREEZE MUTATOR
+   ========================================================================== */
+.category-grid.disabled-grid {
+  pointer-events: none; /* Stops mouse cursor clicks entirely */
 }
 
-/* BUTTONS */
+.category-grid.disabled-grid .cat-item {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+/* Preserves clean isolation for the actively logged item category option */
+.category-grid.disabled-grid .cat-item.active {
+  opacity: 1 !important;
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important;
+}
+.category-grid.disabled-grid .cat-item.active .cat-name {
+  color: #475569 !important;
+}
+
+/* ==========================================================================
+   🚀 PREMIUM WORKSPACE BUTTONS
+   ========================================================================== */
 .buttons {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  align-items: center;
+  margin-top: 32px;
+  gap: 14px;
 }
 
 button {
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: bold;
+  padding: 15px 24px;
+  border-radius: 14px;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  font-size: 1rem;
-  transition: transform 0.1s;
-}
-
-button:active {
-  transform: scale(0.95);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #00ACC1, #00838F);
-  color: white;
-  flex: 2;
-  margin-left: 10px;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  flex: 1.8;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+.btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
 .btn-cancel {
-  background: #eceff1;
-  color: #546e7a;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
   flex: 1;
 }
-
 .btn-cancel:hover {
-  background: #cfd8dc;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
-/* ANIMATIONS */
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+.validation-error {
+  color: #dc2626;
+  font-size: 0.85rem; 
+  margin-top: 6px; 
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* SweetAlert Custom Styling Sync inside the Form Sheet context */
+.swal2-toast {
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Enter Animations */
+.fade-in { animation: cardEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }

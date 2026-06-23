@@ -3,6 +3,7 @@ import { TripService } from '../services/trip.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { WeatherService } from '../services/weather.service';
+import { BudgetService } from '../services/budget';
 
 @Component({
   selector: 'app-trip-summary',
@@ -27,6 +28,8 @@ export class TripSummaryComponent implements OnInit {
    // NEW — confirmed vote places from group chat discussions
   savedVotedPlaces: any[] = [];
   
+// Holds the calculated live budget sum for the UI layout display
+  liveTotalSpent: number = 0;
 
   // =========================
 // SUMMARY PAGE WEATHER
@@ -43,6 +46,7 @@ isLastYearWeather: boolean = false;
 
   constructor(
     private tripService: TripService,
+    private budgetService: BudgetService,
     private route: ActivatedRoute,
     private router: Router,
     private weatherService: WeatherService
@@ -70,6 +74,23 @@ isLastYearWeather: boolean = false;
       this.tripDetails = data;
           console.log('Data received from database:', data);
 
+          
+          // Immediately pull down the corresponding budget payload using the validated tripId parameter contract
+          this.budgetService.getBudget(this.tripId).subscribe({
+            next: (budgetData: any) => {
+              if (budgetData) {
+                // Read from totalSpent property path or aggregate from the sub-documents array immediately
+                this.liveTotalSpent = budgetData.totalSpent || 
+                                      budgetData.TotalSpent || 
+                                      (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
+              }
+            },
+            error: (err) => {
+              console.error("Could not fetch real-time budget for summary view:", err);
+              this.liveTotalSpent = 0;
+            }
+          });
+          
           // FIX: Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
 

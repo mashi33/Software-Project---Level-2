@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System;
 using System.Collections.Generic;
 
 namespace SmartJourneyPlanner.API.Models
@@ -30,11 +31,14 @@ namespace SmartJourneyPlanner.API.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
-        public string Description { get; set; } = null!; // Same as your "Name"
+        public string Description { get; set; } = string.Empty;
 
         // practice for financial data to avoid floating-point rounding errors.
         public decimal Amount { get; set; }
         public string Category { get; set; } = "General";
         public DateTime Date { get; set; } = DateTime.UtcNow;
+
+        // Ties database record logs to the traveler who created them
+        public string AddedBy { get; set; } = string.Empty;
     }
 }
