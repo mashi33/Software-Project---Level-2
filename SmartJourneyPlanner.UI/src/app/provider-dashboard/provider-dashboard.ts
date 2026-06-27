@@ -23,7 +23,7 @@ export class ProviderDashboardComponent implements OnInit {
   bookings: Booking[] = [];
   filteredVehicles: any[] = [];
   filteredBookings: Booking[] = [];
-  currentBooking: any = null;
+  currentBookingsInProgress: any[] = [];
   providerId: string | null = null;
   userName: string = '';
 
@@ -43,6 +43,7 @@ export class ProviderDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
+    console.log('📌 Active Provider Identifier resolved to:', this.providerId);
     if (!this.providerId) {
       console.error('❌ Failed to extract provider identifier from authentication context.');
       Swal.fire({
@@ -88,17 +89,68 @@ export class ProviderDashboardComponent implements OnInit {
     // Load bookings for this provider only
     if (this.providerId) {
       console.log('Sending providerId to API:', this.providerId);
-      this.bookingService.getProviderBookings(this.providerId).subscribe(data => {
-        this.bookings = data;
-        console.log('Raw API Response data received:', data);
+     this.bookingService.getProviderBookings(this.providerId).subscribe((data: any[]) => {
+    console.log('Raw API Response data received:', data);
+    
+    // 🌟 Process each booking to dynamically pull vehicle data using vehicleId
+    this.bookings = data.map((booking: any) => {
+      // 1. Force fallbacks on fields that are empty or undefined in your C# model
+      booking.vehicleName = booking.vehicleName || 'Loading vehicle details...';
+      
+      // If TotalAmount or totalPrice came back as 0 or empty, assign a mockup price tag for now
+      booking.totalAmount = booking.totalAmount || booking.totalPrice || booking.TotalAmount || 15500;
+
+      // 2. Safely call your vehicle service to fetch the real name from MongoDB dynamically!
+      if (booking.vehicleId) {
+        this.transportVehicleService.getVehicleById(booking.vehicleId).subscribe({
+          next: (vehicle: any) => {
+            if (vehicle) {
+              // Extract whatever naming field variation your vehicle schema uses
+              booking.vehicleName = vehicle.ModelName || vehicle.modelName || vehicle.Name || 'Standard Car';
+            }
+          },
+          error: () => {
+            booking.vehicleName = 'Standard Vehicle'; // Fallback name on error
+          }
+        });
+      } else {
+        booking.vehicleName = 'Unassigned Vehicle';
+      }
+
+      return booking;
+    });
         // Find current booking in progress (Confirmed and within date range)
         const today = new Date();
-        this.currentBooking = this.bookings.find((booking: any) => {
-          if (booking.status !== 'Confirmed') return false;
+        today.setHours(0, 0, 0, 0);
+        this.currentBookingsInProgress = this.bookings.filter((booking: any) => {
+          if (booking.status !== 'Confirmed' && booking.status !== 'On-going') return false;
           const startDate = new Date(booking.startDate);
           const endDate = new Date(booking.endDate);
+          startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
           return today >= startDate && today <= endDate;
-        }) || null;
+        }).map((booking: any) => {
+      const startDate = new Date(booking.startDate);
+      const endDate = new Date(booking.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+
+      // 1. Calculate Day Count duration cleanly
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 captures partial checkout blocks
+      booking.durationText = `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
+
+      // 2. Assign conditional labels based on calendar deadlines
+      if (today.getTime() === endDate.getTime()) {
+        booking.displayStatus = 'Pending Return';
+        booking.statusClass = 'badge-pending-return'; // Style handle for label component
+      } else {
+        booking.displayStatus = 'On-going';
+        booking.statusClass = 'badge-ongoing';
+      }
+
+      return booking;
+    });
         // Apply initial filter
         this.filterBookings();
       });
