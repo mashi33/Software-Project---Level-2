@@ -136,17 +136,6 @@ export class ProviderDashboardComponent implements OnInit {
     });
   }
 
-  // Refresh all data
-  refreshData() {
-    this.loadAll();
-  }
-
-  // Logout
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
-
   toggleAvailability(vehicle: any) {
     const targetId = vehicle.id || vehicle._id;
     
