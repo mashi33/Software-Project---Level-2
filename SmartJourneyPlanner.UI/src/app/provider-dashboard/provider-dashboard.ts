@@ -79,6 +79,8 @@ export class ProviderDashboardComponent implements OnInit {
           id: vehicle.id || vehicle._id
         }));
         
+        this.calculateProviderAverageRating();
+
         // Apply initial filter
         this.filterVehicles();
       } else {
@@ -167,6 +169,33 @@ export class ProviderDashboardComponent implements OnInit {
         this.filterBookings();
       });
     }
+  }
+
+  calculateProviderAverageRating() {
+    let totalRatingSum = 0;
+    let totalReviewCount = 0;
+
+    this.vehicles.forEach(vehicle => {
+      
+      const reviews = vehicle.Reviews || vehicle.reviews;
+      
+      if (Array.isArray(reviews) && reviews.length > 0) {
+        reviews.forEach((r: any) => {
+          if (r.rating || r.Rating) {
+            totalRatingSum += (r.rating || r.Rating);
+            totalReviewCount++;
+          }
+        });
+      }
+    });
+
+    if (totalReviewCount > 0) {
+      this.stats.rating = parseFloat((totalRatingSum / totalReviewCount).toFixed(1));
+    } else {
+      this.stats.rating = 0;
+    }
+    
+    console.log(`Calculated Provider Average Rating: ${this.stats.rating} based on ${totalReviewCount} reviews.`);
   }
 
   // Filter vehicles based on search term and status
