@@ -168,78 +168,98 @@
 /* =========================
    CURRENT BOOKING SECTION
    ========================= */
-.current-booking-section {
+.activity-card {
   max-width: 1400px;
   margin: 24px auto 0;
   padding: 0 32px;
-}
-
-.current-booking-card {
   background: #ffffff;
   border-radius: 12px;
-  padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  overflow: hidden;
 }
 
-.booking-progress {
-  display: flex;
-  gap: 32px;
-}
-
-.progress-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-icon {
-  width: 40px;
-  height: 40px;
-  background: #f3f4f6;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-}
-
-.progress-content h4 {
-  font-size: 14px;
-  font-weight: 600;
+.activity-card h3 {
+  font-size: 18px;
+  font-weight: 700;
   color: #1f2937;
-  margin: 0 0 2px 0;
-}
-
-.progress-content p {
-  font-size: 12px;
-  color: #6b7280;
   margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.booking-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 20px;
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table thead {
+  background: #f9fafb;
+}
+
+.dashboard-table th {
+  padding: 14px 20px;
+  text-align: left;
   font-size: 12px;
   font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-table td {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.days-text-muted {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.booking-status-badge.confirmed {
-  background: #d1fae5;
+.badge-ongoing {
+  background-color: #ecfdf5;
   color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
-.booking-status-badge svg {
-  width: 16px;
-  height: 16px;
+.badge-pending-return {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.no-data {
+  padding: 40px 20px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.text-center {
+  text-align: center;
 }
 
 /* =========================
@@ -920,3 +940,5 @@
     flex-wrap: wrap;
   }
 }
+
+
