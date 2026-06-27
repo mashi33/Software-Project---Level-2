@@ -32,6 +32,7 @@ export class ProviderDashboardComponent implements OnInit {
   vehicleStatusFilter: string = '';
   bookingSearchTerm: string = '';
   bookingStatusFilter: string = '';
+  bookingProximityFilter: string = '';
 
   constructor(
     private vehicleService: VehicleService,
@@ -78,6 +79,8 @@ export class ProviderDashboardComponent implements OnInit {
           id: vehicle.id || vehicle._id
         }));
         
+        this.calculateProviderAverageRating();
+
         // Apply initial filter
         this.filterVehicles();
       } else {
@@ -92,13 +95,24 @@ export class ProviderDashboardComponent implements OnInit {
      this.bookingService.getProviderBookings(this.providerId).subscribe((data: any[]) => {
     console.log('Raw API Response data received:', data);
     
-    // 🌟 Process each booking to dynamically pull vehicle data using vehicleId
+    //Process each booking to dynamically pull vehicle data using vehicleId
     this.bookings = data.map((booking: any) => {
       // 1. Force fallbacks on fields that are empty or undefined in your C# model
       booking.vehicleName = booking.vehicleName || 'Loading vehicle details...';
       
-      // If TotalAmount or totalPrice came back as 0 or empty, assign a mockup price tag for now
-      booking.totalAmount = booking.totalAmount || booking.totalPrice || booking.TotalAmount || 15500;
+      //FIX: Calculate durationText here so EVERY booking gets it instantly!
+      if (booking.startDate && booking.endDate) {
+        const sDate = new Date(booking.startDate);
+        const eDate = new Date(booking.endDate);
+        sDate.setHours(0, 0, 0, 0);
+        eDate.setHours(0, 0, 0, 0);
+
+        const diffTime = Math.abs(eDate.getTime() - sDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 captures partial checkout blocks
+        booking.durationText = `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
+      } else {
+        booking.durationText = 'N/A';
+      }
 
       // 2. Safely call your vehicle service to fetch the real name from MongoDB dynamically!
       if (booking.vehicleId) {
@@ -157,6 +171,33 @@ export class ProviderDashboardComponent implements OnInit {
     }
   }
 
+  calculateProviderAverageRating() {
+    let totalRatingSum = 0;
+    let totalReviewCount = 0;
+
+    this.vehicles.forEach(vehicle => {
+      
+      const reviews = vehicle.Reviews || vehicle.reviews;
+      
+      if (Array.isArray(reviews) && reviews.length > 0) {
+        reviews.forEach((r: any) => {
+          if (r.rating || r.Rating) {
+            totalRatingSum += (r.rating || r.Rating);
+            totalReviewCount++;
+          }
+        });
+      }
+    });
+
+    if (totalReviewCount > 0) {
+      this.stats.rating = parseFloat((totalRatingSum / totalReviewCount).toFixed(1));
+    } else {
+      this.stats.rating = 0;
+    }
+    
+    console.log(`Calculated Provider Average Rating: ${this.stats.rating} based on ${totalReviewCount} reviews.`);
+  }
+
   // Filter vehicles based on search term and status
   filterVehicles() {
     this.filteredVehicles = this.vehicles.filter((vehicle: any) => {
@@ -179,21 +220,52 @@ export class ProviderDashboardComponent implements OnInit {
 
   // Filter bookings based on search term and status
   filterBookings() {
-    this.filteredBookings = this.bookings.filter((booking: any) => {
-      const searchTerm = this.bookingSearchTerm.toLowerCase();
-      const statusFilter = this.bookingStatusFilter;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const prox = this.bookingProximityFilter;
+  const isSorting = prox.startsWith('sort-');
+
+  // 1. Filter bookings arrays
+  let result = this.bookings.filter((b: any) => {
+    const matchesSearch = !this.bookingSearchTerm || 
+      (b.userName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase()) ||
+      (b.vehicleName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase());
+
+    // Forces status to be 'Confirmed' if sorting options are active
+    let matchesStatus = false;
+    if (isSorting) {
+      // Must be Confirmed or Pending base state
+      const isAllowedStatus = b.status === 'Confirmed' || b.status === 'Pending';
+      // AND if a user selected a specific option in the status dropdown, it must match that too
+      const matchesDropdown = !this.bookingStatusFilter || b.status === this.bookingStatusFilter;
       
-      // Filter by search term (user name, vehicle name)
-      const matchesSearch = !searchTerm || 
-        (booking.userName || '').toLowerCase().includes(searchTerm) ||
-        (booking.vehicleName || '').toLowerCase().includes(searchTerm);
-      
-      // Filter by status
-      const matchesStatus = !statusFilter || booking.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+      matchesStatus = isAllowedStatus && matchesDropdown;
+    } else {
+      // Standard behavior when sorting is turned off
+      matchesStatus = !this.bookingStatusFilter || b.status === this.bookingStatusFilter;
+    }
+
+    // Calculate proximity days
+    let matchesProx = true;
+    if (b.startDate && !isSorting && prox) {
+      const diffDays = Math.ceil((new Date(b.startDate).setHours(0,0,0,0) - today.getTime()) / (1000 * 60 * 60 * 24));
+      matchesProx = prox === 'near' ? (diffDays >= 0 && diffDays <= 3) : (diffDays > 7);
+    }
+
+    return matchesSearch && matchesStatus && matchesProx;
+  });
+
+  // 2. Sort results if necessary
+  if (isSorting) {
+    result.sort((a: any, b: any) => {
+      const diff = new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime();
+      return prox === 'sort-near-to-far' ? diff : -diff;
     });
   }
+
+  this.filteredBookings = result;
+}
 
   toggleAvailability(vehicle: any) {
     const targetId = vehicle.id || vehicle._id;
