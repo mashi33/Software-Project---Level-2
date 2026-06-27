@@ -19,12 +19,13 @@ namespace SmartJourneyPlanner.Services
             _bookingCollection = database.GetCollection<TransportBooking>("Bookings");
         }
 
-        public async Task<object> GetDashboardStats()
+        public async Task<object> GetDashboardStats(string providerId)
         {
              // Aggregates lightweight counts to power dashboard KPI cards (not full datasets)
-            var totalVehicles = await _vehicleCollection.CountDocumentsAsync(_ => true);
-            var totalBookings = await _bookingCollection.CountDocumentsAsync(_ => true);
-            return new { totalVehicles, totalBookings };
+            var totalVehicles = await _vehicleCollection.CountDocumentsAsync(v => v.ProviderId == providerId);
+            var totalBookings = await _bookingCollection.CountDocumentsAsync(b => b.ProviderId == providerId);
+            return new 
+            { totalVehicles, totalBookings };
         }
       public async Task<List<TransportVehicle>> GetAllVehicles(string ownerEmail) 
         {

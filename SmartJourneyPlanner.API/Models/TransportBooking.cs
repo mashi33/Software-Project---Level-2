@@ -53,6 +53,8 @@ namespace SmartJourneyPlanner.Models
         public string? ProviderName { get; set; }
         public string? ProviderPhone { get; set; }
         public string? UserName { get; set; }
+        public string vehicleName { get; set; } = string.Empty;
+        public decimal totalPrice { get; set; } = 0;
     }
 
     /**
