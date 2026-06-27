@@ -61,8 +61,19 @@ public async Task<IActionResult> GetStats()
         }
 
         [HttpGet("bookings")]
-        public async Task<IActionResult> GetBookings() 
-            => Ok(await _dashboardService.GetAllBookings());
+[Microsoft.AspNetCore.Authorization.Authorize] // 🌟 Ensure authorization claims are bound
+public async Task<IActionResult> GetBookings() 
+{
+    var providerIdentifier = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                             ?? User.FindFirst("email")?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(providerIdentifier)) return Unauthorized();
+
+    // 🌟 Pass the active identifier downstream into your updated service filter query
+    return Ok(await _dashboardService.GetAllBookings(providerIdentifier));
+}
 
         [HttpPut("bookings/{id}/complete")]
         public async Task<IActionResult> CompleteBooking(string id)

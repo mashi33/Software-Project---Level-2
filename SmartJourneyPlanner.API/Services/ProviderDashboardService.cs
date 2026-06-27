@@ -16,7 +16,7 @@ namespace SmartJourneyPlanner.Services
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             
             _vehicleCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
-            _bookingCollection = database.GetCollection<TransportBooking>("Bookings");
+            _bookingCollection = database.GetCollection<TransportBooking>("TransportBookings");
         }
 
         public async Task<object> GetDashboardStats(string providerId)
@@ -53,9 +53,9 @@ namespace SmartJourneyPlanner.Services
             await _vehicleCollection.UpdateOneAsync(filter, update);
         }
 
-        public async Task<List<TransportBooking>> GetAllBookings() 
+        public async Task<List<TransportBooking>> GetAllBookings(string providerId) 
          // Returns complete booking dataset for provider dashboard management
-            => await _bookingCollection.Find(_ => true).ToListAsync();
+            => await _bookingCollection.Find(b => b.ProviderId == providerId).ToListAsync();
 
         public async Task DeleteBooking(string bookingId)
         {
