@@ -7,6 +7,7 @@ import { TransportBookingService } from '../services/transport-booking.service';
 import { AuthService } from '../services/auth.service';
 import { TransportVehicleService } from '../services/transport-vehicle.service';
 import { Booking } from '../models/transport.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-provider-dashboard',
@@ -44,6 +45,12 @@ export class ProviderDashboardComponent implements OnInit {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
     if (!this.providerId) {
       console.error('❌ Failed to extract provider identifier from authentication context.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Authentication Error',
+        text: 'Failed to extract provider identifier. Please log in again.',
+        confirmButtonColor: '#3085d6'
+      });
       this.router.navigate(['/login']);
       return;
     }
@@ -156,10 +163,23 @@ export class ProviderDashboardComponent implements OnInit {
     this.vehicleService.updateAvailability(targetId, nextStatus === 'Available').subscribe({
       next: () => {
         console.log(`⚡ Availability status successfully synchronized to: ${nextStatus}`);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: `Status set to ${nextStatus}`,
+          showConfirmButton: false,
+          timer: 2000
+        });
         this.loadAll(); // Reload metrics and stats
       },
       error: (err) => {
         console.error('Error saving checkbox state:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Update Failed',
+          text: 'Could not sync availability status to the server.'
+        });
         this.loadAll(); // Revert back if database save fails
       }
     });
@@ -171,21 +191,37 @@ export class ProviderDashboardComponent implements OnInit {
 }
 
   deleteVehicle(id: string) {
-    if (confirm('Are you sure you want to delete this vehicle?')) {
-      // Points directly to your TransportVehicleService api/TransportVehicles controller endpoint
-      this.transportVehicleService.deleteVehicle(id).subscribe({
-        next: () => {
-          console.log(`🗑️ Asset ${id} successfully removed.`);
-          this.loadAll();
-        },
-        error: (err) => console.error('Error deleting asset:', err)
-      });
-    }
+    if (!id) return;
+
+    // 🟩 SWEETALERT: Beautiful Interactive Confirmation Dialog
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this asset deletion!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.transportVehicleService.deleteVehicle(id).subscribe({
+          next: () => {
+            Swal.fire('Deleted!', 'The vehicle asset has been removed.', 'success');
+            this.loadAll();
+          },
+          error: (err) => {
+            Swal.fire('Error', 'Failed to remove the asset.', 'error');
+            console.error(err);
+          }
+        });
+      }
+    });
   }
 
   acceptBooking(booking: Booking) {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
+      Swal.fire('Confirmed!', 'The booking has been successfully accepted.', 'success');
       this.loadAll();
     });
   }
@@ -193,20 +229,38 @@ export class ProviderDashboardComponent implements OnInit {
   completeBooking(booking: Booking) {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Completed').subscribe({
-      next: () => this.loadAll(),
-      error: (err) => console.error('Error completing booking:', err)
+      next: () => {
+        Swal.fire('Completed!', 'Trip marked as completed.', 'success');
+        this.loadAll();
+      },
+      error: (err) => Swal.fire('Error', 'Could not update booking status.', 'error')
     });
   }
 
   rejectBooking(booking: Booking) {
     if (!booking.id) return;
     
-    if (confirm('Are you sure you want to reject this booking?')) {
-      this.bookingService.updateBookingStatus(booking.id, 'Rejected').subscribe({
-        next: () => this.loadAll(),
-        error: (err) => console.error('Error rejecting:', err)
-      });
-    }
+    // 🟩 SWEETALERT: Rejection Confirmation Dialog
+    Swal.fire({
+      title: 'Reject Booking Request?',
+      text: 'Are you sure you want to turn down this reservation request?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, reject it'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const bookingId: string = booking.id!;
+        this.bookingService.updateBookingStatus(bookingId, 'Rejected').subscribe({
+          next: () => {
+            Swal.fire('Rejected', 'The booking request was turned down.', 'info');
+            this.loadAll();
+          },
+          error: (err) => Swal.fire('Error', 'Failed to execute status transition.', 'error')
+        });
+      }
+    });
   }
 
   viewBookingDetails(id: string | undefined) {
