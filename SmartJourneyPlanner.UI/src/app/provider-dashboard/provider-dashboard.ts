@@ -364,7 +364,7 @@ export class ProviderDashboardComponent implements OnInit {
   rejectBooking(booking: Booking) {
     if (!booking.id) return;
     
-    // 🟩 SWEETALERT: Rejection Confirmation Dialog
+    //  Rejection Confirmation Dialog
     Swal.fire({
       title: 'Reject Booking Request?',
       text: 'Are you sure you want to turn down this reservation request?',
@@ -388,7 +388,57 @@ export class ProviderDashboardComponent implements OnInit {
   }
 
   viewBookingDetails(id: string | undefined) {
-    if (!id) return;
-    this.router.navigate(['/booking-details', id]);
-  }
+  const b = this.bookings.find(x => x.id === id);
+  if (!b) return;
+
+  const s = b.startDate ? new Date(b.startDate).setHours(0,0,0,0) : 0;
+  const e = b.endDate ? new Date(b.endDate).setHours(0,0,0,0) : 0;
+  const days = (s && e) ? Math.ceil(Math.abs(e - s) / 86400000) + 1 : (b.days || 1);
+  const nights = b.nights || (days > 1 ? days - 1 : 0);
+
+  const pr = b.pricingSummary;
+  const rate = pr?.dailyRate || 0;
+  const rental = pr?.dailyRental || (rate * days);
+  const nRate = pr?.nightlyRate || 0;
+  const nightFee = pr?.driverNightOut || (nRate * nights);
+  const total = b.totalAmount || (rental + nightFee);
+
+  Swal.fire({
+    title: 'Booking Request Details',
+    width: '620px',
+    confirmButtonText: 'Close',
+    confirmButtonColor: '#0c92f4',
+    html: `
+      <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+        <h6 class="text-primary fw-bold mb-1">Customer Details</h6>
+        <div class="bg-light p-2 rounded border mb-3">
+          <p class="m-0"><strong>Name:</strong> ${b.userName || 'N/A'}</p>
+          <p class="m-1 0"><strong>Phone:</strong> ${b.contactNumber || 'Not Provided'}</p>
+          <p class="m-0"><strong>Status:</strong> <span class="badge bg-warning text-dark">${b.status}</span></p>
+        </div>
+
+        <h6 class="text-primary fw-bold mb-1">Trip Itinerary</h6>
+        <div class="bg-light p-2 rounded border mb-3">
+          <p class="m-0"><strong>Vehicle:</strong> ${b.vehicleName || 'Standard Car'}</p>
+          <p class="m-1 0"><strong>Travel Dates:</strong> ${new Date(b.startDate).toLocaleDateString()} to ${new Date(b.endDate).toLocaleDateString()} (${days} Days)</p>
+          <p class="m-1 0"><strong>Pickup:</strong> ${b.pickupAddress || 'N/A'}</p>
+          <p class="m-0"><strong>Destination:</strong> ${b.destinationAddress || b.pickupAddress || 'N/A'}</p>
+        </div>
+
+        <h6 class="text-primary fw-bold mb-1">Pricing Breakdown</h6>
+        <table class="table table-sm table-bordered m-0 fs-6">
+          <thead class="table-light">
+            <tr><th>Item</th><th class="text-end">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Daily Rental (LKR ${rate.toLocaleString()} x ${days} Days)</td><td class="text-end">LKR ${rental.toLocaleString()}</td></tr>
+            <tr><td>Driver Night Fee (LKR ${nRate.toLocaleString()} x ${nights} Nights)</td><td class="text-end">LKR ${nightFee.toLocaleString()}</td></tr>
+            <tr class="table-primary fw-bold text-primary"><td>Total Earnings (Estimated)</td><td class="text-end fs-5">LKR ${total.toLocaleString()}</td></tr>
+          </tbody>
+        </table>
+        <small class="text-muted d-block mt-2"><i>* Extra KM charges are collected separately based on usage.</i></small>
+      </div>
+    `
+  });
+}
 }
