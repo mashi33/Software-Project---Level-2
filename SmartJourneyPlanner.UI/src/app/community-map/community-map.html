@@ -1,103 +1,202 @@
-<div class="explore-wrapper">
-  <main class="map-section">
-    <div id="map"></div>
-  </main>
+<div class="main-wrapper">
 
-  <aside class="sidebar-section">
-    <div class="search-container">
-      <input type="text" [(ngModel)]="searchQuery" (input)="filterMemories()" 
-             placeholder="Search by city (e.g., Kandy)..."class="search-input">   
-      <button class="search-btn">Find</button>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <i class="bi bi-globe-asia-australia"></i>
+      </div>
+      <div class="brand-text">
+        <h1>Community Map</h1>
+        <p class="brand-sub">Explore public trip albums</p>
+      </div>
     </div>
 
-    <section class="community-card">
-  <header class="gallery-header">
-    <h5 class="gallery-title">Community Gallery</h5>
-    <span class="gallery-count" *ngIf="filteredMemories">{{filteredMemories.length}}</span>
-  </header>
+    <nav class="tab-bar">
+      <button class="tab-btn" [class.active]="activeTab === 'popular'" (click)="setActiveTab('popular')">
+        <i class="bi bi-trophy-fill"></i>
+        Popular Memories
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'albums'" (click)="setActiveTab('albums')">
+        <i class="bi bi-images"></i>
+        Public Albums
+        <span class="pill">{{ groupedAlbums.length }}</span>
+      </button>
+    </nav>
 
-  <div class="gallery-grid">
-    <div class="gallery-item" *ngFor="let memory of filteredMemories | slice:0:showMax; trackBy: trackByFn">
-      <div class="thumb-card" 
-      (click)="selectedMemory = memory" 
-      [class.active]="selectedMemory === memory"
-      [title]="'Added by: ' + memory.fullName"> 
-        <div class="img-container">
-          <img *ngIf="memory?.imageUrl" [src]="memory?.imageUrl" class="thumb-img" [alt]="memory?.title">
+    <div class="sidebar-body">
+
+      <section class="form-section">
+        <div class="section-heading">
+          <i class="bi bi-search"></i>
+          <span>Search by City</span>
+        </div>
+        <div class="search-group">
+          <input [(ngModel)]="searchQuery"
+                 (keyup.enter)="filterMemories()"
+                 (input)="filterMemories()"
+                 class="search-input"
+                 placeholder="Search city (e.g. Galle, Kandy)...">
+          <button (click)="filterMemories()" class="btn-find" type="button">
+            <i class="bi bi-search"></i> Find
+          </button>
+        </div>
+      </section>
+
+      <!-- TOP RATED MEMORIES SECTION -->
+      <section class="top-rated-section" *ngIf="activeTab === 'popular' && topRatedMemories.length > 0">
+        <div class="section-heading">
+          <i class="bi bi-trophy-fill"></i>
+          <span>Top Rated Memories</span>
+        </div>
+        <div class="albums-header">
+          <span class="albums-count">{{ topRatedMemories.length }} top memories</span>
+        </div>
+        <div class="gallery-grid">
+          <article *ngFor="let memory of displayedTopRatedMemories; let i = index"
+                   class="thumb-card"
+                   (click)="openTopRatedMemory(memory)">
+            <div class="rank-badge">#{{ i + 1 }}</div>
+            <div class="img-container">
+              <img [src]="memory.imageUrl" class="thumb-img" [alt]="memory.title">
+              <span class="album-badge">
+                <i class="bi bi-star-fill"></i> {{ getPriorityScore(memory) | number:'1.1' }}
+              </span>
+            </div>
+            <div class="thumb-info">
+              <div class="thumb-trip">{{ memory.tripName }}</div>
+              <div class="thumb-text">{{ memory.title }}</div>
+              <div class="thumb-location">
+                <i class="bi bi-geo-alt-fill"></i> {{ memory.locationName }}
+              </div>
+              <div class="like-badge-sidebar">
+                <i class="bi bi-heart-fill"></i> {{ memory.likeCount || 0 }}
+              </div>
+            </div>
+            <div class="album-action-buttons">
+              <button class="card-action-btn like-btn"
+                      [class.liked]="hasUserLiked(memory)"
+                      [disabled]="albumLikeInProgress"
+                      (click)="toggleLike(memory.id, $event)">
+                <i class="bi" [class.bi-heart-fill]="hasUserLiked(memory)" [class.bi-heart]="!hasUserLiked(memory)"></i>
+              </button>
+            </div>
+          </article>
+        </div>
+        <div class="see-more-container" *ngIf="topRatedMemories.length > 3">
+          <button class="btn-see-more" (click)="toggleTopRatedSeeMore()" type="button">
+            <i class="bi" [class.bi-chevron-down]="!showAllTopRated" [class.bi-chevron-up]="showAllTopRated"></i>
+            {{ showAllTopRated ? 'Show Less' : 'See More (' + (topRatedMemories.length - 3) + ')' }}
+          </button>
+        </div>
+      </section>
+
+    
+
+  <!-- MAP -->
+
+  <main class="map-container">
+    <div id="map"></div>
+    <div class="map-hint">
+      <i class="bi bi-hand-index-thumb"></i>
+      Click a pin to view memory details
+    </div>
+  </main>
+</div>
+
+<!-- LIGHTBOX (READ-ONLY) -->
+
+<div class="lightbox-overlay" *ngIf="isLightboxOpen" (click)="closeLightbox()">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <button class="btn-close-top" (click)="closeLightbox()" aria-label="Close" type="button">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="lightbox-media">
+      <button class="nav-arrow left"
+              *ngIf="selectedAlbum && selectedAlbum.memories.length > 1"
+              (click)="prevMemory()"
+              aria-label="Previous"
+              type="button">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+
+      <div class="lightbox-image-frame">
+        <img [src]="selectedMemory?.imageUrl" class="lightbox-img" [alt]="selectedMemory?.title || 'Memory'">
+        <div class="lightbox-image-caption" *ngIf="selectedAlbum && selectedAlbum.memories.length > 1">
+         {{ currentMemoryIndex + 1 }} / {{ selectedAlbum.memories.length }}
+        </div>
+      </div>
+
+      <button class="nav-arrow right" *ngIf="selectedAlbum && selectedAlbum.memories.length > 1" (click)="nextMemory()" aria-label="Next" type="button">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="lightbox-details">
+      <div class="lightbox-header">
+        <span class="trip-name-badge">
+          {{ selectedAlbum?.tripName || selectedMemory?.tripName || 'Community Trip' }}
+        </span>
+        <span class="visibility-chip public">Public</span>
+      </div>
+
+      <h2 class="lightbox-title">{{ selectedMemory?.title }}</h2>
+
+      <div class="lightbox-meta-grid">
+        <div class="meta-item" *ngIf="selectedMemory?.locationName">
+          <div class="meta-icon"><i class="bi bi-geo-alt-fill"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Location</span>
+            <span class="meta-value">{{ selectedMemory?.locationName }}</span>
+          </div>
         </div>
 
-        <div class="thumb-info">
-          <p class="thumb-text">{{ memory?.title || 'Untitled' }}</p>
+        <div class="meta-item" *ngIf="selectedMemory?.fullName">
+          <div class="meta-icon"><i class="bi bi-person-fill"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Shared by</span>
+            <span class="meta-value">{{ selectedMemory?.fullName }}</span>
+          </div>
+        </div>
 
-          <!--<div class="thumb-trip" *ngIf="memory?.tripName">
-              Trip: {{ memory.tripName }}
-              </div>-->
-
-          <div class="thumb-dates" *ngIf="memory?.startDate || memory?.endDate">
-            <span class="date-range">
-              {{ memory?.startDate | date:'mediumDate' }} — {{ memory?.endDate | date:'mediumDate' }}
+        <div class="meta-item" *ngIf="selectedMemory?.startDate || selectedMemory?.endDate">
+          <div class="meta-icon"><i class="bi bi-calendar-range"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Trip Timeline</span>
+            <span class="meta-value">
+              {{ selectedMemory?.startDate | date:'mediumDate' }}
+              <i class="bi bi-arrow-right-short"></i>
+              {{ selectedMemory?.endDate | date:'mediumDate' }}
             </span>
           </div>
-          <div class="thumb-likes">
-            <button class="gallery-like-btn" (click)="toggleLike(memory.id, $event)">
-              <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
-      <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
-    </svg> 
-              {{ memory?.likeCount || 0 }} Likes
-            </button>
-          </div>
         </div>
       </div>
-    </div>
-    
-    <p class="empty-state" *ngIf="filteredMemories?.length === 0">No memories found for this location.</p>
-  </div> 
 
-  <div class="see-more-container" *ngIf="filteredMemories.length > 3">
-    <button class="btn-see-more" (click)="toggleSeeMore()">
-      {{ showMax === 3 ? 'See More (' + (filteredMemories.length - 3) + ')' : 'Show Less' }}
-    </button>
-  </div>
-</section>
-<button class="btn-back" (click)="goBack()"><i class="bi bi-chevron-left"></i>Back</button>
-  </aside>
-</div>
+      <p class="description-text" *ngIf="selectedMemory?.description">
+        {{ selectedMemory?.description }}
+      </p>
 
-<div class="lightbox-overlay" *ngIf="selectedMemory" (click)="selectedMemory = null">
-  <div class="lightbox-content" (click)="$event.stopPropagation()">
-    
-    <button class="btn-close-top" (click)="selectedMemory = null" title="Close Overlay">✕</button>
-    
-    <img [src]="isObject(selectedMemory) ? selectedMemory.imageUrl : selectedMemory" class="lightbox-img" alt="Enlarged memory view">
+      <div class="lightbox-like-row">
+        <button class="btn-like-memory"
+                [class.liked]="selectedMemory && hasUserLiked(selectedMemory)"
+                (click)="toggleLike(selectedMemory?.id, $event)" type="button">
+          <i class="bi" [class.bi-heart-fill]="selectedMemory && hasUserLiked(selectedMemory)" [class.bi-heart]="!(selectedMemory && hasUserLiked(selectedMemory))"></i>
+          {{ selectedMemory && hasUserLiked(selectedMemory) ? 'Liked' : 'Like this memory' }}
+          ({{ selectedMemory?.likeCount || 0 }})
+        </button>
 
-    <div class="lightbox-details" *ngIf="isObject(selectedMemory) && selectedMemory.title; else mapImageFallback">
-      <h2>{{ selectedMemory.title }}</h2>
-      <!--<div class="trip-name-badge" *ngIf="selectedMemory.tripName">
-    <i class="bi bi-briefcase-fill"></i> Trip: {{ selectedMemory.tripName }}
-  </div>-->
-      <div class="date-text" *ngIf="selectedMemory.startDate || selectedMemory.endDate">
-        🗓️ {{ selectedMemory.startDate | date:'mediumDate' }} — {{ selectedMemory.endDate | date:'mediumDate' }}
-      </div>
-      <div class="lightbox-like-container">
-        <button class="modal-like-btn" (click)="toggleLike(selectedMemory.id)">
-          <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
-      <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
-    </svg> 
-          Like ({{ selectedMemory.likeCount || 0 }})
+        <button class="btn-like-album" *ngIf="selectedAlbum"
+                [class.liked]="isAlbumFullyLiked(selectedAlbum)"
+                [disabled]="albumLikeInProgress"
+                (click)="toggleAlbumLike(selectedAlbum, $event)" type="button">
+          <i class="bi" [class.bi-heart-fill]="isAlbumFullyLiked(selectedAlbum)" [class.bi-heart]="!isAlbumFullyLiked(selectedAlbum)"></i>
+          {{ isAlbumFullyLiked(selectedAlbum) ? 'Album liked' : 'Like entire album' }}
+          ({{ getTotalLikes(selectedAlbum) }})
         </button>
       </div>
-      <hr>
-      <p class="description-text">{{ selectedMemory.description || 'No description provided for this memory.' }}</p>
     </div>
-
-    <ng-template #mapImageFallback>
-      <div class="lightbox-details">
-        <h2>Pinned Map Location</h2>
-        <div class="date-text">Active Pin</div>
-        <hr>
-        <p class="description-text">This item was directly loaded from your geo-coordinates pin layout.</p>
-      </div>
-    </ng-template>
-
   </div>
 </div>
+
+
