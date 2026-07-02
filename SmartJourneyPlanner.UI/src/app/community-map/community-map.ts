@@ -318,7 +318,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
- 
+  
 
   openTopRatedMemory(memory: TripMemory): void {
     this.openLightboxForMemory(memory);
