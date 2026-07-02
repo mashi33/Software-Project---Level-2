@@ -131,7 +131,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       );
     }
 
-   
+    
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
     this.cdr.detectChanges();
@@ -181,7 +181,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     (Swal as any).fire(config);
   }
 
-  
+ 
 
 
   private groupMemoriesByTrip(memories: TripMemory[]): void {
@@ -284,8 +284,43 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
+toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
 
- 
+    const currentUserId = this.authService.getUserId();
+    if (!currentUserId || this.albumLikeInProgress) return;
+    const allLiked = this.isAlbumFullyLiked(album);
+    const targets = album.memories.filter(m =>
+      m.id && (allLiked ? this.hasUserLiked(m) : !this.hasUserLiked(m))
+    );
+
+    if (!targets.length) return;
+    this.albumLikeInProgress = true;
+    const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId));
+
+    forkJoin(requests).subscribe({
+      next: (updatedMemories) => {
+        updatedMemories.forEach(m => {
+          if (m.id) this.updateLocalMemoryState(m.id, m);
+        });
+        this.applyFilters();
+        this.albumLikeInProgress = false;
+        const totalLikes = this.getTotalLikes(album);
+        const action = allLiked ? 'album_unlike' : 'album_like';
+        const message = allLiked
+          ? `Removed likes from ${targets.length} memories! (${totalLikes} total)`
+          : `Liked ${targets.length} memories! (${totalLikes} total)`;
+        this.showSweetAlert(message, action);
+        this.cdr.detectChanges();
+      },
+
+      error: (err) => {
+        console.error('Failed to toggle album likes:', err);
+        this.albumLikeInProgress = false;
+      }
+    });
+  }
 
   private updateLocalMemoryState(memoryId: string, updatedMemory: TripMemory): void {
     const updateInList = (list: TripMemory[]) => {

@@ -91,7 +91,82 @@
         </div>
       </section>
 
-    
+      <!-- ALL ALBUMS SECTION -->
+      <section class="albums-section" *ngIf="activeTab === 'albums' && groupedAlbums.length > 0">
+        <div class="albums-header" *ngIf="groupedAlbums.length > 0">
+
+        <span class="albums-count">
+          {{ groupedAlbums.length }} trip album{{ groupedAlbums.length !== 1 ? 's' : '' }}
+          <ng-container *ngIf="searchQuery.trim()"> matching "{{ searchQuery }}"</ng-container>
+        </span>
+        <span class="memories-count">{{ filteredMemories.length }} memories</span>
+      </div>
+
+
+      <div class="gallery-grid">
+        <div class="empty-state" *ngIf="groupedAlbums.length === 0">
+          <i class="bi bi-collection"></i>
+          <p>No trip albums found</p>
+          <small *ngIf="searchQuery.trim()">Try another city name or clear the search.</small>
+          <small *ngIf="!searchQuery.trim()">Public memories will appear here when travelers share them.</small>
+        </div>
+
+        <article *ngFor="let album of displayedAlbums; trackBy: trackByFn"
+                 class="thumb-card"
+                 (mouseenter)="startSlideshow(album)"
+                 (mouseleave)="stopSlideshow(album)"
+                 (click)="openAlbum(album)">
+          <div class="img-container">
+            <img [src]="album.currentDisplayImage || album.latestImage" class="thumb-img" [alt]="album.tripName">
+            <span class="album-badge">
+              <i class="bi bi-images"></i> {{ album.memories.length }}
+            </span>
+          </div>
+
+          <div class="thumb-info">
+            <div class="thumb-trip">{{ album.tripName }}</div>
+            <div class="thumb-text">{{ album.memories[0]?.title || 'Trip Memories' }}</div>
+            <div class="thumb-author" *ngIf="album.memories[0]?.fullName">
+              <i class="bi bi-person-circle"></i> {{ album.memories[0]?.fullName }}
+            </div>
+            <div class="thumb-dates" *ngIf="getOldestCreatedAt(album) as oldest">
+              <i class="bi bi-calendar3"></i>
+              <span>{{ oldest | date:'mediumDate' }}</span>
+              <i class="bi bi-arrow-right"></i>
+              <span>{{ getNewestCreatedAt(album) | date:'mediumDate' }}</span>
+            </div>
+            <div class="like-badge-sidebar">
+              <i class="bi bi-heart-fill"></i> {{ getTotalLikes(album) }} total
+            </div>
+          </div>
+
+          <div class="album-action-buttons">
+            <button class="card-action-btn album-like-btn"
+                    [class.liked]="isAlbumFullyLiked(album)"
+                    [disabled]="albumLikeInProgress"
+                    [title]="isAlbumFullyLiked(album) ? 'Unlike entire album' : 'Like entire album'"
+                    (click)="toggleAlbumLike(album, $event)">
+              <i class="bi" [class.bi-heart-fill]="isAlbumFullyLiked(album)" [class.bi-heart]="!isAlbumFullyLiked(album)"></i>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="see-more-container" *ngIf="groupedAlbums.length > 3">
+        <button class="btn-see-more" (click)="toggleSeeMore()" type="button">
+          <i class="bi" [class.bi-chevron-down]="!showAllAlbums" [class.bi-chevron-up]="showAllAlbums"></i>
+          {{ showAllAlbums ? 'Show Less' : 'See More (' + (groupedAlbums.length - 3) + ')' }}
+        </button>
+      </div>
+      </section>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-back" (click)="goBack()" type="button">
+        <i class="bi bi-arrow-left"></i> Back to Welcome
+      </button>
+    </div>
+  </aside>
 
   <!-- MAP -->
 
