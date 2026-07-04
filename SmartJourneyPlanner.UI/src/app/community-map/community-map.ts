@@ -131,7 +131,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       );
     }
 
-    
+    this.filteredMemories = this.sortMemoriesByLikesAndDate(memories);
+    this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
     this.cdr.detectChanges();
@@ -181,8 +182,34 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     (Swal as any).fire(config);
   }
 
- 
+  private sortMemoriesByLikesAndDate(memories: TripMemory[]): TripMemory[] {
+    const now = Date.now();
 
+    return [...memories].sort((a, b) => {
+      const scoreA = this.calculatePriorityScore(a, now);
+      const scoreB = this.calculatePriorityScore(b, now);
+      return scoreB - scoreA;
+    });
+  }
+
+  private calculatePriorityScore(memory: TripMemory, now: number = Date.now()): number {
+    const date = memory.startDate ? new Date(memory.startDate).getTime() : 
+                 memory.createdAt ? new Date(memory.createdAt).getTime() : now;
+    const ageInHours = Math.max(0.1, (now - date) / (1000 * 60 * 60));
+    
+    // Priority algorithm: (likes * 1.5 + 1) / (age_in_hours + 2) * 100
+    // This gives higher priority to memories with more likes and newer uploads
+    const likeWeight = 1.5;
+    const recencyWeight = 1.0;
+    
+    const score = ((memory.likeCount || 0) * likeWeight + 1) / (ageInHours * recencyWeight + 2) * 100;
+    return score;
+  }
+
+  private getTopRatedMemories(memories: TripMemory[], count: number = 10): TripMemory[] {
+    const sorted = this.sortMemoriesByLikesAndDate(memories);
+    return sorted.slice(0, count);
+  }
 
   private groupMemoriesByTrip(memories: TripMemory[]): void {
     const groups = new Map<string, CommunityAlbum>();
@@ -353,7 +380,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
- 
+  getPriorityScore(memory: TripMemory): number {
+    return this.calculatePriorityScore(memory);
+  }
 
   openTopRatedMemory(memory: TripMemory): void {
     this.openLightboxForMemory(memory);
@@ -430,7 +459,25 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-  
+  // DATE HELPERS 
+
+  getOldestCreatedAt(album: CommunityAlbum): Date | null {
+    if (!album.memories?.length) return null;
+    const dates = album.memories
+      .map(m => new Date(m.createdAt || m.startDate || m.endDate))
+      .filter(d => !isNaN(d.getTime()));
+    return dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
+  }
+
+  getNewestCreatedAt(album: CommunityAlbum): Date | null {
+    if (!album.memories?.length) return null;
+    const dates = album.memories
+      .map(m => new Date(m.createdAt || m.startDate || m.endDate))
+      .filter(d => !isNaN(d.getTime()));
+
+    return dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+  }
+
 
   // MAP 
 
