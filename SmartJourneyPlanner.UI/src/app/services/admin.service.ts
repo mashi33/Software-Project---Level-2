@@ -68,6 +68,14 @@ getBudgetDetails(): Observable<any> {
   return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
 }
 
+/**
+ * Sends a budget alert notification to trip creator
+ */
+sendBudgetAlert(tripId: string): Observable<any> {
+  const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+  return this.http.post(`${this.baseUrl}/Admin/send-budget-alert/${tripId}`, {}, { headers });
+}
+
   // ==========================================================================
   // 👥 USER ACCESS & MANAGEMENT METHODS
   // ==========================================================================

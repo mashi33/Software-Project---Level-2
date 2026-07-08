@@ -89,13 +89,37 @@ public async Task<IActionResult> GetAllVehiclesDetailed()
     var vehicles = await _vehicleCollection.Find(_ => true).ToListAsync();
     return Ok(vehicles);
 }
-        [HttpGet("all-memories")]
-        public async Task<IActionResult> GetAllMemories()
+       [HttpGet("all-memories")]
+public async Task<IActionResult> GetAllMemories()
+{
+    var memories = await _memoryCollection.Find(_ => true).ToListAsync();
+
+    // Collect UserIds for memories missing a FullName
+    var missingNameUserIds = memories
+        .Where(m => string.IsNullOrWhiteSpace(m.FullName) && !string.IsNullOrWhiteSpace(m.UserId))
+        .Select(m => m.UserId)
+        .Distinct()
+        .ToList();
+
+    if (missingNameUserIds.Count > 0)
+    {
+        var users = await _userCollection
+            .Find(u => missingNameUserIds.Contains(u.Id))
+            .ToListAsync();
+
+        var nameById = users.ToDictionary(u => u.Id!, u => u.FullName);
+
+        foreach (var m in memories)
         {
-            // ඔබේ database එකේ memory collection එකේ නම මෙතනට දෙන්න
-            var memories = await _memoryCollection.Find(_ => true).ToListAsync();
-            return Ok(memories);
+            if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId, out var name))
+            {
+                m.FullName = name;
+            }
         }
+    }
+
+    return Ok(memories);
+}
 
         [HttpDelete("delete-memory/{id}")]
 public async Task<IActionResult> DeleteMemory(string id)

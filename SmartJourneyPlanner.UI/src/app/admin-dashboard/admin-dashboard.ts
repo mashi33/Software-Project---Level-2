@@ -38,8 +38,24 @@ export class AdminDashboardComponent implements OnInit {
   };
   costSearch = '';
   costStatusFilter = 'all';
+  costSortFilter = 'date-desc';
   selectedBudgetTrip: any = null;
   costsLoading = false;
+
+  // Memory filtering
+  memorySearch = '';
+  memoryStatusFilter = 'all';
+  memoryDateFilter = 'all';
+
+  // Fleet filtering
+  fleetSearch = '';
+  fleetStatusFilter = 'all';
+  fleetTypeFilter = 'all';
+  fleetBookingFilter = 'all';
+
+  // Provider filtering
+  providerSearch = '';
+  providerTypeFilter = 'all';
 
   ngOnInit() {
     this.adminName = this.authService.getUserName() || 'Admin';
@@ -484,6 +500,248 @@ viewExpenditureDetails() {
     Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
   }
 }
+
+  // Memory filtering methods
+  get filteredMemories(): any[] {
+    return this.allMemories.filter(memory => {
+      const query = this.memorySearch.trim().toLowerCase();
+      const title = (memory.title || '').toLowerCase();
+      const user = (memory.fullName || '').toLowerCase();
+      const location = (memory.locationName || '').toLowerCase();
+      const matchesSearch = !query || title.includes(query) || user.includes(query) || location.includes(query);
+
+      const status = this.getMemoryStatus(memory).toLowerCase();
+      const filter = this.memoryStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      const matchesDate = this.matchesDateFilter(memory);
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }
+
+  getMemoryStatus(memory: any): string {
+    return memory.status || memory.moderationStatus || 'pending';
+  }
+
+  getMemoryStatusClass(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved': return 'memory-status-approved';
+      case 'flagged': return 'memory-status-flagged';
+      case 'pending': return 'memory-status-pending';
+      default: return 'memory-status-default';
+    }
+  }
+
+  getMemoryUploadDate(memory: any): string {
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return '';
+    const d = new Date(date);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  getMemoriesByStatus(status: string): any[] {
+    return this.allMemories.filter(m => this.getMemoryStatus(m).toLowerCase() === status.toLowerCase());
+  }
+
+  matchesDateFilter(memory: any): boolean {
+    if (this.memoryDateFilter === 'all') return true;
+    
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return false;
+    
+    const d = new Date(date);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (this.memoryDateFilter === 'today') {
+      return d >= today;
+    }
+    
+    if (this.memoryDateFilter === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }
+    
+    if (this.memoryDateFilter === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return d >= monthAgo;
+    }
+    
+    return true;
+  }
+
+  // Budget monitoring additional methods
+  getTotalBudgetAllocated(): number {
+    return this.budgetTrips.reduce((sum, trip) => sum + this.getTripBudget(trip), 0);
+  }
+
+  getTotalSpent(): number {
+    return this.budgetTrips.reduce((sum, trip) => sum + this.getTripSpent(trip), 0);
+  }
+
+  getAverageBudgetUsage(): number {
+    const tripsWithBudget = this.budgetTrips.filter(t => this.getTripBudget(t) > 0);
+    if (tripsWithBudget.length === 0) return 0;
+    const totalUsage = tripsWithBudget.reduce((sum, trip) => sum + this.getTripUsage(trip), 0);
+    return totalUsage / tripsWithBudget.length;
+  }
+
+  getTotalExpenseCount(): number {
+    return this.budgetTrips.reduce((sum, trip) => sum + (trip.expenseCount ?? trip.ExpenseCount ?? 0), 0);
+  }
+
+  exportBudgetReport() {
+    const csvContent = this.generateBudgetCSV();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `budget-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    Swal.fire('Exported', 'Budget report has been downloaded.', 'success');
+  }
+
+  generateBudgetCSV(): string {
+    const headers = ['Trip Name', 'Route', 'Created By', 'Budget Limit', 'Total Spent', 'Remaining', 'Usage %', 'Status'];
+    const rows = this.filteredBudgetTrips.map(trip => [
+      trip.tripName || trip.TripName,
+      this.getTripRoute(trip),
+      trip.createdBy || trip.CreatedBy,
+      this.getTripBudget(trip),
+      this.getTripSpent(trip),
+      this.getTripRemaining(trip),
+      this.getTripUsage(trip).toFixed(1),
+      this.getTripStatus(trip)
+    ]);
+    
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  }
+
+  sendBudgetAlert(trip: any) {
+    Swal.fire({
+      title: 'Send budget alert?',
+      text: `Notify the trip creator that they have exceeded their budget limit.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Send Alert'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.sendBudgetAlert(trip.id || trip._id).subscribe({
+          next: () => {
+            Swal.fire('Alert Sent', 'Budget alert notification has been sent.', 'success');
+          },
+          error: (err: any) => Swal.fire('Error', 'Could not send alert.', 'error')
+        });
+      }
+    });
+  }
+
+  // Fleet filtering methods
+  get filteredVehicles(): any[] {
+    return this.allVehicles.filter(vehicle => {
+      const query = this.fleetSearch.trim().toLowerCase();
+      const vehicleClass = (vehicle.vehicleClass || vehicle.VehicleClass || '').toLowerCase();
+      const modelName = (vehicle.modelName || vehicle.ModelName || '').toLowerCase();
+      const provider = (vehicle.providerProfile?.name || vehicle.ProviderProfile?.Name || '').toLowerCase();
+      const location = (vehicle.providerProfile?.location || vehicle.ProviderProfile?.Location || '').toLowerCase();
+      const matchesSearch = !query || vehicleClass.includes(query) || modelName.includes(query) || provider.includes(query) || location.includes(query);
+
+      const status = (vehicle.status || vehicle.Status || '').toLowerCase();
+      const statusFilter = this.fleetStatusFilter.toLowerCase();
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+      const type = (vehicle.type || vehicle.vehicleType || '').toLowerCase();
+      const typeFilter = this.fleetTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || type.includes(typeFilter);
+
+      const isBooked = this.isVehicleBooked(vehicle);
+      const bookingFilter = this.fleetBookingFilter.toLowerCase();
+      const matchesBooking = bookingFilter === 'all' || 
+        (bookingFilter === 'available' && !isBooked) || 
+        (bookingFilter === 'booked' && isBooked);
+
+      return matchesSearch && matchesStatus && matchesType && matchesBooking;
+    });
+  }
+
+  getVehiclesByStatus(status: string): any[] {
+    return this.allVehicles.filter(v => (v.status || v.Status || '').toLowerCase() === status.toLowerCase());
+  }
+
+  getBookedVehiclesCount(): number {
+    return this.allVehicles.filter(v => this.isVehicleBooked(v)).length;
+  }
+
+  getFleetStatusClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'fleet-status-approved';
+      case 'pending': return 'fleet-status-pending';
+      case 'rejected': return 'fleet-status-rejected';
+      case 'unavailable': return 'fleet-status-unavailable';
+      default: return 'fleet-status-default';
+    }
+  }
+
+  getVehicleTypeClass(type: string): string {
+    const t = (type || '').toLowerCase();
+    if (t.includes('car')) return 'vehicle-type-car';
+    if (t.includes('van')) return 'vehicle-type-van';
+    if (t.includes('bus')) return 'vehicle-type-bus';
+    if (t.includes('suv')) return 'vehicle-type-suv';
+    return 'vehicle-type-default';
+  }
+
+  hasDocument(vehicle: any, docType: string): boolean {
+    switch (docType) {
+      case 'license': return !!(vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl);
+      case 'nic': return !!(vehicle.driverNicUrl || vehicle.DriverNicUrl);
+      case 'revenue': return !!(vehicle.revenueLicenseUrl || vehicle.RevenueLicenseUrl);
+      default: return false;
+    }
+  }
+
+  // Provider filtering methods
+  get filteredProviders(): any[] {
+    return this.pendingProviders.filter(provider => {
+      const query = this.providerSearch.trim().toLowerCase();
+      const providerName = (provider.providerProfile?.name || '').toLowerCase();
+      const vehicleClass = (provider.vehicleClass || '').toLowerCase();
+      const location = (provider.location || provider.providerProfile?.location || '').toLowerCase();
+      const matchesSearch = !query || providerName.includes(query) || vehicleClass.includes(query) || location.includes(query);
+
+      const type = (provider.type || '').toLowerCase();
+      const typeFilter = this.providerTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || type.includes(typeFilter);
+
+      return matchesSearch && matchesType;
+    });
+  }
+
+  getSubmissionDate(provider: any): string {
+    const date = provider.submittedAt || provider.createdAt || provider.created_at;
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
 }
 
