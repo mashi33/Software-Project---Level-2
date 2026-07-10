@@ -81,7 +81,7 @@ SmartJourneyPlanner.API/bin/
 SmartJourneyPlanner.API/obj/
 SmartJourneyPlanner.UI/dist/
 
-appsettings.Development.json
-/environment.development.ts
-
-appsettings.toml
+# Application Settings
+SmartJourneyPlanner.API/appsettings.json
+SmartJourneyPlanner.API/appsettings.Development.json
+SmartJourneyPlanner.API/appsettings.toml
