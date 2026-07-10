@@ -12,18 +12,11 @@ export class AdminService {
 
   constructor() { }
 
-  /**
-   * Hits new summary calculation gateway method inside AdminController
-   * to bring home unified analytics, counters, and tracking statistics metrics.
-   */
   getDashboardStats(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
   }
 
-  // ==========================================================================
-  // 🚐 PROVIDER MANAGEMENT METHODS
-  // ==========================================================================
-
+  // PROVIDER MANAGEMENT METHODS
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -37,41 +30,33 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // ==========================================================================
-  // 📸 TRIP MEMORIES AUDITING METHODS
-  // ==========================================================================
-
-  /**
-   * Fetches all published storyboard elements from the trip memories module.
-   */
+  // TRIP MEMORIES AUDITING METHODS
   getAllUploadedMemories(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-memories`);
   }
 
-  /**
-   * Removes a published public travel post from the database system.
-   */
+  updateMemoryStatus(memoryId: string, status: string): Observable<any> {
+  const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+  return this.http.put(`${this.baseUrl}/Admin/update-memory-status/${memoryId}`, JSON.stringify(status), { headers });
+  }
+
   deleteMemoryPost(memoryId: string): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/Admin/delete-memory/${memoryId}`);
   }
 
   getAllVehiclesDetailed(): Observable<any[]> {
   return this.http.get<any[]>(`${this.baseUrl}/Admin/all-vehicles-detailed`);
-}
+  }
 
-// src/app/services/admin.service.ts ගොනුවට මෙය එකතු කරන්න
-getAllExpenses(): Observable<any[]> {
-  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
-}
+  getAllExpenses(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
+  }
 
-getBudgetDetails(): Observable<any> {
-  return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
-}
+  getBudgetDetails(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
+  }
 
-  // ==========================================================================
-  // 👥 USER ACCESS & MANAGEMENT METHODS
-  // ==========================================================================
-
+  // USER ACCESS & MANAGEMENT METHODS
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
