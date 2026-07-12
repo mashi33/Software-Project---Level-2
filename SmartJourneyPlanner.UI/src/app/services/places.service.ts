@@ -38,6 +38,9 @@ export class PlacesService {
     if (cached && (now - cached.timestamp) < this.CACHE_TTL_MS) {
       console.log(`[PlacesService] Frontend cache hit for '${cacheKey}'`);
 
+      // ✅ BUG 10 FIX — clear previous search results before applying filters to avoid showing stale data
+    this.placesSource.next(null);
+
       // Filter cached data in memory — No API call 
       const filtered = this.applyFilters(cached.data, filters);
       this.placesSource.next({
@@ -48,13 +51,15 @@ export class PlacesService {
       return;
     }
     
+    // ✅ BUG 10 FIX — clear previous search results before sending backend request to avoid showing stale data
+     this.placesSource.next(null);
     //start loading state for skeleton loader 
      this.isLoadingSource.next(true);
 
     // Cache miss — send backend request 
     let params = new HttpParams()
       .set('city', city)
-      .set('category', filters.category)
+      .set('category', filters.category.toLowerCase()) // ✅ "hotel" lowercase
       .set('token', token);
 
     if (filters.budget) params = params.set('budget', filters.budget);
@@ -118,5 +123,10 @@ export class PlacesService {
 
   selectPlace(id: string | null) {
     this.selectedPlaceSource.next(id);
+  }
+
+  clearPlaces() {
+    this.placesSource.next(null);
+    this.selectedPlaceSource.next(null);
   }
 }

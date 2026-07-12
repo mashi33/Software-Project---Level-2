@@ -4,6 +4,9 @@
     <button [class.active]="activeCategory === 'Restaurant'" (click)="changeCategory('Restaurant')">Dining</button>
   </div>
 
+ 
+  <div class="filter-divider"></div>
+
   <div class="search-container">
     <div class="search-box">
       <input
@@ -13,11 +16,13 @@
         placeholder="Enter city or town (e.g. Negombo, Kandy)..."
       />
     </div>
-    
     <button class="search-btn" (click)="performSearch()">
       <i class="fas fa-search search-icon"></i> Search
     </button>
   </div>
+
+  
+  <div class="filter-divider"></div>
 
   <div class="filters-row">
     <div class="budget-filter">
@@ -29,7 +34,6 @@
         <option value="4">$$$$</option>
       </select>
     </div>
-
     <div class="rating-filter">
       <label>Min Rating:</label>
       <select [formControl]="ratingControl">
@@ -40,7 +44,6 @@
         <option value="4.5">4.5+</option>
       </select>
     </div>
-
     <div class="distance-filter">
       <label>Distance:</label>
       <select [formControl]="distanceControl">
@@ -49,5 +52,6 @@
         <option value="2">Within 2 km</option>
         <option value="5">Within 5 km</option>
       </select>
+    </div>
   </div>
 </div>

@@ -1,5 +1,6 @@
 <div class="card-container">
-  <!-- Skeleton loader while data is loading -->
+
+  <!-- Skeleton loader -->
   <ng-container *ngIf="isLoading">
     <div *ngFor="let item of skeletonItems" class="skeleton-card">
       <div class="skeleton-img"></div>
@@ -10,7 +11,7 @@
         <div class="skeleton-btn"></div>
       </div>
     </div>
-  </ng-container> 
+  </ng-container>
 
   <ng-container *ngIf="places !== null">
     <div *ngFor="let place of places"
@@ -36,13 +37,15 @@
         <p>{{ place.address }}</p>
         <div class="meta">
           <span>⭐ {{ place.rating }}</span>
-          <span>{{ '$'.repeat(place.priceLevel) }}</span>
+          <!-- ✅ BUG 9 FIX — if price level 0 add N/A  -->
+          <span>{{ place.priceLevel > 0 ? '$'.repeat(place.priceLevel) : 'N/A' }}</span>
         </div>
+
+        <!-- ✅ always button blue — no added state -->
         <button
           class="add-to-trip-btn"
-          [class.added]="isAdded(place.placeId)"
           (click)="addToTrip(place)">
-          {{ isAdded(place.placeId) ? '✓ Added' : '+ Add to Trip' }}
+          + Add to Trip
         </button>
       </div>
     </div>

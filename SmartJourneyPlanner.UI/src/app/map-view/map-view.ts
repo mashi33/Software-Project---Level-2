@@ -49,35 +49,36 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadGoogleMapsScript(): Promise<void> {
-    return new Promise((resolve) => {
+  return new Promise((resolve) => {
 
-      // Google Maps is already loaded — nothing to do
+    // Google Maps already loaded — resolve immediately
+    if (typeof google !== 'undefined' && google.maps) {
+      resolve();
+      return;
+    }
+
+    const existingScript = document.getElementById('google-maps-script');
+    if (existingScript) {
+      // ✅ BUG 5 FIX — check if the script is already loaded or still loading
       if (typeof google !== 'undefined' && google.maps) {
-        resolve();
-        return;
+        resolve(); // already loaded — don't wait for event
+      } else {
+        existingScript.addEventListener('load', () => resolve()); // still loading — wait
       }
+      return;
+    }
 
-      // Script tag exists but hasn't finished loading yet — wait for it instead of adding a duplicate
-      const existingScript = document.getElementById('google-maps-script');
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve());
-        return;
-      }
+    // First load — create script tag
+    const script = document.createElement('script');
+    script.id = 'google-maps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&callback=onGoogleMapsReady`;
+    script.async = true;
+    script.defer = true;
 
-      // First load — create the script tag and inject it into the page
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-
-      // The `callback` param tells Google Maps to call this function when it's ready
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&callback=onGoogleMapsReady`;
-      script.async = true;
-      script.defer = true;
-
-      // Expose the resolver as a global so Google Maps can trigger it via the callback URL param
-      (window as any)['onGoogleMapsReady'] = () => resolve();
-      document.head.appendChild(script);
-    });
-  }
+    (window as any)['onGoogleMapsReady'] = () => resolve();
+    document.head.appendChild(script);
+  });
+}
 
   initMap() {
     const mapElement = document.getElementById('hotelMap');
@@ -134,10 +135,10 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const infoWindow = new google.maps.InfoWindow({ content });
 
-        // On click: show the popup, notify the service which place is selected, and bounce the marker
+        // ✅ BUG 6 FIX — use the service to select the place when a marker is clicked, handling both camelCase and PascalCase IDs
         marker.addListener('click', () => {
           infoWindow.open(this.map, marker);
-          this.placesService.selectPlace(p.id);
+          this.placesService.selectPlace(p.id ?? p.Id ?? null); // ✅ camelCase + PascalCase handle
           this.animateMarker(marker);
         });
 
