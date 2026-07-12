@@ -163,7 +163,8 @@ public async Task<IActionResult> GetTrip(string id)
             try
             {
                 var filter = Builders<Trip>.Filter.Or(
-                    Builders<Trip>.Filter.Eq(t => t.CreatedBy, email),
+                    Builders<Trip>.Filter.Eq(t => t.CreatorEmail, email),
+                    Builders<Trip>.Filter.Eq(t => t.CreatedBy, email),  // fallback for old trips
                     Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == email)
                 );
                 var trips = await _tripsCollection.Find(filter).ToListAsync();

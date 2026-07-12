@@ -1,95 +1,108 @@
 .finder-container {
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: 100vh;
+  background-color: #f4f6fb;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.header-section {
+  background: linear-gradient(135deg, #004a99 0%, #0070f3 100%);
+  padding: 16px 28px;
+  flex-shrink: 0;
 }
 
 .header-section h2 {
-  color: #004a99;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.main-layout {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.map-section {
-  flex: 2;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  background: white;
-  height: 600px;
-}
-
-.list-section {
-  flex: 1;
-  max-height: 600px;
-  overflow-y: auto;
-  padding-right: 10px;
+  color: white;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.3px;
 }
 
 app-filter {
   display: block;
   background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
+  border-bottom: 1px solid #e8edf5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex-shrink: 0;
 }
+
+.main-layout {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.map-section {
+  flex: 2;
+  position: relative;
+  background: white;
+}
+
+.list-section {
+  flex: 1;
+  overflow-y: auto;
+  background: #f4f6fb;
+  padding: 16px;
+  border-left: 1px solid #e8edf5;
+}
+
+.list-section::-webkit-scrollbar { width: 4px; }
+.list-section::-webkit-scrollbar-track { background: #f1f1f1; }
+.list-section::-webkit-scrollbar-thumb { background: #c8d0e0; border-radius: 10px; }
 
 app-place-card {
   display: block;
-  margin-bottom: 15px;
   transition: transform 0.2s;
 }
-
-app-place-card:hover {
-  transform: translateY(-5px);
-}
-
-@media (max-width: 992px) {
-  .main-layout {
-    flex-direction: column;
-  }
-
-  .map-section {
-    height: 400px;
-  }
-}
-
-/* Back and View Route Buttons */
 
 .floating-buttons {
   position: absolute;
   bottom: 20px;
-  width: 100%;
+  left: 20px;
   display: flex;
-  justify-content: space-between;
-  padding: 0 20px;
-  pointer-events: none; 
-  z-index: 1000;
+  gap: 10px;
+  z-index: 10;
 }
 
 .nav-btn {
-  pointer-events: auto; 
-  padding: 10px 25px;
-  font-size: 16px;
+  padding: 10px 22px;
+  font-size: 14px;
   font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   transition: all 0.3s ease;
   color: white;
-  background-color: #007bff; 
+  backdrop-filter: blur(4px);
 }
 
-.nav-btn:hover {
-  background-color: #0056b3;
+.back-btn {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(255,255,255,0.4);
+}
+
+.back-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.route-btn {
+  background: #0070f3;
+}
+
+.route-btn:hover {
+  background: #0056c7;
   transform: translateY(-2px);
+}
+
+@media (max-width: 992px) {
+  .finder-container { height: auto; overflow: auto; }
+  .main-layout { flex-direction: column; }
+  .map-section { height: 400px; }
+  .list-section { max-height: 500px; border-left: none; border-top: 1px solid #e8edf5; }
 }

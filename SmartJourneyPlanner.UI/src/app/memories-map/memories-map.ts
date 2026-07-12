@@ -84,7 +84,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     return val !== null && typeof val === 'object';
   }
 
-  // ==================== SWEETALERT HELPERS ====================
+  // SWEETALERT HELPERS 
 
   private showSuccess(title: string, text?: string) {
     return Swal.fire({
@@ -136,7 +136,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ==================== FILE UPLOAD ====================
+  // FILE UPLOAD
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
@@ -166,7 +166,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     fileInput.value = '';
   }
 
-  // ==================== LIGHTBOX ====================
+  // LIGHTBOX 
 
   openAlbum(album: any) {
     this.selectedAlbum = album;
@@ -240,7 +240,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ==================== TRIPS ====================
+  // TRIPS
 
   loadAccessibleTrips() {
     const token = localStorage.getItem('token');
@@ -265,7 +265,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.selectedTrip = this.allTrips.find(t => t.id == tripId) || null;
   }
 
-  // ==================== DATA HELPERS ====================
+  // DATA HELPERS
 
   private formatData(memory: any) {
     return {
@@ -362,7 +362,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  // ==================== SEARCH & SAVE ====================
+  // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -483,7 +483,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ==================== DELETE ====================
+  // DELETE 
 
   deleteMemory(id: string, event?: Event) {
     event?.stopPropagation();
@@ -592,7 +592,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ==================== MAP POPUP ====================
+  // MAP POPUP 
 
   private escapeHtml(text: string): string {
     const div = document.createElement('div');
@@ -702,7 +702,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ==================== SLIDESHOW ====================
+  // SLIDESHOW 
 
   startSlideshow(album: any) {
     if (album.memories.length <= 1) return;
@@ -725,7 +725,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-  // ==================== MAP INIT ====================
+  // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -761,7 +761,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
-  // ==================== ALBUM HELPERS ====================
+  // ALBUM HELPERS 
 
   getTotalLikes(album: any): number {
     return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
@@ -787,7 +787,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
   }
 
-  // ==================== EVENTS ====================
+  // EVENTS 
 
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: any) {

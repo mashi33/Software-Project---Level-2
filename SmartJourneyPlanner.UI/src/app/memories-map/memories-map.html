@@ -1,6 +1,6 @@
 <div class="main-wrapper">
 
-  <!-- ==================== SIDEBAR ==================== -->
+  <!-- SIDEBAR -->
   <aside class="sidebar">
 
     <div class="sidebar-brand">
@@ -27,7 +27,7 @@
 
     <div class="sidebar-body">
 
-      <!-- ========== UPLOAD TAB ========== -->
+      <!-- UPLOAD TAB -->
       <ng-container *ngIf="activeTab === 'upload'">
 
         <section class="form-section">
@@ -120,7 +120,7 @@
         </button>
       </ng-container>
 
-      <!-- ========== ALBUMS TAB ========== -->
+      <!-- ALBUMS TAB -->
       <ng-container *ngIf="activeTab === 'albums'">
 
         <div class="albums-header" *ngIf="groupedAlbums.length > 0">
@@ -190,7 +190,7 @@
     </div>
   </aside>
 
-  <!-- ==================== MAP ==================== -->
+  <!-- MAP -->
   <main class="map-container">
     <div id="map"></div>
     <div class="map-hint">
@@ -200,7 +200,7 @@
   </main>
 </div>
 
-<!-- ==================== LIGHTBOX (BIG VIEW) ==================== -->
+<!-- LIGHTBOX (BIG VIEW) -->
 <div class="lightbox-overlay" *ngIf="isLightboxOpen" (click)="closeLightbox()">
   <div class="lightbox-content" (click)="$event.stopPropagation()">
 

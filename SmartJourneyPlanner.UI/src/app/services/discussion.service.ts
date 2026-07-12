@@ -34,9 +34,10 @@ export class DiscussionService {
     private signalrService: SignalrService
   ) {}
 
-  // Fetch all discussions linked to a specific trip
-  getDiscussionsByTrip(tripId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/trip/${tripId}`);
+  // ── UPDATED: passes requestingUser so the backend can return only
+  // this user's own vote (anonymizing everyone else's choices)
+  getDiscussionsByTrip(tripId: string, requestingUser: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/trip/${tripId}?requestingUser=${encodeURIComponent(requestingUser)}`);
   }
 
   // Fetch all comments linked to a specific trip
@@ -54,9 +55,16 @@ export class DiscussionService {
     return this.http.post<DiscussionItem>(this.apiUrl, item);
   }
 
-  // Submit a vote for a specific option in a discussion
-  vote(id: string, option: string, user: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${id}/vote`, { optionText: option, userName: user });
+  // ── UPDATED: now also sends userEmail so the backend can verify the
+  // voter is an actual trip member (creator or invited), not just any name.
+  // `user` stays as the display name (unchanged UI behavior); `userEmail`
+  // is the value used purely for server-side membership validation.
+  vote(id: string, option: string, user: string, userEmail: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/vote`, {
+      optionText: option,
+      userName: user,
+      userEmail: userEmail
+    });
   }
 
   // Remove a discussion item by its ID

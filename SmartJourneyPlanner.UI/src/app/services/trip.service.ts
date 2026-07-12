@@ -35,6 +35,12 @@ export class TripService {
   getTripById(id: string): Observable<any> {
   return this.http.get(`${this.apiUrl}/${id}`);
   }
+
+  // fetch only trips where the user is creator or member (filters by email)
+  // Used by group chat / discussion page so users only see their own trips
+  getTripsByEmail(email: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/by-email/${email}`);
+  }
   
   // Stores the current trip data in a temporary variable for use across components during the creation/editing process.
   setTempTripData(data: any) {

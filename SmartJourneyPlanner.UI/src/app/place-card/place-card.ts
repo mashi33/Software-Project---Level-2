@@ -19,9 +19,7 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   googleMapsApiKey: string = environment.googleMapsApiKey;
   places: any[] | null = null;
   selectedPlaceId: string | null = null;
-  addedPlaceIds: Set<string> = new Set();
 
-  //isLoading state for skeleton loader
   isLoading = false;
   skeletonItems = Array(5);
 
@@ -36,12 +34,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    const stored = localStorage.getItem('tripPlaces');
-    if (stored) {
-      const tripPlaces: any[] = JSON.parse(stored);
-      tripPlaces.forEach(p => this.addedPlaceIds.add(p.placeId));
-    }
-
     this.placesSubscription = this.placesService.currentPlaces.subscribe((result: PlacesResult | null) => {
       this.places = result ? result.places : null;
     });
@@ -51,26 +43,28 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
       if (id) this.scrollToCard(id);
     });
 
-    // Subscribe to loading state for skeleton loader
     this.loadingSubscription = this.placesService.isLoading$.subscribe(loading => {
       this.isLoading = loading;
     });
   }
 
   scrollToCard(placeId: string) {
-    setTimeout(() => {
-      const element = document.getElementById('card-' + placeId);
-      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  }
+  setTimeout(() => {
+    // NOTE: card id = "card-" + place.id (MongoDB _id)
+    const element = document.getElementById('card-' + placeId);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
 
-  isAdded(placeId: string): boolean {
-    return this.addedPlaceIds.has(placeId);
+  // ✅ BUG 1 FIX — placeId + tripId combination check
+  isAlreadyAddedToTrip(placeId: string, tripId: string): boolean {
+    const stored = localStorage.getItem('tripPlaces');
+    if (!stored) return false;
+    const tripPlaces: any[] = JSON.parse(stored);
+    return tripPlaces.some(p => p.placeId === placeId && p.tripId === tripId);
   }
 
   async addToTrip(place: any) {
-    if (this.isAdded(place.placeId)) return;
-
     const token = this.authService.getToken();
     if (!token) {
       Swal.fire({
@@ -104,172 +98,154 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             return;
           }
 
-          const tripOptions: Record<string, string> = {};
-          trips.forEach(trip => {
-            const start = new Date(trip.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const end = new Date(trip.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            tripOptions[trip.id] = `__TRIP__${trip.tripName}__DEST__${trip.destination}__DATE__${start} – ${end}`;
-          });
+          let selectedTripId: string | undefined;
 
-          const { value: selectedTripId } = await Swal.fire({
+          await Swal.fire({
             title: 'Select a Trip',
-            input: 'radio',
-            inputOptions: tripOptions,
-            inputValidator: (value) => {
-              if (!value) return 'Please select a trip!';
-              return null;
-            },
+            html: `
+              <div id="custom-trip-list" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding:4px 2px;">
+                ${trips.map(trip => {
+                  const start = new Date(trip.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  const end = new Date(trip.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  return `
+                    <label class="custom-trip-item" data-id="${trip.id}" style="
+                      display:flex; align-items:center; gap:14px;
+                      padding:14px 16px; border-radius:12px;
+                      border:2px solid #eee; cursor:pointer;
+                      background:#fff; transition:all 0.2s;
+                      text-align:left;
+                    ">
+                      <div class="custom-radio" style="
+                        width:20px; height:20px; border-radius:50%;
+                        border:2px solid #ccc; flex-shrink:0;
+                        display:flex; align-items:center; justify-content:center;
+                        transition:all 0.2s;
+                      "></div>
+                      <div style="flex:1;">
+                        <div style="font-size:15px; font-weight:700; color:#1a1a2e;">${trip.tripName}</div>
+                        <div style="font-size:12px; color:#888; margin-top:3px;">
+                          📍 ${trip.destination} &nbsp;|&nbsp; 🗓️ ${start} – ${end}
+                        </div>
+                      </div>
+                    </label>
+                  `;
+                }).join('')}
+              </div>
+            `,
             showCancelButton: true,
             confirmButtonText: 'Add to Trip',
             cancelButtonText: 'Cancel',
             confirmButtonColor: '#4A90D9',
-            customClass: {
-              input: 'swal-trip-radio-group'
-            },
-
+            width: 500,
+            padding: '32px',
             didOpen: () => {
-              const style = document.createElement('style');
-              style.textContent = `
-                .swal2-popup {
-                  width: 520px !important;
-                  padding: 30px !important;
-                  border-radius: 16px !important;
-                }
-                .swal2-title {
-                  font-size: 22px !important;
-                  font-weight: 700 !important;
-                  color: #1a1a2e !important;
-                  margin-bottom: 20px !important;
-                }
-                .swal2-radio {
-                  display: flex !important;
-                  flex-direction: column !important;
-                  gap: 10px !important;
-                  width: 100% !important;
-                  max-height: 380px !important;
-                  overflow-y: auto !important;
-                  padding: 4px 6px !important;
-                }
-                .swal2-radio::-webkit-scrollbar {
-                  width: 6px !important;
-                }
-                .swal2-radio::-webkit-scrollbar-track {
-                  background: #f1f1f1 !important;
-                  border-radius: 10px !important;
-                }
-                .swal2-radio::-webkit-scrollbar-thumb {
-                  background: #c0c0c0 !important;
-                  border-radius: 10px !important;
-                }
-                .swal2-radio label {
-                  display: flex !important;
-                  align-items: center !important;
-                  gap: 12px !important;
-                  padding: 14px 16px !important;
-                  border: 1.5px solid #e8e8e8 !important;
-                  border-radius: 12px !important;
-                  cursor: pointer !important;
-                  background: #fff !important;
-                  width: 100% !important;
-                  box-sizing: border-box !important;
-                  transition: all 0.2s ease !important;
-                  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
-                }
-                .swal2-radio label:hover {
-                  background: #f0f7ff !important;
-                  border-color: #4A90D9 !important;
-                  box-shadow: 0 2px 8px rgba(74,144,217,0.15) !important;
-                  transform: translateY(-1px) !important;
-                }
-                .swal2-radio input[type="radio"] {
-                  width: 18px !important;
-                  height: 18px !important;
-                  accent-color: #4A90D9 !important;
-                  flex-shrink: 0 !important;
-                }
-                .swal2-radio label:has(input:checked) {
-                  background: #eef6ff !important;
-                  border-color: #4A90D9 !important;
-                  box-shadow: 0 2px 10px rgba(74,144,217,0.2) !important;
-                }
-                .swal2-radio .trip-label-wrap {
-                  display: flex !important;
-                  flex-direction: column !important;
-                  gap: 3px !important;
-                  flex: 1 !important;
-                  text-align: left !important;
-                }
-                .swal2-radio .trip-label-name {
-                  font-size: 15px !important;
-                  font-weight: 700 !important;
-                  color: #1a1a2e !important;
-                }
-                .swal2-radio .trip-label-meta {
-                  font-size: 12px !important;
-                  color: #777 !important;
-                  font-weight: 400 !important;
-                }
-                .swal2-radio label:has(input:checked) .trip-label-name {
-                  color: #4A90D9 !important;
-                }
-                .swal2-actions {
-                  margin-top: 24px !important;
-                  gap: 12px !important;
-                }
-                .swal2-confirm {
-                  padding: 12px 32px !important;
-                  border-radius: 10px !important;
-                  font-size: 15px !important;
-                  font-weight: 600 !important;
-                  background: #4A90D9 !important;
-                  box-shadow: 0 4px 12px rgba(74,144,217,0.35) !important;
-                  transition: all 0.2s !important;
-                }
-                .swal2-confirm:hover {
-                  background: #357abd !important;
-                  box-shadow: 0 6px 16px rgba(74,144,217,0.45) !important;
-                  transform: translateY(-1px) !important;
-                }
-                .swal2-cancel {
-                  padding: 12px 32px !important;
-                  border-radius: 10px !important;
-                  font-size: 15px !important;
-                  font-weight: 600 !important;
-                  background: #f0f0f0 !important;
-                  color: #555 !important;
-                }
-                .swal2-cancel:hover {
-                  background: #e0e0e0 !important;
-                }
-                .swal2-validation-message {
-                  border-radius: 8px !important;
-                  font-size: 13px !important;
-                }
-              `;
-              document.head.appendChild(style);
-
-
-              setTimeout(() => {
-                document.querySelectorAll('.swal2-radio label').forEach(label => {
-                  const span = label.querySelector('span');
-                  if (span) {
-                    const raw = span.textContent || '';
-                    const tripMatch = raw.match(/__TRIP__(.+?)__DEST__(.+?)__DATE__(.+)/);
-                    if (tripMatch) {
-                      span.innerHTML = `
-                        <div class="trip-label-wrap">
-                          <span class="trip-label-name">${tripMatch[1]}</span>
-                          <span class="trip-label-meta">📍 ${tripMatch[2]} &nbsp;|&nbsp; 🗓️ ${tripMatch[3]}</span>
-                        </div>
-                      `;
-                    }
+              // ✅ BUG 3 FIX — avoid duplicate style injection
+              if (!document.getElementById('swal-trip-select-style')) {
+                const style = document.createElement('style');
+                style.id = 'swal-trip-select-style';
+                style.textContent = `
+                  .swal2-popup { border-radius: 20px !important; }
+                  .swal2-title {
+                    font-size: 20px !important;
+                    font-weight: 700 !important;
+                    color: #1a1a2e !important;
+                    padding-bottom: 16px !important;
+                    border-bottom: 1px solid #f0f0f0 !important;
+                    margin-bottom: 4px !important;
                   }
+                  #custom-trip-list::-webkit-scrollbar { width: 5px; }
+                  #custom-trip-list::-webkit-scrollbar-track { background: #f5f5f5; border-radius:10px; }
+                  #custom-trip-list::-webkit-scrollbar-thumb { background: #ddd; border-radius:10px; }
+                  .custom-trip-item:hover {
+                    border-color: #4A90D9 !important;
+                    background: #f0f7ff !important;
+                  }
+                  .custom-trip-item.selected {
+                    border-color: #4A90D9 !important;
+                    background: #eef6ff !important;
+                  }
+                  .custom-trip-item.selected .custom-radio {
+                    border-color: #4A90D9 !important;
+                    background: #4A90D9 !important;
+                  }
+                  .custom-trip-item.selected .custom-radio::after {
+                    content: '';
+                    width: 8px; height: 8px;
+                    border-radius: 50%;
+                    background: white;
+                    display: block;
+                  }
+                  .swal2-actions { gap: 12px !important; margin-top: 24px !important; }
+                  .swal2-confirm {
+                    border-radius: 10px !important;
+                    padding: 12px 32px !important;
+                    font-size: 15px !important;
+                    font-weight: 600 !important;
+                    box-shadow: 0 4px 12px rgba(74,144,217,0.3) !important;
+                  }
+                  .swal2-cancel {
+                    border-radius: 10px !important;
+                    padding: 12px 32px !important;
+                    font-size: 15px !important;
+                    font-weight: 600 !important;
+                    background: #f0f0f0 !important;
+                    color: #666 !important;
+                  }
+                  .swal2-cancel:hover { background: #e0e0e0 !important; }
+                  .swal2-validation-message { border-radius: 8px !important; }
+                `;
+                document.head.appendChild(style);
+              }
+
+              document.querySelectorAll('.custom-trip-item').forEach(item => {
+                item.addEventListener('click', () => {
+                  document.querySelectorAll('.custom-trip-item').forEach(i => i.classList.remove('selected'));
+                  item.classList.add('selected');
+                  (document.querySelector('.swal2-popup') as any).__selectedTripId = (item as HTMLElement).dataset['id'];
                 });
-              }, 0);
+              });
+            },
+            preConfirm: () => {
+              const id = (document.querySelector('.swal2-popup') as any).__selectedTripId;
+              if (!id) {
+                Swal.showValidationMessage('Please select a trip!');
+                return false;
+              }
+              return id;
             }
+          }).then(result => {
+            selectedTripId = result.value;
           });
 
           if (selectedTripId) {
+            // ✅ BUG 1 FIX — block duplicate addition to the same trip
+            const alreadyAdded = this.isAlreadyAddedToTrip(place.placeId, selectedTripId);
+            if (alreadyAdded) {
+              Swal.fire({
+                icon: 'info',
+                title: 'Already Added!',
+                html: `<p style="color:#555; font-size:15px; margin:0;">
+                  <strong>${place.name}</strong> is already in this trip.
+                </p>`,
+                confirmButtonColor: '#4A90D9',
+                position: 'center',
+                width: 400,
+                padding: '32px',
+                showClass: { popup: 'swal2-show' },
+                hideClass: { popup: 'swal2-hide' },
+                customClass: { popup: 'info-popup' },
+                didOpen: () => {
+                  if (!document.getElementById('swal-info-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'swal-info-style';
+                    style.textContent = `.info-popup { border-radius: 16px !important; }`;
+                    document.head.appendChild(style);
+                  }
+                }
+              });
+              return;
+            }
+
             const selectedTrip = trips.find(t => t.id == selectedTripId);
             this.selectTrip(place, selectedTrip);
           }
@@ -299,29 +275,68 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
         next: () => {
           const stored = localStorage.getItem('tripPlaces');
           const tripPlaces: any[] = stored ? JSON.parse(stored) : [];
-          tripPlaces.push(placeToSave);
+
+          // ✅ BUG 4 FIX — now save tripId with place to avoid duplicates across trips
+          tripPlaces.push({ ...placeToSave, tripId: trip.id });
           localStorage.setItem('tripPlaces', JSON.stringify(tripPlaces));
 
-          this.addedPlaceIds.add(place.placeId);
-
           Swal.fire({
-            toast: true,
-            position: 'top-end',
             icon: 'success',
-            title: `"${placeToSave.name}" added to "${trip.tripName}"!`,
+            title: 'Place Added!',
+            html: `<p style="color:#555; font-size:15px; margin:0;">
+              <strong>${placeToSave.name}</strong> added to <strong>${trip.tripName}</strong>
+            </p>`,
             showConfirmButton: false,
             timer: 2500,
             timerProgressBar: true,
+            position: 'center',
+            showClass: { popup: 'swal2-show' },
+            hideClass: { popup: 'swal2-hide' },
+            width: 400,
+            padding: '32px',
+            customClass: { popup: 'success-popup' },
+            didOpen: () => {
+              // ✅ BUG 3 FIX
+              if (!document.getElementById('swal-success-style')) {
+                const style = document.createElement('style');
+                style.id = 'swal-success-style';
+                style.textContent = `
+                  .success-popup { border-radius: 16px !important; }
+                  .swal2-success-ring { border-color: #4A90D9 !important; }
+                  .swal2-success-line-tip,
+                  .swal2-success-line-long { background-color: #4A90D9 !important; }
+                  .swal2-timer-progress-bar { background: #4A90D9 !important; }
+                `;
+                document.head.appendChild(style);
+              }
+            }
           });
         },
         error: () => {
           Swal.fire({
-            toast: true,
-            position: 'top-end',
             icon: 'error',
-            title: 'Failed to add place. Try again.',
-            showConfirmButton: false,
-            timer: 2500,
+            title: 'Failed to Add!',
+            html: `<p style="color:#555; font-size:15px; margin:0;">
+              Could not add <strong>${placeToSave.name}</strong> to the trip. Please try again.
+            </p>`,
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#4A90D9',
+            position: 'center',
+            showClass: { popup: 'swal2-show' },
+            hideClass: { popup: 'swal2-hide' },
+            width: 400,
+            padding: '32px',
+            customClass: { popup: 'error-popup' },
+            didOpen: () => {
+              // ✅ BUG 3 FIX
+              if (!document.getElementById('swal-error-style')) {
+                const style = document.createElement('style');
+                style.id = 'swal-error-style';
+                style.textContent = `.error-popup { border-radius: 16px !important; }`;
+                document.head.appendChild(style);
+              }
+            }
           });
         }
       });
@@ -330,7 +345,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.placesSubscription) this.placesSubscription.unsubscribe();
     if (this.selectionSubscription) this.selectionSubscription.unsubscribe();
-    // Unsubscribe from loading state
     if (this.loadingSubscription) this.loadingSubscription.unsubscribe();
   }
 }

@@ -38,8 +38,27 @@ export class AdminDashboardComponent implements OnInit {
   };
   costSearch = '';
   costStatusFilter = 'all';
+  costSortFilter = 'date-desc';
   selectedBudgetTrip: any = null;
   costsLoading = false;
+
+  approvedSessionCount = 0;
+  rejectedSessionCount = 0;
+
+  // Memory filtering
+  memorySearch = '';
+  memoryStatusFilter = 'all';
+  memoryDateFilter = 'all';
+
+  // Fleet filtering
+  fleetSearch = '';
+  fleetStatusFilter = 'all';
+  fleetTypeFilter = 'all';
+  fleetBookingFilter = 'all';
+
+  // Provider filtering
+  providerSearch = '';
+  providerTypeFilter = 'all';
 
   ngOnInit() {
     this.adminName = this.authService.getUserName() || 'Admin';
@@ -103,30 +122,74 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   get filteredBudgetTrips(): any[] {
-    return this.budgetTrips.filter(trip => {
+    if (!this.budgetTrips || this.budgetTrips.length === 0) return [];
+    
+    let filtered = this.budgetTrips.filter(trip => {
       const query = this.costSearch.trim().toLowerCase();
       const tripName = (trip.tripName || trip.TripName || '').toLowerCase();
       const createdBy = (trip.createdBy || trip.CreatedBy || '').toLowerCase();
       const route = this.getTripRoute(trip).toLowerCase();
       const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query) || route.includes(query);
 
-      const status = (trip.status || trip.Status || '').toLowerCase();
+      const status = this.getTripStatus(trip).toLowerCase();
       const filter = this.costStatusFilter.toLowerCase();
       const matchesStatus = filter === 'all' || status === filter;
 
       return matchesSearch && matchesStatus;
     });
+
+    // Apply sorting
+    return this.sortBudgetTrips(filtered);
   }
 
+  sortBudgetTrips(trips: any[]): any[] {
+    const sortOption = this.costSortFilter;
+    
+    return [...trips].sort((a, b) => {
+      switch (sortOption) {
+        case 'date-desc':
+          const dateB = new Date(b.StartDate || b.startDate || 0).getTime();
+          const dateA = new Date(a.StartDate || a.startDate || 0).getTime();
+          return dateB - dateA;
+        case 'date-asc':
+          const dateA2 = new Date(a.StartDate || a.startDate || 0).getTime();
+          const dateB2 = new Date(b.StartDate || b.startDate || 0).getTime();
+          return dateA2 - dateB2;
+
+        // LOGIC FOR SORTING BY SPENT AMOUNT
+        case 'spent-desc':
+          return this.getTripSpent(b) - this.getTripSpent(a);
+        case 'spent-asc':
+          return this.getTripSpent(a) - this.getTripSpent(b);
+
+        case 'usage-desc':
+          return this.getTripUsage(b) - this.getTripUsage(a);
+        case 'usage-asc':
+          return this.getTripUsage(a) - this.getTripUsage(b);
+        default:
+          return 0;
+      }
+    });
+  }
   getTripSpent(trip: any): number {
-    return trip.totalSpent ?? trip.TotalSpent ?? 0;
+    return trip.totalSpent ?? trip.TotalSpent ?? trip.spent ?? trip.Spent ?? 0;
   }
 
   getTripBudget(trip: any): number {
-    return trip.budgetLimit ?? trip.BudgetLimit ?? trip.expectedBudget ?? trip.ExpectedBudget ?? 0;
+    const raw = trip.Budgetlimit ?? trip.budgetLimit ?? trip.BudgetLimit ?? trip.budgetlimit;
+    if (raw === null || raw === undefined || raw === '') return 0;
+
+    if (typeof raw === 'string' && raw.includes('-')) {
+      // Handles a range string like "5000-10000" — take the upper limit
+      const parts = raw.split('-').map((p: string) => parseFloat(p.trim()));
+      return parts[1] || parts[0] || 0;
+    }
+    const parsed = parseFloat(raw);
+    return isNaN(parsed) ? 0 : parsed;
   }
 
   getTripRoute(trip: any): string {
+    if (trip.Route && trip.Route !== '—') return trip.Route;
     const from = trip.departFrom || trip.DepartFrom || '';
     const to = trip.destination || trip.Destination || '';
     if (from && to) return `${from} → ${to}`;
@@ -144,15 +207,32 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getTripRemaining(trip: any): number {
-    return trip.remainingBudget ?? trip.RemainingBudget ?? (this.getTripBudget(trip) - this.getTripSpent(trip));
+    const backendValue = trip.RemainingBudget ?? trip.remainingBudget;
+    if (backendValue !== null && backendValue !== undefined) return backendValue;
+    return this.getTripBudget(trip) - this.getTripSpent(trip);
   }
 
   getTripUsage(trip: any): number {
-    return trip.usagePercent ?? trip.UsagePercent ?? 0;
+    return trip.UsagePercent ?? trip.usagePercent ?? 0;
   }
 
   getTripStatus(trip: any): string {
-    return trip.status || trip.Status || 'On Track';
+    const backendStatus = trip.Status ?? trip.status;
+    if (backendStatus) return backendStatus;
+
+    const budget = this.getTripBudget(trip);
+    const spent = this.getTripSpent(trip);
+
+    if (budget === 0 || budget === null || budget === undefined) {
+      return 'No Limit Set';
+    }
+    if (spent > budget) {
+      return 'Over Budget';
+    }
+    if (spent >= budget * 0.85) {
+      return 'Near Limit';
+    }
+    return 'On Track';
   }
 
   getBudgetStatusClass(status: string): string {
@@ -182,38 +262,34 @@ export class AdminDashboardComponent implements OnInit {
   onReviewMemories() { this.view = 'memories'; this.fetchPlatformMemories(); }
   onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
 
- refreshDashboard() {
-  // 1. Stats ලබාගැනීම (නිවැරදි subscribe ක්‍රමය)
+  refreshDashboard() {
   this.adminService.getDashboardStats().subscribe({
     next: (data) => {
-      console.log("Stats Response:", data); // මෙතන totalExpenditure තියෙනවාද?
+      console.log("Stats Response:", data); 
       this.stats = data;
     },
     error: (err) => console.error("Error loading stats:", err)
   });
 
-  // 2. අනෙකුත් දත්ත ලබාගැනීම (මෙම ශ්‍රිත ඇතුළේ refreshDashboard නැවත නොඅමතන්න!)
   this.fetchPendingProviders();
   this.fetchAllUsers();
   this.fetchPlatformMemories();
   this.fetchAllVehicles();
-}
+ }
 
   fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
   fetchAllUsers() { this.adminService.getAllUsers().subscribe(data => this.allUsers = data); }
 
-  // memory පැටවීමේදී වෙනත් දත්ත සමග පැටලෙන්නේ නැති බවට සහතික වන්න
-fetchPlatformMemories() {
+ fetchPlatformMemories() {
   this.adminService.getAllUploadedMemories().subscribe({
     next: (data) => {
       this.allMemories = data;
     },
     error: (err) => console.error("Memory Load Error:", err)
   });
-}
+ }
 
-refreshCurrentView() {
-  // 1. කුඩා Loading alert එකක් පෙන්වන්න (Optional)
+ refreshCurrentView() {
   Swal.fire({
     title: 'Syncing Data...',
     text: 'Please wait while we update your current view.',
@@ -223,7 +299,6 @@ refreshCurrentView() {
     }
   });
 
-  // 2. අදාළ view එකේ දත්ත refresh කරන්න
   switch (this.view) {
     case 'stats':
       this.refreshDashboard();
@@ -245,8 +320,6 @@ refreshCurrentView() {
       break;
   }
 
-  // 3. Sync එක අවසන් වූ පසු සාර්ථක පණිවිඩය පෙන්වන්න
-  // (මෙය සරලව තත්පර 1කින් වසා දමන ලෙස සකසා ඇත)
   setTimeout(() => {
     Swal.fire({
       icon: 'success',
@@ -255,7 +328,7 @@ refreshCurrentView() {
       timer: 1500,
       showConfirmButton: false
     });
-  }, 1000); // API එකෙන් දත්ත එන වේගය අනුව මෙය වෙනස් කළ හැක
+  }, 1000); 
 }
   confirmApproval(provider: any) {
   Swal.fire({
@@ -264,7 +337,6 @@ refreshCurrentView() {
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: '#10b981',
-    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
     target: document.querySelector('.modal-card') as HTMLElement || document.body 
   }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
 }
@@ -276,19 +348,26 @@ confirmReject(provider: any) {
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
-    // මේකෙන් alert එක modal එක ඇතුලේම පෙන්වයි
     target: document.querySelector('.modal-card') as HTMLElement || document.body 
   }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
 }
 
   updateStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
-    this.adminService.updateProviderStatus(id, status).subscribe(() => {
-      this.selectedProvider = null;
-      this.refreshDashboard();
-      Swal.fire('Success', `Vehicle ${status}`, 'success');
-    });
-  }
+  const id = provider._id || provider.id;
+  this.adminService.updateProviderStatus(id, status).subscribe(() => {
+    this.selectedProvider = null;
+    
+    // INCREMENT THE COUNTERS 
+    if (status === 'Approved') {
+      this.approvedSessionCount++;
+    } else if (status === 'Rejected') {
+      this.rejectedSessionCount++;
+    }
+
+    this.refreshDashboard();
+    Swal.fire('Success', `Vehicle ${status}`, 'success');
+  });
+}
 
 fetchAllVehicles() {
   this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
@@ -296,21 +375,30 @@ fetchAllVehicles() {
   });
 }
 
-// Component එකේ දත්ත ලබාගන්නා ආකාරය
 fetchExpenseList() {
   this.costsLoading = true;
   this.adminService.getBudgetDetails().subscribe({
     next: (data: any) => {
-      const summary = data?.summary || data?.Summary || {};
-      this.costSummary = {
-        totalTrips: summary.totalTrips ?? summary.TotalTrips ?? 0,
-        overBudgetTrips: summary.overBudgetTrips ?? summary.OverBudgetTrips ?? 0,
-        onTrackTrips: summary.onTrackTrips ?? summary.OnTrackTrips ?? 0,
-        nearLimitTrips: summary.nearLimitTrips ?? summary.NearLimitTrips ?? 0
-      };
+      // 1. Extract the trips array safely
+      const rawTrips = data?.trips || data?.Trips || data || [];
 
-      this.budgetTrips = data?.trips || data?.Trips || [];
-      this.expenses = this.budgetTrips;
+      this.budgetTrips = rawTrips.map((t: any) => ({
+        TripName: t.TripName ?? t.tripname ?? t.tripName ?? 'Untitled Trip',
+        Budgetlimit: t.budgetLimit ?? t.BudgetLimit ?? t.Budgetlimit ?? t.budgetlimit ?? 0,
+        TotalSpent: t.totalSpent ?? t.TotalSpent ?? t.totalspent ?? 0,
+        Route: t.Route ?? t.route ?? (t.departFrom ? `${t.departFrom} → ${t.destination}` : '—'),
+        StartDate: t.StartDate ?? t.startDate,
+        EndDate: t.EndDate ?? t.endDate,
+        CreatedBy: t.CreatedBy ?? t.createdBy,
+        ExpenseCount: t.expenseCount ?? t.ExpenseCount ?? 0,
+        RemainingBudget: t.remainingBudget ?? t.RemainingBudget ?? null,
+        UsagePercent: t.usagePercent ?? t.UsagePercent ?? 0,
+        Status: t.status ?? t.Status ?? null,
+        expenses: t.expenses ?? t.Expenses ?? []
+      }));
+
+      this.expenses = [...this.budgetTrips];
+      this.costSummary = this.calculateCostSummary();
       this.costsLoading = false;
     },
     error: (err) => {
@@ -320,29 +408,52 @@ fetchExpenseList() {
   });
 }
 
-onReviewFleet() { 
-  this.view = 'fleet-detailed'; 
-  this.fetchAllVehicles(); 
+calculateCostSummary() {
+  let overBudget = 0;
+  let onTrack = 0;
+  let nearLimit = 0;
+
+  this.budgetTrips.forEach((trip) => {
+    const status = this.getTripStatus(trip);
+
+    if (status === 'Over Budget') {
+      overBudget++;
+    } else if (status === 'Near Limit') {
+      nearLimit++;
+    } else if (status === 'On Track') {
+      onTrack++;
+    }
+  });
+
+  return {
+    totalTrips: this.budgetTrips.length,
+    overBudgetTrips: overBudget,
+    onTrackTrips: onTrack,
+    nearLimitTrips: nearLimit
+  };
 }
 
+  onReviewFleet() { 
+    this.view = 'fleet-detailed'; 
+    this.fetchAllVehicles(); 
+  }
+
   deleteMemory(id: string) {
-    // ඔබ අනිවාර්යයෙන්ම ID එකක් යවනවාදැයි මෙතන බලන්න
     this.adminService.deleteMemoryPost(id).subscribe({
       next: () => {
         this.refreshDashboard();
         Swal.fire('Deleted!', 'Memory post has been removed.', 'success');
       },
       error: (err) => {
-        console.error("Delete Error:", err); // Network tab එකේ එන Error එක මෙතනත් පේයි
+        console.error("Delete Error:", err); 
       }
     });
   }
 
-// වාහන සඳහා පමණක් භාවිතා කරන්න
-viewVehicleDetails(vehicle: any) {
-  console.log("Viewing Vehicle:", vehicle);
-  this.selectedProvider = vehicle; 
-}
+  viewVehicleDetails(vehicle: any) {
+    console.log("Viewing Vehicle:", vehicle);
+    this.selectedProvider = vehicle; 
+  }
 
 // Memory සඳහා පමණක් භාවිතා කරන්න
 viewMemoryDetails(memory: any) {
@@ -357,6 +468,37 @@ viewMemoryDetails(memory: any) {
     width: 640,
     confirmButtonText: 'Close',
     confirmButtonColor: '#2563eb'
+  });
+}
+
+confirmMemoryApproval(memory: any) {
+  Swal.fire({
+    title: 'Approve this memory?',
+    text: `Publish "${memory.title || 'this memory'}" as approved content?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981'
+  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Approved'); });
+}
+
+confirmMemoryFlag(memory: any) {
+  Swal.fire({
+    title: 'Flag this memory?',
+    text: `Flag "${memory.title || 'this memory'}" for review or removal?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444'
+  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Flagged'); });
+}
+
+setMemoryStatus(memory: any, status: string) {
+  const id = memory.id || memory._id;
+  this.adminService.updateMemoryStatus(id, status).subscribe({
+    next: () => {
+      this.fetchPlatformMemories();
+      Swal.fire('Updated', `Memory marked as ${status}.`, 'success');
+    },
+    error: () => Swal.fire('Error', 'Could not update memory status.', 'error')
   });
 }
 
@@ -470,7 +612,6 @@ viewExpenditureDetails() {
     return;
   }
   
-  // නව වින්ඩෝ එකක් ඇරලා image එක ඒකේ පෙන්නන්න
   const win = window.open("", "_blank");
   if (win) {
     win.document.write(`
@@ -485,5 +626,196 @@ viewExpenditureDetails() {
   }
 }
 
-}
+  // Memory filtering methods
+  get filteredMemories(): any[] {
+    if (!this.allMemories || this.allMemories.length === 0) return [];
+    
+    return this.allMemories.filter(memory => {
+      const query = this.memorySearch.trim().toLowerCase();
+      const title = (memory.title || '').toLowerCase();
+      const user = (memory.fullName || '').toLowerCase();
+      const location = (memory.locationName || '').toLowerCase();
+      const matchesSearch = !query || title.includes(query) || user.includes(query) || location.includes(query);
 
+      const status = this.getMemoryStatus(memory).toLowerCase();
+      const filter = this.memoryStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      const matchesDate = this.matchesDateFilter(memory);
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }
+
+  getMemoryStatus(memory: any): string {
+    const status = memory.status || memory.moderationStatus || 'pending';
+    return status.toString().toLowerCase();
+  }
+
+  getMemoryStatusClass(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved': return 'memory-status-approved';
+      case 'flagged': return 'memory-status-flagged';
+      case 'pending': return 'memory-status-pending';
+      default: return 'memory-status-default';
+    }
+  }
+
+  getMemoryUploadDate(memory: any): string {
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  getMemoriesByStatus(status: string): any[] {
+    if (!this.allMemories) return [];
+    return this.allMemories.filter(m => this.getMemoryStatus(m) === status.toLowerCase());
+  }
+
+  matchesDateFilter(memory: any): boolean {
+    if (this.memoryDateFilter === 'all') return true;
+    
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return false;
+    
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return false;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (this.memoryDateFilter === 'today') {
+      return d >= today;
+    }
+    
+    if (this.memoryDateFilter === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }
+    
+    if (this.memoryDateFilter === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return d >= monthAgo;
+    }
+    
+    return true;
+  }
+
+
+  // Fleet filtering methods.
+  get filteredVehicles(): any[] {
+    if (!this.allVehicles || this.allVehicles.length === 0) return [];
+    
+    return this.allVehicles.filter(vehicle => {
+      const query = this.fleetSearch.trim().toLowerCase();
+      const vehicleClass = (vehicle.vehicleClass || vehicle.VehicleClass || '').toLowerCase();
+      const modelName = (vehicle.modelName || vehicle.ModelName || '').toLowerCase();
+      const provider = (vehicle.providerProfile?.name || vehicle.ProviderProfile?.Name || '').toLowerCase();
+      const location = (vehicle.providerProfile?.location || vehicle.ProviderProfile?.Location || '').toLowerCase();
+      const matchesSearch = !query || vehicleClass.includes(query) || modelName.includes(query) || provider.includes(query) || location.includes(query);
+
+      const status = (vehicle.status || vehicle.Status || '').toLowerCase();
+      const statusFilter = this.fleetStatusFilter.toLowerCase();
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+      const typeFilter = this.fleetTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || vehicleClass.includes(typeFilter);
+
+      const isBooked = this.isVehicleBooked(vehicle);
+      const bookingFilter = this.fleetBookingFilter.toLowerCase();
+      const matchesBooking = bookingFilter === 'all' || 
+        (bookingFilter === 'available' && !isBooked) || 
+        (bookingFilter === 'booked' && isBooked);
+
+      return matchesSearch && matchesStatus && matchesType && matchesBooking;
+    });
+  }
+
+  getVehiclesByStatus(status: string): any[] {
+    if (!this.allVehicles) return [];
+    const target = status.toLowerCase();
+    return this.allVehicles.filter(v => {
+      const vStatus = (v.status || v.Status || '').toLowerCase();
+      if (target === 'pending') {
+        return vStatus === 'pending' || vStatus === 'pending approval';
+      }
+      return vStatus === target;
+    });
+  }
+
+  getBookedVehiclesCount(): number {
+    if (!this.allVehicles) return 0;
+    return this.allVehicles.filter(v => this.isVehicleBooked(v)).length;
+  }
+
+  getFleetStatusClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'fleet-status-approved';
+      case 'pending': return 'fleet-status-pending';
+      case 'rejected': return 'fleet-status-rejected';
+      case 'unavailable': return 'fleet-status-unavailable';
+      default: return 'fleet-status-default';
+    }
+  }
+
+  getVehicleTypeClass(type: string): string {
+    const t = (type || '').toLowerCase();
+    if (t.includes('car')) return 'vehicle-type-car';
+    if (t.includes('van')) return 'vehicle-type-van';
+    if (t.includes('bus')) return 'vehicle-type-bus';
+    if (t.includes('suv')) return 'vehicle-type-suv';
+    return 'vehicle-type-default';
+  }
+
+  hasDocument(vehicle: any, docType: string): boolean {
+    switch (docType) {
+      case 'license': return !!(vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl);
+      case 'nic': return !!(vehicle.driverNicUrl || vehicle.DriverNicUrl);
+      case 'revenue': return !!(vehicle.revenueLicenseUrl || vehicle.RevenueLicenseUrl);
+      default: return false;
+    }
+  }
+
+  // Provider filtering methods.
+  get filteredProviders(): any[] {
+    if (!this.pendingProviders || this.pendingProviders.length === 0) return [];
+    
+    return this.pendingProviders.filter(provider => {
+      const query = this.providerSearch.trim().toLowerCase();
+      const providerName = (provider.providerProfile?.name || '').toLowerCase();
+      const vehicleClass = (provider.vehicleClass || provider.VehicleClass || '').toLowerCase();
+      const location = (provider.location || provider.providerProfile?.location || '').toLowerCase();
+      const matchesSearch = !query || providerName.includes(query) || vehicleClass.includes(query) || location.includes(query);
+
+      const typeFilter = this.providerTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || vehicleClass.includes(typeFilter);
+
+      return matchesSearch && matchesType;
+    });
+  }
+
+  getSubmissionDate(provider: any): string {
+    const date = provider.submittedAt || provider.createdAt || provider.created_at;
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+}

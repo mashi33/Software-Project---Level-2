@@ -1,15 +1,16 @@
 
-POST http://localhost:5233/api/discussions/69fb5b729a1de85c58c3bb73/vote
+POST http://localhost:5233/api/discussions/6a37ea5ec175d2bece03fabc/vote
 Content-Type: application/json
 
 {
   "optionText": "Agree",
-  "userName": "ann"
+  "userName": "sandali",
+  "userEmail": "sandaliirushika82@gmail.com"
 }
 ### Vote by User 2 
 
 
-POST http://localhost:5233/api/discussions/69fb5b729a1de85c58c3bb73/vote
+POST http://localhost:5233/api/discussions/6a3694925e38baed126087d5/vote
 Content-Type: application/json
 
 {
@@ -19,7 +20,7 @@ Content-Type: application/json
 
 
 ### Vote by User 3
-POST http://localhost:5233/api/discussions/69fb5adb9a1de85c58c3bb70/vote
+POST http://localhost:5233/api/discussions/6a2ede9bdf3afce3f6d4f10d/vote
 Content-Type: application/json
 
 {
@@ -30,7 +31,7 @@ Content-Type: application/json
 ***************************************
 
 ### Vote by User 4
-POST http://localhost:5233/api/discussions/69fb58b59a1de85c58c3bb58/vote
+POST http://localhost:5233/api/discussions/6a3694925e38baed126087d5/vote
 Content-Type: application/json
 
 {
@@ -39,7 +40,7 @@ Content-Type: application/json
 }
 
 ### Vote by User 5
-POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+POST http://localhost:5233/api/discussions/6a2edebadf3afce3f6d4f10e/vote
 Content-Type: application/json
 
 {
@@ -48,7 +49,7 @@ Content-Type: application/json
 }
 
 ### Vote by User 5
-POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+POST http://localhost:5233/api/discussions/6a2ede87df3afce3f6d4f10c/vote
 Content-Type: application/json
 
 {
@@ -64,7 +65,7 @@ Content-Type: application/json
 ***************
 
 ### Vote by User 3
-POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+POST http://localhost:5233/api/discussions/6a2edebadf3afce3f6d4f10e/vote
 Content-Type: application/json
 
 {
@@ -74,7 +75,7 @@ Content-Type: application/json
 
 
 ### Vote by User 3
-POST http://localhost:5233/api/discussions/69fb56f69a1de85c58c3bb56/vote
+POST http://localhost:5233/api/discussions/6a2ede9bdf3afce3f6d4f10d/vote
 Content-Type: application/json
 
 {
@@ -122,10 +123,10 @@ Content-Type: application/json
 
 
 ### Vote by User 3
-POST http://localhost:5233/api/discussions/69fb56569a1de85c58c3bb55/vote
+POST http://localhost:5233/api/discussions/6a2edebadf3afce3f6d4f10e/vote
 Content-Type: application/json
 
 {
-  "optionText": "Agree",
+  "optionText": "Disagree",
   "userName": "ama"
 }

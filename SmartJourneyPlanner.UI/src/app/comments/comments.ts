@@ -51,6 +51,10 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnInit(): void {
     this.setupSignalRListeners();
+    // NEW — load the logged-in user's name so chat bubbles align correctly
+  const storedUser = localStorage.getItem('userName');
+  this.currentUser = storedUser ? storedUser : 'Guest User';
+
     
   }
 
