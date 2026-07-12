@@ -1,98 +1,593 @@
+<h2 class="sr-only">Admin Control Center</h2>
+
 <div class="admin-layout">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h2>⚙️ Admin Panel</h2>
+      <h2>⚙️ Control Center</h2>
+      <p class="sidebar-subtitle">Welcome, {{ adminName }}</p>
     </div>
     <ul>
       <li [class.active]="view === 'stats'" (click)="view = 'stats'">
-        📊 Dashboard Home
+        📊 Overview Metrics
       </li>
-      <li [class.active]="view === 'providers'" (click)="onReviewNow()">
-        🚐 Manage Providers ({{pendingProviders.length}})
+      <li [class.active]="view === 'providers'" (click)="onReviewProviders()">
+        🚐 Vehicle Fleet Documents
       </li>
       <li [class.active]="view === 'users'" (click)="onManageLogins()">
-        👥 User Management
+        👥 User Access Control
+      </li>
+      <li [class.active]="view === 'memories'" (click)="onReviewMemories()">
+        📸 Uploaded Trip Memories
+      </li>
+      <li [class.active]="view === 'fleet-detailed'" (click)="onReviewFleet()">
+        📋 Detailed Fleet View
+      </li>
+      <li [class.active]="view === 'costs'" (click)="viewExpenditureDetails()">
+        💰 Trip Budget Monitoring
       </li>
     </ul>
+    <div class="sidebar-footer">
+      <button class="sidebar-btn" (click)="refreshCurrentView()">🔄 Sync Data</button>
+      <button class="sidebar-btn sidebar-btn-danger" (click)="logout()">Sign Out</button>
+    </div>
   </aside>
 
   <main class="content">
     <header class="main-header header-container">
-      <div class="header-content">
-        <h1>Smart Journey Control Center</h1>
-        <p class="date-text">System Overview — {{ currentDate | date:'fullDate' }}</p>
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="date-text">{{ currentDate | date:'fullDate' }}</p>
       </div>
-      <button (click)="refreshDashboard()" class="btn-refresh-fancy">
-        <span>🔄</span> Refresh Dashboard
+      <button (click)="refreshCurrentView()" class="btn-refresh-fancy">
+        <span>🔄</span> Force Sync
       </button>
     </header>
 
     <div *ngIf="view === 'stats'" class="dashboard-cards">
-      <div class="card warning-card">
-        <div class="card-icon">🚐</div>
-        <div class="card-data">
-          <h3>Pending Providers</h3>
-          <h1>{{ pendingProviders.length }}</h1>
-        </div>
-        <button class="btn-action-primary" (click)="onReviewNow()">Review Now</button>
-      </div>
-
-      <div class="card success-card">
-        <div class="card-icon">👥</div>
-        <div class="card-data">
-          <h3>Platform Users</h3>
-          <h1>{{ allUsers.length }}</h1>
-        </div>
-        <button class="btn-action-success" (click)="onManageLogins()">Manage Logins</button>
-      </div>
+  
+  <!-- 1. Pending Vehicles -->
+  <div class="card warning-card">
+    <div class="card-icon1">🚐</div>
+    <div class="card-data">
+      <h3>Pending Vehicles</h3>
+      <h1>{{ stats?.pendingProvidersCount ?? pendingProviders.length }}</h1>
     </div>
+    <button class="btn-action1" (click)="onReviewProviders()">Review Documents</button>
+  </div>
 
+  <!-- 2. Platform Users -->
+  <div class="card success-card">
+    <div class="card-icon2">👥</div>
+    <div class="card-data">
+      <h3>Platform Users</h3>
+      <h1>{{ stats?.platformUsers ?? allUsers.length }}</h1>
+    </div>
+    <button class="btn-action2" (click)="onManageLogins()">Manage Access</button>
+  </div>
+
+  <!-- 3. Memory Shares -->
+  <div class="card income-card">
+    <div class="card-icon3">📸</div>
+    <div class="card-data">
+      <h3>Global Memory Shares</h3>
+      <h1>{{ allMemories.length }}</h1>
+    </div>
+    <button class="btn-action3" (click)="onReviewMemories()">Audit Media</button>
+  </div>
+
+  <!-- 4. Detailed Fleet (ඔබේ original style එක) -->
+  <div class="card fleet-card">
+    <div class="card-icon4">📋</div>
+    <div class="card-data">
+      <h3>Detailed Fleet</h3>
+      <h1>{{ allVehicles.length }}</h1>
+    </div>
+    <button class="btn-action4" (click)="onReviewFleet()">View Fleet</button>
+  </div>
+
+  <!-- 5. Trip Budget Monitoring -->
+  <div class="card expense-card">
+    <div class="card-icon5">💰</div>
+    <div class="card-data">
+      <h3>Trips Monitored</h3>
+      <h1>{{ costSummary.totalTrips || stats?.totalTrips || 0 }}</h1>
+    </div>
+    <button class="btn-action5" (click)="viewExpenditureDetails()">Monitor Budgets</button>
+  </div>
+
+</div>
     <div class="verification-section shadow-sm" *ngIf="view === 'providers'">
       <div class="section-header">
-        <h2>📋 Pending Vehicle Approvals</h2>
+        <div class="provider-header-layout">
+          <div>
+            <h2>📋 Fleet Verification Desk</h2>
+            <p class="text-muted small">Review incoming transport fleet registration requests waiting for background validation.</p>
+          </div>
+          <div class="provider-stats-bar">
+            <div class="fleet-stat-pill pending">
+              <i class="bi bi-clock-history"></i> {{ pendingProviders.length }} Pending
+            </div>
+            <div class="fleet-stat-pill approved">
+              <i class="bi bi-check-circle"></i> {{ approvedSessionCount }} Approved Today
+            </div>
+            <div class="fleet-stat-pill rejected">
+              <i class="bi bi-x-circle"></i> {{ rejectedSessionCount }} Rejected Today
+            </div>
+          </div>
+        </div>
       </div>
+
+      <div class="provider-toolbar">
+        <input type="text" class="costs-search provider-search-input" placeholder="Search by provider, vehicle, or location..."
+               [(ngModel)]="providerSearch">
+        <select class="costs-filter" [(ngModel)]="providerTypeFilter">
+          <option value="all">All Types</option>
+          <option value="car">Cars</option>
+          <option value="van">Vans</option>
+          <option value="bus">Buses</option>
+        </select>
+      </div>
+      
       <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Owner</th>
-            <th>Vehicle Type</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of pendingProviders" class="table-row">
-            <td class="font-bold">{{ p.providerProfile?.name || p.fullName || 'No Name' }}</td>
-            <td>{{ p.type || p.vehicleClass }}</td>
-            <td><span class="badge-pending">Pending Approval</span></td>
-            <td>
-              <button class="btn-icon view" (click)="viewDetails(p)" title="View Details">🔍</button>
-              <button class="btn-icon approve" (click)="updateProviderStatus(p, 'Approved')" title="Approve">✅</button>
-              <button class="btn-icon reject" (click)="updateProviderStatus(p, 'Rejected')" title="Reject">❌</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <thead>
+    <tr>
+      <th>Provider & Vehicle</th>
+      <th>Registered Origin Location</th>
+      <th>Daily Rental Value</th>
+      <th>Document Status</th>
+      <th>Submitted Date</th>
+      <th class="provider-actions-header">Actions Control</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of filteredProviders" class="table-row">
+      <td>
+        <div class="provider-name">{{ p.providerProfile?.name || 'Unknown Provider' }}</div>
+        <div class="provider-vehicle-info">
+          <i class="bi bi-car-front-fill"></i> {{ p.vehicleClass }} 
+          <span class="role-pill pill-provider">{{ p.type || 'Vehicle' }}</span>
+        </div>
+        <div class="provider-contact">
+          <i class="bi bi-telephone"></i> {{ p.providerProfile?.phone || 'No contact' }}
+        </div>
+      </td>
+      
+      <td>
+        <i class="bi bi-geo-alt-fill text-danger"></i>
+        {{ p.location || p.providerProfile?.location || 'Not Specified' }}
+      </td>
+
+      <td class="font-bold">Rs. {{ p.standardDailyRate | number:'1.0-0' }}</td>
+
+      <td>
+        <div class="docs-status-mini">
+          <span class="doc-mini-badge" [class.doc-complete]="hasDocument(p, 'license')" [class.doc-incomplete]="!hasDocument(p, 'license')">
+            <i class="bi bi-file-earmark-text"></i>
+          </span>
+          <span class="doc-mini-badge" [class.doc-complete]="hasDocument(p, 'nic')" [class.doc-incomplete]="!hasDocument(p, 'nic')">
+            <i class="bi bi-card-heading"></i>
+          </span>
+          <span class="doc-mini-badge" [class.doc-complete]="hasDocument(p, 'revenue')" [class.doc-incomplete]="!hasDocument(p, 'revenue')">
+            <i class="bi bi-receipt"></i>
+          </span>
+        </div>
+      </td>
+
+      <td class="provider-submission-date">
+        {{ getSubmissionDate(p) }}
+      </td>
+      
+      <td>
+        <div class="action-btn-group">
+          <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p)">View</button>
+          <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p)">Approve</button>
+          <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p)">Reject</button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+      <div *ngIf="filteredProviders.length === 0" class="empty-ledger-box provider-empty-box">
+        <i class="bi bi-shield-check-fill provider-empty-icon"></i>
+        <h5>Fleet Registry Clear</h5>
+        <p>No pending car or van provider verification applications require system processing currently.</p>
+      </div>
     </div>
 
-    <div class="verification-section border-0 bg-transparent p-0 shadow-none" *ngIf="view === 'users'">
+    <div class="verification-section shadow-sm" *ngIf="view === 'memories'">
+        <div class="section-header mb-4">
+          <h2>📸 Trip Memory Moderation</h2>
+          <p class="text-muted small">Monitor, audit, and manage media uploaded across shared travel groups.</p>
+          
+          <div class="memories-stats-bar">
+            <div class="stat-card">
+              <div class="stat-label">Total Uploads</div>
+              <div class="stat-value">{{ allMemories.length }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Approved</div>
+              <div class="stat-value approved">{{ getMemoriesByStatus('approved').length }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Flagged</div>
+              <div class="stat-value flagged">{{ getMemoriesByStatus('flagged').length }}</div>
+            </div>
+          </div>
+
+          <div class="memories-toolbar">
+            <input type="text" class="costs-search memory-search-input" placeholder="Search by title, user, or location..."
+                   [(ngModel)]="memorySearch">
+            <select class="costs-filter" [(ngModel)]="memoryStatusFilter">
+              <option value="all">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="flagged">Flagged</option>
+            </select>
+            <select class="costs-filter" [(ngModel)]="memoryDateFilter">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+          </div>
+        </div>
+
+  <div class="user-cards-stack memories-grid">
+  
+  <div *ngFor="let m of filteredMemories" class="bp-card memory-card" 
+       [class.memory-flagged]="getMemoryStatus(m) === 'flagged'"
+       [class.memory-pending]="getMemoryStatus(m) === 'pending'"
+>
+    
+    <div class="memory-image" 
+         [style.background-image]="'url(' + (m.imageUrl || 'assets/placeholder-travel.jpg') + ')'">
+      <div class="memory-status-badge" [ngClass]="getMemoryStatusClass(getMemoryStatus(m))">
+        {{ getMemoryStatus(m) }}
+      </div>
+      <div class="memory-date-badge">
+        {{ getMemoryUploadDate(m) }}
+      </div>
+    </div>
+
+    <div class="memory-content">
+      <h4 class="memory-title">
+        {{ m.title || 'No Caption' }}
+      </h4>
+      
+      <div class="memory-metadata">
+        <div class="metadata-row">
+          <span><i class="bi bi-person"></i> {{ m.fullName || 'Unknown' }}</span>
+          <span class="metadata-separator">•</span>
+          <span><i class="bi bi-geo-alt"></i> {{ m.locationName || 'N/A' }}</span>
+        </div>
+        <div *ngIf="m.tripName || m.tripId" class="metadata-row">
+          <span><i class="bi bi-map"></i> {{ m.tripName || 'Associated Trip' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="m.description" class="memory-description">
+        {{ m.description }}
+      </div>
+
+      <div class="memory-actions">
+  <button class="btn-ctrl-vibrant memory-review-btn" (click)="viewMemoryDetails(m)">
+    <i class="bi bi-eye"></i> Review
+  </button>
+  <button *ngIf="getMemoryStatus(m) !== 'approved'" class="btn-ctrl-vibrant"
+          style="background:#dcfce7;color:#166534;" (click)="confirmMemoryApproval(m)">
+    <i class="bi bi-check-lg"></i> Approve
+  </button>
+  <button *ngIf="getMemoryStatus(m) !== 'flagged'" class="btn-ctrl-vibrant"
+          style="background:#fef2f2;color:#991b1b;" (click)="confirmMemoryFlag(m)">
+    <i class="bi bi-flag"></i> Flag
+  </button>
+  <button class="btn-ctrl-vibrant btn-delete-ink memory-delete-btn" (click)="deleteMemory(m.id || m._id)">
+    <i class="bi bi-trash3"></i>
+  </button>
+</div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="filteredMemories.length === 0" class="empty-ledger-box memories-empty-box">
+  <i class="bi bi-images memories-empty-icon"></i>
+  <h5>No memories found</h5>
+  <p>Try adjusting your search or filter criteria.</p>
+</div>
+</div>
+
+<div class="verification-section shadow-sm" *ngIf="view === 'fleet-detailed'">
+  <div class="section-header mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+      <div>
+        <h2>🚐 Full Fleet Overview</h2>
+        <p class="text-muted small">Manage all registered vehicles, track bookings, and monitor compliance status.</p>
+      </div>
+      <div class="fleet-stats-bar" style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div class="fleet-stat-pill" style="background: #f0fdf4; color: #166534; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+          <i class="bi bi-check-circle"></i> {{ getVehiclesByStatus('Approved').length }} Approved
+        </div>
+        <div class="fleet-stat-pill" style="background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+          <i class="bi bi-clock"></i> {{ getVehiclesByStatus('Pending').length }} Pending
+        </div>
+        <div class="fleet-stat-pill" style="background: #dbeafe; color: #1d4ed8; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+          <i class="bi bi-calendar-check"></i> {{ getBookedVehiclesCount() }} Booked
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fleet-toolbar">
+    <input type="text" class="costs-search fleet-search-input" placeholder="Search by vehicle, provider, or location..."
+           [(ngModel)]="fleetSearch">
+    <select class="costs-filter" [(ngModel)]="fleetStatusFilter">
+      <option value="all">All Status</option>
+      <option value="approved">Approved</option>
+      <option value="pending">Pending</option>
+      <option value="rejected">Rejected</option>
+      <option value="unavailable">Unavailable</option>
+    </select>
+    <select class="costs-filter" [(ngModel)]="fleetTypeFilter">
+      <option value="all">All Types</option>
+      <option value="car">Cars</option>
+      <option value="van">Vans</option>
+      <option value="bus">Buses</option>
+    </select>
+    <select class="costs-filter" [(ngModel)]="fleetBookingFilter">
+      <option value="all">All Booking Status</option>
+      <option value="available">Available</option>
+      <option value="booked">Booked</option>
+    </select>
+  </div>
+
+  <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px;">
+    <div *ngFor="let v of filteredVehicles" class="card fleet-detail-card" style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 0; overflow: hidden; background: white;">
+      <div style="position: relative;">
+        <img [src]="v.exteriorPhoto || v.ExteriorPhoto || 'assets/placeholder-car.jpg'" 
+             style="width: 100%; height: 200px; object-fit: cover;">
+        <div class="fleet-status-badge" [ngClass]="getFleetStatusClass(v.status || v.Status)">
+          {{ v.status || v.Status || 'Unknown' }}
+        </div>
+        <div *ngIf="isVehicleBooked(v)" class="fleet-booking-badge">
+          <i class="bi bi-calendar-x"></i> Booked
+        </div>
+      </div>
+      
+      <div style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+          <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">
+            {{ v.vehicleClass || v.VehicleClass }} · {{ v.modelName || v.ModelName }}
+          </h4>
+          <span class="vehicle-type-pill" [ngClass]="getVehicleTypeClass(v.type || v.vehicleType)">
+            {{ v.type || v.vehicleType || 'Vehicle' }}
+          </span>
+        </div>
+
+        <div class="fleet-specs-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;">
+          <div class="fleet-spec-item">
+            <span class="spec-label"><i class="bi bi-people"></i> Seats</span>
+            <span class="spec-value">{{ v.seatCount || v.SeatCount || 'N/A' }}</span>
+          </div>
+          <div class="fleet-spec-item">
+            <span class="spec-label"><i class="bi bi-gear"></i> Transmission</span>
+            <span class="spec-value">{{ v.transmission || v.Transmission || 'Auto' }}</span>
+          </div>
+          <div class="fleet-spec-item">
+            <span class="spec-label"><i class="bi bi-currency-rupee"></i> Daily Rate</span>
+            <span class="spec-value">Rs. {{ (v.standardDailyRate || v.StandardDailyRate || 0) | number:'1.0-0' }}</span>
+          </div>
+          <div class="fleet-spec-item">
+            <span class="spec-label"><i class="bi bi-geo-alt"></i> Location</span>
+            <span class="spec-value">{{ v.providerProfile?.location || v.ProviderProfile?.Location || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <div class="provider-info" style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <i class="bi bi-person"></i>
+            <strong>{{ v.providerProfile?.name || v.ProviderProfile?.Name || 'Unknown Provider' }}</strong>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-telephone"></i>
+            <span>{{ v.providerProfile?.phone || v.ProviderProfile?.Phone || 'No contact' }}</span>
+          </div>
+        </div>
+
+        <div class="fleet-docs-status" style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'license')" [class.doc-incomplete]="!hasDocument(v, 'license')">
+            <i class="bi bi-file-earmark-text"></i> License
+          </div>
+          <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'nic')" [class.doc-incomplete]="!hasDocument(v, 'nic')">
+            <i class="bi bi-card-heading"></i> NIC
+          </div>
+          <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'revenue')" [class.doc-incomplete]="!hasDocument(v, 'revenue')">
+            <i class="bi bi-receipt"></i> Revenue
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-ctrl-vibrant" style="flex: 1; padding: 10px; background: #e0f2fe; color: #0369a1; border: none; border-radius: 8px;" (click)="viewVehicleDetails(v)">
+            <i class="bi bi-eye"></i> View Details
+          </button>
+          <button *ngIf="(v.status || v.Status) === 'Pending'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #dcfce7; color: #166534; border: none; border-radius: 8px;" (click)="confirmApproval(v)">
+            <i class="bi bi-check-lg"></i>
+          </button>
+          <button *ngIf="(v.status || v.Status) === 'Pending'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #fef2f2; color: #991b1b; border: none; border-radius: 8px;" (click)="confirmReject(v)">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="filteredVehicles.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+    <i class="bi bi-car-front" style="font-size: 3rem; color: #94a3b8; display: block; margin-bottom: 16px;"></i>
+    <h5>No vehicles found</h5>
+    <p>Try adjusting your search or filter criteria.</p>
+  </div>
+</div>
+
+<div class="verification-section shadow-sm costs-panel" *ngIf="view === 'costs'">
+  <div class="section-header costs-section-header">
+    <div>
+      <h2>Trip Budget Monitoring</h2>
+      <p class="text-muted">Review every trip's budget limit set at creation and flag trips that exceed their allocated amount.</p>
+    </div>
+    <div class="costs-header-meta">
+      <span class="costs-last-sync">Showing {{ filteredBudgetTrips.length }} of {{ budgetTrips.length }} trips</span>
+    </div>
+  </div>
+
+  <div class="costs-kpi-row">
+    <div class="cost-kpi-card">
+      <div class="cost-kpi-icon">🗺️</div>
+      <div class="cost-kpi-body">
+        <span class="cost-kpi-label">Total Trips</span>
+        <span class="cost-kpi-value">{{ costSummary.totalTrips }}</span>
+        <span class="cost-kpi-hint">All trips created on the platform</span>
+      </div>
+    </div>
+    <div class="cost-kpi-card cost-kpi-danger" [class.cost-kpi-active]="costSummary.overBudgetTrips > 0">
+      <div class="cost-kpi-icon">⚠️</div>
+      <div class="cost-kpi-body">
+        <span class="cost-kpi-label">Over Budget</span>
+        <span class="cost-kpi-value">{{ costSummary.overBudgetTrips }}</span>
+        <span class="cost-kpi-hint">Spending exceeds the trip limit</span>
+      </div>
+    </div>
+    <div class="cost-kpi-card cost-kpi-success">
+      <div class="cost-kpi-icon">✅</div>
+      <div class="cost-kpi-body">
+        <span class="cost-kpi-label">On Track</span>
+        <span class="cost-kpi-value">{{ costSummary.onTrackTrips }}</span>
+        <span class="cost-kpi-hint">Within the set budget limit</span>
+      </div>
+    </div>
+    <div class="cost-kpi-card cost-kpi-warning">
+      <div class="cost-kpi-icon">📊</div>
+      <div class="cost-kpi-body">
+        <span class="cost-kpi-label">Near Limit</span>
+        <span class="cost-kpi-value">{{ costSummary.nearLimitTrips }}</span>
+        <span class="cost-kpi-hint">Used 85% or more of budget</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="costs-toolbar">
+    <input type="text" class="costs-search" placeholder="Search trip name, route, or creator..."
+           [(ngModel)]="costSearch">
+    <select class="costs-filter" [(ngModel)]="costStatusFilter">
+      <option value="all">All status</option>
+      <option value="over budget">Over Budget</option>
+      <option value="near limit">Near Limit</option>
+      <option value="on track">On Track</option>
+      <option value="no limit set">No Limit Set</option>
+    </select>
+    <select class="costs-filter" [(ngModel)]="costSortFilter">
+      <option value="date-desc">Newest First</option>
+      <option value="date-asc">Oldest First</option>
+      <option value="spent-desc">Highest Spent</option>
+      <option value="spent-asc">Lowest Spent</option>
+      <option value="usage-desc">Highest Usage</option>
+      <option value="usage-asc">Lowest Usage</option>
+    </select>
+  </div>
+
+  <div *ngIf="costsLoading" class="costs-loading">
+    <div class="costs-loading-spinner"></div>
+    <span>Loading trip budget records...</span>
+  </div>
+
+  <div class="costs-table-wrap" *ngIf="!costsLoading && filteredBudgetTrips.length > 0">
+    <table class="admin-table costs-table">
+      <thead>
+        <tr>
+          <th>Trip</th>
+          <th>Route</th>
+          <th>Travel Dates</th>
+          <th>Created By</th>
+          <th>Budget Limit <span class="th-note">(at creation)</span></th>
+          <th>Total Spent</th>
+          <th>Remaining</th>
+          <th>Usage</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let trip of filteredBudgetTrips" class="table-row" [class.row-over-budget]="getTripStatus(trip) === 'Over Budget'">
+          <td>
+            <div class="trip-name-cell">{{ trip.tripName || trip.TripName }}</div>
+            <div class="trip-meta-cell">{{ (trip.expenseCount ?? trip.ExpenseCount ?? 0) }} expense(s) logged</div>
+          </td>
+          <td class="route-cell">{{ getTripRoute(trip) }}</td>
+          <td class="date-cell">{{ getTripDates(trip) }}</td>
+          <td>{{ trip.createdBy || trip.CreatedBy }}</td>
+          <td class="budget-limit-cell">
+            <span *ngIf="getTripBudget(trip) > 0">Rs. {{ getTripBudget(trip) | number:'1.2-2' }}</span>
+            <span *ngIf="getTripBudget(trip) <= 0" class="text-muted">Not set</span>
+          </td>
+          <td class="font-bold">Rs. {{ getTripSpent(trip) | number:'1.2-2' }}</td>
+          <td [ngClass]="getTripRemaining(trip) < 0 ? 'text-danger' : ''">
+            <span *ngIf="getTripBudget(trip) > 0">Rs. {{ getTripRemaining(trip) | number:'1.2-2' }}</span>
+            <span *ngIf="getTripBudget(trip) <= 0" class="text-muted">—</span>
+          </td>
+          <td>
+            <div class="usage-cell" *ngIf="getTripBudget(trip) > 0; else noLimitUsage">
+              <div class="usage-bar-track">
+                <div class="usage-bar-fill"
+                     [class.usage-over]="getTripUsage(trip) > 100"
+                     [class.usage-near]="getTripUsage(trip) >= 85 && getTripUsage(trip) <= 100"
+                     [style.width.%]="getTripUsage(trip) > 100 ? 100 : getTripUsage(trip)"></div>
+              </div>
+              <span class="usage-label">{{ getTripUsage(trip) | number:'1.0-1' }}%</span>
+            </div>
+            <ng-template #noLimitUsage><span class="text-muted">—</span></ng-template>
+          </td>
+          <td>
+            <span class="cost-status-pill" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">
+              {{ getTripStatus(trip) }}
+            </span>
+          </td>
+          <td>
+            <div class="action-btn-group">
+              <button class="btn-ctrl-action btn-view" (click)="viewBudgetTripDetails(trip)">Audit</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!costsLoading && budgetTrips.length === 0" class="empty-ledger-box costs-empty">
+    <div class="costs-empty-icon">🗺️</div>
+    <h5>No trips found</h5>
+    <p>Trips will appear here once travellers create them. Budget limits set during trip creation will be monitored automatically.</p>
+  </div>
+
+  <div *ngIf="!costsLoading && budgetTrips.length > 0 && filteredBudgetTrips.length === 0" class="empty-ledger-box costs-empty">
+    <div class="costs-empty-icon">🔍</div>
+    <h5>No matching trips</h5>
+    <p>Try adjusting your search term or status filter.</p>
+  </div>
+</div>
+
+    <div class="verification-section shadow-sm users-panel" *ngIf="view === 'users'">
       <div class="panel-header-wrapper mb-4">
-        <h2 class="fw-bold text-dark m-0">User Login & Role Control</h2>
-        <p class="text-muted small m-0">Manage system permission tiers, account active statuses, and authentications.</p>
+        <h2 class="fw-bold text-dark m-0">User Access Control</h2>
+        <p class="text-muted small m-0">Manage roles and account access. Suspend users for 2 weeks, permanently, or restore access anytime.</p>
       </div>
 
       <div class="user-cards-stack">
         <div *ngFor="let u of allUsers" class="user-management-card-grid">
-          
           <div class="grid-profile-col">
             <div class="user-avatar-circle" [ngClass]="{
-              'av-provider': u.role === 'TransportProvider' || u.role === 'Transportprovider',
-              'av-traveller': u.role === 'Traveller',
-              'av-admin': u.role === 'Admin'
+              'av-provider': getUserRole(u) === 'TransportProvider' || getUserRole(u) === 'Transportprovider',
+              'av-traveller': getUserRole(u) === 'Traveller' || getUserRole(u) === 'Traveler',
+              'av-admin': getUserRole(u) === 'Admin'
             }">
               <span>{{ u.fullName?.charAt(0) || u.name?.charAt(0) || 'U' }}</span>
             </div>
-            
             <div class="user-profile-details">
               <h5 class="user-display-name m-0">{{ u.fullName || u.name || 'System User' }}</h5>
               <span class="user-email-text text-muted"><i class="bi bi-envelope"></i> {{ u.email }}</span>
@@ -103,109 +598,276 @@
             <span class="text-overline">Current Role</span>
             <div class="badge-pill-container">
               <span class="role-pill" [ngClass]="{
-                'pill-provider': u.role === 'TransportProvider',
-                'pill-traveller': u.role === 'Traveller',
-                'pill-admin': u.role === 'Admin'
-              }">
-                {{ u.role }}
-              </span>
+                'pill-provider': getUserRole(u) === 'TransportProvider',
+                'pill-traveller': getUserRole(u) === 'Traveller' || getUserRole(u) === 'Traveler',
+                'pill-admin': getUserRole(u) === 'Admin'
+              }">{{ getUserRole(u) }}</span>
             </div>
           </div>
 
           <div class="grid-meta-col">
-            <span class="text-overline">Status</span>
+            <span class="text-overline">Access Status</span>
             <div class="badge-pill-container">
-              <span class="status-dot-pill" [ngClass]="u.isBlocked ? 'bg-danger-subtle text-danger' : 'status-active'">
-                <span class="pulse-dot" [style.background]="u.isBlocked ? '#e53e3e' : '#10b981'" [style.animation]="u.isBlocked ? 'none' : ''"></span> 
-                {{ u.isBlocked ? 'Blocked' : 'Active' }}
+              <span class="status-dot-pill" [ngClass]="getBlockStatusClass(u)">
+                <span class="pulse-dot"
+                      [style.background]="isUserBlocked(u) ? '#e53e3e' : '#10b981'"
+                      [style.animation]="isUserBlocked(u) ? 'none' : ''"></span>
+                {{ getBlockStatusLabel(u) }}
               </span>
             </div>
           </div>
 
-          <div class="grid-actions-col">
-            <button *ngIf="u.role !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')" title="Promote User Privilege Level">
+          <div class="grid-actions-col block-actions-col">
+            <button *ngIf="getUserRole(u) !== 'Admin'" class="btn-action-smart btn-promote" (click)="changeRole(u.id || u._id, 'Admin')">
               <i class="bi bi-shield-arrow"></i> Promote
             </button>
-            <button class="btn-action-smart btn-suspend" [style.background]="u.isBlocked ? '#fed7d7' : ''" (click)="toggleBlock(u)" [title]="u.isBlocked ? 'Unblock User' : 'Block User'">
-              <i class="bi" [ngClass]="u.isBlocked ? 'bi-check-circle-fill' : 'bi-slash-circle'"></i>
-            </button>
-            <button class="btn-action-smart btn-delete-account" (click)="deleteUser(u.id || u._id)" title="Permanently Terminate Records">
+
+            <ng-container *ngIf="canManageBlock(u)">
+              <button *ngIf="!isUserBlocked(u)" class="btn-action-smart btn-block-temp" (click)="blockUserTemporary(u)" title="Suspend for 2 weeks">
+                <i class="bi bi-clock-history"></i> 2 Weeks
+              </button>
+              <button *ngIf="!isUserBlocked(u)" class="btn-action-smart btn-block-perm" (click)="blockUserPermanent(u)" title="Suspend permanently">
+                <i class="bi bi-slash-circle"></i> Permanent
+              </button>
+              <button *ngIf="isUserBlocked(u)" class="btn-action-smart btn-unblock" (click)="unblockUserAccount(u)" title="Restore access">
+                <i class="bi bi-unlock-fill"></i> Unblock
+              </button>
+            </ng-container>
+
+            <button class="btn-action-smart btn-delete-account" (click)="deleteUser(u.id || u._id)">
               <i class="bi bi-trash3"></i>
             </button>
           </div>
-
         </div>
       </div>
+
+      <div *ngIf="allUsers.length === 0" class="empty-ledger-box" style="padding: 60px 24px;">
+        <h5>No users found</h5>
+        <p>Registered platform accounts will appear here.</p>
+      </div>
     </div>
+    
   </main>
 
   <div class="modal-overlay" *ngIf="selectedProvider" (click)="selectedProvider = null">
-    <div class="modal-card shadow-lg" (click)="$event.stopPropagation()">
-      <div class="modal-header">
+    <div class="modal-card shadow-lg" style="max-width: 900px; width: 90%; border-radius: 24px;" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header" style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0;">
         <div class="header-title">
-          <span class="tag">{{ selectedProvider.type }}</span>
-          <h2>Reviewing: {{ selectedProvider.vehicleClass }}</h2>
+          <span class="tag" style="background: #eff6ff; color: #1e40af; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; text-transform: uppercase;">
+            Classification: {{ selectedProvider.type || 'Fleet Asset' }}
+          </span>
+          <h2 style="margin: 8px 0 0 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">
+            Asset Details: {{ selectedProvider.vehicleClass }}
+          </h2>
         </div>
-        <button class="close-pill" (click)="selectedProvider = null">&times;</button>
+        <button class="close-pill" style="font-size: 1.5rem; color: #94a3b8; background: transparent; border: none; cursor: pointer;" (click)="selectedProvider = null">&times;</button>
       </div>
 
-      <div class="modal-body">
-        <div class="modal-grid-layout">
-          <div class="modal-col specs-container">
-            <div class="section-title">
-              <span class="icon">📋</span>
-              <h3>Specifications</h3>
+      <div class="modal-body" style="padding: 32px; max-height: 65vh; overflow-y: auto;">
+
+        <div class="vehicle-photos-section" style="margin-bottom: 28px;">
+          <div class="section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+            <span class="icon" style="font-size: 1.2rem;">📷</span>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Vehicle Photos</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 8px;">Exterior</div>
+              <img *ngIf="selectedProvider.exteriorPhoto || selectedProvider.ExteriorPhoto"
+                   [src]="selectedProvider.exteriorPhoto || selectedProvider.ExteriorPhoto"
+                   style="width: 100%; height: 220px; object-fit: cover; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer;"
+                   (click)="openImage(selectedProvider.exteriorPhoto || selectedProvider.ExteriorPhoto)" />
+              <div *ngIf="!(selectedProvider.exteriorPhoto || selectedProvider.ExteriorPhoto)"
+                   style="width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; color: #94a3b8; font-size: 0.85rem;">
+                No exterior photo uploaded
+              </div>
             </div>
-            <div class="specs-list">
-              <div class="spec-row"><span class="label">Owner</span><span class="val">{{ selectedProvider.providerProfile?.name }}</span></div>
-              <div class="spec-row"><span class="label">Phone</span><span class="val">{{ selectedProvider.providerProfile?.phone }}</span></div>
-              <div class="spec-row"><span class="label">Daily Rate</span><span class="val highlight">Rs. {{ selectedProvider.standardDailyRate }}</span></div>
-              <div class="spec-row"><span class="label">Seats</span><span class="val">{{ selectedProvider.seatCount }}</span></div>
-              <div class="spec-row"><span class="label">Transmission</span><span class="val">{{ selectedProvider.transmission }}</span></div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 8px;">Interior</div>
+              <img *ngIf="selectedProvider.interiorPhoto || selectedProvider.InteriorPhoto"
+                   [src]="selectedProvider.interiorPhoto || selectedProvider.InteriorPhoto"
+                   style="width: 100%; height: 220px; object-fit: cover; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer;"
+                   (click)="openImage(selectedProvider.interiorPhoto || selectedProvider.InteriorPhoto)" />
+              <div *ngIf="!(selectedProvider.interiorPhoto || selectedProvider.InteriorPhoto)"
+                   style="width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; color: #94a3b8; font-size: 0.85rem;">
+                No interior photo uploaded
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-grid-layout" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px;">
+          
+          <div class="modal-col specs-container">
+            <div class="section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+              <span class="icon" style="font-size: 1.2rem;">📋</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Technical Specifications</h3>
+            </div>
+            <div class="specs-list" style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Vehicle Name & Brand</span>
+                <span class="val" style="color: #2563eb; font-weight: 800;">{{ selectedProvider.vehicleClass }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Registered Origin Location</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.location || selectedProvider.providerProfile?.location || 'Not Specified' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Owner Registration</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.providerProfile?.name || selectedProvider.fullName }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Contact Hotline</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.providerProfile?.phone || 'N/A' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Standard Daily Value</span>
+                <span class="val highlight" style="color: #10b981; font-weight: 800; font-size: 1.05rem;">Rs. {{ selectedProvider.standardDailyRate | number:'1.2-2' }}</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Seating Capacity</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.seatCount || '4' }} Seats</span>
+              </div>
+              <div class="spec-row" style="display: flex; justify-content: space-between; padding-bottom: 8px;">
+                <span class="label" style="color: #64748b; font-weight: 500;">Transmission Config</span>
+                <span class="val" style="color: #0f172a; font-weight: 700;">{{ selectedProvider.transmission || 'Automatic' }}</span>
+              </div>
             </div>
           </div>
 
           <div class="modal-col docs-container">
-            <div class="section-title">
-              <span class="icon">🆔</span>
-              <h3>Verification Documents</h3>
+            <div class="section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+              <span class="icon" style="font-size: 1.2rem;">🆔</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Compliance Document Previews</h3>
             </div>
-            <div class="docs-stack">
-              <div class="doc-card" (click)="openImage(selectedProvider.driverLicenseUrl)">
-                <div class="d-icon license">📄</div>
-                <div class="d-content">
-                  <span class="d-title">Driver License</span>
-                  <span class="d-status">✅ Available</span>
+            
+            <div class="docs-stack" style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">📄</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">Driver's License</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.driverLicenseUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
-              <div class="doc-card" (click)="openImage(selectedProvider.driverNicUrl)">
-                <div class="d-icon nic">🪪</div>
-                <div class="d-content">
-                  <span class="d-title">NIC / Identity Card</span>
-                  <span class="d-status">✅ Available</span>
+
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">🪪</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">NIC / Identity Document</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.driverNicUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
-              <div class="doc-card" (click)="openImage(selectedProvider.revenueLicenseUrl)">
-                <div class="d-icon revenue">📝</div>
-                <div class="d-content">
-                  <span class="d-title">Revenue License</span>
-                  <span class="d-status">✅ Available</span>
+
+              <div class="doc-card-premium" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 1.5rem; background: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">📝</span>
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">Revenue License Receipt</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Resource Available</div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569;" (click)="openImage(selectedProvider.revenueLicenseUrl)">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-cancel" (click)="selectedProvider = null">Cancel</button>
-        <div class="action-group">
-          <button class="btn-reject-main" (click)="updateProviderStatus(selectedProvider, 'Rejected')">Reject</button>
-          <button class="btn-approve-main" (click)="updateProviderStatus(selectedProvider, 'Approved')">Approve Provider</button>
+      <div class="modal-footer" style="background: #f8fafc; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
+        <button class="btn-cancel" style="background: #ffffff; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 10px; font-weight: 600;" (click)="selectedProvider = null">Close Review</button>
+        <div class="action-group" style="display: flex; gap: 12px;">
+          <button class="btn-ctrl-vibrant btn-delete-ink" style="padding: 10px 22px; font-size: 0.9rem;" (click)="confirmReject(selectedProvider)">Reject Request</button>
+          <button class="btn-ctrl-vibrant" style="background-color: #10b981; color: #ffffff; padding: 10px 22px; font-size: 0.9rem; border: none; border-radius: 10px;" (click)="confirmApproval(selectedProvider)">Approve Vehicle</button>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="selectedBudgetTrip" (click)="selectedBudgetTrip = null">
+    <div class="modal-card shadow-lg budget-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="tag">Trip Budget Audit</span>
+          <h2>{{ selectedBudgetTrip.tripName || selectedBudgetTrip.TripName }}</h2>
+          <p class="modal-subtitle">{{ getTripRoute(selectedBudgetTrip) }} · {{ getTripDates(selectedBudgetTrip) }}</p>
+          <p class="modal-subtitle">Created by {{ selectedBudgetTrip.createdBy || selectedBudgetTrip.CreatedBy }}</p>
+        </div>
+        <button class="close-pill" (click)="selectedBudgetTrip = null">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="budget-modal-summary">
+          <div class="budget-modal-stat">
+            <span>Budget Limit (at creation)</span>
+            <strong>{{ getTripBudget(selectedBudgetTrip) > 0 ? ('Rs. ' + (getTripBudget(selectedBudgetTrip) | number:'1.2-2')) : 'Not set' }}</strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Total Spent</span>
+            <strong>Rs. {{ getTripSpent(selectedBudgetTrip) | number:'1.2-2' }}</strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Remaining</span>
+            <strong [ngClass]="getTripRemaining(selectedBudgetTrip) < 0 ? 'text-danger' : 'text-success'">
+              {{ getTripBudget(selectedBudgetTrip) > 0 ? ('Rs. ' + (getTripRemaining(selectedBudgetTrip) | number:'1.2-2')) : '—' }}
+            </strong>
+          </div>
+          <div class="budget-modal-stat">
+            <span>Status</span>
+            <span class="cost-status-pill" [ngClass]="getBudgetStatusClass(getTripStatus(selectedBudgetTrip))">
+              {{ getTripStatus(selectedBudgetTrip) }}
+            </span>
+          </div>
+        </div>
+
+        <table class="admin-table" *ngIf="(selectedBudgetTrip.expenses || selectedBudgetTrip.Expenses)?.length; else noExpenses">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Added By</th>
+              <th>Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of (selectedBudgetTrip.expenses || selectedBudgetTrip.Expenses)">
+              <td>
+                <span class="category-pill" [ngClass]="getCategoryClass(item.category || item.Category)">
+                  {{ item.category || item.Category || 'General' }}
+                </span>
+              </td>
+              <td>{{ item.description || item.Description || '—' }}</td>
+              <td>{{ item.addedBy || item.AddedBy }}</td>
+              <td>{{ item.date || item.Date | date:'MMM d, y' }}</td>
+              <td class="font-bold">Rs. {{ (item.amount ?? item.Amount) | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noExpenses>
+          <div class="empty-ledger-box" style="padding: 32px;">
+            <h5>No individual expenses logged</h5>
+            <p>This trip budget exists but has no line-item expenses yet.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="selectedBudgetTrip = null">Close</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
@@ -15,271 +16,806 @@ import Swal from 'sweetalert2';
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
+  private router = inject(Router);
+  private cd = inject(ChangeDetectorRef);
 
-  // System Data
   currentDate = new Date();
-  
-  // View Switcher
-  view: 'stats' | 'providers' | 'users' = 'stats';
-
-  stats: any = { pendingProvidersCount: 0, platformUsers: 0 };
-
-  // Data Lists
+  adminName = '';
+  view: 'stats' | 'providers' | 'memories' | 'users' | 'fleet-detailed' | 'costs' = 'stats';
+  stats: any = { totalExpenditure: 0 };
   pendingProviders: any[] = [];
   allUsers: any[] = [];
+  allMemories: any[] = []; 
   selectedProvider: any = null;
-  
-  // States
-  errorMessage: string = '';
+  allVehicles: any[] = [];
+  expenses: any[] = [];
+  budgetTrips: any[] = [];
+  costSummary: any = {
+    totalTrips: 0,
+    overBudgetTrips: 0,
+    onTrackTrips: 0,
+    nearLimitTrips: 0
+  };
+  costSearch = '';
+  costStatusFilter = 'all';
+  costSortFilter = 'date-desc';
+  selectedBudgetTrip: any = null;
+  costsLoading = false;
+
+  approvedSessionCount = 0;
+  rejectedSessionCount = 0;
+
+  // Memory filtering
+  memorySearch = '';
+  memoryStatusFilter = 'all';
+  memoryDateFilter = 'all';
+
+  // Fleet filtering
+  fleetSearch = '';
+  fleetStatusFilter = 'all';
+  fleetTypeFilter = 'all';
+  fleetBookingFilter = 'all';
+
+  // Provider filtering
+  providerSearch = '';
+  providerTypeFilter = 'all';
 
   ngOnInit() {
+    this.adminName = this.authService.getUserName() || 'Admin';
     this.refreshDashboard();
+    this.fetchExpenseList();
   }
 
-  // DASHBOARD HOME & VIEW HANDLERS
-
-  onReviewNow() {
-    this.view = 'providers';
-    this.fetchPendingProviders();
+  getUserRole(user: any): string {
+    return user?.userType || user?.UserType || user?.role || 'Unknown';
   }
 
-  onManageLogins() {
-    this.view = 'users';
-    this.fetchAllUsers();
+  isUserBlocked(user: any): boolean {
+    return user?.isBlocked === true || user?.IsBlocked === true;
   }
 
-  /* DEDICATED REFRESH LOGIC
-     Updates all counts and lists simultaneously */
-  refreshDashboard() {
-    this.errorMessage = '';
-    
-    // Fetches the counter metrics and assigns them straight to our summary layout parameters
-    this.adminService.getDashboardStats().subscribe({
-      next: (data: any) => {
-        this.stats = data;
-        console.log("📊 Unified Dashboard Counters Synchronized:", this.stats);
-      },
-      error: (err: any) => {
-        console.error("Could not populate metric stats cards", err);
+  getBlockType(user: any): string {
+    return user?.blockType || user?.BlockType || '';
+  }
+
+  getBlockStatusLabel(user: any): string {
+    if (!this.isUserBlocked(user)) return 'Active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'Permanently Blocked';
+
+    if (blockType === 'Temporary') {
+      const until = user?.blockedUntil || user?.BlockedUntil;
+      if (until) {
+        const date = new Date(until).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        });
+        return `Blocked until ${date}`;
       }
-    });
-
-    this.fetchPendingProviders();
-    this.fetchAllUsers();
-    
-    // Optional toast notification
-    Swal.fire({
-      title: 'Dashboard Refreshed',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      icon: 'success'
-    });
-  }
-
-  // DATA FETCHING
-
-  fetchPendingProviders() {
-    this.adminService.getPendingProviders().subscribe({
-      next: (data: any[]) => {
-        this.pendingProviders = data;
-        this.errorMessage = '';
-      },
-      error: (err: any) => {
-        console.error("Fetch error:", err);
-        this.errorMessage = "Failed to load providers.";
-      }
-    });
-  }
-
-  fetchAllUsers() {
-    this.adminService.getAllUsers().subscribe({
-      next: (data: any[]) => this.allUsers = data,
-      error: (err: any) => console.error("Could not load users", err)
-    });
-  }
-
-  // MANAGE PROVIDERS ACTIONS
-
-  /* Approves or Rejects a transport provider */
-  updateProviderStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
-
-    if (!id) {
-      Swal.fire('Error', 'Unique ID for this provider is missing.', 'error');
-      return;
+      return 'Blocked (2 weeks)';
     }
 
+    return 'Blocked';
+  }
+
+  getBlockStatusClass(user: any): string {
+    if (!this.isUserBlocked(user)) return 'status-active';
+
+    const blockType = this.getBlockType(user);
+    if (blockType === 'Permanent') return 'status-blocked-permanent';
+    if (blockType === 'Temporary') return 'status-blocked-temporary';
+    return 'bg-danger-subtle text-danger';
+  }
+
+  canManageBlock(user: any): boolean {
+    return this.getUserRole(user) !== 'Admin';
+  }
+
+  isVehicleBooked(vehicle: any): boolean {
+    const dates = vehicle?.bookedDates || vehicle?.BookedDates;
+    return Array.isArray(dates) && dates.length > 0;
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  get filteredBudgetTrips(): any[] {
+    if (!this.budgetTrips || this.budgetTrips.length === 0) return [];
+    
+    let filtered = this.budgetTrips.filter(trip => {
+      const query = this.costSearch.trim().toLowerCase();
+      const tripName = (trip.tripName || trip.TripName || '').toLowerCase();
+      const createdBy = (trip.createdBy || trip.CreatedBy || '').toLowerCase();
+      const route = this.getTripRoute(trip).toLowerCase();
+      const matchesSearch = !query || tripName.includes(query) || createdBy.includes(query) || route.includes(query);
+
+      const status = this.getTripStatus(trip).toLowerCase();
+      const filter = this.costStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      return matchesSearch && matchesStatus;
+    });
+
+    // Apply sorting
+    return this.sortBudgetTrips(filtered);
+  }
+
+  sortBudgetTrips(trips: any[]): any[] {
+    const sortOption = this.costSortFilter;
+    
+    return [...trips].sort((a, b) => {
+      switch (sortOption) {
+        case 'date-desc':
+          const dateB = new Date(b.StartDate || b.startDate || 0).getTime();
+          const dateA = new Date(a.StartDate || a.startDate || 0).getTime();
+          return dateB - dateA;
+        case 'date-asc':
+          const dateA2 = new Date(a.StartDate || a.startDate || 0).getTime();
+          const dateB2 = new Date(b.StartDate || b.startDate || 0).getTime();
+          return dateA2 - dateB2;
+
+        // LOGIC FOR SORTING BY SPENT AMOUNT
+        case 'spent-desc':
+          return this.getTripSpent(b) - this.getTripSpent(a);
+        case 'spent-asc':
+          return this.getTripSpent(a) - this.getTripSpent(b);
+
+        case 'usage-desc':
+          return this.getTripUsage(b) - this.getTripUsage(a);
+        case 'usage-asc':
+          return this.getTripUsage(a) - this.getTripUsage(b);
+        default:
+          return 0;
+      }
+    });
+  }
+  getTripSpent(trip: any): number {
+    return trip.totalSpent ?? trip.TotalSpent ?? trip.spent ?? trip.Spent ?? 0;
+  }
+
+  getTripBudget(trip: any): number {
+    const raw = trip.Budgetlimit ?? trip.budgetLimit ?? trip.BudgetLimit ?? trip.budgetlimit;
+    if (raw === null || raw === undefined || raw === '') return 0;
+
+    if (typeof raw === 'string' && raw.includes('-')) {
+      // Handles a range string like "5000-10000" — take the upper limit
+      const parts = raw.split('-').map((p: string) => parseFloat(p.trim()));
+      return parts[1] || parts[0] || 0;
+    }
+    const parsed = parseFloat(raw);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  getTripRoute(trip: any): string {
+    if (trip.Route && trip.Route !== '—') return trip.Route;
+    const from = trip.departFrom || trip.DepartFrom || '';
+    const to = trip.destination || trip.Destination || '';
+    if (from && to) return `${from} → ${to}`;
+    return from || to || '—';
+  }
+
+  getTripDates(trip: any): string {
+    const start = trip.startDate || trip.StartDate;
+    const end = trip.endDate || trip.EndDate;
+    if (!start) return '—';
+    const startStr = new Date(start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (!end) return startStr;
+    const endStr = new Date(end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${startStr} – ${endStr}`;
+  }
+
+  getTripRemaining(trip: any): number {
+    const backendValue = trip.RemainingBudget ?? trip.remainingBudget;
+    if (backendValue !== null && backendValue !== undefined) return backendValue;
+    return this.getTripBudget(trip) - this.getTripSpent(trip);
+  }
+
+  getTripUsage(trip: any): number {
+    return trip.UsagePercent ?? trip.usagePercent ?? 0;
+  }
+
+  getTripStatus(trip: any): string {
+    const backendStatus = trip.Status ?? trip.status;
+    if (backendStatus) return backendStatus;
+
+    const budget = this.getTripBudget(trip);
+    const spent = this.getTripSpent(trip);
+
+    if (budget === 0 || budget === null || budget === undefined) {
+      return 'No Limit Set';
+    }
+    if (spent > budget) {
+      return 'Over Budget';
+    }
+    if (spent >= budget * 0.85) {
+      return 'Near Limit';
+    }
+    return 'On Track';
+  }
+
+  getBudgetStatusClass(status: string): string {
+    switch (status) {
+      case 'Over Budget': return 'cost-status-over';
+      case 'Near Limit': return 'cost-status-near';
+      case 'No Limit Set': return 'cost-status-none';
+      default: return 'cost-status-ok';
+    }
+  }
+
+  getCategoryClass(category: string): string {
+    const key = (category || 'general').toLowerCase();
+    if (key.includes('meal') || key.includes('food')) return 'cat-meals';
+    if (key.includes('transport')) return 'cat-transport';
+    if (key.includes('stay') || key.includes('accommodation') || key.includes('lodg')) return 'cat-stay';
+    if (key.includes('shop')) return 'cat-shopping';
+    return 'cat-general';
+  }
+
+  viewBudgetTripDetails(trip: any) {
+    this.selectedBudgetTrip = trip;
+  }
+
+  // View switchers
+  onReviewProviders() { this.view = 'providers'; this.fetchPendingProviders(); }
+  onReviewMemories() { this.view = 'memories'; this.fetchPlatformMemories(); }
+  onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
+
+  refreshDashboard() {
+  this.adminService.getDashboardStats().subscribe({
+    next: (data) => {
+      console.log("Stats Response:", data); 
+      this.stats = data;
+    },
+    error: (err) => console.error("Error loading stats:", err)
+  });
+
+  this.fetchPendingProviders();
+  this.fetchAllUsers();
+  this.fetchPlatformMemories();
+  this.fetchAllVehicles();
+ }
+
+  fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
+  fetchAllUsers() { this.adminService.getAllUsers().subscribe(data => this.allUsers = data); }
+
+ fetchPlatformMemories() {
+  this.adminService.getAllUploadedMemories().subscribe({
+    next: (data) => {
+      this.allMemories = data;
+    },
+    error: (err) => console.error("Memory Load Error:", err)
+  });
+ }
+
+ refreshCurrentView() {
+  Swal.fire({
+    title: 'Syncing Data...',
+    text: 'Please wait while we update your current view.',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  switch (this.view) {
+    case 'stats':
+      this.refreshDashboard();
+      break;
+    case 'providers':
+      this.fetchPendingProviders();
+      break;
+    case 'memories':
+      this.fetchPlatformMemories();
+      break;
+    case 'users':
+      this.fetchAllUsers();
+      break;
+    case 'fleet-detailed':
+      this.fetchAllVehicles();
+      break;
+    case 'costs':
+      this.fetchExpenseList();
+      break;
+  }
+
+  setTimeout(() => {
     Swal.fire({
-      title: `Confirm ${status}?`,
-      text: `Are you sure you want to set this provider to ${status}?`,
+      icon: 'success',
+      title: 'Sync Successful!',
+      text: 'Your current view is up to date.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }, 1000); 
+}
+  confirmApproval(provider: any) {
+  Swal.fire({
+    title: 'Approve Fleet Item?',
+    text: `Verify ${provider.vehicleClass}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
+}
+
+confirmReject(provider: any) {
+  Swal.fire({
+    title: 'Reject Request?',
+    text: `Decline ${provider.vehicleClass}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    target: document.querySelector('.modal-card') as HTMLElement || document.body 
+  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
+}
+
+  updateStatus(provider: any, status: string) {
+  const id = provider._id || provider.id;
+  this.adminService.updateProviderStatus(id, status).subscribe(() => {
+    this.selectedProvider = null;
+    
+    // INCREMENT THE COUNTERS 
+    if (status === 'Approved') {
+      this.approvedSessionCount++;
+    } else if (status === 'Rejected') {
+      this.rejectedSessionCount++;
+    }
+
+    this.refreshDashboard();
+    Swal.fire('Success', `Vehicle ${status}`, 'success');
+  });
+}
+
+fetchAllVehicles() {
+  this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
+    this.allVehicles = data;
+  });
+}
+
+fetchExpenseList() {
+  this.costsLoading = true;
+  this.adminService.getBudgetDetails().subscribe({
+    next: (data: any) => {
+      // 1. Extract the trips array safely
+      const rawTrips = data?.trips || data?.Trips || data || [];
+
+      this.budgetTrips = rawTrips.map((t: any) => ({
+        TripName: t.TripName ?? t.tripname ?? t.tripName ?? 'Untitled Trip',
+        Budgetlimit: t.budgetLimit ?? t.BudgetLimit ?? t.Budgetlimit ?? t.budgetlimit ?? 0,
+        TotalSpent: t.totalSpent ?? t.TotalSpent ?? t.totalspent ?? 0,
+        Route: t.Route ?? t.route ?? (t.departFrom ? `${t.departFrom} → ${t.destination}` : '—'),
+        StartDate: t.StartDate ?? t.startDate,
+        EndDate: t.EndDate ?? t.endDate,
+        CreatedBy: t.CreatedBy ?? t.createdBy,
+        ExpenseCount: t.expenseCount ?? t.ExpenseCount ?? 0,
+        RemainingBudget: t.remainingBudget ?? t.RemainingBudget ?? null,
+        UsagePercent: t.usagePercent ?? t.UsagePercent ?? 0,
+        Status: t.status ?? t.Status ?? null,
+        expenses: t.expenses ?? t.Expenses ?? []
+      }));
+
+      this.expenses = [...this.budgetTrips];
+      this.costSummary = this.calculateCostSummary();
+      this.costsLoading = false;
+    },
+    error: (err) => {
+      console.error('Error loading budget details:', err);
+      this.costsLoading = false;
+    }
+  });
+}
+
+calculateCostSummary() {
+  let overBudget = 0;
+  let onTrack = 0;
+  let nearLimit = 0;
+
+  this.budgetTrips.forEach((trip) => {
+    const status = this.getTripStatus(trip);
+
+    if (status === 'Over Budget') {
+      overBudget++;
+    } else if (status === 'Near Limit') {
+      nearLimit++;
+    } else if (status === 'On Track') {
+      onTrack++;
+    }
+  });
+
+  return {
+    totalTrips: this.budgetTrips.length,
+    overBudgetTrips: overBudget,
+    onTrackTrips: onTrack,
+    nearLimitTrips: nearLimit
+  };
+}
+
+  onReviewFleet() { 
+    this.view = 'fleet-detailed'; 
+    this.fetchAllVehicles(); 
+  }
+
+  deleteMemory(id: string) {
+    this.adminService.deleteMemoryPost(id).subscribe({
+      next: () => {
+        this.refreshDashboard();
+        Swal.fire('Deleted!', 'Memory post has been removed.', 'success');
+      },
+      error: (err) => {
+        console.error("Delete Error:", err); 
+      }
+    });
+  }
+
+  viewVehicleDetails(vehicle: any) {
+    console.log("Viewing Vehicle:", vehicle);
+    this.selectedProvider = vehicle; 
+  }
+
+// Memory සඳහා පමණක් භාවිතා කරන්න
+viewMemoryDetails(memory: any) {
+  Swal.fire({
+    title: memory.title || 'Trip Memory',
+    html: `
+      <p style="text-align:left;margin-bottom:8px;"><strong>By:</strong> ${memory.fullName || 'Unknown'}</p>
+      <p style="text-align:left;margin-bottom:8px;"><strong>Location:</strong> ${memory.locationName || 'N/A'}</p>
+      <p style="text-align:left;margin-bottom:12px;">${memory.description || 'No description provided.'}</p>
+      ${memory.imageUrl ? `<img src="${memory.imageUrl}" style="max-width:100%;border-radius:12px;" />` : ''}
+    `,
+    width: 640,
+    confirmButtonText: 'Close',
+    confirmButtonColor: '#2563eb'
+  });
+}
+
+confirmMemoryApproval(memory: any) {
+  Swal.fire({
+    title: 'Approve this memory?',
+    text: `Publish "${memory.title || 'this memory'}" as approved content?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981'
+  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Approved'); });
+}
+
+confirmMemoryFlag(memory: any) {
+  Swal.fire({
+    title: 'Flag this memory?',
+    text: `Flag "${memory.title || 'this memory'}" for review or removal?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444'
+  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Flagged'); });
+}
+
+setMemoryStatus(memory: any, status: string) {
+  const id = memory.id || memory._id;
+  this.adminService.updateMemoryStatus(id, status).subscribe({
+    next: () => {
+      this.fetchPlatformMemories();
+      Swal.fire('Updated', `Memory marked as ${status}.`, 'success');
+    },
+    error: () => Swal.fire('Error', 'Could not update memory status.', 'error')
+  });
+}
+
+viewExpenditureDetails() {
+  this.view = 'costs';
+  this.fetchExpenseList();
+}
+
+  changeRole(id: string, role: string) {
+    Swal.fire({
+      title: 'Update user role?',
+      text: `Promote this account to ${role}?`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: status === 'Approved' ? '#10b981' : '#ef4444',
-      confirmButtonText: 'Yes, proceed',
-      cancelButtonText: 'No, cancel',
-      heightAuto: false,
-      focusConfirm: true,
-      returnFocus: true,
-      target: document.querySelector('.modal-card') as HTMLElement || document.body
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.updateProviderStatus(id, status).subscribe({
-          next: () => {
-            this.pendingProviders = this.pendingProviders.filter(p => (p._id || p.id) !== id);
-            this.selectedProvider = null; // Automatically close the detail modal
-            
-            // Recalculate KPI summary counters instantly so the home cards stay in sync
-            this.refreshDashboard();
-            
-            Swal.fire({
-              title: 'Success',
-              text: `Provider has been ${status}`,
-              icon: 'success',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          },
-          error: (err: any) => {
-            console.error("Update failed", err);
-            Swal.fire({
-              title: 'Error',
-              text: 'Update failed. Backend might be down.',
-              icon: 'error',
-              heightAuto: false,
-              target: document.querySelector('.modal-card') as HTMLElement || document.body
-            });
-          }
+      confirmButtonColor: '#2563eb'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.updateUserRole(id, role).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Updated', 'User role changed successfully.', 'success');
         });
       }
     });
   }
 
-  /* Opens the detail modal for a specific provider and fetches full data */
-  viewDetails(provider: any) {
-    const id = provider._id || provider.id;
-    this.adminService.getProviderById(id).subscribe({
-      next: (fullData: any) => {
-        this.selectedProvider = fullData;
-      },
-      error: (err: any) => {
-        console.error("Could not fetch details", err);
-        Swal.fire({
-          title: 'Error',
-          text: 'Failed to load vehicle documents.',
-          icon: 'error',
-          heightAuto: false
-        });
-      }
-    });
-  }
-
-  // USER MANAGEMENT ACTIONS 
-
-  /* Promotes a regular user to an Admin role */
-  changeRole(userId: string, newRole: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
-    this.adminService.updateUserRole(userId, newRole).subscribe({
-      next: (res: any) => {
-        const user = this.allUsers.find(u => (u._id || u.id) === userId);
-        if (user) user.role = newRole;
-        Swal.fire('Updated', `User promoted to ${newRole}`, 'success');
-      },
-      error: (err: any) => {
-        console.error("Server error:", err);
-        Swal.fire('Error', 'Role update failed.', 'error');
-      }
-    });
-  }
-
-  /* Toggle Block status for users */
-  toggleBlock(user: any) {
-    const userId = user.id || user._id;
-    const newBlockStatus = !user.isBlocked;
-    const action = newBlockStatus ? 'block' : 'unblock';
-
+  blockUserTemporary(user: any) {
+    const id = user.id || user._id;
     Swal.fire({
-      title: `Confirm ${action}?`,
-      text: `Do you want to ${action} ${user.fullName || user.name}?`,
+      title: 'Block for 2 weeks?',
+      text: 'This user will be suspended for 14 days and automatically unblocked afterward.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: newBlockStatus ? '#ef4444' : '#10b981',
-      confirmButtonText: `Yes, ${action}`,
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.toggleBlockUser(userId, newBlockStatus).subscribe({
+      confirmButtonColor: '#f59e0b',
+      confirmButtonText: 'Block 2 Weeks'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Temporary').subscribe({
           next: () => {
-            user.isBlocked = newBlockStatus;
-            Swal.fire({ title: 'Success', icon: 'success', heightAuto: false });
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User suspended for 2 weeks.', 'success');
           },
-          error: (err) => console.error("Block/Unblock failed:", err)
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
         });
       }
     });
   }
 
-  /* Permanently deletes a user */
-  deleteUser(userId: string) {
-    if (!userId) {
-      Swal.fire('Error', 'User ID is missing!', 'error');
-      return;
-    }
-
+  blockUserPermanent(user: any) {
+    const id = user.id || user._id;
     Swal.fire({
-      title: 'Are you sure?',
-      text: "This user will be permanently removed from the system!",
+      title: 'Permanently block user?',
+      text: 'This account will stay suspended until you manually unblock it.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete!',
-      heightAuto: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.adminService.deleteUser(userId).subscribe({
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Block Permanently'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.blockUser(id, 'Permanent').subscribe({
           next: () => {
-            this.allUsers = this.allUsers.filter(u => (u._id || u.id) !== userId);
-            
-            // Recalculate stats cards to reflect total population reduction
-            this.refreshDashboard();
-
-            Swal.fire({
-              title: 'Deleted!',
-              text: 'User has been removed.',
-              icon: 'success',
-              heightAuto: false
-            });
+            this.fetchAllUsers();
+            Swal.fire('Blocked', 'User permanently suspended.', 'success');
           },
-          error: (err) => {
-            console.error("Delete failed:", err);
-            Swal.fire('Error', 'Failed to delete user.', 'error');
-          }
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not block user.', 'error')
         });
       }
     });
   }
 
-  // DOCUMENT UTILITIES
+  unblockUserAccount(user: any) {
+    const id = user.id || user._id;
+    Swal.fire({
+      title: 'Unblock user?',
+      text: 'This will restore full access to the account immediately.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      confirmButtonText: 'Unblock'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.unblockUser(id).subscribe({
+          next: () => {
+            this.fetchAllUsers();
+            Swal.fire('Unblocked', 'User access has been restored.', 'success');
+          },
+          error: (err) => Swal.fire('Error', err.error?.message || 'Could not unblock user.', 'error')
+        });
+      }
+    });
+  }
 
+  deleteUser(id: string) {
+    Swal.fire({
+      title: 'Delete user?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444'
+    }).then(res => {
+      if (res.isConfirmed) {
+        this.adminService.deleteUser(id).subscribe(() => {
+          this.refreshDashboard();
+          Swal.fire('Deleted', 'User removed from the platform.', 'success');
+        });
+      }
+    });
+  }
   openImage(base64Data: string | undefined) {
-    if (!base64Data) {
-      Swal.fire({ title: 'Error', text: 'No document found.', icon: 'error', heightAuto: false });
-      return;
-    }
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(`
-        <title>Document Viewer</title>
-        <body style="margin:0; background:#111; display:flex; align-items:center; justify-content:center; height: 100vh;">
-          <img src="${base64Data}" style="max-width:90%; max-height:90vh; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+  if (!base64Data) {
+    Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
+    return;
+  }
+  
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(`
+      <html>
+        <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#333;">
+          <img src="${base64Data}" style="max-width:100%; max-height:100vh; border: 5px solid #fff;">
         </body>
-      `);
+      </html>
+    `);
+  } else {
+    Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
+  }
+}
+
+  // Memory filtering methods
+  get filteredMemories(): any[] {
+    if (!this.allMemories || this.allMemories.length === 0) return [];
+    
+    return this.allMemories.filter(memory => {
+      const query = this.memorySearch.trim().toLowerCase();
+      const title = (memory.title || '').toLowerCase();
+      const user = (memory.fullName || '').toLowerCase();
+      const location = (memory.locationName || '').toLowerCase();
+      const matchesSearch = !query || title.includes(query) || user.includes(query) || location.includes(query);
+
+      const status = this.getMemoryStatus(memory).toLowerCase();
+      const filter = this.memoryStatusFilter.toLowerCase();
+      const matchesStatus = filter === 'all' || status === filter;
+
+      const matchesDate = this.matchesDateFilter(memory);
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }
+
+  getMemoryStatus(memory: any): string {
+    const status = memory.status || memory.moderationStatus || 'pending';
+    return status.toString().toLowerCase();
+  }
+
+  getMemoryStatusClass(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved': return 'memory-status-approved';
+      case 'flagged': return 'memory-status-flagged';
+      case 'pending': return 'memory-status-pending';
+      default: return 'memory-status-default';
     }
   }
+
+  getMemoryUploadDate(memory: any): string {
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  getMemoriesByStatus(status: string): any[] {
+    if (!this.allMemories) return [];
+    return this.allMemories.filter(m => this.getMemoryStatus(m) === status.toLowerCase());
+  }
+
+  matchesDateFilter(memory: any): boolean {
+    if (this.memoryDateFilter === 'all') return true;
+    
+    const date = memory.uploadDate || memory.createdAt || memory.created_at;
+    if (!date) return false;
+    
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return false;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (this.memoryDateFilter === 'today') {
+      return d >= today;
+    }
+    
+    if (this.memoryDateFilter === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }
+    
+    if (this.memoryDateFilter === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return d >= monthAgo;
+    }
+    
+    return true;
+  }
+
+
+  // Fleet filtering methods.
+  get filteredVehicles(): any[] {
+    if (!this.allVehicles || this.allVehicles.length === 0) return [];
+    
+    return this.allVehicles.filter(vehicle => {
+      const query = this.fleetSearch.trim().toLowerCase();
+      const vehicleClass = (vehicle.vehicleClass || vehicle.VehicleClass || '').toLowerCase();
+      const modelName = (vehicle.modelName || vehicle.ModelName || '').toLowerCase();
+      const provider = (vehicle.providerProfile?.name || vehicle.ProviderProfile?.Name || '').toLowerCase();
+      const location = (vehicle.providerProfile?.location || vehicle.ProviderProfile?.Location || '').toLowerCase();
+      const matchesSearch = !query || vehicleClass.includes(query) || modelName.includes(query) || provider.includes(query) || location.includes(query);
+
+      const status = (vehicle.status || vehicle.Status || '').toLowerCase();
+      const statusFilter = this.fleetStatusFilter.toLowerCase();
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+      const typeFilter = this.fleetTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || vehicleClass.includes(typeFilter);
+
+      const isBooked = this.isVehicleBooked(vehicle);
+      const bookingFilter = this.fleetBookingFilter.toLowerCase();
+      const matchesBooking = bookingFilter === 'all' || 
+        (bookingFilter === 'available' && !isBooked) || 
+        (bookingFilter === 'booked' && isBooked);
+
+      return matchesSearch && matchesStatus && matchesType && matchesBooking;
+    });
+  }
+
+  getVehiclesByStatus(status: string): any[] {
+    if (!this.allVehicles) return [];
+    const target = status.toLowerCase();
+    return this.allVehicles.filter(v => {
+      const vStatus = (v.status || v.Status || '').toLowerCase();
+      if (target === 'pending') {
+        return vStatus === 'pending' || vStatus === 'pending approval';
+      }
+      return vStatus === target;
+    });
+  }
+
+  getBookedVehiclesCount(): number {
+    if (!this.allVehicles) return 0;
+    return this.allVehicles.filter(v => this.isVehicleBooked(v)).length;
+  }
+
+  getFleetStatusClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'fleet-status-approved';
+      case 'pending': return 'fleet-status-pending';
+      case 'rejected': return 'fleet-status-rejected';
+      case 'unavailable': return 'fleet-status-unavailable';
+      default: return 'fleet-status-default';
+    }
+  }
+
+  getVehicleTypeClass(type: string): string {
+    const t = (type || '').toLowerCase();
+    if (t.includes('car')) return 'vehicle-type-car';
+    if (t.includes('van')) return 'vehicle-type-van';
+    if (t.includes('bus')) return 'vehicle-type-bus';
+    if (t.includes('suv')) return 'vehicle-type-suv';
+    return 'vehicle-type-default';
+  }
+
+  hasDocument(vehicle: any, docType: string): boolean {
+    switch (docType) {
+      case 'license': return !!(vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl);
+      case 'nic': return !!(vehicle.driverNicUrl || vehicle.DriverNicUrl);
+      case 'revenue': return !!(vehicle.revenueLicenseUrl || vehicle.RevenueLicenseUrl);
+      default: return false;
+    }
+  }
+
+  // Provider filtering methods.
+  get filteredProviders(): any[] {
+    if (!this.pendingProviders || this.pendingProviders.length === 0) return [];
+    
+    return this.pendingProviders.filter(provider => {
+      const query = this.providerSearch.trim().toLowerCase();
+      const providerName = (provider.providerProfile?.name || '').toLowerCase();
+      const vehicleClass = (provider.vehicleClass || provider.VehicleClass || '').toLowerCase();
+      const location = (provider.location || provider.providerProfile?.location || '').toLowerCase();
+      const matchesSearch = !query || providerName.includes(query) || vehicleClass.includes(query) || location.includes(query);
+
+      const typeFilter = this.providerTypeFilter.toLowerCase();
+      const matchesType = typeFilter === 'all' || vehicleClass.includes(typeFilter);
+
+      return matchesSearch && matchesType;
+    });
+  }
+
+  getSubmissionDate(provider: any): string {
+    const date = provider.submittedAt || provider.createdAt || provider.created_at;
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
 }

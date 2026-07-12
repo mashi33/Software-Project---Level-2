@@ -1,314 +1,633 @@
-import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
-import { CommonModule,Location } from '@angular/common';
+import {Component,OnInit,HostListener,AfterViewInit,ChangeDetectorRef} from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import * as L from 'leaflet';
-import {MemoryService} from '../services/memory';
+import { HttpClientModule } from '@angular/common/http';
+import { Router } from '@angular/router';
+import * as leaflet from 'leaflet';
+import 'leaflet.markercluster';
+import { forkJoin } from 'rxjs';
+import { MemoryService } from '../services/memory';
 import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
-import 'leaflet.markercluster';
+import Swal from 'sweetalert2';
+
+interface CommunityAlbum {
+  tripName: string;
+  memories: TripMemory[];
+  latestImage: string;
+  latestDate: string | Date;
+  currentDisplayImage: string;
+  slideIndex: number;
+  slideshowInterval?: ReturnType<typeof setInterval> | null;
+}
 
 @Component({
   selector: 'app-community-map',
   standalone: true,
   imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './community-map.html',
-  styleUrls: ['./community-map.css']
+  styleUrl: './community-map.css'
 })
+
 export class CommunityMapComponent implements OnInit, AfterViewInit {
-  private map!: L.Map;
-    private markersLayer = (L as any).markerClusterGroup({
+  private map!: leaflet.Map;
+  private markersLayer = (leaflet as any).markerClusterGroup({
       iconCreateFunction: (cluster: any) => {
-        const count = cluster.getChildCount();
-        return L.divIcon({
-          html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
-          className: 'my-cluster-wrapper',
-          iconSize: L.point(40, 40)
-        });
-      }
-    });
-  
-  private readonly sriLankaBounds = L.latLngBounds(
-    L.latLng(5.0, 78.0), 
-    L.latLng(10.5, 83.5)
+      const count = cluster.getChildCount();
+      return leaflet.divIcon({
+        html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
+        className: 'my-cluster-wrapper',
+        iconSize: leaflet.point(40, 40)
+      });
+    }
+  });
+
+  private readonly sriLankaBounds = leaflet.latLngBounds(
+    leaflet.latLng(5.9, 79.5),
+    leaflet.latLng(9.9, 82.0)
   );
 
-  public searchQuery: string = '';
-  public allMemories: TripMemory[] = [];
-  public filteredMemories: TripMemory[] = [];
-  public selectedMemory: TripMemory | null = null;
-  public showMax: number = 3;
+  searchQuery = '';
+  allMemories: TripMemory[] = [];
+  filteredMemories: TripMemory[] = [];
+  groupedAlbums: CommunityAlbum[] = [];
+  topRatedMemories: TripMemory[] = [];
+  selectedMemory: TripMemory | null = null;
+  selectedAlbum: CommunityAlbum | null = null;
+  currentMemoryIndex = 0;
+  isLightboxOpen = false;
+  activeTab: 'popular' | 'albums' = 'popular';
+  showAllAlbums = false;
+  showAllTopRated = false;
+  albumLikeInProgress = false;
 
-  constructor(private readonly memoryService: MemoryService, private readonly authService: AuthService,private readonly location: Location) {}
+  constructor(
+    private readonly memoryService: MemoryService,
+    private readonly authService: AuthService,
+    private readonly router: Router,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
-    this.loadCommunityMemories(); 
+    this.loadCommunityMemories();
   }
+
 
   ngAfterViewInit(): void {
     this.initMap();
   }
 
-  // ADD THIS EXACT METHOD INSIDE THE CLASS:
-  public isObject(val: unknown): boolean {
-    return val !== null && typeof val === 'object';
+  // DATA LOADING 
+
+  loadCommunityMemories(): void {
+    this.memoryService.getPublicMemories().subscribe({
+      next: (data) => {
+        this.allMemories = data
+          .filter(m => m.isPublic)
+          .map(m => this.formatData(m));
+        this.applyFilters();
+      },
+      error: (err) => console.error('Failed to load community memories:', err)
+    });
   }
 
-  // Matches the naming used in your memories-map for consistency
-  private formatData(memory: any) {
+  private formatData(raw: TripMemory | Record<string, unknown>): TripMemory {
+    const memory = raw as Record<string, unknown>;
     return {
-      id: memory.id || memory._id || memory.Id,
-      title: memory.title || memory.Title || 'Untitled',
-      imageUrl: memory.imageUrl || memory.ImageUrl || '',
-      description: memory.description || memory.Description || '',
-      latitude: Number(memory.latitude || memory.Latitude || 0),
-      longitude: Number(memory.longitude || memory.Longitude || 0),
-      locationName: memory.locationName || memory.LocationName || 'Unknown Location',
-      startDate: memory.startDate, 
-      endDate: memory.endDate,
-      isPublic: memory.isPublic || memory.IsPublic || false,
-      likeCount: memory.likeCount || memory.LikeCount || 0,
-      likedByUsers: memory.likedByUsers || memory.LikedByUsers || []
+      id: (memory['id'] || memory['_id'] || memory['Id']) as string,
+      title: (memory['title'] || memory['Title'] || 'Untitled') as string,
+      imageUrl: (memory['imageUrl'] || memory['ImageUrl'] || '') as string,
+      description: (memory['description'] || memory['Description'] || '') as string,
+      latitude: Number(memory['latitude'] || memory['Latitude'] || 0),
+      longitude: Number(memory['longitude'] || memory['Longitude'] || 0),
+      locationName: (memory['locationName'] || memory['LocationName'] || 'Unknown Location') as string,
+      startDate: memory['startDate'] as Date,
+      endDate: memory['endDate'] as Date,
+      isPublic: Boolean(memory['isPublic'] ?? memory['IsPublic'] ?? false),
+      likeCount: Number(memory['likeCount'] || memory['LikeCount'] || 0),
+      likedByUsers: (memory['likedByUsers'] || memory['LikedByUsers'] || []) as string[],
+      tripId: (memory['tripId'] || memory['TripId']) as string | undefined,
+      tripName: (memory['tripName'] || memory['TripName']) as string | undefined,
+      userId: (memory['userId'] || memory['UserId'] || '') as string,
+      fullName: (memory['fullName'] || memory['FullName']) as string | undefined,
+      createdAt: (memory['createdAt'] || memory['CreatedAt']) as Date | undefined
     };
   }
 
-  private sortMemoriesByLikesAndDate(memoriesArray: TripMemory[]): TripMemory[] {
-    const now = new Date().getTime();
+  // FILTER & ALBUMS 
 
-    return [...memoriesArray].sort((a, b) => {
-      // 1. මතකයන් දෙක අප්ලෝඩ් කර ඇති පැය ගණන සෙවීම (Age in Hours)
-      const dateA = a.startDate ? new Date(a.startDate).getTime() : now;
-      const dateB = b.startDate ? new Date(b.startDate).getTime() : now;
-      
-      const ageInHoursA = Math.max(0.1, (now - dateA) / (1000 * 60 * 60));
-      const ageInHoursB = Math.max(0.1, (now - dateB) / (1000 * 60 * 60));
+  filterMemories(): void {
+    this.applyFilters();
+  }
 
-      // 2. ලයික් ප්‍රමාණය ලබා ගැනීම (ලයික් නැති ඒවට අවස්ථාවක් දීමට මූලිකව +1 කරයි)
-      const scoreA = ((a.likeCount || 0) + 1) / (ageInHoursA + 2);
-      const scoreB = ((b.likeCount || 0) + 1) / (ageInHoursB + 2);
+  private applyFilters(): void {
+    let memories = [...this.allMemories];
 
-      // වැඩිම ලකුණ ඇති මතකය මුලටම පැමිණේ (Descending Order)
+    if (this.searchQuery?.trim()) {
+      const query = this.searchQuery.toLowerCase().trim();
+      memories = memories.filter(m =>
+        m.locationName?.toLowerCase().includes(query)
+      );
+    }
+
+    this.filteredMemories = this.sortMemoriesByLikesAndDate(memories);
+    this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
+    this.groupMemoriesByTrip(this.filteredMemories);
+    this.refreshMapMarkers(this.filteredMemories);
+    this.cdr.detectChanges();
+  }
+
+
+  // SweetAlert Helper
+  private showSweetAlert(message: string, type: 'like' | 'unlike' | 'album_like' | 'album_unlike' = 'like') {
+    const config: any = {
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      customClass: {
+        popup: 'swal-custom-toast',
+        title: 'swal-custom-title'
+      }
+    };
+
+    switch (type) {
+      case 'like':
+        config.icon = 'success';
+        config.title = `<div class="swal-like-content"><i class="bi bi-heart-fill"></i> ${message}</div>`;
+        config.background = '#fff1f2';
+        config.color = '#be123c';
+        break;
+      case 'unlike':
+        config.icon = 'info';
+        config.title = `<div class="swal-unlike-content"><i class="bi bi-heart"></i> ${message}</div>`;
+        config.background = '#f1f5f9';
+        config.color = '#64748b';
+        break;
+      case 'album_like':
+        config.icon = 'success';
+        config.title = `<div class="swal-album-like-content"><i class="bi bi-images"></i> ${message}</div>`;
+        config.background = '#eff6ff';
+        config.color = '#2563eb';
+        break;
+      case 'album_unlike':
+        config.icon = 'info';
+        config.title = `<div class="swal-album-unlike-content"><i class="bi bi-images"></i> ${message}</div>`;
+        config.background = '#f1f5f9';
+        config.color = '#64748b';
+        break;
+    }
+    (Swal as any).fire(config);
+  }
+
+  private sortMemoriesByLikesAndDate(memories: TripMemory[]): TripMemory[] {
+    const now = Date.now();
+
+    return [...memories].sort((a, b) => {
+      const scoreA = this.calculatePriorityScore(a, now);
+      const scoreB = this.calculatePriorityScore(b, now);
       return scoreB - scoreA;
     });
   }
 
-  goBack(): void {
-  this.location.back();
-}
+  private calculatePriorityScore(memory: TripMemory, now: number = Date.now()): number {
+    const date = memory.startDate ? new Date(memory.startDate).getTime() : 
+                 memory.createdAt ? new Date(memory.createdAt).getTime() : now;
+    const ageInHours = Math.max(0.1, (now - date) / (1000 * 60 * 60));
+    
+    // Priority algorithm: (likes * 1.5 + 1) / (age_in_hours + 2) * 100
+    // This gives higher priority to memories with more likes and newer uploads
+    const likeWeight = 1.5;
+    const recencyWeight = 1.0;
+    
+    const score = ((memory.likeCount || 0) * likeWeight + 1) / (ageInHours * recencyWeight + 2) * 100;
+    return score;
+  }
 
-  public loadCommunityMemories(): void {
-    this.memoryService.getPublicMemories().subscribe({
-      next: (data: TripMemory[]) => {
-        this.allMemories = data.filter(m => m.isPublic);
-        this.filteredMemories = this.sortMemoriesByLikesAndDate(this.allMemories);
-        this.refreshMapMarkers(this.filteredMemories); 
-      },
-      error: (err: unknown) => console.error('Failed to load community memories:', err)
+  private getTopRatedMemories(memories: TripMemory[], count: number = 10): TripMemory[] {
+    const sorted = this.sortMemoriesByLikesAndDate(memories);
+    return sorted.slice(0, count);
+  }
+
+  private groupMemoriesByTrip(memories: TripMemory[]): void {
+    const groups = new Map<string, CommunityAlbum>();
+
+    memories.forEach(memory => {
+      const tripId = memory.tripId || 'no-trip';
+      const tripName = memory.tripName || 'Unknown Trip';
+      const memoryDate = memory.startDate || memory.endDate || memory.createdAt;
+
+      if (!groups.has(tripId)) {
+        groups.set(tripId, {
+          tripName,
+          memories: [],
+          latestImage: memory.imageUrl,
+          latestDate: memoryDate,
+          currentDisplayImage: memory.imageUrl,
+          slideIndex: 0
+        });
+      }
+
+      const album = groups.get(tripId)!;album.memories.push(memory);
+      const albumDate = new Date(album.latestDate);
+      const currentDate = new Date(memoryDate);
+
+      if (currentDate > albumDate) {
+        album.latestImage = memory.imageUrl;
+        album.latestDate = memoryDate;
+        album.currentDisplayImage = memory.imageUrl;
+      }
+    });
+
+    this.groupedAlbums = Array.from(groups.values()).sort((a, b) => {
+      const likesA = this.getTotalLikes(a);
+      const likesB = this.getTotalLikes(b);
+      return likesB - likesA;
     });
   }
 
-  public toggleSeeMore(): void {
-    this.showMax = (this.showMax === 3) ? this.filteredMemories.length : 3;
+  get displayedAlbums(): CommunityAlbum[] {
+    return this.showAllAlbums ? this.groupedAlbums : this.groupedAlbums.slice(0, 3);
   }
 
-  public trackByFn(index: number, item: TripMemory): string | number {
-    return item.id || index;
+  get displayedTopRatedMemories(): TripMemory[] {
+    return this.showAllTopRated ? this.topRatedMemories : this.topRatedMemories.slice(0, 3);
   }
-  
-  public filterMemories(): void {
-    if (!this.searchQuery?.trim()) {
-      this.filteredMemories = this.sortMemoriesByLikesAndDate(this.allMemories);
-    } else {
-      const query = this.searchQuery.toLowerCase().trim();
-      const matched = this.allMemories.filter(m => m.locationName.toLowerCase().includes(query));
-      this.filteredMemories = this.sortMemoriesByLikesAndDate(matched);
+
+  toggleTopRatedSeeMore(): void {
+    this.showAllTopRated = !this.showAllTopRated;
+  }
+
+  setActiveTab(tab: 'popular' | 'albums'): void {
+    this.activeTab = tab;
+  }
+
+
+  toggleSeeMore(): void {
+    this.showAllAlbums = !this.showAllAlbums;
+  }
+
+  trackByFn(index: number, item: CommunityAlbum): string | number {
+    return item.tripName || index;
+  }
+
+  //  LIKES 
+
+  hasUserLiked(memory: TripMemory): boolean {
+    const userId = this.authService.getUserId();
+    if (!userId || !memory.likedByUsers) return false;
+    return memory.likedByUsers.includes(userId);
+  }
+
+  isAlbumFullyLiked(album: CommunityAlbum): boolean {
+    return album.memories.length > 0 && album.memories.every(m => this.hasUserLiked(m));
+  }
+
+  toggleLike(memoryId: string | undefined, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    if (!memoryId) return;
+    const currentUserId = this.authService.getUserId();
+    if (!currentUserId) return;
+    const memory = this.allMemories.find(m => m.id === memoryId);
+    const isLiked = memory ? this.hasUserLiked(memory) : false;
+    this.memoryService.toggleLike(memoryId, currentUserId).subscribe({
+
+      next: (updatedMemory) => {
+        this.updateLocalMemoryState(memoryId, updatedMemory);
+        this.applyFilters();
+        const newLikeCount = updatedMemory.likeCount || 0;
+        const action = isLiked ? 'unlike' : 'like';
+        const message = isLiked
+          ? `Removed like! (${newLikeCount} likes)`
+          : `Liked! (${newLikeCount} likes)`;
+        this.showSweetAlert(message, action);
+      },
+
+      error: (err) => console.error('Failed to toggle like:', err)
+    });
+  }
+
+toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    const currentUserId = this.authService.getUserId();
+    if (!currentUserId || this.albumLikeInProgress) return;
+    const allLiked = this.isAlbumFullyLiked(album);
+    const targets = album.memories.filter(m =>
+      m.id && (allLiked ? this.hasUserLiked(m) : !this.hasUserLiked(m))
+    );
+
+    if (!targets.length) return;
+    this.albumLikeInProgress = true;
+    const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId));
+
+    forkJoin(requests).subscribe({
+      next: (updatedMemories) => {
+        updatedMemories.forEach(m => {
+          if (m.id) this.updateLocalMemoryState(m.id, m);
+        });
+        this.applyFilters();
+        this.albumLikeInProgress = false;
+        const totalLikes = this.getTotalLikes(album);
+        const action = allLiked ? 'album_unlike' : 'album_like';
+        const message = allLiked
+          ? `Removed likes from ${targets.length} memories! (${totalLikes} total)`
+          : `Liked ${targets.length} memories! (${totalLikes} total)`;
+        this.showSweetAlert(message, action);
+        this.cdr.detectChanges();
+      },
+
+      error: (err) => {
+        console.error('Failed to toggle album likes:', err);
+        this.albumLikeInProgress = false;
+      }
+    });
+  }
+
+  private updateLocalMemoryState(memoryId: string, updatedMemory: TripMemory): void {
+    const updateInList = (list: TripMemory[]) => {
+      const idx = list.findIndex(m => m.id === memoryId);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...updatedMemory };
+      }
+    };
+
+    updateInList(this.allMemories);
+    updateInList(this.filteredMemories);
+    this.groupMemoriesByTrip(this.filteredMemories);
+
+    if (this.selectedAlbum) {
+      const refreshed = this.groupedAlbums.find(a => a.tripName === this.selectedAlbum!.tripName);
+      if (refreshed) {
+        this.selectedAlbum = refreshed;
+        this.selectedMemory = refreshed.memories[this.currentMemoryIndex] || null;
+      }
+    } else if (this.selectedMemory?.id === memoryId) {
+      this.selectedMemory = { ...this.selectedMemory, ...updatedMemory };
     }
+
     this.refreshMapMarkers(this.filteredMemories);
+    this.cdr.detectChanges();
+
   }
+
+  getTotalLikes(album: CommunityAlbum): number {
+    return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
+  }
+
+  getPriorityScore(memory: TripMemory): number {
+    return this.calculatePriorityScore(memory);
+  }
+
+  openTopRatedMemory(memory: TripMemory): void {
+    this.openLightboxForMemory(memory);
+  }
+
+  // LIGHTBOX 
+
+  openAlbum(album: CommunityAlbum): void {
+    this.selectedAlbum = album;
+    this.currentMemoryIndex = 0;
+    this.selectedMemory = album.memories[0] || null;
+    this.isLightboxOpen = true;
+  }
+
+  openLightboxForMemory(memory: TripMemory, album?: CommunityAlbum): void {
+    if (!memory) return;
+    if (album) {
+      this.selectedAlbum = album;
+      this.currentMemoryIndex = album.memories.findIndex(m => m.id === memory.id);
+      if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
+    } else {
+      const matchingAlbum = this.groupedAlbums.find(a =>
+        a.memories.some(m => m.id === memory.id)
+      );
+      this.selectedAlbum = matchingAlbum || null;
+      this.currentMemoryIndex = matchingAlbum
+        ? matchingAlbum.memories.findIndex(m => m.id === memory.id)
+        : 0;
+    }
+
+    this.selectedMemory = memory;
+    this.isLightboxOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  nextMemory(): void {
+    if (!this.selectedAlbum) return;
+    this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
+    this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+  }
+
+  prevMemory(): void {
+    if (!this.selectedAlbum) return;
+    this.currentMemoryIndex =
+      (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
+      this.selectedAlbum.memories.length;
+    this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+  }
+
+  closeLightbox(): void {
+    this.isLightboxOpen = false;
+    this.selectedAlbum = null;
+    this.selectedMemory = null;
+  }
+
+  //  SLIDESHOW 
+
+  startSlideshow(album: CommunityAlbum): void {
+    if (album.memories.length <= 1) return;
+    album.slideIndex = 0;
+    album.currentDisplayImage = album.memories[0].imageUrl;
+    album.slideshowInterval = setInterval(() => {
+      album.slideIndex = (album.slideIndex + 1) % album.memories.length;
+      album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
+      this.cdr.detectChanges();
+    }, 2000);
+  }
+
+  stopSlideshow(album: CommunityAlbum): void {
+    if (album.slideshowInterval) {
+      clearInterval(album.slideshowInterval);
+      album.slideshowInterval = null;
+    }
+    album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
+  }
+
+  // DATE HELPERS 
+
+  getOldestCreatedAt(album: CommunityAlbum): Date | null {
+    if (!album.memories?.length) return null;
+    const dates = album.memories
+      .map(m => new Date(m.createdAt || m.startDate || m.endDate))
+      .filter(d => !isNaN(d.getTime()));
+    return dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
+  }
+
+  getNewestCreatedAt(album: CommunityAlbum): Date | null {
+    if (!album.memories?.length) return null;
+    const dates = album.memories
+      .map(m => new Date(m.createdAt || m.startDate || m.endDate))
+      .filter(d => !isNaN(d.getTime()));
+
+    return dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+  }
+
+
+  // MAP 
 
   private refreshMapMarkers(memories: TripMemory[]): void {
+    if (!this.map) return;
     this.markersLayer.clearLayers();
-
-    memories.forEach((memory) => {
+    memories.forEach(memory => {
       if (!memory.latitude || !memory.longitude) return;
-
-      const iconConfig = this.getMarkerIconConfiguration(memory.likeCount);
-      const customIcon = L.icon({
-        iconUrl: iconConfig.url,
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize: iconConfig.size,
-        iconAnchor: iconConfig.anchor,
-        popupAnchor: [1, -34],
-        shadowSize: iconConfig.size
-      });
-
-      const marker = L.marker([memory.latitude, memory.longitude], { icon: customIcon });
-      const popupHtml = this.generatePopupHtml(memory);
-
-      marker
-        .bindPopup(popupHtml)
-        .on('popupopen', (e: L.LeafletEvent) => {
-          const popupEl = e.target.getPopup().getElement();
-          
-          popupEl?.querySelector('.view-big-image')?.addEventListener('click', () => {
-            window.dispatchEvent(new CustomEvent('viewBig', { detail: memory })); 
-          });
-
-          popupEl?.querySelector('.popup-like-btn')?.addEventListener('click', () => {
-            if (memory.id) this.toggleLike(memory.id);
-          });
+      const marker = leaflet.marker([memory.latitude, memory.longitude]);
+      const popupHtml = this.getPopupHtml(memory);
+      marker.bindPopup(popupHtml, {
+          maxWidth: 320,
+          minWidth: 280,
+          className: 'memory-popup-wrapper'
         })
-        this.markersLayer.addLayer(marker);
+        .on('popupopen', (e: any) => {
+          const popupEl = e.popup.getElement();
+          if (popupEl) this.attachPopupListeners(popupEl, memory);
+        });
+
+      this.markersLayer.addLayer(marker);
     });
   }
 
-  private getMarkerIconConfiguration(likeCount: number): { url: string, size: [number, number], anchor: [number, number] } {
-    if (likeCount > 20) {
-      return {
-        url: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png',
-        size: [42, 62],
-        anchor: [21, 62]
-      };
-    } else if (likeCount > 5) {
-      return {
-        url: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        size: [35, 52],
-        anchor: [17, 52]
-      };
-    }
-    return {
-      url: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-      size: [25, 41],
-      anchor: [12, 41]
-    };
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
   }
 
-  private generatePopupHtml(memory: TripMemory): string {
+  private getPopupHtml(memory: TripMemory): string {
+    const title = this.escapeHtml(memory.title || 'Untitled');
+    const location = this.escapeHtml(memory.locationName || 'Unknown');
+    const imageUrl = this.escapeHtml(memory.imageUrl || '');
+    const id = this.escapeHtml(String(memory.id));
+    const tripName = this.escapeHtml(memory.tripName || 'Unknown Trip');
+    const liked = this.hasUserLiked(memory);
+
     return `
-      <div class="popup-container">
-        <h6 class="popup-title">${memory.title}</h6>
-        <img src="${memory.imageUrl}" class="popup-image view-big-image" style="cursor:pointer;" />
-        <p class="popup-location"><i class="bi bi-geo-alt-fill me-2 text-danger"></i> ${memory.locationName}</p>
-        <div class="popup-like-section">
-          <button class="popup-like-btn">
-          <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
-              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
-            </svg> 
-          Like (<span class="like-num">${memory.likeCount}</span>)</button>
+
+      <div class="map-popup" data-memory-id="${id}">
+        <div class="popup-image-outer">
+          <div class="popup-image-wrap view-big-image" data-memory-id="${id}" title="Click to view full size">
+            <img src="${imageUrl}" alt="${title}" class="popup-image" />
+            <div class="popup-image-overlay">
+              <span class="popup-zoom-hint">View full size</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="popup-body">
+          <div class="popup-header">
+            <h6 class="popup-title">${title}</h6>
+            <span class="popup-visibility public">Public</span>
+          </div>
+
+          <span class="popup-trip-badge">${tripName}</span>
+
+          <p class="popup-location">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+            </svg>
+            <span>${location}</span>
+          </p>
+
+          <div class="popup-likes">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
+            </svg>
+            <span class="like-num">${memory.likeCount || 0}</span>
+          </div>
+
+          <div class="popup-actions">
+            <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">
+              Open details
+            </button>
+            <button type="button" class="popup-btn popup-btn-like popup-like-btn ${liked ? 'liked' : ''}" data-memory-id="${id}">
+              ${liked ? 'Liked' : 'Like'}
+            </button>
+          </div>
         </div>
       </div>
     `;
   }
 
-    private initMap(): void {
-      this.map = L.map('map', {
-        center: [7.8731, 80.7718],
-        zoom: 8,
-        minZoom: 7,
-        maxBounds: this.sriLankaBounds,
-        maxBoundsViscosity: 1.0
+  private attachPopupListeners(popupEl: HTMLElement, memory: TripMemory): void {
+    const openDetail = () => {
+      window.dispatchEvent(new CustomEvent('viewBig', { detail: memory.id }));
+    };
+
+    popupEl.querySelectorAll('.view-big-image').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openDetail();
+      });
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    popupEl.querySelector('.popup-like-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (memory.id) {
+        this.toggleLike(memory.id);
+        this.map.closePopup();
+      }
+    });
+  }
+
+  private initMap(): void {
+    this.map = leaflet.map('map', {
+      center: [7.8731, 80.7718],
+      zoom: 8,
+      minZoom: 8,
+      maxBounds: this.sriLankaBounds,
+      maxBoundsViscosity: 1.0
+    });
+
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(this.map);
 
     this.markersLayer.addTo(this.map);
-  }
-
-    private fixLeafletIcons() {
-      const iconDefault = L.icon({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-      L.Marker.prototype.options.icon = iconDefault;
-  }
-
-  // පැරාමීටර් එක Event ලෙස ගෙන ඇතුළතදී CustomEvent ලෙස පාවිච්චි කළා
-  @HostListener('window:viewBig', ['$event'])
-  public onViewBig(event: Event): void { 
-    const customEvent = event as CustomEvent<TripMemory>;
-    if (customEvent.detail) {
-      this.selectedMemory = customEvent.detail; 
-    }
-  }
-
-  closeModal() {
-    this.selectedMemory = null;
-  }
-
-  /**
-   * 🗺️ ලයික් බටන් එක ක්ලික් කළ විට ක්‍රියාත්මක වන සම්පූර්ණ මෙතඩ් එක
-   */
-  public toggleLike(memoryId: string | undefined, event?: Event): void {
-    if (event) { 
-      event.stopPropagation(); // Gallery Card එක ක්ලික් වීම වළක්වයි
-    }
-    
-    // 🛡️ Safe Check: memoryId එකක් නැත්නම් මෙතනින්ම නවත්වනවා
-    if (!memoryId) {
-      console.warn('Cannot toggle like: Memory ID is undefined.');
-      return;
-    }
-
-    // 🔐 1. AuthService එක හරහා සැබෑවටම ලොග් වී සිටින පරිශීලකයාගේ ID එක සජීවීව ලබා ගැනීම
-    // 💡 සටහන: ඔයාගේ AuthService එකේ User ID එක ගන්න තියෙන මෙතඩ් එකේ නම (උදා: getUserId() හෝ userId) මෙතනට ආදේශ කරන්න.
-    const currentUserId = this.authService.getUserId(); 
-
-    // 🛡️ යූසර් කෙනෙක් ලොග් වෙලාම නැත්නම් ලයික් කරන්න ඉඩ නොදී Warn කිරීම
-    if (!currentUserId) {
-      console.warn('User must be logged in to like a memory.');
-      // ඔයාට අවශ්‍ය නම් මෙතනදී Toast Message එකක් හෝ Login Page එකට Redirect කිරීමක් කළ හැක
-      return;
-    }
-
-    // 2. 🌐 Backend API එක හරහා Database (MongoDB) එක Update කිරීමට සර්විස් එක කැඳවීම
-    this.memoryService.toggleLike(memoryId, currentUserId).subscribe({
-      next: (updatedMemory: TripMemory) => {
-        // Angular UI එකේ තියෙන ලිස්ට් (Gallery/Sidebar) වල අගයන් Update කිරීම
-        this.updateLocalMemoryState(memoryId, updatedMemory);
-        
-        // 📍 සිතියම මත දැනට ඇරලා තියෙන Leaflet Popup එකේ Like Count එක සජීවීව සකස් කිරීම
-        const popupLikeNum = document.querySelector('.like-num');
-        if (popupLikeNum) {
-          popupLikeNum.textContent = updatedMemory.likeCount.toString();
-        }
-      },
-      error: (err: unknown) => console.error('Failed to toggle like interaction:', err)
-    });
-  }
-
-  /**
-   * 🔄 Frontend එක ඇතුළේ ඇති දත්ත ලැයිස්තු (State) සජීවීව යාවත්කාලීන කරන පුද්ගලික මෙතඩ් එක
-   */
-  private updateLocalMemoryState(memoryId: string, updatedMemory: TripMemory): void {
-    // Array එකක් ඇතුළේ අදාළ මතකය සොයා එය අලුත් දත්ත වලින් ප්‍රතිස්ථාපනය කරන ශ්‍රිතය
-    const updateIndex = (list: TripMemory[]) => {
-      const idx = list.findIndex(m => m.id === memoryId);
-      if (idx !== -1) {
-        list[idx] = updatedMemory;
-      }
-    };
-
-    // ප්‍රධාන ලිස්ට් දෙකම Update කිරීම
-    updateIndex(this.allMemories);
-    updateIndex(this.filteredMemories);
-
-    // 📊 අලුත් ලයික් අගය අනුව මුළු ලිස්ට් එකම අපේ Exponential Time-Decay ඇල්ගොරිතමයෙන් නැවත පෙළගැස්වීම
-    this.filteredMemories = this.sortMemoriesByLikesAndDate(this.filteredMemories);
-    
-    // 📍 සිතියම මත ඇති මාකර්ස් (Markers) වල දත්ත අලුත් කිරීම
     this.refreshMapMarkers(this.filteredMemories);
-    
-    // 🔍 දැනට Lightbox Overlay එක විවෘතව ඇත්නම් එහි ඇති දත්තද යාවත්කාලීන කිරීම
-    if (this.selectedMemory?.id === memoryId) {
-      this.selectedMemory = updatedMemory;
+  }
+
+  private fixLeafletIcons(): void {
+    const iconDefault = leaflet.icon({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    leaflet.Marker.prototype.options.icon = iconDefault;
+  }
+
+  goBack(): void {
+    this.router.navigate(['/memories-welcome']);
+  }
+
+  @HostListener('window:viewBig', ['$event'])
+  onViewBig(event: Event): void {
+    const memoryId = (event as CustomEvent<string>).detail;
+    const foundMemory = this.filteredMemories.find(m => m.id === memoryId);
+    if (foundMemory) {
+      this.openLightboxForMemory(foundMemory);
     }
   }
-  }
+}
+
+

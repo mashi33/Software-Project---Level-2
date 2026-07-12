@@ -18,8 +18,20 @@ namespace SmartJourneyPlanner.API.Controllers
 
        // Returns aggregated metrics used for dashboard summary cards (KPIs)
         [HttpGet("stats")]
-        public async Task<IActionResult> GetStats() 
-            => Ok(await _dashboardService.GetDashboardStats());
+[Microsoft.AspNetCore.Authorization.Authorize] // 🌟 Secure the endpoint
+public async Task<IActionResult> GetStats() 
+{
+    // 🌟 Extract the dynamic provider email/username identifier from the token claims
+    var providerIdentifier = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                             ?? User.FindFirst("email")?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(providerIdentifier)) return Unauthorized();
+
+    // 🌟 Pass the identifier into your service calculation method
+    return Ok(await _dashboardService.GetDashboardStats(providerIdentifier));
+}
 
         // Provides full vehicle list for fleet management UI
         // Provides full vehicle list for fleet management UI
@@ -49,8 +61,19 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpGet("bookings")]
-        public async Task<IActionResult> GetBookings() 
-            => Ok(await _dashboardService.GetAllBookings());
+[Microsoft.AspNetCore.Authorization.Authorize] // 🌟 Ensure authorization claims are bound
+public async Task<IActionResult> GetBookings() 
+{
+    var providerIdentifier = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                             ?? User.FindFirst("email")?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(providerIdentifier)) return Unauthorized();
+
+    // 🌟 Pass the active identifier downstream into your updated service filter query
+    return Ok(await _dashboardService.GetAllBookings(providerIdentifier));
+}
 
         [HttpPut("bookings/{id}/complete")]
         public async Task<IActionResult> CompleteBooking(string id)

@@ -4,6 +4,140 @@
   padding-top: 1rem;
 }
 
+.loading-state {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-hero {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  padding: 1.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08);
+}
+
+.hero-badge-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-badge.viewer-badge {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.role-badge.owner-badge {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.route-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.hero-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.25rem;
+}
+
+.hero-subtitle {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.overview-stat {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  height: 100%;
+}
+
+.overview-stat i {
+  font-size: 1.5rem;
+  color: #0284c7;
+}
+
+.overview-stat strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.overview-stat span {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.section-label {
+  color: #475569;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.detail-card-title {
+  font-weight: 700;
+  color: #334155;
+}
+
+.saved-places-section .place-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.place-chip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.place-chip i {
+  color: #0284c7;
+}
+
 .detail-card {
   background-color: #ffffff;
   border-radius: 24px;
@@ -34,6 +168,30 @@
   color: #141414;
   font-family: monospace;
   font-weight: 700;
+}
+
+.transport-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.transport-badge.eco-badge {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.eco-tag {
+  font-size: 0.75rem;
+  margin-left: 4px;
 }
 
 .summary-dropdown {

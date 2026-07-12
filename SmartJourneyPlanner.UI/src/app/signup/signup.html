@@ -1,64 +1,75 @@
-<div class="body">
-  <div class="container-fluid signup-wrapper">
-  <div class="container">
-    <!-- Left Signup Panel -->
-    <div class="left">
-      <h1>Smart Journey Planner</h1>
-      <p class="subtitle">Explore more. Experience Life</p>
+<div class="login-wrapper">
+  <div class="bg-overlay"></div>
+
+  <div class="login-card signup-card">
+    <div class="brand-header">
+      <span class="logo-text">SJP</span>
       <h2>Begin Your Adventure</h2>
-      <p class="small">Fill in your details to get started :</p>
+      <p class="subtitle">Fill in your details to get started</p>
+    </div>
 
-      <!-- Signup Form -->
-      <div class="form-group">
-        <input type="text" name="FullName" [(ngModel)]="signupData.FullName" placeholder="User Name">
-        <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="E-mail">
-        <input 
-  type="password" 
-  name="Password" 
-  [(ngModel)]="signupData.Password" 
-  placeholder="Password"
-  required
-  minlength="8"
-  #pwd="ngModel">
+    <div class="login-form">
 
-@if (pwd.invalid && (pwd.dirty || pwd.touched)) {
-  <div style="color: #ff4d4d; font-size: 12px; margin-top: -10px; margin-bottom: 10px; text-align: left;">
-    Password must be at least 8 characters long!
-  </div>
-}
+      <div class="input-group">
+        <label>User Name</label>
+        <div class="input-field">
+          <i class="bi bi-person input-icon"></i>
+          <input type="text" name="FullName" [(ngModel)]="signupData.FullName" placeholder="Enter your username"
+            required />
+        </div>
+      </div>
 
-        <div class="role-selection">
-          <label for="role">Your Role : </label>
-          <select name="UserType" [(ngModel)]="signupData.UserType" id="role">
+      <div class="input-group">
+        <label>Email Address</label>
+        <div class="input-field">
+          <i class="bi bi-envelope input-icon"></i>
+          <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="Enter your email" required />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-field">
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" name="Password" [(ngModel)]="signupData.Password" placeholder="Create a password"
+            required minlength="8" #pwd="ngModel" />
+        </div>
+        @if (pwd.invalid && (pwd.dirty || pwd.touched)) {
+        <div class="error-msg">
+          <i class="bi bi-exclamation-circle-fill"></i> Password must be at least 8 characters long!
+        </div>
+        }
+      </div>
+
+      <div class="input-group">
+        <label for="role">Your Role</label>
+        <div class="input-field dropdown-field">
+          <i class="bi bi-briefcase input-icon"></i>
+          <select name="UserType" [(ngModel)]="signupData.UserType" id="role" required>
+            <option value="" disabled selected hidden>Select your role</option>
             <option value="Traveller">Traveller</option>
             <option value="TransportProvider">Transport Provider</option>
           </select>
         </div>
       </div>
 
-      <div class="options">
-        <div class="remember">
-          <input type="checkbox" id="rem">
-          <label for="rem">Remember</label>
-        </div>
-
-        <p class="login-text">
-          Already have an account?
-          <a routerLink="/login">Login</a>
-        </p>
+      <div class="form-actions">
+        <label class="remember-me">
+          <input type="checkbox" id="rem" />
+          <span>Remember me</span>
+        </label>
       </div>
 
-      <button class="start-btn" [disabled]="pwd.invalid" (click)="onSignup()">Let's start</button>
-    </div>
-    
-    <!-- Right Image Panel -->
-    <div class="right">
-      <div class="overlay">
-        <h3>Explore the World,<br>Beyond Boundaries!</h3>
-        <p>Start your adventure today</p>
-      </div>
-    </div>
+      <button class="btn-login" [disabled]="pwd.invalid" (click)="onSignup()">
+        <span>Let's start</span>
+        <i class="bi bi-arrow-right btn-icon"></i>
+      </button>
 
+      <p class="signup-prompt">
+        Already have an account?
+        <a routerLink="/login">Login</a>
+      </p>
+
+    </div>
   </div>
-</div>
 </div>

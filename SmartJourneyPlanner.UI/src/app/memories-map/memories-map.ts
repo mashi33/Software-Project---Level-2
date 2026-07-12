@@ -1,17 +1,18 @@
-import { Component, OnInit, HostListener, AfterViewInit,ChangeDetectorRef } from '@angular/core';
-import { CommonModule,Location } from '@angular/common';
+import { Component, OnInit, HostListener, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import * as leaflet from 'leaflet';
 import 'leaflet.markercluster';
+import { forkJoin } from 'rxjs';
+import Swal from 'sweetalert2';
 
 @Component({
-    selector: 'app-memories-map',
-    standalone: true,
-    imports: [CommonModule, HttpClientModule, FormsModule],
-    templateUrl: './memories-map.html',
-    styleUrls: ['./memories-map.css']
+  selector: 'app-memories-map',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule, FormsModule],
+  templateUrl: './memories-map.html',
+  styleUrls: ['./memories-map.css']
 })
 export class MemoriesMapComponent implements OnInit, AfterViewInit {
   private map!: leaflet.Map;
@@ -25,93 +26,175 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       });
     }
   });
-  
-  
+
   private readonly sriLankaBounds = leaflet.latLngBounds(
-    leaflet.latLng(5.9, 79.5), 
-    leaflet.latLng(9.9, 82.0)  
+    leaflet.latLng(5.9, 79.5),
+    leaflet.latLng(9.9, 82.0)
   );
 
-  private apiUrl = 'http://localhost:5233/api/memories'; 
+  private apiUrl = 'http://localhost:5233/api/memories';
 
-  visibilityStatus: string = 'public'; 
+  visibilityStatus: string = 'public';
 
-  newMemory = { 
-    title: '', 
-    locationName: '', 
-    imageUrl: '', 
-    description: '', 
-    latitude: 0, 
+  newMemory = {
+    title: '',
+    locationName: '',
+    imageUrl: '',
+    description: '',
+    latitude: 0,
     longitude: 0,
     isPublic: true
   };
-  
+
   searchQuery: string = '';
   allMemories: any[] = [];
-  myRecentUploads: any[] = []; 
+  myRecentUploads: any[] = [];
   selectedMemory: any | null = null;
   allTrips: any[] = [];
-selectedTrip: any = null;
-groupedAlbums: any[] = [];
-selectedAlbum: any | null = null;
-currentMemoryIndex: number = 0;
-isLightboxOpen = false;
-showMax: number = 3;
-showAllAlbums: boolean = false;
+  selectedTrip: any = null;
+  groupedAlbums: any[] = [];
+  selectedAlbum: any | null = null;
+  currentMemoryIndex: number = 0;
+  isLightboxOpen = false;
+  showMax: number = 3;
+  showAllAlbums: boolean = false;
+  activeTab: 'upload' | 'albums' = 'upload';
 
-  constructor(private http: HttpClient,private location: Location,private cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    private location: Location,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
-    this.loadMyMemories(); 
     this.loadAccessibleTrips();
+    this.loadMyMemories();
   }
 
   ngAfterViewInit(): void {
     this.initMap();
   }
 
-  activeTab: 'upload' | 'albums' = 'upload'; 
-
-  // You can also add a helper method to make switching tabs cleaner
   setActiveTab(tab: 'upload' | 'albums') {
     this.activeTab = tab;
   }
 
-  // Type checker helper function for HTML template validation
   isObject(val: any): boolean {
     return val !== null && typeof val === 'object';
   }
 
-onFileSelected(event: any): void {
-  const file: File = event.target.files[0];
+  // SWEETALERT HELPERS 
 
-  if (file) {
+  private showSuccess(title: string, text?: string) {
+    return Swal.fire({
+      icon: 'success',
+      title,
+      text,
+      confirmButtonColor: '#2563eb'
+    });
+  }
+
+  private showError(title: string, text?: string) {
+    return Swal.fire({
+      icon: 'error',
+      title,
+      text,
+      confirmButtonColor: '#2563eb'
+    });
+  }
+
+  private showWarning(title: string, text?: string) {
+    return Swal.fire({
+      icon: 'warning',
+      title,
+      text,
+      confirmButtonColor: '#2563eb'
+    });
+  }
+
+  private showInfo(title: string, text?: string) {
+    return Swal.fire({
+      icon: 'info',
+      title,
+      text,
+      confirmButtonColor: '#2563eb'
+    });
+  }
+
+  private confirmDelete(title: string, text: string, confirmText = 'Yes, delete it') {
+    return Swal.fire({
+      title,
+      text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+  }
+
+  // FILE UPLOAD
+
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
     if (file.size > 2 * 1024 * 1024) {
-      alert("File is too large! Please choose an image under 2MB.");
+      this.showError(
+        'File too large',
+        'Please choose an image under 2MB.'
+      );
       return;
     }
 
     const reader = new FileReader();
-    
-    reader.onload = (event: any) => {
-      this.newMemory.imageUrl = event.target.result;
+    reader.onload = (e: any) => {
+      this.newMemory.imageUrl = e.target.result;
     };
-
-    reader.readAsDataURL(file); 
+    reader.readAsDataURL(file);
   }
-}
 
-goBack(): void {
-  this.location.back();
-}
+  goBack(): void {
+    this.location.back();
+  }
 
-// ==================== LIGHTBOX METHODS ====================
+  removeImage(fileInput: HTMLInputElement): void {
+    this.newMemory.imageUrl = '';
+    fileInput.value = '';
+  }
+
+  // LIGHTBOX 
+
   openAlbum(album: any) {
     this.selectedAlbum = album;
     this.currentMemoryIndex = 0;
-    this.selectedMemory =album.memories[0] || null;
+    this.selectedMemory = album.memories[0] || null;
     this.isLightboxOpen = true;
+  }
+
+  openLightboxForMemory(memory: any, album?: any) {
+    if (!memory) return;
+
+    if (album) {
+      this.selectedAlbum = album;
+      this.currentMemoryIndex = album.memories.findIndex((m: any) => m.id === memory.id);
+      if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
+    } else {
+      const matchingAlbum = this.groupedAlbums.find(a =>
+        a.memories.some((m: any) => m.id === memory.id)
+      );
+      this.selectedAlbum = matchingAlbum || null;
+      this.currentMemoryIndex = matchingAlbum
+        ? matchingAlbum.memories.findIndex((m: any) => m.id === memory.id)
+        : 0;
+    }
+
+    this.selectedMemory = memory;
+    this.isLightboxOpen = true;
+    this.cdr.detectChanges();
   }
 
   nextMemory() {
@@ -122,7 +205,9 @@ goBack(): void {
 
   prevMemory() {
     if (!this.selectedAlbum) return;
-    this.currentMemoryIndex = (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) % this.selectedAlbum.memories.length;
+    this.currentMemoryIndex =
+      (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
+      this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
   }
 
@@ -132,47 +217,55 @@ goBack(): void {
     this.selectedMemory = null;
   }
 
+  closeModal() {
+    this.selectedMemory = null;
+  }
+
   toggleMemoryVisibility(memory: any) {
     if (!memory) return;
     memory.isPublic = !memory.isPublic;
     this.http.patch(`${this.apiUrl}/${memory.id}`, { isPublic: memory.isPublic }).subscribe({
-      error: () => console.error('Failed to update visibility')
+      next: () => {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: memory.isPublic ? 'Memory is now public' : 'Memory is now private',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true
+        });
+      },
+      error: () => this.showError('Update failed', 'Could not update memory visibility.')
     });
   }
 
-// In your Angular service or component
-loadAccessibleTrips() {
-  const token = localStorage.getItem('token');
-  const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  // TRIPS
 
-  // This one call gets both "Created by me" and "Member of"
-  this.http.get<any[]>(`http://localhost:5233/api/trips/user-accessible`, { headers })
-    .subscribe({
+  loadAccessibleTrips() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any[]>(`http://localhost:5233/api/trips/user-accessible`, { headers }).subscribe({
       next: (data) => {
-        // 'data' now contains all trips the user is authorized to see
-        this.allTrips = data; 
-        console.log("Combined list of trips:", this.allTrips);
+        this.allTrips = data;
+        this.enrichMemoriesWithTripNames();
+        this.groupMemoriesByTrip();
+        this.cdr.detectChanges();
       },
-      error: (err) => console.error("Error fetching trips:", err)
+      error: (err) => {
+        console.error('Error fetching trips:', err);
+        this.showError('Could not load trips', 'Please check your connection and try again.');
+      }
     });
-}
+  }
 
-// Handler for the select dropdown
-onTripChange(event: any) {
+  onTripChange(event: any) {
     const tripId = event.target.value;
-    // Find the trip based on the id
-    this.selectedTrip = this.allTrips.find(t => t.id == tripId);
-    
-    // Debug to ensure selectedTrip is being set correctly
-    console.log("Selected Trip Object:", this.selectedTrip);
-}
+    this.selectedTrip = this.allTrips.find(t => t.id == tripId) || null;
+  }
 
-removeImage(fileInput: HTMLInputElement): void {
-  this.newMemory.imageUrl = '';
-
-  fileInput.value = '';
-}
-
+  // DATA HELPERS
 
   private formatData(memory: any) {
     return {
@@ -183,38 +276,53 @@ removeImage(fileInput: HTMLInputElement): void {
       latitude: Number(memory.latitude || memory.Latitude || 0),
       longitude: Number(memory.longitude || memory.Longitude || 0),
       locationName: memory.locationName || memory.LocationName || 'Unknown Location',
-      startDate:  memory.startDate, 
-       endDate:  memory.endDate,
-       isPublic: memory.isPublic || memory.IsPublic || false,
-       likeCount: memory.likeCount || 0,
-       tripName: memory.tripName || memory.TripName || null,
-       createdAt: memory.createdAt || memory.CreatedAt
+      startDate: memory.startDate,
+      endDate: memory.endDate,
+      isPublic: memory.isPublic ?? memory.IsPublic ?? false,
+      likeCount: memory.likeCount || 0,
+      tripId: memory.tripId || memory.TripId || null,
+      tripName: memory.tripName || memory.TripName || null,
+      createdAt: memory.createdAt || memory.CreatedAt
     };
   }
-  
-  // ==================== GROUPING LOGIC (Improved) ====================
+
+  private enrichMemoriesWithTripNames() {
+    this.allMemories = this.allMemories.map(m => {
+      const trip = this.allTrips.find(t => t.id === m.tripId);
+      return {
+        ...m,
+        tripName: trip?.tripName || m.tripName || 'No Trip Assigned'
+      };
+    });
+  }
+
   groupMemoriesByTrip() {
-    const groups = new Map();
+    const groups = new Map<string, any>();
 
     this.allMemories.forEach(memory => {
       const tripName = memory.tripName || 'No Trip';
 
       if (!groups.has(tripName)) {
         groups.set(tripName, {
-          tripName: tripName,
+          tripName,
           memories: [],
           latestImage: memory.imageUrl,
-          latestDate: memory.startDate || memory.endDate
+          latestDate: memory.startDate || memory.endDate || memory.createdAt,
+          currentDisplayImage: memory.imageUrl,
+          slideIndex: 0
         });
       }
 
-      const album = groups.get(tripName);
+      const album = groups.get(tripName)!;
       album.memories.push(memory);
 
-      // Keep the most recent image as thumbnail
-      if (new Date(memory.startDate || memory.endDate) > new Date(album.latestDate)) {
+      const memoryDate = new Date(memory.startDate || memory.endDate || memory.createdAt);
+      const albumDate = new Date(album.latestDate);
+
+      if (memoryDate > albumDate) {
         album.latestImage = memory.imageUrl;
-        album.latestDate = memory.startDate || memory.endDate;
+        album.latestDate = memory.startDate || memory.endDate || memory.createdAt;
+        album.currentDisplayImage = memory.imageUrl;
       }
     });
 
@@ -223,48 +331,60 @@ removeImage(fileInput: HTMLInputElement): void {
 
   loadMyMemories() {
     const userId = localStorage.getItem('userId');
+    if (!userId) return;
+
     this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
-        next: (data) => {
-            this.allMemories = data.map(m => {
-        const formatted = this.formatData(m);
-        // Find the matching trip name from your allTrips list
-        const trip = this.allTrips.find(t => t.id === m.tripId);
-        formatted.tripName = trip ? trip.tripName : 'No Trip Assigned';
-        return formatted;
-      });
-            this.groupMemoriesByTrip();
+      next: (data) => {
+        this.allMemories = data.map(m => {
+          const formatted = this.formatData(m);
+          const trip = this.allTrips.find(t => t.id === m.tripId);
+          formatted.tripName = trip?.tripName || formatted.tripName || 'No Trip Assigned';
+          return formatted;
+        });
 
-            this.refreshMapMarkers();
-        }
+        this.groupMemoriesByTrip();
+        this.refreshMapMarkers();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading memories:', err);
+        this.showError('Could not load memories', 'Please check your backend server.');
+      }
     });
-}
+  }
 
-toggleSeeMore() {
-  this.showAllAlbums = !this.showAllAlbums;
-  this.cdr.detectChanges(); // This forces Angular to refresh the view
-  console.log("showAllAlbums is now:", this.showAllAlbums);
-}
+  get displayedAlbums() {
+    return this.showAllAlbums ? this.groupedAlbums : this.groupedAlbums.slice(0, 3);
+  }
 
-// Add this getter inside your MemoriesMapComponent class
-get displayedAlbums() {
-  // If showAllAlbums is true, return the whole array.
-  // Otherwise, return only the first 3 items.
-  return this.showAllAlbums ? this.groupedAlbums : this.groupedAlbums.slice(0, 3);
-}
+  toggleSeeMore() {
+    this.showAllAlbums = !this.showAllAlbums;
+    this.cdr.detectChanges();
+  }
 
+  // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
-      alert("Please enter a city name (e.g., Kandy).");
+      this.showInfo('Enter a location', 'Please enter a city name (e.g., Kandy).');
       return;
     }
 
-    const query = encodeURIComponent(this.searchQuery + ", Sri Lanka");
+    const query = encodeURIComponent(this.searchQuery + ', Sri Lanka');
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
+
+    Swal.fire({
+      title: 'Searching...',
+      text: 'Looking up your location',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
 
     this.http.get<any[]>(url).subscribe({
       next: (res) => {
-        if (res && res.length > 0) {
+        Swal.close();
+
+        if (res?.length) {
           const lat = parseFloat(res[0].lat);
           const lon = parseFloat(res[0].lon);
 
@@ -272,160 +392,348 @@ get displayedAlbums() {
             this.newMemory.latitude = lat;
             this.newMemory.longitude = lon;
             this.newMemory.locationName = res[0].display_name;
-            // Smooth transition improves UX when focusing on selected location
             this.map.flyTo([lat, lon], 14);
+
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Location found!',
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true
+            });
           } else {
-            alert("This location is outside of Sri Lanka.");
+            this.showWarning(
+              'Outside Sri Lanka',
+              'This location is outside of Sri Lanka. Please search within Sri Lanka.'
+            );
           }
         } else {
-          alert("Location not found. Try another city.");
+          this.showWarning('Location not found', 'Try another city name.');
         }
       },
-      error: () => alert("Searching for your location.")
+      error: () => {
+        Swal.close();
+        this.showError('Search failed', 'Could not search for your location. Please try again.');
+      }
     });
   }
 
-
-
   saveMemory() {
-
-    const userId = localStorage.getItem('userId'); // Retrieve logged-in ID
-    
+    const userId = localStorage.getItem('userId');
     if (!userId) {
-        alert("Please log in to save memories");
-        return;
+      this.showWarning('Login required', 'Please log in to save memories.');
+      return;
     }
 
-    //if (!this.newMemory.startDate || !this.newMemory.endDate) {
-    //alert("Please select both start and end dates");
-    //return;
-  //}
+    this.newMemory.isPublic = this.visibilityStatus === 'public';
 
-  //const start = new Date(this.newMemory.startDate);
-  //const end = new Date(this.newMemory.endDate);
+    const body = {
+      ...this.newMemory,
+      userId,
+      isPublic: this.newMemory.isPublic,
+      tripId: this.selectedTrip?.id || null,
+      tripName: this.selectedTrip?.tripName || null
+    };
 
-  //if (end < start) {
-   // alert("End date cannot be before start date");
-    //return;
-  //}
-  
-    this.newMemory.isPublic = (this.visibilityStatus === 'public');
- const body = { 
-    ...this.newMemory,
-    userId: userId, 
-    isPublic: this.newMemory.isPublic, 
-    tripId: this.selectedTrip?.id || null,
-        tripName: this.selectedTrip?.name || null
-  };
- this.http.post(this.apiUrl, body).subscribe({
- next: (response: any) => {
- const savedData = this.formatData(response);
- 
- this.allMemories.push(savedData);
- this.myRecentUploads.unshift(savedData);
- if(this.myRecentUploads.length > 6) this.myRecentUploads.pop(); 
+    Swal.fire({
+      title: 'Saving memory...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
 
- if (savedData.isPublic) {
-          console.log("This will be visible on the Community Map");
+    this.http.post(this.apiUrl, body).subscribe({
+      next: (response: any) => {
+        Swal.close();
+
+        const savedData = this.formatData(response);
+        savedData.tripName = this.selectedTrip?.tripName || savedData.tripName || 'No Trip Assigned';
+
+        this.allMemories.push(savedData);
+        this.myRecentUploads.unshift(savedData);
+        if (this.myRecentUploads.length > 6) this.myRecentUploads.pop();
+
+        this.groupMemoriesByTrip();
+        this.refreshMapMarkers();
+
+        this.newMemory = {
+          title: '',
+          locationName: '',
+          imageUrl: '',
+          description: '',
+          latitude: 0,
+          longitude: 0,
+          isPublic: true
+        };
+        this.visibilityStatus = 'public';
+        this.searchQuery = '';
+        this.selectedTrip = null;
+        this.cdr.detectChanges();
+
+        this.showSuccess('Memory pinned!', 'Your memory has been saved and added to the map.');
+      },
+      error: () => {
+        Swal.close();
+        this.showError(
+          'Save failed',
+          'Could not save memory. Please check your backend server.'
+        );
       }
- 
- this.refreshMapMarkers();
+    });
+  }
 
- // Reset form state after successful save to prevent duplicate submissions
- this.newMemory = { title: '', locationName: '', imageUrl: '', description: '', latitude: 0, longitude: 0,isPublic: true };
- this.visibilityStatus = 'public';
- this.searchQuery = '';
- alert("Memory pinned successfully!");
- },
- error: (err) => alert("Could not save memory. Check your Backend server.")
- });
- }    
+  // DELETE 
 
+  deleteMemory(id: string, event?: Event) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    this.confirmDelete(
+      'Delete this memory?',
+      'This action cannot be undone.'
+    ).then(result => {
+      if (!result.isConfirmed) return;
+
+      Swal.fire({
+        title: 'Deleting...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+        next: () => {
+          Swal.close();
+
+          this.allMemories = this.allMemories.filter(m => m.id !== id);
+          this.myRecentUploads = this.myRecentUploads.filter(m => m.id !== id);
+
+          if (this.selectedMemory?.id === id) {
+            this.closeLightbox();
+          }
+
+          this.groupMemoriesByTrip();
+          this.refreshMapMarkers();
+          this.cdr.detectChanges();
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Memory deleted',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+          });
+        },
+        error: (err) => {
+          Swal.close();
+          console.error('Delete failed', err);
+          this.showError('Delete failed', 'Could not delete memory. Check backend connection.');
+        }
+      });
+    });
+  }
+
+  deleteAlbum(album: any, event?: Event) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    if (!album?.memories?.length) return;
+
+    const count = album.memories.length;
+    const label = album.tripName || 'this album';
+
+    this.confirmDelete(
+      `Delete "${label}"?`,
+      `This will permanently delete all ${count} memor${count === 1 ? 'y' : 'ies'} in this album.`,
+      'Yes, delete album'
+    ).then(result => {
+      if (!result.isConfirmed) return;
+
+      Swal.fire({
+        title: 'Deleting album...',
+        text: `Removing ${count} memor${count === 1 ? 'y' : 'ies'}...`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const requests = album.memories.map((m: any) => this.http.delete(`${this.apiUrl}/${m.id}`));
+
+      forkJoin(requests).subscribe({
+        next: () => {
+          Swal.close();
+
+          const ids = new Set(album.memories.map((m: any) => m.id));
+
+          this.allMemories = this.allMemories.filter(m => !ids.has(m.id));
+          this.myRecentUploads = this.myRecentUploads.filter(m => !ids.has(m.id));
+
+          if (this.selectedAlbum?.tripName === album.tripName) {
+            this.closeLightbox();
+          }
+
+          this.groupMemoriesByTrip();
+          this.refreshMapMarkers();
+          this.cdr.detectChanges();
+
+          this.showSuccess('Album deleted', `"${label}" and all its memories were removed.`);
+        },
+        error: (err) => {
+          Swal.close();
+          console.error('Album delete failed', err);
+          this.showError(
+            'Album delete failed',
+            'Some items may not have been deleted. Refreshing your list...'
+          );
+          this.loadMyMemories();
+        }
+      });
+    });
+  }
+
+  // MAP POPUP 
+
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
+  }
 
   private getPopupHtml(memory: any): string {
-    if (!memory) return '<div class="popup-container">No data available</div>';
-    // Public නම් විතරක් Like Count එක පෙන්වන කොටස සෑදීම
-  const likeHtml = memory.isPublic 
-    ? `<div style="margin-top: 8px; font-weight: bold; color: #145dbf;">
-    <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
-              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
-            </svg> 
-    ${memory.likeCount || 0}</div>` 
-    : '';
+    if (!memory) return '<div class="map-popup">No data available</div>';
+
+    const title = this.escapeHtml(memory.title || 'Untitled');
+    const location = this.escapeHtml(memory.locationName || 'Unknown');
+    const imageUrl = this.escapeHtml(memory.imageUrl || '');
+    const id = this.escapeHtml(String(memory.id));
+    const visibility = memory.isPublic ? 'Public' : 'Private';
+    const visibilityClass = memory.isPublic ? 'public' : 'private';
+
+    const likeHtml = memory.isPublic
+      ? `<div class="popup-likes">
+           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+             <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
+           </svg>
+           <span>${memory.likeCount || 0}</span>
+         </div>`
+      : '';
+
     return `
-      <div class="popup-container">
-        <h6 class="popup-title">${memory.title || 'Untitled'}</h6>
+      <div class="map-popup" data-memory-id="${id}">
+        <div class="popup-image-wrap view-big-image" data-memory-id="${id}" title="Click to view full size">
+          <img src="${imageUrl}" alt="${title}" class="popup-image" />
+          <div class="popup-image-overlay">
+            <span class="popup-zoom-hint">View full size</span>
+          </div>
+        </div>
 
-        <img src="${memory.imageUrl}" 
-             class="popup-image view-big-image"
-             data-img="${memory.imageUrl}" />
+        <div class="popup-body">
+          <div class="popup-header">
+            <h6 class="popup-title">${title}</h6>
+            <span class="popup-visibility ${visibilityClass}">${visibility}</span>
+          </div>
 
-        <p class="popup-location">
-        <i class="bi bi-geo-alt-fill me-2 text-danger"></i>${memory.locationName || 'Unknown'}
-      </p>
-        ${likeHtml}
+          <p class="popup-location">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+            </svg>
+            <span>${location}</span>
+          </p>
+
+          ${likeHtml}
+
+          <div class="popup-actions">
+            <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">
+              Open details
+            </button>
+            <button type="button" class="popup-btn popup-btn-delete delete-memory-btn" data-memory-id="${id}">
+              Delete
+            </button>
+          </div>
+        </div>
       </div>
     `;
   }
 
+  private attachPopupListeners(popupEl: HTMLElement, memory: any) {
+    const openDetail = () => {
+      window.dispatchEvent(new CustomEvent('viewBig', { detail: memory.id }));
+    };
 
+    popupEl.querySelectorAll('.view-big-image').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openDetail();
+      });
+    });
+
+    const deleteBtn = popupEl.querySelector('.delete-memory-btn');
+    deleteBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.deleteMemory(memory.id);
+      this.map.closePopup();
+    });
+  }
 
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
 
-    this.allMemories.forEach((memory) => {
-      if (memory.latitude && memory.longitude) {
-      const marker = leaflet.marker([memory.latitude, memory.longitude]);
+    this.allMemories.forEach(memory => {
+      if (!memory.latitude || !memory.longitude) return;
 
+      const marker = leaflet.marker([memory.latitude, memory.longitude]);
       const popupHtml = this.getPopupHtml(memory);
 
-      marker.bindPopup(popupHtml)
-        // Waits for the popup to load because the HTML doesn't exist until then.
+      marker
+        .bindPopup(popupHtml, {
+          maxWidth: 320,
+          minWidth: 280,
+          className: 'memory-popup-wrapper'
+        })
         .on('popupopen', (e: any) => {
           const popupEl = e.popup.getElement();
-          const img = popupEl.querySelector('.view-big-image');
+          if (popupEl) this.attachPopupListeners(popupEl, memory);
+        });
 
-          img?.addEventListener('click', () => {
-            // Broadcasts an event to trigger image viewing without tying it to the map.
-            window.dispatchEvent(
-              new CustomEvent('viewBig', {
-                detail: memory.id
-              })
-            );
-          });
-        })
-        this.markersLayer.addLayer(marker);
-      }
+      this.markersLayer.addLayer(marker);
     });
   }
 
-  // 1. Initialize: Add a property to your album objects to track the index
-// When you fetch your albums, ensure each has: currentDisplayImage: string, slideIndex: number
+  // SLIDESHOW 
 
-startSlideshow(album: any) {
-  if (album.memories.length <= 1) return; // Don't animate if only 1 image
+  startSlideshow(album: any) {
+    if (album.memories.length <= 1) return;
 
-  album.slideIndex = 0;
-  album.slideshowInterval = setInterval(() => {
-    album.slideIndex = (album.slideIndex + 1) % album.memories.length;
-    album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
-  }, 2000); // Change image every 2 seconds
-}
+    album.slideIndex = 0;
+    album.currentDisplayImage = album.memories[0].imageUrl;
 
-stopSlideshow(album: any) {
-  clearInterval(album.slideshowInterval);
-  // Reset back to the first image or keep the last one shown
-  album.currentDisplayImage = album.memories[0].imageUrl;
-}
+    album.slideshowInterval = setInterval(() => {
+      album.slideIndex = (album.slideIndex + 1) % album.memories.length;
+      album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
+      this.cdr.detectChanges();
+    }, 2000);
+  }
 
+  stopSlideshow(album: any) {
+    if (album.slideshowInterval) {
+      clearInterval(album.slideshowInterval);
+      album.slideshowInterval = null;
+    }
+    album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
+  }
+
+  // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
       center: [7.8731, 80.7718],
       zoom: 8,
-      minZoom: 8,                    
-      maxBounds: this.sriLankaBounds, 
-      maxBoundsViscosity: 1.0        
+      minZoom: 8,
+      maxBounds: this.sriLankaBounds,
+      maxBoundsViscosity: 1.0
     });
 
     leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -433,113 +741,70 @@ stopSlideshow(album: any) {
     }).addTo(this.map);
 
     this.markersLayer.addTo(this.map);
+    this.refreshMapMarkers();
   }
-
 
   trackByFn(index: number, item: any) {
-    return item.id || index;
+    return item.id || item.tripName || index;
   }
-
-
 
   private fixLeafletIcons() {
-  const iconDefault = leaflet.icon({
-
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34], 
-    shadowSize: [41, 41]
-  });
-  leaflet.Marker.prototype.options.icon = iconDefault;
-}
-
-
-
-
-deleteMemory(id: string, event: Event) {
-  // Prevent the gallery from opening the large view
-  event.stopPropagation();
-
-  if (confirm('Are you sure you want to delete this memory?')) {
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
-      next: () => {
-        // 1. Remove from allMemories (Map pins)
-        this.allMemories = this.allMemories.filter(memory => memory.id !== id);
-        
-        // 2. Remove from myRecentUploads (Sidebar)
-        this.myRecentUploads = this.myRecentUploads.filter(memory => memory.id !== id);
-        
-        this.refreshMapMarkers();
-        
-        console.log("Deleted successfully");
-      },
-      error: (err) => {
-        console.error("Delete failed", err);
-        alert("Could not delete. Check backend connection.");
-      }
+    const iconDefault = leaflet.icon({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
     });
+    leaflet.Marker.prototype.options.icon = iconDefault;
   }
-}
 
-// In memories-map.ts
-getTotalLikes(album: any): number {
-  return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
-}
+  // ALBUM HELPERS 
 
-// Get the oldest creation date in the album
-getOldestCreatedAt(album: any): Date | null {
-  if (!album.memories || album.memories.length === 0) return null;
-  
-  const dates = album.memories
-    .map((m: any) => new Date(m.createdAt))
-    .filter((d: Date) => !isNaN(d.getTime()));
-    
-  return dates.length ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
-}
+  getTotalLikes(album: any): number {
+    return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
+  }
 
-// Get the newest creation date in the album
-getNewestCreatedAt(album: any): Date | null {
-  if (!album.memories || album.memories.length === 0) return null;
-  
-  const dates = album.memories
-    .map((m: any) => new Date(m.createdAt))
-    .filter((d: Date) => !isNaN(d.getTime()));
-    
-  return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
-}
+  getOldestCreatedAt(album: any): Date | null {
+    if (!album.memories?.length) return null;
 
+    const dates = album.memories
+      .map((m: any) => new Date(m.createdAt))
+      .filter((d: Date) => !isNaN(d.getTime()));
 
-  // ==========================================
-  // HIGHLIGHTED CHANGE: Look up full object from URL
-  // ==========================================
+    return dates.length ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
+  }
+
+  getNewestCreatedAt(album: any): Date | null {
+    if (!album.memories?.length) return null;
+
+    const dates = album.memories
+      .map((m: any) => new Date(m.createdAt))
+      .filter((d: Date) => !isNaN(d.getTime()));
+
+    return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+  }
+
+  // EVENTS 
+
   @HostListener('window:viewBig', ['$event'])
-  onViewBig(event: any) { 
+  onViewBig(event: any) {
     const memoryId = event.detail;
-    
-    // Attempt to locate the full descriptive object using the matching URL string
     const foundMemory = this.allMemories.find(m => m.id === memoryId);
-    
+
     if (foundMemory) {
-      console.log("Memory Object Details:", foundMemory);
-      // Open the modal with all information available
-      this.selectedMemory = foundMemory; 
+      this.openLightboxForMemory(foundMemory);
     } else {
-      // Fallback if the collection doesn't contain the element
-      console.error("Memory not found for ID:", memoryId);
+      this.showError('Memory not found', 'This memory could not be loaded.');
     }
   }
 
   openLightboxById(id: string) {
-  const foundMemory = this.allMemories.find(m => m.id === id);
-  if (foundMemory) {
-    this.selectedMemory = foundMemory;
-    this.isLightboxOpen = true;
-  }
-}
-  closeModal() {
-    this.selectedMemory = null;
+    const foundMemory = this.allMemories.find(m => m.id === id);
+    if (foundMemory) {
+      this.openLightboxForMemory(foundMemory);
+    }
   }
 }

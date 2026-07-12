@@ -1,196 +1,311 @@
 <div class="main-wrapper">
+
+  <!-- SIDEBAR -->
   <aside class="sidebar">
 
-    <!-- Brand -->
     <div class="sidebar-brand">
-      <span class="logo">🗺️</span>
-      <h1>Travel Memories</h1>
+      <div class="brand-icon">
+        <i class="bi bi-map-fill"></i>
+      </div>
+      <div class="brand-text">
+        <h1>Travel Memories</h1>
+        <p class="brand-sub">Pin &amp; relive your journeys</p>
+      </div>
     </div>
 
-    <!-- Tabs -->
     <nav class="tab-bar">
-      <button class="tab-btn" [class.active]="activeTab === 'upload'"
-              (click)="activeTab = 'upload'">
+      <button class="tab-btn" [class.active]="activeTab === 'upload'" (click)="setActiveTab('upload')">
+        <i class="bi bi-plus-circle"></i>
         Add Memory
       </button>
-      <button class="tab-btn" [class.active]="activeTab === 'albums'"
-              (click)="activeTab = 'albums'">
-        My Albums <span class="pill">{{ groupedAlbums.length }}</span>
+      <button class="tab-btn" [class.active]="activeTab === 'albums'" (click)="setActiveTab('albums')">
+        <i class="bi bi-images"></i>
+        My Albums
+        <span class="pill">{{ groupedAlbums.length }}</span>
       </button>
     </nav>
 
-    <!-- Scrollable body -->
     <div class="sidebar-body">
 
-      <!-- ==================== TAB: UPLOAD ==================== -->
+      <!-- UPLOAD TAB -->
       <ng-container *ngIf="activeTab === 'upload'">
-        <label class="field-label">Trip Name</label>
-        <select id="tripSelect" class="form-input" (change)="onTripChange($event)">
-          <option value="">-- Select a Trip --</option>
-          <option *ngFor="let trip of allTrips" [value]="trip.id">{{ trip.tripName }}</option>
-        </select>
 
-        <label class="field-label">Location</label>
-        <div class="search-group">
-          <input [(ngModel)]="searchQuery" (keyup.enter)="searchLocation()"
-                 class="search-input" placeholder="Search City (e.g. Galle)...">
-          <button (click)="searchLocation()" class="btn-find">Find</button>
-        </div>
-
-        <label class="field-label">Memory Title</label>
-        <input [(ngModel)]="newMemory.title" class="form-input" placeholder="Memory Title">
-
-        <label class="field-label">Description</label>
-        <textarea [(ngModel)]="newMemory.description" class="form-textarea"
-                  placeholder="Description"></textarea>
-
-        <label class="input-label">Choose a Photo</label>
-        <div class="upload-box-wrapper">
-          <input type="file" #fileInput (change)="onFileSelected($event)"
-                 accept="image/*" class="file-input">
-          <div class="upload-preview" *ngIf="newMemory.imageUrl">
-            <img [src]="newMemory.imageUrl" alt="Preview">
-            <button type="button" class="btn-remove" (click)="removeImage(fileInput)">✕</button>
+        <section class="form-section">
+          <div class="section-heading">
+            <i class="bi bi-airplane"></i>
+            <span>Trip Details</span>
           </div>
-        </div>
+          <label class="field-label" for="tripSelect">Trip Name</label>
+          <select id="tripSelect" class="form-input" (change)="onTripChange($event)">
+            <option value="">— Select a Trip —</option>
+            <option *ngFor="let trip of allTrips" [value]="trip.id">{{ trip.tripName }}</option>
+          </select>
+        </section>
 
-        <div *ngIf="newMemory.latitude !== 0" class="status-msg">
-          <i class="bi bi-geo-alt-fill"></i> Location ready to pin!
-        </div>
+        <section class="form-section">
+          <div class="section-heading">
+            <i class="bi bi-geo-alt"></i>
+            <span>Location</span>
+          </div>
+          <div class="search-group">
+            <input [(ngModel)]="searchQuery"
+                   (keyup.enter)="searchLocation()"
+                   class="search-input"
+                   placeholder="Search city (e.g. Galle, Kandy)...">
+            <button (click)="searchLocation()" class="btn-find">
+              <i class="bi bi-search"></i> Find
+            </button>
+          </div>
+          <div *ngIf="newMemory.latitude !== 0" class="status-msg success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Location pinned and ready to save</span>
+          </div>
+        </section>
 
-        <div class="upload-field-group">
+        <section class="form-section">
+          <div class="section-heading">
+            <i class="bi bi-journal-text"></i>
+            <span>Memory Info</span>
+          </div>
+          <label class="field-label">Memory Title</label>
+          <input [(ngModel)]="newMemory.title" class="form-input" placeholder="Give this memory a title">
+          <label class="field-label">Description</label>
+          <textarea [(ngModel)]="newMemory.description" class="form-textarea"
+                    placeholder="What made this moment special?" rows="3"></textarea>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading">
+            <i class="bi bi-camera"></i>
+            <span>Photo</span>
+          </div>
+          <div class="upload-box-wrapper" [class.has-preview]="newMemory.imageUrl">
+            <input type="file" #fileInput (change)="onFileSelected($event)"
+                   accept="image/*" class="file-input" id="photoInput">
+            <label for="photoInput" class="upload-placeholder" *ngIf="!newMemory.imageUrl">
+              <i class="bi bi-cloud-arrow-up"></i>
+              <span>Click to upload a photo</span>
+              <small>PNG, JPG — max 2 MB</small>
+            </label>
+            <div class="upload-preview" *ngIf="newMemory.imageUrl">
+              <img [src]="newMemory.imageUrl" alt="Preview">
+              <button type="button" class="btn-remove" (click)="removeImage(fileInput)" aria-label="Remove">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ORIGINAL VISIBILITY OPTION -->
+        <section class="form-section">
           <label class="field-label">Visibility</label>
           <div class="visibility-options">
-            <label class="visible">
+            <label class="visibility-radio public-option" [class.active]="visibilityStatus === 'public'">
               <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
-              Public
+              <i class="bi bi-globe2"></i>
+              <span>Public</span>
             </label>
-            <label class="visible-private">
+            <label class="visibility-radio private-option" [class.active]="visibilityStatus === 'private'">
               <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
-              Private
+              <i class="bi bi-lock-fill"></i>
+              <span>Private</span>
             </label>
           </div>
-        </div>
+        </section>
 
         <button (click)="saveMemory()" class="btn-save"
                 [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
+          <i class="bi bi-pin-map-fill"></i>
           Save &amp; Pin to Map
         </button>
       </ng-container>
 
-      <!-- ==================== TAB: ALBUMS ==================== -->
+      <!-- ALBUMS TAB -->
       <ng-container *ngIf="activeTab === 'albums'">
+
+        <div class="albums-header" *ngIf="groupedAlbums.length > 0">
+          <span class="albums-count">{{ groupedAlbums.length }} trip album{{ groupedAlbums.length !== 1 ? 's' : '' }}</span>
+        </div>
+
         <div class="gallery-grid">
-          <p class="empty-state" *ngIf="groupedAlbums.length === 0">
-            No trip albums yet. Add memories with trip names to see albums here.
-          </p>
+          <div class="empty-state" *ngIf="groupedAlbums.length === 0">
+            <i class="bi bi-collection"></i>
+            <p>No trip albums yet</p>
+            <small>Add memories with a trip name to see albums here.</small>
+          </div>
 
-          <div *ngFor="let album of groupedAlbums"
-               class="thumb-card"
-               (mouseenter)="startSlideshow(album)"
-               (mouseleave)="stopSlideshow(album)"
-               (click)="openAlbum(album)">
-
-            <span class="album-item-count">{{ album.memories.length }}</span>
+          <article *ngFor="let album of displayedAlbums; trackBy: trackByFn"
+                   class="thumb-card"
+                   (mouseenter)="startSlideshow(album)"
+                   (mouseleave)="stopSlideshow(album)"
+                   (click)="openAlbum(album)">
 
             <div class="img-container">
               <img [src]="album.currentDisplayImage || album.latestImage"
-                   class="thumb-img" alt="Trip Cover">
-              <span class="album-badge">{{ album.memories.length }} items</span>
+                   class="thumb-img" alt="Album cover">
+              <span class="album-badge">
+                <i class="bi bi-images"></i> {{ album.memories.length }}
+              </span>
             </div>
 
             <div class="thumb-info">
               <div class="thumb-trip">{{ album.tripName }}</div>
               <div class="thumb-text">{{ album.memories[0]?.title || 'Trip Memories' }}</div>
-
               <div class="thumb-dates" *ngIf="getOldestCreatedAt(album) as oldest">
-                <span class="date-label">Period</span>
-                <span class="date-range">
-                  {{ oldest | date:'mediumDate' }}
-                  <i class="bi bi-arrow-right"></i>
-                  {{ getNewestCreatedAt(album) | date:'mediumDate' }}
-                </span>
+                <i class="bi bi-calendar3"></i>
+                <span>{{ oldest | date:'mediumDate' }}</span>
+                <i class="bi bi-arrow-right"></i>
+                <span>{{ getNewestCreatedAt(album) | date:'mediumDate' }}</span>
               </div>
-
               <div class="like-badge-sidebar" *ngIf="album.memories[0]?.isPublic">
-                <svg class="thumbs-up-icon" viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z" />
-                </svg>
-                {{ getTotalLikes(album) }}
+                <i class="bi bi-heart-fill"></i> {{ getTotalLikes(album) }}
               </div>
             </div>
 
-            <button class="delete-overlay-btn"
-                    (click)="deleteMemory(album.memories[0]?.id, $event); $event.stopPropagation()">
-              <i class="bi bi-trash3-fill"></i>
-            </button>
-          </div>
+            <div class="album-action-buttons">
+              
+              <button class="card-action-btn delete-album-btn"
+                      title="Delete entire album"
+                      (click)="deleteAlbum(album, $event)">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+          </article>
         </div>
 
         <div class="see-more-container" *ngIf="groupedAlbums.length > 3">
           <button class="btn-see-more" (click)="toggleSeeMore()">
-            {{ showAllAlbums ? 'Show Less Albums' : 'See More Albums (' + (groupedAlbums.length - 3) + ')' }}
+            <i class="bi" [class.bi-chevron-down]="!showAllAlbums" [class.bi-chevron-up]="showAllAlbums"></i>
+            {{ showAllAlbums ? 'Show Less' : 'See More (' + (groupedAlbums.length - 3) + ')' }}
           </button>
         </div>
       </ng-container>
 
     </div>
 
-    <!-- Sticky footer -->
     <div class="sidebar-footer">
       <button class="btn-back" (click)="goBack()">
-        <i class="bi bi-chevron-left"></i> Back
+        <i class="bi bi-arrow-left"></i> Back
       </button>
     </div>
   </aside>
 
-  <!-- ==================== MAP ==================== -->
+  <!-- MAP -->
   <main class="map-container">
     <div id="map"></div>
+    <div class="map-hint">
+      <i class="bi bi-hand-index-thumb"></i>
+      Click a pin to view memory details
+    </div>
   </main>
 </div>
 
-<!-- ==================== LIGHTBOX CAROUSEL ==================== -->
+<!-- LIGHTBOX (BIG VIEW) -->
 <div class="lightbox-overlay" *ngIf="isLightboxOpen" (click)="closeLightbox()">
   <div class="lightbox-content" (click)="$event.stopPropagation()">
 
-    <button class="btn-close-top" (click)="closeLightbox()">✕</button>
+    <button class="btn-close-top" (click)="closeLightbox()" aria-label="Close">
+      <i class="bi bi-x-lg"></i>
+    </button>
 
-    <button class="nav-arrow left" (click)="prevMemory()"><i class="bi bi-chevron-left"></i></button>
-    <button class="nav-arrow right" (click)="nextMemory()"><i class="bi bi-chevron-right"></i></button>
+    <div class="lightbox-media">
+      <button class="nav-arrow left"
+              *ngIf="selectedAlbum && selectedAlbum.memories.length > 1"
+              (click)="prevMemory()" aria-label="Previous">
+        <i class="bi bi-chevron-left"></i>
+      </button>
 
-    <img [src]="selectedMemory?.imageUrl" class="lightbox-img" alt="Memory">
+      <div class="lightbox-image-frame">
+        <img [src]="selectedMemory?.imageUrl"
+             class="lightbox-img"
+             alt="{{ selectedMemory?.title || 'Memory' }}">
+        <div class="lightbox-image-caption"
+             *ngIf="selectedAlbum && selectedAlbum.memories.length > 1">
+          {{ currentMemoryIndex + 1 }} / {{ selectedAlbum.memories.length }}
+        </div>
+      </div>
+
+      <button class="nav-arrow right"
+              *ngIf="selectedAlbum && selectedAlbum.memories.length > 1"
+              (click)="nextMemory()" aria-label="Next">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
 
     <div class="lightbox-details">
-      <span class="trip-name-badge">{{ selectedAlbum?.tripName }}</span>
-      <h2>{{ selectedMemory?.title }}</h2>
-
-      <div class="date-text">
-        <i class="bi bi-calendar-range"></i>
-        <span class="label">Trip Timeline</span>
-        {{ selectedMemory?.startDate | date:'mediumDate' }}
-        <i class="bi bi-arrow-right"></i>
-        {{ selectedMemory?.endDate | date:'mediumDate' }}
+      <div class="lightbox-header">
+        <span class="trip-name-badge">
+          {{ selectedAlbum?.tripName || selectedMemory?.tripName || 'Memory' }}
+        </span>
+        <span class="visibility-chip"
+              [class.public]="selectedMemory?.isPublic"
+              [class.private]="!selectedMemory?.isPublic">
+          {{ selectedMemory?.isPublic ? 'Public' : 'Private' }}
+        </span>
       </div>
 
-      <div class="date-text">
-        <i class="bi bi-clock-history"></i>
-        <span class="label">Uploaded On</span>
-        {{ selectedMemory?.createdAt | date:'medium' }}
+      <h2 class="lightbox-title">{{ selectedMemory?.title }}</h2>
+
+      <div class="lightbox-meta-grid">
+        <div class="meta-item" *ngIf="selectedMemory?.locationName">
+          <div class="meta-icon"><i class="bi bi-geo-alt-fill"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Location</span>
+            <span class="meta-value">{{ selectedMemory?.locationName }}</span>
+          </div>
+        </div>
+        <div class="meta-item" *ngIf="selectedMemory?.startDate || selectedMemory?.endDate">
+          <div class="meta-icon"><i class="bi bi-calendar-range"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Trip Timeline</span>
+            <span class="meta-value">
+              {{ selectedMemory?.startDate | date:'mediumDate' }}
+              <i class="bi bi-arrow-right-short"></i>
+              {{ selectedMemory?.endDate | date:'mediumDate' }}
+            </span>
+          </div>
+        </div>
+        <div class="meta-item" *ngIf="selectedMemory?.createdAt">
+          <div class="meta-icon"><i class="bi bi-clock-history"></i></div>
+          <div class="meta-text">
+            <span class="meta-label">Uploaded On</span>
+            <span class="meta-value">{{ selectedMemory?.createdAt | date:'medium' }}</span>
+          </div>
+        </div>
       </div>
 
-      <p class="description-text">{{ selectedMemory?.description }}</p>
+      <p class="description-text" *ngIf="selectedMemory?.description">
+        {{ selectedMemory?.description }}
+      </p>
 
-      <div class="visibility-options">
-        <label>
-          <input type="checkbox" [checked]="selectedMemory?.isPublic"
-                 (change)="toggleMemoryVisibility(selectedMemory)">
-          Make this memory public
-        </label>
+      <!-- VISIBILITY TOGGLE IN LIGHTBOX -->
+      <div class="lightbox-visibility-section">
+        <label class="field-label">Visibility</label>
+        <div class="visibility-options lightbox-visibility">
+          <label class="visibility-checkbox">
+            <input type="checkbox"
+                   [checked]="selectedMemory?.isPublic"
+                   (change)="toggleMemoryVisibility(selectedMemory)">
+            <span>Make this memory public</span>
+          </label>
+        </div>
       </div>
 
       <div class="like-badge-lightbox" *ngIf="selectedMemory?.isPublic">
-        ❤️ {{ selectedMemory?.likeCount || 0 }} loved this
+        <i class="bi bi-heart-fill"></i>
+        {{ selectedMemory?.likeCount || 0 }} loved this
+      </div>
+
+      <div class="lightbox-action-row">
+        <button class="btn-lightbox-delete"
+                (click)="deleteMemory(selectedMemory?.id, $event)">
+          <i class="bi bi-trash3"></i> Delete memory
+        </button>
+        <button class="btn-lightbox-delete-album"
+                *ngIf="selectedAlbum"
+                (click)="deleteAlbum(selectedAlbum, $event)">
+          <i class="bi bi-collection-x"></i> Delete album
+        </button>
       </div>
     </div>
   </div>

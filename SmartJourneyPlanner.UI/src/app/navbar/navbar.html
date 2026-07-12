@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
   <div class="container-fluid px-4">
 
-    <a class="navbar-brand brand-container" [routerLink]="userRole === 'Admin' ? '/admin-panel' : (userRole === 'Provider' ? '/provider-dashboard' : '/traveller-dashboard')">
+    <a class="navbar-brand brand-container" [routerLink]="userRole === 'Admin' ? '/admin-dashboard' : (userRole === 'Provider' || userRole === 'TransportProvider' ? '/provider-dashboard' : '/traveller-dashboard')">
       <img src="/logo.jpg" alt="Logo" class="brand-logo">
       <div class="brand-text">
         <span class="secular one"><b>Smart</b></span>
@@ -17,8 +17,9 @@
     <div class="collapse navbar-collapse" id="navbarNav">
 
       <div class="navbar-nav mx-auto nav-links-group">
-        <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
-        <a class="nav-link" routerLink="/traveller-dashboard" routerLinkActive="active">Traveller Dashboard</a>
+        <a *ngIf="userRole === 'Admin'" class="nav-link" routerLink="/admin-dashboard" routerLinkActive="active">Admin Panel</a>
+        <a *ngIf="userRole === 'TransportProvider' || userRole === 'Provider'" class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
+        <a *ngIf="userRole === 'Traveller' || userRole === 'Traveler'" class="nav-link" routerLink="/traveller-dashboard" routerLinkActive="active">Traveller Dashboard</a>
         <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
         <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
         <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>

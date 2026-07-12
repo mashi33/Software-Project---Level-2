@@ -36,7 +36,7 @@ export class AuthService {
       const decoded: any = jwtDecode(token);
 
       //Get the user type from the backend response if provided, otherwise decode it from the token or fallback to 'Traveler'
-      const finalUserType = backendUserType || decoded['UserType'] || decoded['userType'] || 'Traveler';
+      const finalUserType = backendUserType || decoded['UserType'] || decoded['userType'] || 'Traveller';
       localStorage.setItem('userType', finalUserType);
 
       // roll inside the  trip
@@ -66,7 +66,7 @@ export class AuthService {
   }
   // Method to retrieve the user system type (e.g., Traveler, Provider) from localStorage, defaulting to 'Traveler' if not found
   getUserSystemType(): string {
-    return localStorage.getItem('userType') || 'Traveler';
+    return localStorage.getItem('userType') || 'Traveller';
   }
 
   // Method to retrieve the user role within a trip (e.g., viewer, editor) from localStorage, defaulting to 'viewer' if not found
@@ -108,18 +108,22 @@ export class AuthService {
 
   // Method to retrieve the user's role within a trip from the token or localStorage, providing a fallback to 'User' if not found
   getUserRole(): string {
+    const storedType = localStorage.getItem('userType');
+    if (storedType) return storedType;
+
     const token = this.getToken();
     if (!token) return 'Guest';
 
     try {
       const decoded: any = jwtDecode(token);
-      const role = decoded['role'] ||
-        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-
-      return role || localStorage.getItem('userRole') || 'User';
+      return decoded['role'] ||
+        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+        decoded['UserType'] ||
+        decoded['userType'] ||
+        'Traveller';
     } catch (error) {
       console.error('Token decoding failed', error);
-      return localStorage.getItem('userRole') || 'User';
+      return 'Traveller';
     }
   }
 

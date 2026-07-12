@@ -18,14 +18,19 @@ namespace SmartJourneyPlanner.API.Controllers
     {
         private readonly IMongoCollection<User> _users;
         private readonly IConfiguration _configuration;
-        private readonly EmailService _emailService; 
+        private readonly EmailService _emailService;
+        private readonly UserBlockService _userBlockService;
 
-        // Injecting core dependencies via the constructor
-        public AuthController(IMongoDatabase database, IConfiguration configuration, EmailService emailService)
+        public AuthController(
+            IMongoDatabase database,
+            IConfiguration configuration,
+            EmailService emailService,
+            UserBlockService userBlockService)
         {
             _users = database.GetCollection<User>("Users");
             _configuration = configuration;
-            _emailService = emailService; 
+            _emailService = emailService;
+            _userBlockService = userBlockService;
         }
 
         [HttpPost("register")]
@@ -110,10 +115,18 @@ namespace SmartJourneyPlanner.API.Controllers
                 return BadRequest("User not found.");
             }
 
-            // SECURITY CHECK 1: Prevent blocked users from logging in
-            if (user.IsBlocked)
+            // SECURITY CHECK 1: Auto-lift expired temporary blocks, then prevent blocked users from logging in
+            await _userBlockService.ExpireTemporaryBlocksAsync();
+            user = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if (user == null)
             {
-                return StatusCode(403, new { message = "Your account has been suspended. Please contact the administrator." });
+                return BadRequest("User not found.");
+            }
+
+            var (isBlocked, blockMessage) = await _userBlockService.ResolveBlockStatusAsync(user);
+            if (isBlocked)
+            {
+                return StatusCode(403, new { message = blockMessage ?? "Your account has been suspended. Please contact the administrator." });
             }
 
             // SECURITY CHECK 2: Block unverified users from gaining an active session

@@ -12,15 +12,11 @@ export class AdminService {
 
   constructor() { }
 
-  /**
-   * Hits new summary calculation gateway method inside AdminController
-   * to bring home unified analytics, counters, and tracking statistics metrics.
-   */
   getDashboardStats(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/Admin/dashboard-stats`);
   }
 
-  // Provider Methods
+  // PROVIDER MANAGEMENT METHODS
   getPendingProviders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/pending-providers`);
   }
@@ -34,7 +30,33 @@ export class AdminService {
     return this.http.put(`${this.baseUrl}/Admin/update-status/${id}`, JSON.stringify(status), { headers });
   }
 
-  // User Management Methods
+  // TRIP MEMORIES AUDITING METHODS
+  getAllUploadedMemories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-memories`);
+  }
+
+  updateMemoryStatus(memoryId: string, status: string): Observable<any> {
+  const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+  return this.http.put(`${this.baseUrl}/Admin/update-memory-status/${memoryId}`, JSON.stringify(status), { headers });
+  }
+
+  deleteMemoryPost(memoryId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/Admin/delete-memory/${memoryId}`);
+  }
+
+  getAllVehiclesDetailed(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/Admin/all-vehicles-detailed`);
+  }
+
+  getAllExpenses(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
+  }
+
+  getBudgetDetails(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Admin/budget-details`);
+  }
+
+  // USER ACCESS & MANAGEMENT METHODS
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-users`);
   }
@@ -43,6 +65,16 @@ export class AdminService {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     const body = JSON.stringify(newRole);
     return this.http.put(`${this.baseUrl}/Admin/promote-user/${userId}`, body, { headers });
+  }
+
+  blockUser(userId: string, blockType: 'Temporary' | 'Permanent'): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/block-user/${userId}`, { blockType }, { headers });
+  }
+
+  unblockUser(userId: string): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.put(`${this.baseUrl}/Admin/unblock-user/${userId}`, {}, { headers });
   }
 
   toggleBlockUser(userId: string, isBlocked: boolean): Observable<any> {

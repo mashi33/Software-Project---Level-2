@@ -65,6 +65,7 @@ src/environments/environment.development.ts
 *.development.ts
 environments/
 
-
-appsettings.Development.json
+# Application Settings
+SmartJourneyPlanner.API/appsettings.json
+SmartJourneyPlanner.API/appsettings.Development.json
 SmartJourneyPlanner.API/appsettings.toml
