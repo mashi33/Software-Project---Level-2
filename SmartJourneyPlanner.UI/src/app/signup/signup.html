@@ -8,7 +8,7 @@
       <p class="subtitle">Fill in your details to get started</p>
     </div>
 
-    <div class="login-form">
+    <form class="login-form" (ngSubmit)="onSignup()">
 
       <div class="input-group">
         <label>User Name</label>
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <button class="btn-login" [disabled]="pwd.invalid" (click)="onSignup()">
+      <button class="btn-login" type="submit" [disabled]="pwd.invalid">
         <span>Let's start</span>
         <i class="bi bi-arrow-right btn-icon"></i>
       </button>
@@ -81,6 +81,6 @@
         <a routerLink="/login">Login</a>
       </p>
 
-    </div>
+    </form>
   </div>
 </div>
