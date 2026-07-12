@@ -4,19 +4,20 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { MemoryService } from '../services/memory';
 import { TransportBookingService } from '../services/transport-booking.service';
+import { AchievementService, AchievementSummary } from '../services/achievement.service';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './profile.html',
   styleUrls: ['./profile.css']
 })
@@ -26,16 +27,20 @@ export class ProfileComponent implements OnInit {
 
   user: any = null;
   userId: string | null = null;
-  isEditMode: boolean = false;
-  showPasswordSection: boolean = false;
+  isEditMode = false;
+  showPasswordSection = false;
   loadingStats = true;
+  loadingAchievements = true;
+
+  achievementSummary: AchievementSummary | null = null;
 
   stats = {
     upcomingTrips: 0,
     memories: 0,
     vehicles: 0,
     bookings: 0,
-    averageRating: 0
+    averageRating: 0,
+    completedTrips: 0
   };
 
   editData: any = {
@@ -63,7 +68,8 @@ export class ProfileComponent implements OnInit {
     private router: Router,
     private dashboardService: TravellerDashboardService,
     private memoryService: MemoryService,
-    private bookingService: TransportBookingService
+    private bookingService: TransportBookingService,
+    private achievementService: AchievementService
   ) { }
 
   ngOnInit(): void {
@@ -81,6 +87,55 @@ export class ProfileComponent implements OnInit {
 
   isProvider(): boolean {
     return this.userRole === 'Provider' || this.userRole === 'TransportProvider';
+  }
+
+  get level(): number {
+    return this.achievementSummary?.level ?? 1;
+  }
+
+  get totalXp(): number {
+    return this.achievementSummary?.totalXp ?? 0;
+  }
+
+  get xpToNextLevel(): number {
+    return this.achievementSummary?.xpToNextLevel ?? 150;
+  }
+
+  get levelProgressPercent(): number {
+    const xpInLevel = this.totalXp % 150;
+    return Math.round((xpInLevel / 150) * 100);
+  }
+
+  get travellerRankTitle(): string {
+    const lvl = this.level;
+    const badges = this.achievementSummary?.unlockedCount ?? 0;
+
+    if (badges >= 6) return 'Island Legend';
+    if (badges >= 5) return 'Voyage Master';
+    if (lvl >= 20) return 'Journey Legend';
+    if (lvl >= 15) return 'Seasoned Explorer';
+    if (lvl >= 10) return 'Adventurer';
+    if (lvl >= 5) return 'Pathfinder';
+    if (lvl >= 2) return 'Rising Traveller';
+    return 'Novice Explorer';
+  }
+
+  get providerRankTitle(): string {
+    if (this.stats.averageRating >= 4.5 && this.stats.bookings >= 5) return 'Top Rated Provider';
+    if (this.stats.averageRating >= 4.0 && this.stats.bookings >= 3) return 'Trusted Fleet';
+    if (this.stats.vehicles >= 3) return 'Fleet Owner';
+    if (this.stats.bookings >= 1) return 'Active Provider';
+    return 'New Provider';
+  }
+
+  get unlockedBadges(): number {
+    return this.achievementSummary?.unlockedCount ?? 0;
+  }
+
+  get recentBadges() {
+    return (this.achievementSummary?.badges ?? [])
+      .filter(b => b.isUnlocked)
+      .slice(0, 4);
   }
 
   showSuccess(message: string) {
@@ -111,6 +166,7 @@ export class ProfileComponent implements OnInit {
     this.loadingStats = true;
 
     if (this.isProvider()) {
+      this.loadingAchievements = false;
       forkJoin({
         vehicles: this.http.get<any[]>(`${environment.apiUrl}/TransportVehicles/my-vehicles/${this.userId}`).pipe(
           catchError(() => of([]))
@@ -131,15 +187,22 @@ export class ProfileComponent implements OnInit {
     }
 
     forkJoin({
-      dashboard: this.dashboardService.getDashboardData().pipe(catchError(() => of({ upcomingCount: 0 }))),
-      memories: this.memoryService.getMemoryCount(this.userId!).pipe(catchError(() => of({ count: 0 })))
+      dashboard: this.dashboardService.getDashboardData().pipe(catchError(() => of({ upcomingCount: 0, completedCount: 0 }))),
+      memories: this.memoryService.getMemoryCount(this.userId!).pipe(catchError(() => of({ count: 0 }))),
+      achievements: this.achievementService.getSummary().pipe(catchError(() => of(null)))
     }).subscribe({
-      next: ({ dashboard, memories }) => {
+      next: ({ dashboard, memories, achievements }) => {
         this.stats.upcomingTrips = dashboard?.upcomingCount || 0;
+        this.stats.completedTrips = dashboard?.completedCount || 0;
         this.stats.memories = memories?.count || 0;
+        this.achievementSummary = achievements;
+        this.loadingAchievements = false;
         this.loadingStats = false;
       },
-      error: () => { this.loadingStats = false; }
+      error: () => {
+        this.loadingAchievements = false;
+        this.loadingStats = false;
+      }
     });
   }
 
@@ -155,6 +218,11 @@ export class ProfileComponent implements OnInit {
     if (!allRatings.length) return 0;
     const avg = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
     return Math.round(avg * 10) / 10;
+  }
+
+  getRatingStars(): number[] {
+    const full = Math.floor(this.stats.averageRating);
+    return Array(full).fill(0);
   }
 
   onEditProfile() {

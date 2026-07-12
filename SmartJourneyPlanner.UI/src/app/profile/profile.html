@@ -1,195 +1,233 @@
-<div class="profile-card">
+<div class="profile-page" [class.provider-theme]="isProvider()" [class.traveller-theme]="!isProvider()">
 
-  <div class="cover-photo">
-    <button class="edit-btn" (click)="onEditProfile()">
-      <i class="bi bi-pencil-square"></i>
-      Edit Profile
-    </button>
+  <!-- Cover -->
+  <div class="profile-cover">
+    <div class="cover-overlay"></div>
+    <div class="cover-actions">
+      <button class="btn-edit-profile" (click)="onEditProfile()">
+        <i class="bi bi-pencil-square"></i> Edit Profile
+      </button>
+
+      <a *ngIf="isProvider()" routerLink="/provider-dashboard" class="btn-achievements provider-link">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+    </div>
   </div>
 
-  <div class="profile-content">
+  <div class="profile-body" *ngIf="user">
 
-    <div class="left-panel">
-      <img *ngIf="user?.profilePictureUrl" 
-           [src]="user?.profilePictureUrl" 
-           [alt]="user?.fullName || 'User'" 
-           class="profile-image" />
+    <!-- Left column: identity -->
+    <aside class="profile-sidebar">
+      <div class="avatar-wrap">
+        <img *ngIf="user?.profilePictureUrl" [src]="user.profilePictureUrl" [alt]="user.fullName" class="avatar-img" />
+        <div *ngIf="!user?.profilePictureUrl" class="avatar-img avatar-fallback">
+          {{ (user?.fullName || 'T').charAt(0).toUpperCase() }}
+        </div>
 
-      <div *ngIf="!user?.profilePictureUrl" 
-           class="profile-image default-avatar-initial" 
-           style="width: 150px; height: 150px; border-radius: 50%; background-color: #a0aec0; color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 600; margin: 0 auto 15px auto; text-transform: uppercase; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        {{ (user?.fullName || 'T').charAt(0) }}
       </div>
 
-      <h2>{{ user?.fullName || user?.username }}</h2>
+      <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
+      <p class="profile-email"><i class="bi bi-envelope"></i> {{ user.email }}</p>
 
-      <p class="email">
-        <i class="bi bi-envelope"></i>
-        {{ user?.email }}
-      </p>
-
-      <span class="traveller-badge" [class.provider-badge]="isProvider()">
+      <span class="role-pill" [class.provider-pill]="isProvider()">
         {{ isProvider() ? '🚐 Transport Provider' : '✈ Traveller' }}
       </span>
 
-      <hr>
-
-      <div class="stats-container">
-        <ng-container *ngIf="!isProvider()">
-          <div class="stat-card">
-            <i class="bi bi-briefcase"></i>
-            <h3>{{ loadingStats ? '...' : stats.upcomingTrips }}</h3>
-            <span>Upcoming Trips</span>
+      <!-- Traveller rank from achievements -->
+      <div class="rank-card traveller-rank" *ngIf="!isProvider()">
+        <div class="rank-header">
+          <i class="bi bi-award"></i>
+          <div>
+            <small>Traveller Rank</small>
+            <strong>{{ loadingAchievements ? 'Loading...' : travellerRankTitle }}</strong>
           </div>
+        </div>
+        <div class="xp-section" *ngIf="!loadingAchievements">
+          <div class="xp-labels">
+            <span>Level {{ level }}</span>
+            <span>{{ totalXp }} XP · {{ xpToNextLevel }} to next</span>
+          </div>
+          <div class="xp-bar">
+            <div class="xp-fill" [style.width.%]="levelProgressPercent"></div>
+          </div>
+        </div>
+      </div>
 
-          <div class="stat-card">
+      <!-- Provider rank -->
+      <div class="rank-card provider-rank" *ngIf="isProvider()">
+        <div class="rank-header">
+          <i class="bi bi-star-fill"></i>
+          <div>
+            <small>Provider Status</small>
+            <strong>{{ loadingStats ? 'Loading...' : providerRankTitle }}</strong>
+          </div>
+        </div>
+        <div class="rating-row" *ngIf="!loadingStats && stats.averageRating > 0">
+          <span class="stars">
+            <i class="bi bi-star-fill" *ngFor="let s of getRatingStars()"></i>
+          </span>
+          <span>{{ stats.averageRating }} / 5.0</span>
+        </div>
+        <p class="no-rating" *ngIf="!loadingStats && stats.averageRating === 0">No ratings yet — complete trips to earn
+          reviews!</p>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="mini-stats">
+        <ng-container *ngIf="!isProvider()">
+          <div class="mini-stat">
+            <i class="bi bi-briefcase"></i>
+            <strong>{{ loadingStats ? '—' : stats.upcomingTrips }}</strong>
+            <span>Upcoming</span>
+          </div>
+          <div class="mini-stat">
             <i class="bi bi-camera"></i>
-            <h3>{{ loadingStats ? '...' : stats.memories }}</h3>
+            <strong>{{ loadingStats ? '—' : stats.memories }}</strong>
             <span>Memories</span>
           </div>
+          <div class="mini-stat">
+            <i class="bi bi-trophy"></i>
+            <strong>{{ loadingAchievements ? '—' : unlockedBadges }}</strong>
+            <span>Badges</span>
+          </div>
         </ng-container>
-
         <ng-container *ngIf="isProvider()">
-          <div class="stat-card">
-            <i class="bi bi-car-front-fill text-primary"></i>
-            <h3>{{ loadingStats ? '...' : stats.vehicles }}</h3>
+          <div class="mini-stat">
+            <i class="bi bi-car-front"></i>
+            <strong>{{ loadingStats ? '—' : stats.vehicles }}</strong>
             <span>Vehicles</span>
           </div>
-
-          <div class="stat-card">
-            <i class="bi bi-calendar-check text-success"></i>
-            <h3>{{ loadingStats ? '...' : stats.bookings }}</h3>
+          <div class="mini-stat">
+            <i class="bi bi-calendar-check"></i>
+            <strong>{{ loadingStats ? '—' : stats.bookings }}</strong>
             <span>Bookings</span>
+          </div>
+          <div class="mini-stat">
+            <i class="bi bi-star"></i>
+            <strong>{{ loadingStats ? '—' : (stats.averageRating || '—') }}</strong>
+            <span>Rating</span>
           </div>
         </ng-container>
       </div>
-    </div>
+    </aside>
 
-    <div class="right-panel">
-      <div class="section-card">
-        <h4>
-          <i class="bi bi-person-vcard"></i>
-          About Me
-        </h4>
-        <div class="about-box">
-          {{ user?.bio || 'Hey there! I am using Smart Journey Planner.' }}
-        </div>
-      </div>
+    <!-- Right column: details -->
+    <main class="profile-main">
 
-      <div class="info-row">
-        <div class="info-card">
-          <div class="icon-circle location">
-            <i class="bi bi-geo-alt-fill"></i>
-          </div>
+      <section class="content-card about-card">
+        <h2><i class="bi bi-person-vcard"></i> About Me</h2>
+        <p class="about-text">{{ user.bio || 'Hey there! I am using Smart Journey Planner.' }}</p>
+      </section>
+
+      <div class="info-grid">
+        <div class="info-tile">
+          <div class="info-icon location-icon"><i class="bi bi-geo-alt-fill"></i></div>
           <div>
             <small>Location</small>
-            <h6>{{ user?.location || 'Not specified' }}</h6>
+            <strong>{{ user.location || 'Not specified' }}</strong>
           </div>
         </div>
 
-        <div class="info-card">
-          <ng-container *ngIf="!isProvider()">
-            <div class="icon-circle status" style="background-color: #e0f2fe; color: #0284c7;">
-              <i class="bi bi-check-circle-fill"></i>
-            </div>
-            <div>
-              <small>Status</small>
-              <h6 style="color: #0284c7; font-weight: 600;">Active Account</h6>
-            </div>
-          </ng-container>
+        <div class="info-tile" *ngIf="!isProvider()">
+          <div class="info-icon level-icon"><i class="bi bi-bar-chart-steps"></i></div>
+          <div>
+            <small>Explorer Level</small>
+            <strong *ngIf="!loadingAchievements">Level {{ level }} · {{ totalXp }} XP</strong>
+            <strong *ngIf="loadingAchievements">Loading...</strong>
+          </div>
+        </div>
 
-          <ng-container *ngIf="isProvider()">
-            <div class="icon-circle status" style="background-color: #fffbeb; color: #f59e0b;">
-              <i class="bi bi-star-fill"></i>
-            </div>
-            <div>
-              <small>Average Rating</small>
-              <h6 style="color: #b45309; font-weight: 600;" *ngIf="!loadingStats && stats.averageRating > 0">
-                ⭐ {{ stats.averageRating }} / 5.0
-              </h6>
-              <h6 style="color: #94a3b8; font-weight: 600;" *ngIf="loadingStats || stats.averageRating === 0">
-                {{ loadingStats ? 'Loading...' : 'No ratings yet' }}
-              </h6>
-            </div>
-          </ng-container>
+        <div class="info-tile" *ngIf="isProvider()">
+          <div class="info-icon verify-icon"><i class="bi bi-patch-check-fill"></i></div>
+          <div>
+            <small>Account Status</small>
+            <strong class="status-approved">{{ user.status || 'Approved' }}</strong>
+          </div>
+        </div>
+
+        <div class="info-tile" *ngIf="!isProvider()">
+          <div class="info-icon trip-icon"><i class="bi bi-check2-circle"></i></div>
+          <div>
+            <small>Completed Trips</small>
+            <strong>{{ loadingStats ? '—' : stats.completedTrips }}</strong>
+          </div>
         </div>
       </div>
 
-      <div class="section-card" *ngIf="!isProvider()">
-        <h4>
-          <i class="bi bi-heart-fill text-danger"></i>
-          Travel Interests
-        </h4>
-        <div *ngIf="user?.interests?.length">
-          <span *ngFor="let interest of user?.interests" class="interest-chip">
-            {{ interest }}
-          </span>
+      <!-- Traveller: recent badges -->
+      <section class="content-card badges-preview" *ngIf="!isProvider() && recentBadges.length">
+        <div class="card-header-row">
+          <h2><i class="bi bi-trophy-fill"></i> Recent Badges</h2>
+          <a routerLink="/achievements" class="view-all-link">View all →</a>
         </div>
-        <div *ngIf="!user?.interests?.length">
-          No interests added yet. Click edit to add yours!
+        <div class="badge-chips">
+          <div *ngFor="let badge of recentBadges" class="badge-chip" [attr.data-rank]="badge.rank">
+            <span class="chip-icon">{{ badge.icon }}</span>
+            <span class="chip-name">{{ badge.name }}</span>
+            <span class="chip-xp">+{{ badge.xpReward }} XP</span>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="section-card" *ngIf="isProvider()">
-        <h4>
-          <i class="bi bi-truck text-primary"></i>
-          Vehicles & Fleet Services
-        </h4>
-        <div *ngIf="user?.interests?.length">
-          <span *ngFor="let vehicle of user?.interests" class="interest-chip" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
-            🚗 {{ vehicle }}
-          </span>
-        </div>
-        <div *ngIf="!user?.interests?.length">
-          No vehicles added yet. Click edit to add your fleet!
-        </div>
-      </div>
-    </div>
+      <section class="content-card badges-preview empty-badges-hint"
+        *ngIf="!isProvider() && !loadingAchievements && !recentBadges.length">
+        <h2><i class="bi bi-trophy"></i> Achievements</h2>
+        <p>Start creating trips to unlock badges and level up your explorer rank!</p>
+        <a routerLink="/achievements" class="btn-start-journey">Explore Achievements</a>
+      </section>
 
+      <!-- Interests / Fleet -->
+      <section class="content-card" *ngIf="!isProvider()">
+        <h2><i class="bi bi-heart-fill"></i> Travel Interests</h2>
+        <div class="chip-list" *ngIf="user.interests?.length">
+          <span *ngFor="let interest of user.interests" class="interest-tag">{{ interest }}</span>
+        </div>
+        <p class="empty-hint" *ngIf="!user.interests?.length">No interests added yet. Click Edit Profile to add yours!
+        </p>
+      </section>
+
+      <section class="content-card" *ngIf="isProvider()">
+        <h2><i class="bi bi-truck"></i> Fleet & Services</h2>
+        <div class="chip-list" *ngIf="user.interests?.length">
+          <span *ngFor="let vehicle of user.interests" class="interest-tag fleet-tag">🚗 {{ vehicle }}</span>
+        </div>
+        <p class="empty-hint" *ngIf="!user.interests?.length">No fleet types listed. Edit your profile to showcase your
+          vehicles!</p>
+        <div class="provider-actions" *ngIf="isProvider()">
+          <a routerLink="/register-vehicle" class="action-link"><i class="bi bi-plus-circle"></i> Add Vehicle</a>
+          <a routerLink="/provider-dashboard" class="action-link secondary"><i class="bi bi-grid"></i> Manage Fleet</a>
+        </div>
+      </section>
+
+    </main>
   </div>
-</div> 
+</div>
 
+<!-- Edit modal (unchanged structure, cleaner classes) -->
 <div class="custom-modal-overlay" *ngIf="isEditMode">
   <div class="custom-modal-content">
-    
     <button type="button" class="modal-close-btn" (click)="onCancel()">×</button>
-    
     <div class="modal-header">
-      <h2>Edit profile</h2>
+      <h2>Edit Profile</h2>
     </div>
 
     <div class="modal-body">
-      
-      <div *ngIf="user" class="avatar-preview mx-auto mb-4 d-flex align-items-center justify-content-center bg-secondary text-white rounded-circle position-relative" 
-           style="width: 90px; height: 90px; font-size: 2.2rem; font-weight: 600; background-color: #a0aec0 !important;">
-
-        <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 50%;">
-          <img *ngIf="editData.profilePictureUrl || user?.profilePictureUrl" 
-               [src]="editData.profilePictureUrl || user?.profilePictureUrl" 
-               alt="Profile Preview" 
-               style="width: 100%; height: 100%; object-fit: cover;" />
-
-          <span *ngIf="!editData.profilePictureUrl && !user?.profilePictureUrl" class="d-flex align-items-center justify-content-center" style="height: 100%;">
+      <div class="modal-avatar-wrap">
+        <div class="modal-avatar">
+          <img *ngIf="editData.profilePictureUrl || user?.profilePictureUrl"
+            [src]="editData.profilePictureUrl || user?.profilePictureUrl" alt="Preview" />
+          <span *ngIf="!editData.profilePictureUrl && !user?.profilePictureUrl">
             {{ (user?.fullName || 'T').charAt(0).toUpperCase() }}
           </span>
         </div>
-
-        <button type="button" class="avatar-edit-icon" (click)="triggerFileInput()" 
-                style="cursor: pointer; border: none; z-index: 10; position: absolute; bottom: 0; right: 0; background: #007bff; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0;">
-          <i class="bi bi-pencil-fill" style="font-size: 0.9rem;"></i>
+        <button type="button" class="avatar-edit-icon" (click)="triggerFileInput()">
+          <i class="bi bi-pencil-fill"></i>
         </button>
-
-        <input 
-          type="file" 
-          #fileInput
-          style="display: none;" 
-          accept="image/*" 
-          (change)="onFileSelected($event)"
-        />
+        <input type="file" #fileInput style="display:none" accept="image/*" (change)="onFileSelected($event)" />
       </div>
 
       <div *ngIf="editData.profilePictureUrl || user?.profilePictureUrl" class="text-center mb-3">
-        <button type="button" class="btn btn-sm btn-outline-danger" (click)="onRemovePhoto()" style="border: none; background: transparent; color: #dc3545; font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+        <button type="button" class="btn-remove-photo" (click)="onRemovePhoto()">
           <i class="bi bi-trash3-fill"></i> Remove Photo
         </button>
       </div>
@@ -198,71 +236,55 @@
         <label>Full Name</label>
         <input type="text" class="custom-input" [(ngModel)]="editData.fullName" placeholder="Enter your full name">
       </div>
-
       <div class="form-group">
         <label>Email Address</label>
         <input type="email" class="custom-input" [(ngModel)]="editData.email" placeholder="Enter your email">
       </div>
-
       <div class="form-group">
         <label>Location</label>
         <input type="text" class="custom-input" [(ngModel)]="editData.location" placeholder="Where are you from?">
       </div>
-
       <div class="form-group">
         <label>About Me (Bio)</label>
-        <textarea class="custom-input" rows="3" [(ngModel)]="editData.bio" placeholder="Tell us about your dreams..."></textarea>
+        <textarea class="custom-input" rows="3" [(ngModel)]="editData.bio"
+          placeholder="Tell us about yourself..."></textarea>
       </div>
 
-      <div class="form-group" style="margin-bottom: 15px;">
-        <button type="button" (click)="showPasswordSection = !showPasswordSection" 
-                style="background: #edf2f7; color: #4a5568; border: none; font-weight: 600; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+      <div class="form-group">
+        <button type="button" class="btn-password-toggle" (click)="showPasswordSection = !showPasswordSection">
           <i class="bi" [class.bi-lock-fill]="!showPasswordSection" [class.bi-unlock-fill]="showPasswordSection"></i>
           {{ showPasswordSection ? 'Hide Password Settings' : 'Change Password' }}
         </button>
       </div>
 
-      <div *ngIf="showPasswordSection" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-        
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label style="font-size: 0.85rem; color: #718096;">Current Password</label>
-          <input type="password" class="custom-input" [(ngModel)]="passwordData.currentPassword" placeholder="Enter current password">
+      <div *ngIf="showPasswordSection" class="password-panel">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.currentPassword">
         </div>
-
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label style="font-size: 0.85rem; color: #718096;">New Password</label>
-          <input type="password" class="custom-input" [(ngModel)]="passwordData.newPassword" placeholder="Enter new password">
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.newPassword">
         </div>
-
-        <div class="form-group" style="margin-bottom: 5px;">
-          <label style="font-size: 0.85rem; color: #718096;">Confirm New Password</label>
-          <input type="password" class="custom-input" [(ngModel)]="passwordData.confirmPassword" placeholder="Confirm new password">
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" class="custom-input" [(ngModel)]="passwordData.confirmPassword">
         </div>
-
       </div>
 
       <div class="form-group">
-        <label class="d-block">
-          {{ isProvider() ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}
-        </label>
-        
+        <label>{{ isProvider() ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}</label>
         <div class="chips-container">
-          <button type="button" *ngFor="let interest of availableInterests" 
-                  class="popup-chip"
-                  [class.active-chip]="editData.interests.includes(interest)"
-                  (click)="toggleInterest(interest)">
-            {{ editData.interests.includes(interest) ? '✓ ' : '+ ' }} {{ interest }}
+          <button type="button" *ngFor="let interest of availableInterests" class="popup-chip"
+            [class.active-chip]="editData.interests.includes(interest)" (click)="toggleInterest(interest)">
+            {{ editData.interests.includes(interest) ? '✓ ' : '+ ' }}{{ interest }}
           </button>
         </div>
       </div>
-
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-done" (click)="onSaveProfile()">
-        Done
-      </button>
+      <button type="button" class="btn-done" (click)="onSaveProfile()">Save Changes</button>
     </div>
-
   </div>
 </div>

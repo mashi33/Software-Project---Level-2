@@ -20,7 +20,8 @@ namespace SmartJourneyPlanner.API.Services
         public async Task SendVerificationEmailAsync(string receiverEmail, string verificationLink)
         {
             // get sender email from configuration (TOML file or environment variable)
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+           var senderEmail = _configuration["EmailSettings:SenderEmail"]
+           ?? throw new InvalidOperationException("Sender email is missing.");
             
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
@@ -49,7 +50,8 @@ namespace SmartJourneyPlanner.API.Services
         // 2. Trip Invitation Email Sender
         public async Task SendInviteEmailAsync(string receiverEmail, string tripName, string role, string tripId)
         {
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+            var senderEmail = _configuration["EmailSettings:SenderEmail"]
+            ?? throw new InvalidOperationException("Sender email is missing.");
             
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
@@ -80,7 +82,8 @@ namespace SmartJourneyPlanner.API.Services
         //  3.Password Reset Email Sender
         public async Task SendPasswordResetEmailAsync(string receiverEmail, string resetLink)
         {
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
+            var senderEmail = _configuration["EmailSettings:SenderEmail"]
+            ?? throw new InvalidOperationException("Sender email is missing.");
     
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
@@ -110,10 +113,16 @@ namespace SmartJourneyPlanner.API.Services
         private async Task SendEmailAsync(MimeMessage message)
         {
             
-            var smtpServer = _configuration["EmailSettings:SmtpServer"];
-            var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
-            var appPassword = _configuration["EmailSettings:AppPassword"];
+           var smtpServer = _configuration["EmailSettings:SmtpServer"]
+           ?? throw new InvalidOperationException("SMTP Server is missing.");
+
+           var senderEmail = _configuration["EmailSettings:SenderEmail"]
+           ?? throw new InvalidOperationException("Sender Email is missing.");
+
+           var appPassword = _configuration["EmailSettings:AppPassword"]
+           ?? throw new InvalidOperationException("App Password is missing.");
+
+           var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
 
             using (var client = new SmtpClient())
             {
