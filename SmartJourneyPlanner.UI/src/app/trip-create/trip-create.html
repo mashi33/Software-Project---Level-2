@@ -112,7 +112,7 @@
 
             <!-- Transport Mode -->
             <div class="form-field-group">
-              <label>Transport Type <span class="required-star">*</span></label>
+              <label>Transport Type </label>
               <div class="input-with-icon select-box-wrapper">
                 <i class="bi bi-signpost-split field-icon"></i>
                 <select formControlName="transportMode">
@@ -125,7 +125,8 @@
               <small class="field-hint" *ngIf="tripForm.get('transportMode')?.value === 'Transport Provider'">
                 After saving, you can browse and book vehicles from our transport providers.
               </small>
-              <small class="field-hint eco-hint" *ngIf="['Cycle','Public Transport','Walking'].includes(tripForm.get('transportMode')?.value)">
+              <small class="field-hint eco-hint"
+                *ngIf="['Cycle','Public Transport','Walking'].includes(tripForm.get('transportMode')?.value)">
                 🌿 Eco-friendly choice! Counts toward the Eco-Traveler badge.
               </small>
             </div>
@@ -144,7 +145,7 @@
         </div>
       </div>
 
-      <!-- 🟢 RIGHT COLUMN: SIDE CARDS PANEL -->
+      <!--  RIGHT COLUMN: SIDE CARDS PANEL -->
       <div class="column-right-side-panel">
 
         <!-- Invite Card -->
