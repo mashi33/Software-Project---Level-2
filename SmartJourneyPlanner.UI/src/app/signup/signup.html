@@ -32,11 +32,29 @@
         <div class="input-field">
           <i class="bi bi-lock input-icon"></i>
           <input type="password" name="Password" [(ngModel)]="signupData.Password" placeholder="Create a password"
-            required minlength="8" #pwd="ngModel" />
+            required minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            #pwd="ngModel" />
         </div>
         @if (pwd.invalid && (pwd.dirty || pwd.touched)) {
         <div class="error-msg">
-          <i class="bi bi-exclamation-circle-fill"></i> Password must be at least 8 characters long!
+          <i class="bi bi-exclamation-circle-fill"></i>
+
+          @if (pwd.errors?.['required']) {
+          <span>Password is required.</span>
+          }
+
+          @if (pwd.errors?.['minlength']) {
+          <span>Password must be at least 8 characters long.</span>
+          }
+
+          @if (pwd.errors?.['pattern']) {
+          <span>Password must contain at least:
+            <br>• One uppercase letter
+            <br>• One lowercase letter
+            <br>• One number
+            <br>• One special character (@$!%*?&)
+          </span>
+          }
         </div>
         }
       </div>
@@ -51,13 +69,6 @@
             <option value="TransportProvider">Transport Provider</option>
           </select>
         </div>
-      </div>
-
-      <div class="form-actions">
-        <label class="remember-me">
-          <input type="checkbox" id="rem" />
-          <span>Remember me</span>
-        </label>
       </div>
 
       <button class="btn-login" [disabled]="pwd.invalid" (click)="onSignup()">
