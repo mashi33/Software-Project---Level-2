@@ -56,7 +56,7 @@ public class UsersController : ControllerBase
         var user = await _usersCollection.Find(u => u.Id == id).FirstOrDefaultAsync();
         if (user == null) return NotFound();
         
-        user.PasswordHash = null;
+        user.PasswordHash = "";
         return Ok(user);
     }
 
@@ -71,14 +71,16 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrEmpty(dto.FullName)) user.FullName = dto.FullName;
         if (!string.IsNullOrEmpty(dto.Email)) user.Email = dto.Email;
         
-        user.Bio = dto.Bio;
-        user.Location = dto.Location;
+        user.Bio = dto.Bio ?? "";
+        user.Location = dto.Location ?? "";
 
         if (!string.IsNullOrEmpty(dto.Interests))
         {
             try 
             { 
-                user.Interests = JsonSerializer.Deserialize<List<string>>(dto.Interests); 
+                user.Interests =
+                    JsonSerializer.Deserialize<List<string>>(dto.Interests ?? "[]")
+                    ?? new List<string>();
             }
             catch (Exception) 
             { 
