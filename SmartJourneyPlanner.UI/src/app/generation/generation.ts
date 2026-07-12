@@ -275,31 +275,33 @@ export class GenerationComponent implements OnInit, OnChanges {
     let tableY = 64;
 
     routes.forEach(r => {
-      const info       = this.routeData.allRoutes?.[r.key];
-      if (!info) return;
+  const info       = this.routeData.allRoutes?.[r.key];
+  if (!info) return;
 
-      const isSelected = this.routeData.selectedType === r.key.toUpperCase();
+  const isSelected = this.routeData.selectedType === r.key.toUpperCase();
 
+      // fill color based on selection
       if (isSelected) {
         doc.setFillColor(26, 86, 219);
       } else {
         doc.setFillColor(245, 247, 250);
       }
-      doc.roundedRect(14, tableY, pageWidth - 28, 20, 2, 2, 'F');
+      doc.roundedRect(14, tableY, pageWidth - 28, 30, 2, 2, 'F'); // ✅ 20 → 30
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(
-        isSelected ? 255 : 30,
-        isSelected ? 255 : 30,
-        isSelected ? 255 : 30
-      );
+      doc.setTextColor(isSelected ? 255 : 30, isSelected ? 255 : 30, isSelected ? 255 : 30);
       doc.text(r.label, 20, tableY + 8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text(`Distance: ${info.distance}`, 20, tableY + 15);
-      doc.text(`Est. Time: ${info.duration}`, 85, tableY + 15);
+      doc.text(`Distance: ${info.distance}`, 20, tableY + 16);
+      doc.text(`Est. Time: ${info.duration}`, 85, tableY + 16);
+
+      const petrol = info.petrolCost != null ? `Petrol: Rs. ${info.petrolCost}` : 'Petrol: N/A';
+      const diesel = info.dieselCost != null ? `Diesel: Rs. ${info.dieselCost}` : 'Diesel: N/A';
+            doc.text(petrol, 20, tableY + 24);
+      doc.text(diesel, 85, tableY + 24);
 
       if (isSelected) {
         doc.setFont('helvetica', 'bold');
@@ -307,7 +309,7 @@ export class GenerationComponent implements OnInit, OnChanges {
         doc.text('Selected', pageWidth - 20, tableY + 8, { align: 'right' });
       }
 
-      tableY += 24;
+      tableY += 34; // ✅ 24 → 34
     });
 
     // ── MAP VIEW ──────────────────────────────────────────────

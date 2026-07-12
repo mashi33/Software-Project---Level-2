@@ -66,6 +66,16 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("comments")]
         [JsonPropertyName("comments")]
         public List<CommentItem>? Comments { get; set; } = new List<CommentItem>();
+
+        //Google Places info for "Trip" type discussions only.
+        // Used to push the place into Trip.SavedPlaces once the vote is confirmed.
+        [BsonElement("placeId")]
+        [JsonPropertyName("placeId")]
+        public string? PlaceId { get; set; }
+ 
+        [BsonElement("placeName")]
+        [JsonPropertyName("placeName")]
+        public string? PlaceName { get; set; }
     }
 
 
