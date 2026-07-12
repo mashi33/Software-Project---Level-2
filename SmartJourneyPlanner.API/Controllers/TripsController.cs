@@ -426,11 +426,12 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
 
                 if (!string.IsNullOrEmpty(changes))
                 {
+                    var editorName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown User";
                     var historyEntry = new TripHistory
                     {
                         TripId = id,
                         EditedAt = DateTime.Now,
-                        EditedBy = "User", 
+                        EditedBy = editorName, 
                         Changes = changes
                     };
                     await _historyCollection.InsertOneAsync(historyEntry);
