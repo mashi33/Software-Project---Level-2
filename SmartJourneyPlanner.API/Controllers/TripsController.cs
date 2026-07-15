@@ -91,40 +91,70 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         // Get detailed information of a specific trip including its edit history
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetTrip(string id)
+       [HttpGet("{id}")]
+public async Task<IActionResult> GetTrip(string id)
+{
+    try
+    {
+        var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+
+        if (trip == null)
+            return NotFound(new { message = "Trip not found in database!" });
+
+
+        var history = await _historyCollection
+            .Find(h => h.TripId == id)
+            .SortByDescending(h => h.EditedAt)
+            .ToListAsync();
+
+
+        var allMembers = new List<object>();
+
+        // Add owner
+        allMembers.Add(new
         {
-            try
-            {
-                var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
-                if (trip == null) return NotFound(new { message = "Trip not found in database!" });
+            Email = trip.CreatorEmail ?? trip.CreatedBy,
+            Role = "Owner"
+        });
 
-                var history = await _historyCollection.Find(h => h.TripId == id)
-                                                      .SortByDescending(h => h.EditedAt)
-                                                      .ToListAsync();
 
-                // Returning trip details combined with its edit history
-                return Ok(new {
-                    trip.Id,
-                    trip.TripName,
-                    trip.DepartFrom,
-                    trip.Destination,
-                    trip.StartDate,
-                    trip.EndDate,
-                    trip.BudgetLimit,
-                    trip.TransportMode,
-                    trip.Description,
-                    trip.Members,
-                    trip.SavedPlaces,
-                    trip.CreatedBy,
-                    EditHistory = history
-                });
-            }
-            catch (Exception ex)
+        // Add invited members
+        foreach (var m in trip.Members)
+        {
+            allMembers.Add(new
             {
-                return BadRequest(new { message = "Error fetching trip: " + ex.Message });
-            }
+                Email = m.Email,
+                Role = m.Role
+            });
         }
+
+
+        // Return trip details
+        return Ok(new
+        {
+            trip.Id,
+            trip.TripName,
+            trip.DepartFrom,
+            trip.Destination,
+            trip.StartDate,
+            trip.EndDate,
+            trip.BudgetLimit,
+            trip.TransportMode,
+            trip.Description,
+            trip.SavedPlaces,
+            trip.CreatedBy,
+            Members = allMembers,
+            EditHistory = history
+        });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new 
+        { 
+            message = "Error fetching trip: " + ex.Message 
+        });
+    }
+}
 
         // Fetch trips where the user is either the creator or a member
         [HttpGet("by-email/{email}")]
@@ -133,7 +163,8 @@ namespace SmartJourneyPlanner.API.Controllers
             try
             {
                 var filter = Builders<Trip>.Filter.Or(
-                    Builders<Trip>.Filter.Eq(t => t.CreatedBy, email),
+                    Builders<Trip>.Filter.Eq(t => t.CreatorEmail, email),
+                    Builders<Trip>.Filter.Eq(t => t.CreatedBy, email),  // fallback for old trips
                     Builders<Trip>.Filter.ElemMatch(t => t.Members, m => m.Email == email)
                 );
                 var trips = await _tripsCollection.Find(filter).ToListAsync();
@@ -146,12 +177,12 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         // Dashboard data for logged-in user only
-[Authorize] // 🔥 CRITICAL: Force .NET to validate the JWT token header before running this code
-[HttpGet("dashboard")] // Notice we removed "/{userId}" from the route path!
-public async Task<IActionResult> GetDashboardData()
-{
-    try
-    {
+       [Authorize] // 🔥 CRITICAL: Force .NET to validate the JWT token header before running this code
+       [HttpGet("dashboard")] // Notice we removed "/{userId}" from the route path!
+        public async Task<IActionResult> GetDashboardData()
+       {
+       try
+       {
 
         // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -396,11 +427,12 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
 
                 if (!string.IsNullOrEmpty(changes))
                 {
+                    var editorName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown User";
                     var historyEntry = new TripHistory
                     {
                         TripId = id,
                         EditedAt = DateTime.Now,
-                        EditedBy = "User", 
+                        EditedBy = editorName, 
                         Changes = changes
                     };
                     await _historyCollection.InsertOneAsync(historyEntry);

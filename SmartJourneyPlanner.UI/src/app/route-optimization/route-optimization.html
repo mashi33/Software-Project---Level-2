@@ -28,25 +28,23 @@
       </button>
     </div>
 
-   <div class="results" *ngIf="isLoading">
-  <p class="loading-label">Finding the best routes...</p>
-
-  <!-- Skeleton Card x3 -->
-  <div class="card skeleton-card" *ngFor="let i of [1,2,3]">
-    <div class="card-header">
-      <div class="skel skel-circle"></div>
-      <div class="skel skel-title"></div>
+    <div class="results" *ngIf="isLoading">
+      <p class="loading-label">Finding the best routes...</p>
+      <div class="card skeleton-card" *ngFor="let i of [1,2,3]">
+        <div class="card-header">
+          <div class="skel skel-circle"></div>
+          <div class="skel skel-title"></div>
+        </div>
+        <div class="details-section">
+          <div class="skel skel-line"></div>
+          <div class="skel skel-line short"></div>
+        </div>
+      </div>
     </div>
-    <div class="details-section">
-      <div class="skel skel-line"></div>
-      <div class="skel skel-line short"></div>
-    </div>
-  </div>
-</div>
 
     <div class="results" *ngIf="results && !isLoading">
-      <!-- <h3>Select Your Preferred Route:</h3> -->
-      
+
+      <!-- ── FASTEST ROUTE ── -->
       <div class="card" [class.active]="selectedRouteType === 'fastest'">
         <label>
           <div class="card-header">
@@ -58,12 +56,36 @@
             <h4>🚀 Fastest Route</h4>
           </div>
           <div class="details-section">
-            <p><strong>Distance:</strong> {{ formatDistance(results.fastest.distance) }}</p>
-            <p><strong>Estimated Time:</strong> {{ formatDuration(results.fastest.duration) }}</p>
+            <div class="detail-row">
+              <span class="detail-label">📍 Distance</span>
+              <span class="detail-value">{{ formatDistance(results.fastest.distance) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-value">{{ formatDuration(results.fastest.duration) }}</span>
+            </div>
+            <div class="detail-divider"></div>
+            <div class="detail-row">
+              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-value fuel-value" *ngIf="results.fastest.estimatedPetrolCost !== null">
+                Rs. {{ results.fastest.estimatedPetrolCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.fastest.estimatedPetrolCost === null">N/A</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-value fuel-value" *ngIf="results.fastest.estimatedDieselCost !== null">
+                Rs. {{ results.fastest.estimatedDieselCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.fastest.estimatedDieselCost === null">N/A</span>
+            </div>
+            <!-- Toll notice — fastest route uses highways -->
+            <div class="toll-notice">🏷️ Toll charges may apply on this route</div>
           </div>
         </label>
       </div>
 
+      <!-- ── SCENIC ROUTE ── -->
       <div class="card" [class.active]="selectedRouteType === 'scenic'" *ngIf="results.scenic">
         <label>
           <div class="card-header">
@@ -75,12 +97,34 @@
             <h4>🌿 Scenic Route</h4>
           </div>
           <div class="details-section">
-            <p><strong>Distance:</strong> {{ formatDistance(results.scenic.distance) }}</p>
-            <p><strong>Estimated Time:</strong> {{ formatDuration(results.scenic.duration) }}</p>
+            <div class="detail-row">
+              <span class="detail-label">📍 Distance</span>
+              <span class="detail-value">{{ formatDistance(results.scenic.distance) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-value">{{ formatDuration(results.scenic.duration) }}</span>
+            </div>
+            <div class="detail-divider"></div>
+            <div class="detail-row">
+              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-value fuel-value" *ngIf="results.scenic.estimatedPetrolCost !== null">
+                Rs. {{ results.scenic.estimatedPetrolCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.scenic.estimatedPetrolCost === null">N/A</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-value fuel-value" *ngIf="results.scenic.estimatedDieselCost !== null">
+                Rs. {{ results.scenic.estimatedDieselCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.scenic.estimatedDieselCost === null">N/A</span>
+            </div>
           </div>
         </label>
       </div>
 
+      <!-- ── CHEAPEST ROUTE ── -->
       <div class="card" [class.active]="selectedRouteType === 'cheapest'">
         <label>
           <div class="card-header">
@@ -92,10 +136,39 @@
             <h4>💰 Cheapest Route</h4>
           </div>
           <div class="details-section">
-            <p><strong>Distance:</strong> {{ formatDistance(results.cheapest.distance) }}</p>
-            <p><strong>Estimated Time:</strong> {{ formatDuration(results.cheapest.duration) }}</p>
+            <div class="detail-row">
+              <span class="detail-label">📍 Distance</span>
+              <span class="detail-value">{{ formatDistance(results.cheapest.distance) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-value">{{ formatDuration(results.cheapest.duration) }}</span>
+            </div>
+            <div class="detail-divider"></div>
+            <div class="detail-row">
+              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-value fuel-value" *ngIf="results.cheapest.estimatedPetrolCost !== null">
+                Rs. {{ results.cheapest.estimatedPetrolCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.cheapest.estimatedPetrolCost === null">N/A</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-value fuel-value" *ngIf="results.cheapest.estimatedDieselCost !== null">
+                Rs. {{ results.cheapest.estimatedDieselCost }}
+              </span>
+              <span class="cost-unavailable" *ngIf="results.cheapest.estimatedDieselCost === null">N/A</span>
+            </div>
           </div>
         </label>
+      </div>
+
+      <!-- ── DISCLAIMER ── -->
+      <div class="route-disclaimer">
+        <span class="disclaimer-icon">ℹ️</span>
+        <p>Fuel costs are estimated based on average vehicle consumption
+        and live CPC fuel prices. Actual costs may vary depending on
+        driving speed, vehicle condition, load, and traffic conditions.</p>
       </div>
 
       <div class="generation-wrapper" *ngIf="selectedRouteDetails">
@@ -122,15 +195,17 @@
         [options]="startMarkerOptions">
       </map-marker>
 
-    <!-- End pin — Red -->
-    <map-marker *ngIf="endCoords"
-      [position]="endCoords"
-      [options]="endMarkerOptions">
-    </map-marker>
+      <!-- End pin — Red -->
+      <map-marker *ngIf="endCoords"
+        [position]="endCoords"
+        [options]="endMarkerOptions">
+      </map-marker>
+
       <ng-container *ngIf="selectedRouteType === 'scenic' && results?.scenicViewpoints">
         <map-advanced-marker 
           *ngFor="let point of results.scenicViewpoints"
           [position]="{lat: point.lat, lng: point.lng}"
+          [content]="scenicPinElement"
           (mapClick)="focusOnSpot(point)">
         </map-advanced-marker>
       </ng-container>

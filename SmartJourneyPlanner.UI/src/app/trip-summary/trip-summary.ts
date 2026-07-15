@@ -24,20 +24,21 @@ export class TripSummaryComponent implements OnInit {
 
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
+  // NEW — confirmed vote places from group chat discussions
+  savedVotedPlaces: any[] = [];
   savedPlacesCount = 0;
   membersCount = 0;
   tripDurationDays = 0;
   
-// Holds the calculated live budget sum for the UI layout display
+  // Holds the calculated live budget sum for the UI layout display
   liveTotalSpent: number = 0;
 
   // =========================
-// SUMMARY PAGE WEATHER
-// =========================
-
-summaryWeather: any = null;
-summarySuggestion: any = null;
-forecastDays: any[] = [];
+  // SUMMARY PAGE WEATHER
+  // =========================
+  summaryWeather: any = null;
+  summarySuggestion: any = null;
+  forecastDays: any[] = [];
 
   loadingWeather = false;
   isLastYearWeather = false;
@@ -68,15 +69,12 @@ forecastDays: any[] = [];
           this.editHistory = data.editHistory || data.EditHistory || [];
           this.determineUserRole();
           this.computeTripMeta();
-      this.tripDetails = data;
           console.log('Data received from database:', data);
 
-          
-          // Immediately pull down the corresponding budget payload using the validated tripId parameter contract
+          // Immediately pull down the corresponding budget payload
           this.budgetService.getBudget(this.tripId).subscribe({
             next: (budgetData: any) => {
               if (budgetData) {
-                // Read from totalSpent property path or aggregate from the sub-documents array immediately
                 this.liveTotalSpent = budgetData.totalSpent || 
                                       budgetData.TotalSpent || 
                                       (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
@@ -88,7 +86,6 @@ forecastDays: any[] = [];
             }
           });
           
-          // FIX: Call filterSavedPlaces() after data is loaded
           this.filterSavedPlaces();
           this.loadTripWeather();
           this.loading = false;
@@ -277,6 +274,11 @@ forecastDays: any[] = [];
     this.savedRestaurants = places.filter((p: any) => {
       const cat = (p.category || p.Category || '').toLowerCase();
       return cat.includes('restaurant') || cat.includes('food');
+    });
+    // Confirmed vote places from group chat discussions
+    this.savedVotedPlaces = places.filter((p: any) => {
+      const cat = (p.category || p.Category || '').toLowerCase();
+      return cat.includes('confirmed') || cat.includes('vote');
     });
     this.savedPlacesCount = places.length;
   }

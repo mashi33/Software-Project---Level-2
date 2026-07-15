@@ -70,6 +70,12 @@
                   </div>
                 </div>
               </li>
+
+              <li class="p-2 text-center bg-light"
+                  style="border-radius: 0 0 12px 12px"
+                  *ngIf="editHistory && editHistory.length > 0">
+                <small class="text-muted font-monospace" style="font-size: 0.65rem">End of history</small>
+              </li>
             </ul>
           </div>
 
@@ -161,6 +167,13 @@
               <span class="text-capitalize">{{ description }}</span>
             </div>
 
+            <div class="detail-item">
+              <label>Budget (LKR)</label>
+              <span class="budget-text">
+                {{ liveTotalSpent > 0 ? 'Rs.' + (liveTotalSpent | number:'1.2-2') : 'Rs. 0.00' }}
+              </span>
+            </div>
+
             <div class="detail-item" *ngIf="transportMode">
               <label>Transport Type</label>
               <span class="transport-badge" [class.eco-badge]="isEcoTransport">
@@ -178,38 +191,52 @@
             <div class="saved-places-section mt-4 pt-3 border-top">
               <h6 class="text-muted small fw-bold mb-3 text-uppercase">Saved Places</h6>
 
-              <div class="saved-place-group mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="text-muted small m-0">
-                    <i class="bi bi-building me-1"></i> Hotels ({{ savedHotels.length }})
-                  </label>
-                </div>
-                <div *ngIf="savedHotels.length; else noHotels" class="place-list">
-                  <div *ngFor="let hotel of savedHotels" class="place-chip">
-                    <i class="bi bi-house-door"></i>
+              <!-- Hotels Dropdown -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="text-muted small m-0">
+                  <i class="bi bi-building me-1"></i> Hotels
+                </label>
+                <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                  <option selected disabled>
+                    View Hotels List {{ savedHotels && savedHotels.length > 0 ? '(' + savedHotels.length + ')' : '' }}
+                  </option>
+                  <option *ngFor="let hotel of savedHotels" [value]="hotel.placeId || hotel.PlaceId">
                     {{ hotel.name || hotel.Name }}
-                  </div>
-                </div>
-                <ng-template #noHotels>
-                  <p class="text-muted small mb-0">No hotels added yet.</p>
-                </ng-template>
+                  </option>
+                  <option *ngIf="savedHotels?.length === 0" disabled>No hotels added yet</option>
+                </select>
               </div>
 
-              <div class="saved-place-group">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="text-muted small m-0">
-                    <i class="bi bi-cup-hot me-1"></i> Restaurants ({{ savedRestaurants.length }})
-                  </label>
-                </div>
-                <div *ngIf="savedRestaurants.length; else noRestaurants" class="place-list">
-                  <div *ngFor="let restaurant of savedRestaurants" class="place-chip">
-                    <i class="bi bi-shop"></i>
+              <!-- Restaurants Dropdown -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="text-muted small m-0">
+                  <i class="bi bi-cup-hot me-1"></i> Restaurants
+                </label>
+                <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                  <option selected disabled>
+                    View Restaurants List {{ savedRestaurants && savedRestaurants.length > 0 ? '(' + savedRestaurants.length + ')' : '' }}
+                  </option>
+                  <option *ngFor="let restaurant of savedRestaurants" [value]="restaurant.placeId || restaurant.PlaceId">
                     {{ restaurant.name || restaurant.Name }}
-                  </div>
-                </div>
-                <ng-template #noRestaurants>
-                  <p class="text-muted small mb-0">No restaurants added yet.</p>
-                </ng-template>
+                  </option>
+                  <option *ngIf="savedRestaurants?.length === 0" disabled>No restaurants added yet</option>
+                </select>
+              </div>
+
+              <!-- Places Dropdown -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="text-muted small m-0">
+                  <i class="bi bi-pin-map me-1"></i> Places
+                </label>
+                <select class="form-select form-select-sm summary-dropdown shadow-sm">
+                  <option selected disabled>
+                    View Places List {{ (savedVotedPlaces && savedVotedPlaces.length > 0) ? '(' + savedVotedPlaces.length + ')' : '' }}
+                  </option>
+                  <option *ngFor="let place of savedVotedPlaces" [value]="place.placeId || place.PlaceId">
+                    {{ place.name || place.Name }}
+                  </option>
+                  <option *ngIf="savedVotedPlaces?.length === 0" disabled>No confirmed places yet</option>
+                </select>
               </div>
             </div>
           </div>
@@ -285,6 +312,7 @@
                     {{ startDate | date:'MMM d' }} – {{ endDate | date:'MMM d, y' }}
                   </p>
                 </div>
+
                 <div class="weather-stats">
                   <div class="weather-stat-item">
                     <i class="bi bi-droplet-half text-info"></i>
@@ -301,15 +329,12 @@
                   <h6 class="m-0 fw-bold text-dark">{{ startDate | date:'EEEE, MMM d' }}</h6>
                 </div>
                 <div class="current-temp-wrapper">
-                  <i
-                    class="weather-main-icon"
+                  <i class="weather-main-icon"
                     [ngClass]="{
                       'bi bi-cloud-rain-fill text-primary': summaryWeather?.condition === 'Rainy',
-                      'bi bi-brightness-high-fill text-warning':
-                        summaryWeather?.condition === 'Sunny',
+                      'bi bi-brightness-high-fill text-warning': summaryWeather?.condition === 'Sunny',
                       'bi bi-cloud-fill text-secondary': summaryWeather?.condition === 'Cloudy'
-                    }"
-                  >
+                    }">
                   </i>
                   <div class="temp-display">
                     <h1 class="temperature">

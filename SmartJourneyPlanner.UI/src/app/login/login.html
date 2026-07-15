@@ -8,7 +8,7 @@
       <p class="subtitle">Welcome Back! Please Sign In</p>
     </div>
 
-    <div class="login-form">
+    <form class="login-form" (ngSubmit)="onLogin()">
 
       <!-- Email Field -->
       <div class="input-group">
@@ -31,15 +31,11 @@
       </div>
 
       <div class="form-actions">
-        <label class="remember-me">
-          <input type="checkbox" />
-          <span>Remember me</span>
-        </label>
         <a [routerLink]="['/forgot-password']" class="forgot-link">Forgot Password?</a>
       </div>
 
       <!-- Sign In Button -->
-      <button class="btn-login" (click)="onLogin()">
+      <button class="btn-login" type="submit">
         <span>Sign In</span>
         <!-- Bootstrap Arrow Right Icon -->
         <i class="bi bi-arrow-right btn-icon"></i>
@@ -55,6 +51,6 @@
         </a>
       </p>
 
-    </div>
+    </form>
   </div>
 </div>

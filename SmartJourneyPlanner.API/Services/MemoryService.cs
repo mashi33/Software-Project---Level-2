@@ -36,7 +36,7 @@ namespace SmartJourneyPlanner.API.Services
 
 public async Task<List<TripMemory>> GetPublicMemoriesAsync() =>
     await _memoriesCollection
-        .Find(memory => memory.IsPublic == true)
+        .Find(memory => memory.IsPublic == true && memory.Status != "Flagged")
         .ToListAsync();
 
         public async Task<int> GetCountByUserIdAsync(string userId)
