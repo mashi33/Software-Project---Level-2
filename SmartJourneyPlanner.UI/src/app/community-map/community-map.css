@@ -137,38 +137,6 @@
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
 
-.thumb-location {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  color: var(--ink-soft);
-}
-
-.thumb-location i {
-  color: var(--danger);
-}
-
-.like-btn {
-  color: var(--like);
-}
-
-.like-btn:hover {
-  background: var(--like-soft);
-  border-color: #fecdd3;
-}
-
-.like-btn.liked {
-  background: var(--like-soft);
-  border-color: #fecdd3;
-  color: var(--like);
-}
-
-.like-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Albums Section */
 .albums-section {
   margin-top: 1.5rem;
@@ -346,7 +314,24 @@
   align-items: center;
   gap: 0.25rem;
   font-size: 0.72rem;
-  color: var(--ink-soft);
+  color: var(--brand);
+  font-weight: 500;
+}
+
+.thumb-author i {
+  color: var(--brand);
+}
+
+.thumb-location {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.thumb-location i {
+  color: var(--brand);
 }
 
 .thumb-dates {
@@ -395,9 +380,14 @@
   color: var(--like);
 }
 
+.like-btn:hover { background: var(--like-soft); border-color: #fecdd3; }
+.like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: var(--like); }
+.like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .album-like-btn:hover { background: var(--like-soft); border-color: #fecdd3; }
 .album-like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: var(--like); }
 .album-like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .see-more-container { margin-top: 0.5rem; }
 
 .btn-see-more {
@@ -446,8 +436,8 @@
 }
 
 .btn-back:hover { background: var(--line-soft); color: var(--ink); }
-.map-container { flex: 1; position: relative; overflow: hidden; }
 
+.map-container { flex: 1; position: relative; overflow: hidden; }
 #map { width: 100%; height: 100%; }
 
 .map-hint {
@@ -470,9 +460,7 @@
   pointer-events: none;
   z-index: 500;
 }
-
 /* Map popup */
-
 :host ::ng-deep .memory-popup-wrapper .leaflet-popup-content-wrapper {
   padding: 0;
   border-radius: 16px;
@@ -656,9 +644,7 @@
   border: 3px solid #fff;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
-
 /* Lightbox */
-
 .lightbox-overlay {
   position: fixed;
   inset: 0;
@@ -843,8 +829,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--brand-soft);
+  border: 1px solid #bfdbfe;
   color: var(--brand);
 }
 
@@ -918,7 +904,6 @@
 .btn-like-album:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
 @keyframes scaleUp { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 
 @media (max-width: 900px) {
@@ -959,10 +944,7 @@
 }
 
 .swal-like-content i,
-.swal-album-like-content i {
-  font-size: 1rem;
-}
-
+.swal-album-like-content i,
 .swal-unlike-content i,
 .swal-album-unlike-content i {
   font-size: 1rem;

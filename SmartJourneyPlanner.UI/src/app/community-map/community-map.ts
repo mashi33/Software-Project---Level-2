@@ -6,6 +6,8 @@ import { Router } from '@angular/router';
 import * as leaflet from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 import { MemoryService } from '../services/memory';
 import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
@@ -60,6 +62,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   showAllAlbums = false;
   showAllTopRated = false;
   albumLikeInProgress = false;
+  private searchSubject = new Subject<string>();
+  private markerCache = new Map<string, leaflet.Marker>();
 
   constructor(
     private readonly memoryService: MemoryService,
@@ -71,6 +75,17 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.fixLeafletIcons();
     this.loadCommunityMemories();
+    this.setupSearchDebounce();
+  }
+
+  private setupSearchDebounce(): void {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.searchQuery = query;
+      this.applyFilters();
+    });
   }
 
 
@@ -85,7 +100,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.allMemories = data
           .filter(m => m.isPublic)
-          .map(m => this.formatData(m));
+          .map(m => this.formatData(m))
+          .slice(0, 500);
         this.applyFilters();
       },
       error: (err) => console.error('Failed to load community memories:', err)
@@ -115,10 +131,10 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     };
   }
 
-  // FILTER & ALBUMS 
+  // FILTER & ALBUMS
 
   filterMemories(): void {
-    this.applyFilters();
+    this.searchSubject.next(this.searchQuery);
   }
 
   private applyFilters(): void {
@@ -135,7 +151,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
-    this.cdr.detectChanges();
+    //this.cdr.detectChanges();
   }
 
 
@@ -215,8 +231,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     const groups = new Map<string, CommunityAlbum>();
 
     memories.forEach(memory => {
-      const tripId = memory.tripId || 'no-trip';
-      const tripName = memory.tripName || 'Unknown Trip';
+      const tripId = memory.tripId || memory.id || 'no-trip';
+      const tripName = memory.tripName || memory.title || 'Unknown Trip';
       const memoryDate = memory.startDate || memory.endDate || memory.createdAt;
 
       if (!groups.has(tripId)) {
@@ -230,7 +246,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         });
       }
 
-      const album = groups.get(tripId)!;album.memories.push(memory);
+      const album = groups.get(tripId)!;
+      album.memories.push(memory);
       const albumDate = new Date(album.latestDate);
       const currentDate = new Date(memoryDate);
 
@@ -273,12 +290,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return item.tripName || index;
   }
 
-  //  LIKES 
+  //  LIKES
 
   hasUserLiked(memory: TripMemory): boolean {
-    const userId = this.authService.getUserId();
-    if (!userId || !memory.likedByUsers) return false;
-    return memory.likedByUsers.includes(userId);
+    const userName = this.authService.getUserName();
+    if (!userName || !memory.likedByUsers) return false;
+    return memory.likedByUsers.includes(userName);
   }
 
   isAlbumFullyLiked(album: CommunityAlbum): boolean {
@@ -291,10 +308,11 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
 
     if (!memoryId) return;
     const currentUserId = this.authService.getUserId();
+    const currentUserName = this.authService.getUserName();
     if (!currentUserId) return;
     const memory = this.allMemories.find(m => m.id === memoryId);
     const isLiked = memory ? this.hasUserLiked(memory) : false;
-    this.memoryService.toggleLike(memoryId, currentUserId).subscribe({
+    this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
 
       next: (updatedMemory) => {
         this.updateLocalMemoryState(memoryId, updatedMemory);
@@ -316,6 +334,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     event?.preventDefault();
 
     const currentUserId = this.authService.getUserId();
+    const currentUserName = this.authService.getUserName();
     if (!currentUserId || this.albumLikeInProgress) return;
     const allLiked = this.isAlbumFullyLiked(album);
     const targets = album.memories.filter(m =>
@@ -324,7 +343,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     if (!targets.length) return;
     this.albumLikeInProgress = true;
-    const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId));
+    const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId, currentUserName || ''));
 
     forkJoin(requests).subscribe({
       next: (updatedMemories) => {
@@ -372,8 +391,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     }
 
     this.refreshMapMarkers(this.filteredMemories);
-    this.cdr.detectChanges();
-
+    //this.cdr.detectChanges();
   }
 
   getTotalLikes(album: CommunityAlbum): number {
@@ -447,7 +465,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     album.slideshowInterval = setInterval(() => {
       album.slideIndex = (album.slideIndex + 1) % album.memories.length;
       album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
-      this.cdr.detectChanges();
+      //this.cdr.detectChanges();
     }, 2000);
   }
 
@@ -479,16 +497,39 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
   }
 
 
-  // MAP 
+  // MAP
 
   private refreshMapMarkers(memories: TripMemory[]): void {
     if (!this.map) return;
-    this.markersLayer.clearLayers();
+
+    const currentMemoryIds = new Set(memories.map(m => m.id));
+    const cachedIds = new Set(this.markerCache.keys());
+
+    // Remove markers for memories no longer in filtered list
+    cachedIds.forEach(id => {
+      if (!currentMemoryIds.has(id)) {
+        const marker = this.markerCache.get(id);
+        if (marker) {
+          this.markersLayer.removeLayer(marker);
+          this.markerCache.delete(id);
+        }
+      }
+    });
+
+    // Add or update markers for current memories
     memories.forEach(memory => {
-      if (!memory.latitude || !memory.longitude) return;
-      const marker = leaflet.marker([memory.latitude, memory.longitude]);
-      const popupHtml = this.getPopupHtml(memory);
-      marker.bindPopup(popupHtml, {
+      if (!memory.latitude || !memory.longitude || !memory.id) return;
+
+      if (this.markerCache.has(memory.id)) {
+        // Marker exists, update popup if needed
+        const marker = this.markerCache.get(memory.id)!;
+        const popupHtml = this.getPopupHtml(memory);
+        marker.setPopupContent(popupHtml);
+      } else {
+        // Create new marker
+        const marker = leaflet.marker([memory.latitude, memory.longitude]);
+        const popupHtml = this.getPopupHtml(memory);
+        marker.bindPopup(popupHtml, {
           maxWidth: 320,
           minWidth: 280,
           className: 'memory-popup-wrapper'
@@ -498,7 +539,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
           if (popupEl) this.attachPopupListeners(popupEl, memory);
         });
 
-      this.markersLayer.addLayer(marker);
+        this.markersLayer.addLayer(marker);
+        this.markerCache.set(memory.id, marker);
+      }
     });
   }
 

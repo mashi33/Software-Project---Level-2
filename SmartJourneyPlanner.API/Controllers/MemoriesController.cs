@@ -5,7 +5,8 @@ using System.Text.Json.Serialization;
 
 namespace SmartJourneyPlanner.API.Controllers;
 public record LikeRequest(
-    [property: JsonPropertyName("userId")] string UserId
+    [property: JsonPropertyName("userId")] string UserId,
+    [property: JsonPropertyName("fullName")] string FullName
 );
 
 [ApiController]
@@ -102,12 +103,16 @@ public async Task<ActionResult<TripMemory>> ToggleLike([FromRoute] string id, [F
         return BadRequest("User ID is required within the request body.");
     }
 
+    if (string.IsNullOrWhiteSpace(request.FullName))
+    {
+        return BadRequest("Full Name is required within the request body.");
+    }
+
     try
     {
-        _logger.LogInformation("Processing like toggle for Memory: {MemoryId} by User: {UserId}", id, request.UserId);
-        
-        // 🌐 Service එක හරහා Database එක Update කිරීම
-        var updatedMemory = await _memoryService.ToggleLikeAsync(id, request.UserId);
+        _logger.LogInformation("Processing like toggle for Memory: {MemoryId} by User: {UserId} ({FullName})", id, request.UserId, request.FullName);
+
+        var updatedMemory = await _memoryService.ToggleLikeAsync(id, request.UserId, request.FullName);
 
         if (updatedMemory == null)
         {
@@ -115,7 +120,7 @@ public async Task<ActionResult<TripMemory>> ToggleLike([FromRoute] string id, [F
             return NotFound($"Memory with ID {id} does not exist.");
         }
 
-        return Ok(updatedMemory); // 🔄 Update වූ නව LikeCount එක සහිත Object එක Angular එකට යවයි
+        return Ok(updatedMemory); 
     }
     catch (Exception ex)
     {
@@ -123,17 +128,6 @@ public async Task<ActionResult<TripMemory>> ToggleLike([FromRoute] string id, [F
         return StatusCode(500, "A database concurrency or server error occurred.");
     }
 }
-
-// 📦 Request Body එක භාර ගැනීමට පාවිච්චි කරන සරල Class එක
-public class LikeRequest
-{
-    public string UserId { get; set; } = string.Empty;
-}
-
-
-// =========================================================================================
-// === ADD THIS NEW COUNT ROUTE HERE ===
-// =========================================================================================
 [HttpGet("user/{userId}/count")]
 public async Task<IActionResult> GetUserMemoryCount(string userId)
 {
@@ -148,5 +142,4 @@ public async Task<IActionResult> GetUserMemoryCount(string userId)
         return StatusCode(500, $"SERVER ERROR: {ex.Message}");
     }
 }
-// =========================================================================================
 }

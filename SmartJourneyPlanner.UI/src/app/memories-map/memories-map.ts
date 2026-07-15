@@ -59,6 +59,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   showMax: number = 3;
   showAllAlbums: boolean = false;
   activeTab: 'upload' | 'albums' = 'upload';
+  showLikedUsers: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -78,6 +79,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   setActiveTab(tab: 'upload' | 'albums') {
     this.activeTab = tab;
+  }
+
+  toggleLikedUsers(): void {
+    this.showLikedUsers = !this.showLikedUsers;
   }
 
   isObject(val: any): boolean {
@@ -280,6 +285,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       endDate: memory.endDate,
       isPublic: memory.isPublic ?? memory.IsPublic ?? false,
       likeCount: memory.likeCount || 0,
+      likedByUsers: memory.likedByUsers || memory.LikedByUsers || [],
       tripId: memory.tripId || memory.TripId || null,
       tripName: memory.tripName || memory.TripName || null,
       createdAt: memory.createdAt || memory.CreatedAt
@@ -422,6 +428,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   saveMemory() {
     const userId = localStorage.getItem('userId');
+    const fullName = localStorage.getItem('userName');
     if (!userId) {
       this.showWarning('Login required', 'Please log in to save memories.');
       return;
@@ -432,6 +439,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     const body = {
       ...this.newMemory,
       userId,
+      fullName,
       isPublic: this.newMemory.isPublic,
       tripId: this.selectedTrip?.id || null,
       tripName: this.selectedTrip?.tripName || null
@@ -619,6 +627,13 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
          </div>`
       : '';
 
+    const likedUsersHtml = memory.isPublic && memory.likedByUsers && memory.likedByUsers.length > 0
+      ? `<div class="popup-liked-users">
+           <span class="popup-liked-label">Liked by:</span>
+           <span class="popup-liked-names">${memory.likedByUsers.map((u: string) => this.escapeHtml(u)).join(', ')}</span>
+         </div>`
+      : '';
+
     return `
       <div class="map-popup" data-memory-id="${id}">
         <div class="popup-image-wrap view-big-image" data-memory-id="${id}" title="Click to view full size">
@@ -642,6 +657,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
           </p>
 
           ${likeHtml}
+
+          ${likedUsersHtml}
 
           <div class="popup-actions">
             <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">

@@ -522,7 +522,7 @@ select.form-input {
   z-index: 500;
 }
 
-/* MAP POPUP — bordered image frame */
+/* MAP POPUP */
 :host ::ng-deep .memory-popup-wrapper .leaflet-popup-content-wrapper {
   padding: 0;
   border-radius: 16px;
@@ -541,13 +541,11 @@ select.form-input {
 
 :host ::ng-deep .map-popup { font-family: var(--font); color: var(--ink); }
 
-/* Outer padding area */
 :host ::ng-deep .popup-image-outer {
   padding: 12px 12px 0;
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
 
-/* Framed image — matches lightbox style */
 :host ::ng-deep .popup-image-wrap {
   position: relative;
   padding: 8px;
@@ -655,6 +653,31 @@ select.form-input {
   font-weight: 700;
   color: var(--brand);
   margin-bottom: 0.65rem;
+}
+
+:host ::ng-deep .popup-liked-users {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .popup-liked-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+:host ::ng-deep .popup-liked-names {
+  font-size: 0.72rem;
+  color: var(--ink);
+  line-height: 1.4;
 }
 
 :host ::ng-deep .popup-actions { display: flex; gap: 0.45rem; }
@@ -942,6 +965,41 @@ select.form-input {
   border-radius: 99px;
 }
 
+.liked-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.85rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.liked-users-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.liked-users-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.liked-user {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: #fff;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
 .lightbox-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -976,7 +1034,6 @@ select.form-input {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleUp { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 
-/* RESPONSIVE */
 @media (max-width: 900px) {
   .main-wrapper { flex-direction: column; height: auto; min-height: 100vh; }
   .sidebar { width: 100%; max-height: 58vh; border-right: none; border-bottom: 1px solid var(--line); order: 2; }
