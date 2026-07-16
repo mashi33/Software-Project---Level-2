@@ -70,8 +70,9 @@ export class ProviderDashboardComponent implements OnInit {
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
         const approvedFleetOnly = data.filter((vehicle: any) => {
-          const currentStatus = vehicle.Status || vehicle.status || '';
-          return currentStatus.trim() !== 'Pending Approval';
+          // checks the admin's verification status
+          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
+          return adminStatus !== 'Pending';
         });
 
         this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
@@ -210,9 +211,11 @@ export class ProviderDashboardComponent implements OnInit {
         (vehicle.VehicleClass || vehicle.vehicleClass || '').toLowerCase().includes(searchTerm) ||
         (vehicle.YearOfManufacture || vehicle.yearOfManufacture || '').toString().includes(searchTerm);
       
-      // Filter by status
-      const currentStatus = vehicle.Status || vehicle.status || '';
-      const matchesStatus = !statusFilter || currentStatus === statusFilter;
+      // Filter by checking the boolean
+      const isAvailable = vehicle.isAvailableForBooking === true || vehicle.IsAvailableForBooking === true;
+      const matchesStatus = !statusFilter || 
+                            (statusFilter === 'Available' && isAvailable) || 
+                            (statusFilter === 'Unavailable' && !isAvailable);
       
       return matchesSearch && matchesStatus;
     });
@@ -270,32 +273,26 @@ export class ProviderDashboardComponent implements OnInit {
   toggleAvailability(vehicle: any) {
     const targetId = vehicle.id || vehicle._id;
     
-    // Force read both uppercase and lowercase properties cleanly
-    const currentStatus = vehicle.Status || vehicle.status || '';
-    
-    // If it's currently Available, flip it to Unavailable. Otherwise, set it to Available.
-    const nextStatus = (currentStatus === 'Available') ? 'Unavailable' : 'Available';
+    // Determine the current boolean state and flip it
+    const currentlyAvailable = vehicle.isAvailableForBooking === true || vehicle.IsAvailableForBooking === true;
+    const nextStatus = !currentlyAvailable;
 
-    // Optimistically update the property value in frontend memory so the checkmark changes instantly
-    if (vehicle.hasOwnProperty('Status')) {
-      vehicle.Status = nextStatus;
-    } else {
-      vehicle.status = nextStatus;
-    }
+    // Optimistically update the property value in frontend memory so the toggle slides instantly
+    vehicle.isAvailableForBooking = nextStatus;
+    vehicle.IsAvailableForBooking = nextStatus;
 
     // Call your service to update MongoDB
-    this.vehicleService.updateAvailability(targetId, nextStatus === 'Available').subscribe({
+    this.vehicleService.updateAvailability(targetId, nextStatus).subscribe({
       next: () => {
-        console.log(`⚡ Availability status successfully synchronized to: ${nextStatus}`);
+        console.log(`⚡ Availability successfully synchronized to: ${nextStatus}`);
         Swal.fire({
           toast: true,
           position: 'top-end',
           icon: 'success',
-          title: `Status set to ${nextStatus}`,
+          title: `Vehicle is now ${nextStatus ? 'Live' : 'Hidden'}`,
           showConfirmButton: false,
           timer: 2000
         });
-        this.loadAll(); // Reload metrics and stats
       },
       error: (err) => {
         console.error('Error saving checkbox state:', err);

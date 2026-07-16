@@ -174,7 +174,7 @@
       </td>
 
       <td class="provider-submission-date">
-        {{ getSubmissionDate(p) }}
+        {{ p.createdAt | date:'mediumDate' }}
       </td>
       
       <td>
@@ -310,6 +310,9 @@
         <div class="fleet-stat-pill" style="background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
           <i class="bi bi-clock"></i> {{ getVehiclesByStatus('Pending').length }} Pending
         </div>
+        <div class="fleet-stat-pill" style="background: #fef2f2; color: #991b1b; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+          <i class="bi bi-x-circle"></i> {{ getVehiclesByStatus('Rejected').length }} Rejected
+        </div>
         <div class="fleet-stat-pill" style="background: #dbeafe; color: #1d4ed8; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
           <i class="bi bi-calendar-check"></i> {{ getBookedVehiclesCount() }} Booked
         </div>
@@ -325,7 +328,6 @@
       <option value="approved">Approved</option>
       <option value="pending">Pending</option>
       <option value="rejected">Rejected</option>
-      <option value="unavailable">Unavailable</option>
     </select>
     <select class="costs-filter" [(ngModel)]="fleetTypeFilter">
       <option value="all">All Types</option>
@@ -345,9 +347,11 @@
       <div style="position: relative;">
         <img [src]="v.exteriorPhoto || v.ExteriorPhoto || 'assets/placeholder-car.jpg'" 
              style="width: 100%; height: 200px; object-fit: cover;">
-        <div class="fleet-status-badge" [ngClass]="getFleetStatusClass(v.status || v.Status)">
-          {{ v.status || v.Status || 'Unknown' }}
+
+        <div class="fleet-status-badge" [ngClass]="getFleetStatusClass(v.adminVerificationStatus || v.AdminVerificationStatus)">
+          {{ v.adminVerificationStatus || v.AdminVerificationStatus || 'Unknown' }}
         </div>
+
         <div *ngIf="isVehicleBooked(v)" class="fleet-booking-badge">
           <i class="bi bi-calendar-x"></i> Booked
         </div>
@@ -409,10 +413,10 @@
           <button class="btn-ctrl-vibrant" style="flex: 1; padding: 10px; background: #e0f2fe; color: #0369a1; border: none; border-radius: 8px;" (click)="viewVehicleDetails(v)">
             <i class="bi bi-eye"></i> View Details
           </button>
-          <button *ngIf="(v.status || v.Status) === 'Pending'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #dcfce7; color: #166534; border: none; border-radius: 8px;" (click)="confirmApproval(v)">
+          <button *ngIf="(v.adminVerificationStatus || v.AdminVerificationStatus) !== 'Approved'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #dcfce7; color: #166534; border: none; border-radius: 8px;" (click)="confirmApproval(v)" title="Approve">
             <i class="bi bi-check-lg"></i>
           </button>
-          <button *ngIf="(v.status || v.Status) === 'Pending'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #fef2f2; color: #991b1b; border: none; border-radius: 8px;" (click)="confirmReject(v)">
+          <button *ngIf="(v.adminVerificationStatus || v.AdminVerificationStatus) !== 'Rejected'" class="btn-ctrl-vibrant" style="padding: 10px 16px; background: #fef2f2; color: #991b1b; border: none; border-radius: 8px;" (click)="confirmReject(v)" title="Reject">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
@@ -790,8 +794,18 @@
       <div class="modal-footer" style="background: #f8fafc; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
         <button class="btn-cancel" style="background: #ffffff; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 10px; font-weight: 600;" (click)="selectedProvider = null">Close Review</button>
         <div class="action-group" style="display: flex; gap: 12px;">
-          <button class="btn-ctrl-vibrant btn-delete-ink" style="padding: 10px 22px; font-size: 0.9rem;" (click)="confirmReject(selectedProvider)">Reject Request</button>
-          <button class="btn-ctrl-vibrant" style="background-color: #10b981; color: #ffffff; padding: 10px 22px; font-size: 0.9rem; border: none; border-radius: 10px;" (click)="confirmApproval(selectedProvider)">Approve Vehicle</button>
+          <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Rejected'" 
+                  class="btn-ctrl-vibrant btn-delete-ink" 
+                  style="padding: 10px 22px; font-size: 0.9rem;" 
+                  (click)="confirmReject(selectedProvider)">
+            Reject Vehicle
+          </button>
+          <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Approved'" 
+                  class="btn-ctrl-vibrant" 
+                  style="background-color: #10b981; color: #ffffff; padding: 10px 22px; font-size: 0.9rem; border: none; border-radius: 10px;" 
+                  (click)="confirmApproval(selectedProvider)">
+            Approve Vehicle
+          </button>
         </div>
       </div>
 

@@ -75,11 +75,16 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("RevenueLicenseExpiry")]
         public string? RevenueLicenseExpiry { get; set; }
 
-        // Verification Status
-        [BsonElement("IsVerified")]
-        public bool IsVerified { get; set; } = false;              // Becomes TRUE only after Admin check
-        [BsonElement("Status")]
-        public string Status { get; set; } = "Pending";           // "Pending", "Approved", or "Rejected"
+        // Verification & Availability Status
+        [BsonElement("AdminVerificationStatus")]
+        public string AdminVerificationStatus { get; set; } = "Pending"; // "Pending", "Approved", or "Rejected"
+
+        [BsonElement("IsAvailableForBooking")]
+        public bool IsAvailableForBooking { get; set; } = false; // True if they want to accept bookings
+        
+        [BsonElement("CreatedAt")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Extra Amenities
         [BsonElement("Features")]

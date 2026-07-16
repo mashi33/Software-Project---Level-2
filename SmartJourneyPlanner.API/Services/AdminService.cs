@@ -33,7 +33,7 @@ namespace SmartJourneyPlanner.API.Services
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
-                .Find(v => v.IsVerified == true && v.Status == "Available")
+                .Find(v => v.AdminVerificationStatus == "Approved" && v.IsAvailableForBooking == true)
                 .ToListAsync();
         }
 
@@ -44,11 +44,8 @@ namespace SmartJourneyPlanner.API.Services
          */
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
         {
-            var pendingFilter = Builders<TransportVehicle>.Filter.Or(
-                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending"),
-                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending Approval")
-            );
-
+            var pendingFilter = Builders<TransportVehicle>.Filter.Eq(v => v.AdminVerificationStatus, "Pending");
+            
             return await _vehiclesCollection
                 .Find(pendingFilter)
                 .ToListAsync();
@@ -74,12 +71,9 @@ namespace SmartJourneyPlanner.API.Services
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
 
-            var isApproved = newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase);
-
             var update = Builders<TransportVehicle>.Update
-                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus)
-                .Set(v => v.IsVerified, isApproved);
-            
+                .Set(v => v.AdminVerificationStatus, newStatus);
+                
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
