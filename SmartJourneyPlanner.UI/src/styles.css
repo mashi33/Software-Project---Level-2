@@ -51,64 +51,47 @@ app-root {
 
 
 
-/* ==========================================================================
-   📍 MAP POPUP LIKE BUTTON STYLES
-   ========================================================================== */
+/* MAP POPUP LIKE BUTTON STYLES */
 
-/* ලයික් බටන් එක අඩංගු වන කන්ටේනරය (Spacing සකස් කිරීම) */
 .popup-like-section {
   display: flex;
   justify-content: flex-start;
   margin-top: 8px;
   margin-bottom: 4px;
 }
-
-/* 🛑 සිතියමේ ඇති කැත කළු බෝඩරය සම්පූර්ණයෙන්ම ඉවත් කළ නව බටන් ස්ටයිල් එක */
-.popup-like-btn {
-  /* පසුබිම සහ වර්ණ (මෘදු රෝස තේමාව) */
-  background-color: rgba(255, 75, 110, 0.08); /* 8% ක පාරදෘශ්‍ය ලා රෝස පැහැයක් */
-  color: #ff4b6e; /* ප්‍රධාන රෝස/රතු වර්ණය */
-  
-  /* බෝඩර් සහ අවුට්ලයින් ඉවත් කිරීම */
-  border: none;      /* ❌ කළු බෝඩරය ඉවත් කළා */
-  outline: none;     /* ❌ ක්ලික් කිරීමේදී එන නිල්/කළු ලයින් එක ඉවත් කළා */
-  
-  /* ප්‍රමාණය සහ හැඩය (Pill-shaped Design) */
+popup-like-btn {
+  background-color: rgba(255, 75, 110, 0.08); 
+  color: #ff4b6e;
+  border: none;     
+  outline: none;   
   padding: 6px 14px;
   border-radius: 20px;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
-  
-  /* ක්‍රියාකාරීත්වය (UX) */
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px; /* ඉමෝජි එක සහ අකුරු අතර පරතරය */
-  transition: all 0.2s ease-in-out; /* සුමටව වර්ණ වෙනස් වීමට */
+  gap: 4px; 
+  transition: all 0.2s ease-in-out; 
 }
 
-/* බටන් එක ඇතුළේ ඇති ලයික් සංඛ්‍යාව පෙන්වන Span කොටස */
 .like-num {
   font-weight: 700;
   margin-left: 2px;
 }
 
-/* 🖱️ බටන් එක උඩට මောက်ස් එක ගෙනියන විට (Hover Effect) */
 .popup-like-btn:hover {
   background-color: #ff4b6e;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(255, 75, 110, 0.25); /* සැහැල්ලු හෙවනැල්ලක් */
-  transform: translateY(-1px); /* මඳක් උඩට එසවීම */
+  box-shadow: 0 4px 10px rgba(255, 75, 110, 0.25); 
+  transform: translateY(-1px);
 }
 
-/* 👆 බටන් එක ක්ලික් කරන මොහොතේ (Active/Click Effect) */
 .popup-like-btn:active {
-  transform: scale(0.95); /* බටන් එක මඳක් කුඩා වී Tactile Feedback එකක් ලබා දේ */
+  transform: scale(0.95); 
 }
 
-
-/* Cluster එකේ අංකය පෙන්වන ප්‍රධාන කවය */
 .custom-cluster-icon {
   background: #2779b5;
   color: #ffffff;
@@ -121,25 +104,22 @@ app-root {
   justify-content: center;
   font-weight: bold;
   font-size: 16px;
-  border: 3px solid rgba(255, 255, 255, 0.9); /* සුදු පැහැති මායිමක් */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* සෙවනැල්ලක් (Shadow) */
+  border: 3px solid rgba(255, 255, 255, 0.9); 
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
   transition: transform 0.2s ease-in-out;
 }
 
-/* Cluster එක මත මවුස් එක තැබූ විට (Hover) එය තරමක් විශාල වීම */
 .custom-cluster-icon:hover {
   transform: scale(1.1);
   background: #1e6396;
 }
 
-/* අයිකනය වටා ඇති wrapper එක */
 .my-cluster-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* කුඩා අංකයට සෙවනැල්ලක් (Shadow) එකතු කිරීම */
 .custom-cluster-icon span {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }

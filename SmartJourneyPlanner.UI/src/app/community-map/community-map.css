@@ -349,7 +349,7 @@
   gap: 0.25rem;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--like);
+  color: #be123c;
 }
 
 .album-action-buttons {
@@ -381,11 +381,11 @@
 }
 
 .like-btn:hover { background: var(--like-soft); border-color: #fecdd3; }
-.like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: var(--like); }
+.like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: #be123c; }
 .like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .album-like-btn:hover { background: var(--like-soft); border-color: #fecdd3; }
-.album-like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: var(--like); }
+.album-like-btn.liked { background: var(--like-soft); border-color: #fecdd3; color: #be123c; }
 .album-like-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .see-more-container { margin-top: 0.5rem; }
@@ -619,13 +619,13 @@
 :host ::ng-deep .popup-btn-view:hover { background: var(--brand); color: #fff; }
 
 :host ::ng-deep .popup-btn-like {
-  color: var(--like);
-  background: var(--like-soft);
-  border: 1px solid #fecdd3;
+  color: #be123c;
+  background: #fecdd3;
+  border: 1px solid #f97a89;
 }
 
 :host ::ng-deep .popup-btn-like:hover,:host ::ng-deep .popup-btn-like.liked {
-  background: var(--like);
+  background: #be123c;
   color: #fff;
   border-color: var(--like);
 }
@@ -884,19 +884,19 @@
   border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
-  color: var(--like);
-  background: var(--like-soft);
+  color: #be123c;
+  background: #fff1f2;
   border: 1px solid #fecdd3;
 }
 
 .btn-like-memory:hover,.btn-like-album:hover {
-  background: var(--like);
+  background: #be123c;
   color: #fff;
   border-color: var(--like);
 }
 
 .btn-like-memory.liked,.btn-like-album.liked {
-  background: var(--like);
+  background: #be123c;
   color: #fff;
   border-color: var(--like);
 }
