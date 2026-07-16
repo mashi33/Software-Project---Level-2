@@ -20,21 +20,70 @@
     <div class="column-half left-column">
       
       <div class="card glass-card creation-box">
-        <input type="text" [(ngModel)]="newTrip.title" placeholder="Vote Title (Min 3 chars & 1 Vowel)" class="minimal-input">
-        
-        <div *ngIf="newTrip.title && !validateTitle(newTrip.title)" style="color: #ff6b6b; font-size: 11px; margin-top: -10px; margin-bottom: 10px; padding-left: 5px;">
+
+        <!-- ── TITLE INPUT + PLACES AUTOCOMPLETE ── -->
+        <div style="position: relative; width: 100%;">
+          <input
+            type="text"
+            [(ngModel)]="newTrip.title"
+            (ngModelChange)="onTitleInput()"
+            [placeholder]="newTrip.type === 'Trip' ? 'Search a place... (e.g. Kandy, Ella)' : 'Vote Title (Min 3 chars & 1 Vowel)'"
+            class="minimal-input"
+            (blur)="showSuggestions = false"
+            autocomplete="off">
+
+          <!-- Valid / invalid badge — Trip type only -->
+          <span
+            *ngIf="newTrip.type === 'Trip' && newTrip.title"
+            style="position: absolute; right: 10px; top: 50%;
+                   transform: translateY(-50%); font-size: 11px; pointer-events: none;"
+            [style.color]="isPlaceValid ? '#1D9E75' : '#E24B4A'">
+            {{ isPlaceValid ? '✔ Valid place' : '⚠ Select a place' }}
+          </span>
+
+          <!-- Autocomplete dropdown -->
+          <div
+            *ngIf="showSuggestions && placeSuggestions.length > 0"
+            style="position: absolute; z-index: 999; width: 100%; top: 100%; left: 0;
+                   background: var(--color-background-primary, #fff);
+                   border: 0.5px solid rgba(0,0,0,0.15);
+                   border-radius: 8px; overflow: hidden;">
+            <div
+              *ngFor="let p of placeSuggestions"
+              (mousedown)="selectPlace(p)"
+              style="padding: 10px 14px; font-size: 13px; cursor: pointer;
+                     color: inherit;
+                     border-bottom: 0.5px solid rgba(0,0,0,0.08);"
+              onmouseenter="this.style.background='rgba(0,0,0,0.04)'"
+              onmouseleave="this.style.background='transparent'">
+              📍 {{ p.description }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Title validation warning -->
+        <div *ngIf="newTrip.title && !validateTitle(newTrip.title)"
+             style="color: #ff6b6b; font-size: 11px; margin-top: 4px; margin-bottom: 6px; padding-left: 5px;">
           ⚠ Please enter a meaningful title (At least 3 letters and 1 vowel).
+        </div>
+
+        <!-- Place not selected warning — Trip type only -->
+        <div *ngIf="newTrip.type === 'Trip' && newTrip.title && validateTitle(newTrip.title) && !isPlaceValid"
+             style="color: #f59e0b; font-size: 11px; margin-top: 4px; margin-bottom: 6px; padding-left: 5px;">
+          ⚠ Please select a valid place from the suggestions.
         </div>
 
         <textarea [(ngModel)]="newTrip.description" placeholder="Description..." class="minimal-input description-area"></textarea>
         
         <div class="radio-group">
           <label class="radio-label">
-            <input type="radio" name="tripType" [(ngModel)]="newTrip.type" value="Trip">
+            <input type="radio" name="tripType" [(ngModel)]="newTrip.type"
+                   value="Trip" (change)="onTypeChange()">
             <span>Trip (Agree/Disagree)</span>
           </label>
           <label class="radio-label">
-            <input type="radio" name="tripType" [(ngModel)]="newTrip.type" value="Other">
+            <input type="radio" name="tripType" [(ngModel)]="newTrip.type"
+                   value="Other" (change)="onTypeChange()">
             <span>Other (Poll)</span>
           </label>
         </div>
@@ -47,15 +96,16 @@
           <button type="button" (click)="addOptionField()" class="btn-add-option">+ Add Option</button>
         </div>
 
+        <!-- isReadyToPost()  — If Trip option check validation of place  -->
         <button (click)="addNewTrip()" 
                 class="btn-post-main" 
-                [disabled]="!validateTitle(newTrip.title)">
+                [disabled]="!isReadyToPost()">
           Post Suggestion
         </button>
       </div>
 
       <div class="discussion-list">
-        <div *ngFor="let item of discussions">
+        <div *ngFor="let item of sortedDiscussions">
           <div class="card glass-card vote-display" 
                [ngClass]="{'locked-card': item.isConfirmed, 'rejected-card': item.isRejected}"
                *ngIf="item && item.title">
@@ -73,7 +123,7 @@
                   {{ item.isConfirmed ? '✔ Confirmed' : (item.isRejected ? '✖ Rejected' : '🕒 Pending') }}
                 </span>
                 <small class="voted-count-tag" *ngIf="item.type === 'Trip'">
-                  Voted: {{ (item.userVotes?.length || 0) }}/{{ (item.memberLimit ) }}
+                  Voted: {{ (item.votedUsers?.length || 0) }}/{{ (item.memberLimit ) }}
                 </small>
               </div>
             </div>
@@ -84,7 +134,7 @@
               <div class="vote-action-container">
                 <button class="vote-btn agree" 
                         [disabled]="isVotingDisabled(item)"
-                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Agree'}"
+                        [ngClass]="{'active': getMyVote(item) === 'Agree'}"
                         (click)="castVote(item.id, 'Agree')">
                   <span class="btn-label">Agree</span>
                   <span class="vote-count-label">{{ item.options[0]?.voteCount || 0 }} votes</span>
@@ -92,7 +142,7 @@
                 
                 <button class="vote-btn disagree" 
                         [disabled]="isVotingDisabled(item)"
-                        [ngClass]="{'active': item.userVotes?.[0]?.optionText === 'Disagree'}"
+                        [ngClass]="{'active': getMyVote(item) === 'Disagree'}"
                         (click)="castVote(item.id, 'Disagree')">
                   <span class="btn-label">Disagree</span>
                   <span class="vote-count-label">{{ item.options[1]?.voteCount || 0 }} votes</span>
@@ -113,7 +163,7 @@
               <div *ngFor="let opt of item.options; let i = index" 
                    (click)="!isVotingDisabled(item) && castVote(item.id, opt.optionText)" 
                    class="poll-bar-wrapper" 
-                   [ngClass]="{'active': item.userVotes?.[0]?.optionText === opt.optionText, 'poll-locked': isVotingDisabled(item)}"
+                   [ngClass]="{'active': getMyVote(item) === opt.optionText, 'poll-locked': isVotingDisabled(item)}"
                    style="cursor: pointer;">
                 <div class="poll-bar-info">
                   <div class="opt-left-content" style="display: flex; align-items: center; gap: 10px;">
@@ -149,16 +199,16 @@
       </div>
     </div>
 
-   <app-comments 
-  [selectedTripId]="selectedTripId" 
-  class="column-half right-column glass-chat-panel">
-</app-comments>
+    <app-comments 
+      [selectedTripId]="selectedTripId" 
+      class="column-half right-column glass-chat-panel">
+    </app-comments>
   </div>
 
   <div class="navigation-footer">
-    <button class="nav-btn" (click)="showNotReadyAlert()">
+    <button class="nav-btn" (click)="navigateToDashboard()">
       <i class="material-icons">dashboard</i> Back to Dashboard
-    </button>
+  </button>
     <button class="nav-btn" (click)="navigateToSummary()">
       <i class="material-icons">summarize</i> View Summary
     </button>

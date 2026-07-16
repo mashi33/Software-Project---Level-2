@@ -291,9 +291,18 @@
         </div>
       </div>
 
-      <div class="like-badge-lightbox" *ngIf="selectedMemory?.isPublic">
+      <div class="like-badge-lightbox" *ngIf="selectedMemory?.isPublic" (click)="toggleLikedUsers()" style="cursor: pointer;">
         <i class="bi bi-heart-fill"></i>
         {{ selectedMemory?.likeCount || 0 }} loved this
+        <i class="bi bi-chevron-down" *ngIf="!showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
+        <i class="bi bi-chevron-up" *ngIf="showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
+      </div>
+
+      <div class="liked-users-list" *ngIf="selectedMemory?.isPublic && selectedMemory?.likedByUsers?.length > 0 && showLikedUsers">
+        <span class="liked-users-label">Liked by:</span>
+        <div class="liked-users-names">
+          <span class="liked-user" *ngFor="let user of selectedMemory.likedByUsers">{{ user }}</span>
+        </div>
       </div>
 
       <div class="lightbox-action-row">

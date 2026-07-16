@@ -46,6 +46,8 @@ namespace SmartJourneyPlanner.Models
         public string Distance { get; set; } = string.Empty;
         public string Duration { get; set; } = string.Empty;
         public string Polyline { get; set; } = string.Empty; // Encoded polyline for drawing the route on a map
+        public double? EstimatedPetrolCost { get; set; } // ✅ Petrol vehicle  cost
+        public double? EstimatedDieselCost { get; set; } // ✅ Diesel vehicle  cost
     }
 
     /// <summary>

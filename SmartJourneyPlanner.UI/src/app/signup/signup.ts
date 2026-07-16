@@ -38,8 +38,13 @@ export class Signup {
       return;
     }
 
-    if (!this.signupData.Password || this.signupData.Password.length < 8) {
-      alert('Password must be at least 8 characters long!');
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(this.signupData.Password)) {
+      alert(
+        'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.'
+      );
       return;
     }
 

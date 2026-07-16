@@ -17,15 +17,41 @@ namespace SmartJourneyPlanner.Services
     {
         private readonly IMongoCollection<SavedRoute> _routeCollection;
         private readonly string _apiKey;
+        private readonly FuelPriceService _fuelPriceService; // ✅ field declare
+
+        // Average fuel consumption per vehicle type (litres per 100km)
+        private const double AVG_PETROL_CONSUMPTION = 7.5;
+        private const double AVG_DIESEL_CONSUMPTION = 6.5;
 
         /// <summary>
-        /// Initializes the service with a MongoDB client and app configuration.
+        /// Initializes the service with a MongoDB client, app configuration, and fuel price service.
         /// </summary>
-        public RouteService(IMongoClient client, IConfiguration config)
+        public RouteService(IMongoClient client, IConfiguration config, FuelPriceService fuelPriceService) // ✅ parameter add
         {
             var database = client.GetDatabase("SmartJourneyDb");
             _routeCollection = database.GetCollection<SavedRoute>("SavedRoutes");
             _apiKey = config["GoogleApi:ApiKey"] ?? string.Empty;
+            _fuelPriceService = fuelPriceService; // ✅ assign
+        }
+
+        /// <summary>
+        /// Calculates estimated petrol and diesel fuel costs for a given distance.
+        /// Returns null for either if the live price could not be fetched.
+        /// </summary>
+        private async Task<(double? petrolCost, double? dieselCost)> CalculateFuelCosts(double distanceMeters)
+        {
+            var (petrolPrice, dieselPrice) = await _fuelPriceService.GetFuelPricesAsync();
+            double distanceKm = distanceMeters / 1000;
+
+            double? petrolCost = petrolPrice.HasValue
+                ? Math.Round((distanceKm / 100) * AVG_PETROL_CONSUMPTION * petrolPrice.Value, 2)
+                : null;
+
+            double? dieselCost = dieselPrice.HasValue
+                ? Math.Round((distanceKm / 100) * AVG_DIESEL_CONSUMPTION * dieselPrice.Value, 2)
+                : null;
+
+            return (petrolCost, dieselCost);
         }
 
         /// <summary>
@@ -46,10 +72,10 @@ namespace SmartJourneyPlanner.Services
                 return new OkObjectResult(existingRoute);
             }
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-
             try
             {
+                // ✅ ServicePointManager removed — obsolete in .NET 6+
+                // HttpClient handles TLS automatically
                 using var handler = new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(30);
@@ -148,15 +174,38 @@ namespace SmartJourneyPlanner.Services
                 }
                 catch (Exception ex) { Console.WriteLine("Scenic Viewpoints Error: " + ex.Message); }
 
+                // ✅ Calculate fuel costs for all 3 routes using live CPC prices
+                var (fastestPetrol, fastestDiesel)   = await CalculateFuelCosts(fRoute.GetProperty("distanceMeters").GetDouble());
+                var (cheapestPetrol, cheapestDiesel) = await CalculateFuelCosts(cRoute.GetProperty("distanceMeters").GetDouble());
+                var (scenicPetrol, scenicDiesel)     = await CalculateFuelCosts(sRoute.GetProperty("distanceMeters").GetDouble());
+
                 // Build the final route object and save it to MongoDB for future cache hits
                 var newRoute = new SavedRoute
                 {
                     Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                     StartLocation = req.Start,
                     EndLocation = req.End,
-                    Fastest = new RouteDetail { Distance = fRoute.GetProperty("distanceMeters").ToString() + "m", Duration = fRoute.GetProperty("duration").GetString(), Polyline = fRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString() },
-                    Cheapest = new RouteDetail { Distance = cRoute.GetProperty("distanceMeters").ToString() + "m", Duration = cRoute.GetProperty("duration").GetString(), Polyline = cRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString() },
-                    Scenic = new RouteDetail { Distance = sRoute.GetProperty("distanceMeters").ToString() + "m", Duration = sRoute.GetProperty("duration").GetString(), Polyline = sRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString() },
+                    Fastest = new RouteDetail {
+                        Distance = fRoute.GetProperty("distanceMeters").ToString() + "m",
+                        Duration = fRoute.GetProperty("duration").GetString() ?? string.Empty,
+                        Polyline = fRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
+                        EstimatedPetrolCost = fastestPetrol,
+                        EstimatedDieselCost = fastestDiesel
+                    },
+                    Cheapest = new RouteDetail {
+                        Distance = cRoute.GetProperty("distanceMeters").ToString() + "m",
+                        Duration = cRoute.GetProperty("duration").GetString() ?? string.Empty  ,
+                        Polyline = cRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
+                        EstimatedPetrolCost = cheapestPetrol,
+                        EstimatedDieselCost = cheapestDiesel
+                    },
+                    Scenic = new RouteDetail {
+                        Distance = sRoute.GetProperty("distanceMeters").ToString() + "m",
+                        Duration = sRoute.GetProperty("duration").GetString() ?? string.Empty,
+                        Polyline = sRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
+                        EstimatedPetrolCost = scenicPetrol,
+                        EstimatedDieselCost = scenicDiesel
+                    },
                     ScenicViewpoints = scenicViewpoints
                 };
 

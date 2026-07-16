@@ -43,6 +43,9 @@ export class RouteOptimization implements OnInit, OnDestroy {
   startMarkerOptions: any = {};
   endMarkerOptions: any = {};
 
+  // ✅ Scenic pin — created ONCE in initMarkerOptions(), reused via [content]="scenicPinElement"
+  scenicPinElement!: HTMLElement;
+
   // Pre-computed distance cache — avoids O(n) recalculation on every render cycle
   // Key: "lat_lng", Value: formatted distance string
   private distanceCache = new Map<string, string>();
@@ -165,6 +168,18 @@ export class RouteOptimization implements OnInit, OnDestroy {
         fontSize: '13px'
       }
     };
+    const pin = document.createElement('div');
+    pin.style.cssText = `
+      width: 14px;
+      height: 14px;
+      background-color: #f59e0b;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+  `;
+  this.scenicPinElement = pin;
+    
   }
 
   
@@ -408,15 +423,21 @@ export class RouteOptimization implements OnInit, OnDestroy {
       allRoutes: {
         fastest: this.results?.fastest ? {
           distance: this.formatDistance(this.results.fastest.distance),
-          duration: this.formatDuration(this.results.fastest.duration)
+          duration: this.formatDuration(this.results.fastest.duration),
+          petrolCost: this.results.fastest.estimatedPetrolCost ?? null, // ✅
+          dieselCost: this.results.fastest.estimatedDieselCost ?? null  // ✅
         } : null,
         scenic: this.results?.scenic ? {
           distance: this.formatDistance(this.results.scenic.distance),
-          duration: this.formatDuration(this.results.scenic.duration)
+          duration: this.formatDuration(this.results.scenic.duration),
+          petrolCost: this.results.scenic.estimatedPetrolCost ?? null,  // ✅
+          dieselCost: this.results.scenic.estimatedDieselCost ?? null   // ✅
         } : null,
         cheapest: this.results?.cheapest ? {
           distance: this.formatDistance(this.results.cheapest.distance),
-          duration: this.formatDuration(this.results.cheapest.duration)
+          duration: this.formatDuration(this.results.cheapest.duration),
+          petrolCost: this.results.cheapest.estimatedPetrolCost ?? null, // ✅
+          dieselCost: this.results.cheapest.estimatedDieselCost ?? null  // ✅
         } : null
       }
     };

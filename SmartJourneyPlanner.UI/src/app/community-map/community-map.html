@@ -36,7 +36,8 @@
                  (keyup.enter)="filterMemories()"
                  (input)="filterMemories()"
                  class="search-input"
-                 placeholder="Search city (e.g. Galle, Kandy)...">
+                 placeholder="Search city (e.g. Galle, Kandy)..."
+                 autocomplete="off">
           <button (click)="filterMemories()" class="btn-find" type="button">
             <i class="bi bi-search"></i> Find
           </button>
@@ -58,7 +59,7 @@
                    (click)="openTopRatedMemory(memory)">
             <div class="rank-badge">#{{ i + 1 }}</div>
             <div class="img-container">
-              <img [src]="memory.imageUrl" class="thumb-img" [alt]="memory.title">
+              <img [src]="memory.imageUrl" class="thumb-img" [alt]="memory.title" loading="lazy">
               <span class="album-badge">
                 <i class="bi bi-star-fill"></i> {{ getPriorityScore(memory) | number:'1.1' }}
               </span>
@@ -77,6 +78,7 @@
               <button class="card-action-btn like-btn"
                       [class.liked]="hasUserLiked(memory)"
                       [disabled]="albumLikeInProgress"
+                      [title]="hasUserLiked(memory) ? 'Unlike this memory' : 'Like this memory'"
                       (click)="toggleLike(memory.id, $event)">
                 <i class="bi" [class.bi-heart-fill]="hasUserLiked(memory)" [class.bi-heart]="!hasUserLiked(memory)"></i>
               </button>
@@ -117,7 +119,7 @@
                  (mouseleave)="stopSlideshow(album)"
                  (click)="openAlbum(album)">
           <div class="img-container">
-            <img [src]="album.currentDisplayImage || album.latestImage" class="thumb-img" [alt]="album.tripName">
+            <img [src]="album.currentDisplayImage || album.latestImage" class="thumb-img" [alt]="album.tripName" loading="lazy">
             <span class="album-badge">
               <i class="bi bi-images"></i> {{ album.memories.length }}
             </span>
@@ -126,9 +128,7 @@
           <div class="thumb-info">
             <div class="thumb-trip">{{ album.tripName }}</div>
             <div class="thumb-text">{{ album.memories[0]?.title || 'Trip Memories' }}</div>
-            <div class="thumb-author" *ngIf="album.memories[0]?.fullName">
-              <i class="bi bi-person-circle"></i> {{ album.memories[0]?.fullName }}
-            </div>
+            
             <div class="thumb-dates" *ngIf="getOldestCreatedAt(album) as oldest">
               <i class="bi bi-calendar3"></i>
               <span>{{ oldest | date:'mediumDate' }}</span>
@@ -211,7 +211,7 @@
     <div class="lightbox-details">
       <div class="lightbox-header">
         <span class="trip-name-badge">
-          {{ selectedAlbum?.tripName || selectedMemory?.tripName || 'Community Trip' }}
+          {{ selectedAlbum?.tripName || selectedMemory?.tripName || 'Unknown Trip' }}
         </span>
         <span class="visibility-chip public">Public</span>
       </div>
@@ -255,6 +255,7 @@
       <div class="lightbox-like-row">
         <button class="btn-like-memory"
                 [class.liked]="selectedMemory && hasUserLiked(selectedMemory)"
+                [title]="selectedMemory && hasUserLiked(selectedMemory) ? 'Unlike this memory' : 'Like this memory'"
                 (click)="toggleLike(selectedMemory?.id, $event)" type="button">
           <i class="bi" [class.bi-heart-fill]="selectedMemory && hasUserLiked(selectedMemory)" [class.bi-heart]="!(selectedMemory && hasUserLiked(selectedMemory))"></i>
           {{ selectedMemory && hasUserLiked(selectedMemory) ? 'Liked' : 'Like this memory' }}
@@ -264,6 +265,7 @@
         <button class="btn-like-album" *ngIf="selectedAlbum"
                 [class.liked]="isAlbumFullyLiked(selectedAlbum)"
                 [disabled]="albumLikeInProgress"
+                [title]="isAlbumFullyLiked(selectedAlbum) ? 'Unlike entire album' : 'Like entire album'"
                 (click)="toggleAlbumLike(selectedAlbum, $event)" type="button">
           <i class="bi" [class.bi-heart-fill]="isAlbumFullyLiked(selectedAlbum)" [class.bi-heart]="!isAlbumFullyLiked(selectedAlbum)"></i>
           {{ isAlbumFullyLiked(selectedAlbum) ? 'Album liked' : 'Like entire album' }}

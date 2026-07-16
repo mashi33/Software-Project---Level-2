@@ -36,8 +36,8 @@ export class MemoryService {
     );
   }
 
-  toggleLike(memoryId: string, userId: string): Observable<TripMemory> {
-    const payload = { userId };
+  toggleLike(memoryId: string, userId: string, fullName: string): Observable<TripMemory> {
+    const payload = { userId, fullName };
     return this.http.post<TripMemory>(`${this.apiUrl}/${memoryId}/like`, payload).pipe(
       timeout(this.requestTimeout)
     );
