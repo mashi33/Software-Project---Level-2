@@ -147,7 +147,7 @@
             <div class="availability-toggle">
               <label class="toggle-label">
                 <input type="checkbox" 
-                       [checked]="(vehicle.Status || vehicle.status) === 'Available' || vehicle.available" 
+                       [checked]="vehicle.isAvailableForBooking || vehicle.IsAvailableForBooking"
                        (change)="toggleAvailability(vehicle)">
                 <span class="toggle-slider"></span>
               </label>

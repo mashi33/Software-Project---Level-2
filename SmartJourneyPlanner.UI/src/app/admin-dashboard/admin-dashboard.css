@@ -504,8 +504,20 @@
 }
 
 .block-actions-col {
-  flex-wrap: wrap;
-  max-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;         
+  gap: 15px;                 
+  min-width: 320px;
+}
+
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start !important; 
+  gap: 8px;                  
+  min-width: 270px;          
 }
 
 .btn-block-temp {

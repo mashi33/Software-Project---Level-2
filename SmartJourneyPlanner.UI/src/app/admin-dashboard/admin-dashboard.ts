@@ -62,10 +62,38 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.adminName = this.authService.getUserName() || 'Admin';
+    
+    // 1. Safely load the counters first
+    this.loadDailyCounters(); 
+    
+    // 2. Then load the rest of the dashboard data
     this.refreshDashboard();
     this.fetchExpenseList();
   }
 
+  // --- NEW METHOD: Add this right below ngOnInit ---
+  loadDailyCounters() {
+    try {
+      const todayString = new Date().toDateString();
+      const savedDate = localStorage.getItem('adminDashboardDate');
+      
+      // If it's a new day (or first time loading), reset storage to zero
+      if (savedDate !== todayString) {
+        localStorage.setItem('adminDashboardDate', todayString);
+        localStorage.setItem('approvedToday', '0');
+        localStorage.setItem('rejectedToday', '0');
+      }
+
+      // Explicitly convert the saved strings back into numbers
+      this.approvedSessionCount = parseInt(localStorage.getItem('approvedToday') || '0', 10);
+      this.rejectedSessionCount = parseInt(localStorage.getItem('rejectedToday') || '0', 10);
+      
+      console.log('📊 Loaded Daily Counters - Approved:', this.approvedSessionCount, 'Rejected:', this.rejectedSessionCount);
+    } catch (e) {
+      console.error('Browser blocked LocalStorage:', e);
+    }
+  }
+  
   getUserRole(user: any): string {
     return user?.userType || user?.UserType || user?.role || 'Unknown';
   }
@@ -352,33 +380,36 @@ confirmReject(provider: any) {
   }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
 }
 
-  updateStatus(provider: any, status: string) {
-  const id = provider._id || provider.id;
-  this.adminService.updateProviderStatus(id, status).subscribe(() => {
-    this.selectedProvider = null;
+ updateStatus(provider: any, status: string) {
+    const id = provider._id || provider.id;
     
-    // INCREMENT THE COUNTERS 
-    if (status === 'Approved') {
-      this.approvedSessionCount++;
-    } else if (status === 'Rejected') {
-      this.rejectedSessionCount++;
-    }
+    this.adminService.updateProviderStatus(id, status).subscribe(() => {
+      this.selectedProvider = null;
+      
+      // Increment the correct counter and immediately save it to the browser
+      if (status === 'Approved') {
+        this.approvedSessionCount++;
+        localStorage.setItem('approvedToday', this.approvedSessionCount.toString());
+      } else if (status === 'Rejected') {
+        this.rejectedSessionCount++;
+        localStorage.setItem('rejectedToday', this.rejectedSessionCount.toString());
+      }
 
-    this.refreshDashboard();
-    Swal.fire('Success', `Vehicle ${status}`, 'success');
-  });
-}
+      this.refreshDashboard();
+      Swal.fire('Success', `Vehicle ${status}`, 'success');
+    });
+  }
 
-fetchAllVehicles() {
-  this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
-    this.allVehicles = data;
-  });
-}
+  fetchAllVehicles() {
+    this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
+      this.allVehicles = data;
+    });
+  }
 
-fetchExpenseList() {
-  this.costsLoading = true;
-  this.adminService.getBudgetDetails().subscribe({
-    next: (data: any) => {
+  fetchExpenseList() {
+    this.costsLoading = true;
+    this.adminService.getBudgetDetails().subscribe({
+      next: (data: any) => {
       // 1. Extract the trips array safely
       const rawTrips = data?.trips || data?.Trips || data || [];
 
@@ -724,17 +755,19 @@ viewExpenditureDetails() {
       const location = (vehicle.providerProfile?.location || vehicle.ProviderProfile?.Location || '').toLowerCase();
       const matchesSearch = !query || vehicleClass.includes(query) || modelName.includes(query) || provider.includes(query) || location.includes(query);
 
-      const status = (vehicle.status || vehicle.Status || '').toLowerCase();
+      const adminStatus = (vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '').toLowerCase();
       const statusFilter = this.fleetStatusFilter.toLowerCase();
-      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || adminStatus === statusFilter;
 
       const typeFilter = this.fleetTypeFilter.toLowerCase();
       const matchesType = typeFilter === 'all' || vehicleClass.includes(typeFilter);
 
       const isBooked = this.isVehicleBooked(vehicle);
+      const isAvailable = vehicle.isAvailableForBooking === true || vehicle.IsAvailableForBooking === true;
+
       const bookingFilter = this.fleetBookingFilter.toLowerCase();
       const matchesBooking = bookingFilter === 'all' || 
-        (bookingFilter === 'available' && !isBooked) || 
+        (bookingFilter === 'available' && !isBooked && isAvailable) || 
         (bookingFilter === 'booked' && isBooked);
 
       return matchesSearch && matchesStatus && matchesType && matchesBooking;
@@ -745,7 +778,7 @@ viewExpenditureDetails() {
     if (!this.allVehicles) return [];
     const target = status.toLowerCase();
     return this.allVehicles.filter(v => {
-      const vStatus = (v.status || v.Status || '').toLowerCase();
+      const vStatus = (v.adminVerificationStatus || v.AdminVerificationStatus || '').toLowerCase();
       if (target === 'pending') {
         return vStatus === 'pending' || vStatus === 'pending approval';
       }
