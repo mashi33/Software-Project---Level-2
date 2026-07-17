@@ -62,33 +62,30 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.adminName = this.authService.getUserName() || 'Admin';
-    
-    // 1. Safely load the counters first
     this.loadDailyCounters(); 
-    
-    // 2. Then load the rest of the dashboard data
     this.refreshDashboard();
     this.fetchExpenseList();
+
+    (window as any).openAdminFullImage = (url: string) => {
+      this.openImage(url);
+    };
   }
 
-  // --- NEW METHOD: Add this right below ngOnInit ---
   loadDailyCounters() {
     try {
       const todayString = new Date().toDateString();
       const savedDate = localStorage.getItem('adminDashboardDate');
       
-      // If it's a new day (or first time loading), reset storage to zero
       if (savedDate !== todayString) {
         localStorage.setItem('adminDashboardDate', todayString);
         localStorage.setItem('approvedToday', '0');
         localStorage.setItem('rejectedToday', '0');
       }
 
-      // Explicitly convert the saved strings back into numbers
       this.approvedSessionCount = parseInt(localStorage.getItem('approvedToday') || '0', 10);
       this.rejectedSessionCount = parseInt(localStorage.getItem('rejectedToday') || '0', 10);
       
-      console.log('📊 Loaded Daily Counters - Approved:', this.approvedSessionCount, 'Rejected:', this.rejectedSessionCount);
+      console.log('Loaded Daily Counters - Approved:', this.approvedSessionCount, 'Rejected:', this.rejectedSessionCount);
     } catch (e) {
       console.error('Browser blocked LocalStorage:', e);
     }
@@ -166,7 +163,6 @@ export class AdminDashboardComponent implements OnInit {
       return matchesSearch && matchesStatus;
     });
 
-    // Apply sorting
     return this.sortBudgetTrips(filtered);
   }
 
@@ -183,13 +179,10 @@ export class AdminDashboardComponent implements OnInit {
           const dateA2 = new Date(a.StartDate || a.startDate || 0).getTime();
           const dateB2 = new Date(b.StartDate || b.startDate || 0).getTime();
           return dateA2 - dateB2;
-
-        // LOGIC FOR SORTING BY SPENT AMOUNT
         case 'spent-desc':
           return this.getTripSpent(b) - this.getTripSpent(a);
         case 'spent-asc':
           return this.getTripSpent(a) - this.getTripSpent(b);
-
         case 'usage-desc':
           return this.getTripUsage(b) - this.getTripUsage(a);
         case 'usage-asc':
@@ -199,6 +192,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
+
   getTripSpent(trip: any): number {
     return trip.totalSpent ?? trip.TotalSpent ?? trip.spent ?? trip.Spent ?? 0;
   }
@@ -208,7 +202,6 @@ export class AdminDashboardComponent implements OnInit {
     if (raw === null || raw === undefined || raw === '') return 0;
 
     if (typeof raw === 'string' && raw.includes('-')) {
-      // Handles a range string like "5000-10000" — take the upper limit
       const parts = raw.split('-').map((p: string) => parseFloat(p.trim()));
       return parts[1] || parts[0] || 0;
     }
@@ -291,102 +284,102 @@ export class AdminDashboardComponent implements OnInit {
   onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
 
   refreshDashboard() {
-  this.adminService.getDashboardStats().subscribe({
-    next: (data) => {
-      console.log("Stats Response:", data); 
-      this.stats = data;
-    },
-    error: (err) => console.error("Error loading stats:", err)
-  });
+    this.adminService.getDashboardStats().subscribe({
+      next: (data) => {
+        console.log("Stats Response:", data); 
+        this.stats = data;
+      },
+      error: (err) => console.error("Error loading stats:", err)
+    });
 
-  this.fetchPendingProviders();
-  this.fetchAllUsers();
-  this.fetchPlatformMemories();
-  this.fetchAllVehicles();
- }
+    this.fetchPendingProviders();
+    this.fetchAllUsers();
+    this.fetchPlatformMemories();
+    this.fetchAllVehicles();
+  }
 
   fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
   fetchAllUsers() { this.adminService.getAllUsers().subscribe(data => this.allUsers = data); }
 
- fetchPlatformMemories() {
-  this.adminService.getAllUploadedMemories().subscribe({
-    next: (data) => {
-      this.allMemories = data;
-    },
-    error: (err) => console.error("Memory Load Error:", err)
-  });
- }
-
- refreshCurrentView() {
-  Swal.fire({
-    title: 'Syncing Data...',
-    text: 'Please wait while we update your current view.',
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    }
-  });
-
-  switch (this.view) {
-    case 'stats':
-      this.refreshDashboard();
-      break;
-    case 'providers':
-      this.fetchPendingProviders();
-      break;
-    case 'memories':
-      this.fetchPlatformMemories();
-      break;
-    case 'users':
-      this.fetchAllUsers();
-      break;
-    case 'fleet-detailed':
-      this.fetchAllVehicles();
-      break;
-    case 'costs':
-      this.fetchExpenseList();
-      break;
+  fetchPlatformMemories() {
+    this.adminService.getAllUploadedMemories().subscribe({
+      next: (data) => {
+        this.allMemories = data;
+      },
+      error: (err) => console.error("Memory Load Error:", err)
+    });
   }
 
-  setTimeout(() => {
+  refreshCurrentView() {
     Swal.fire({
-      icon: 'success',
-      title: 'Sync Successful!',
-      text: 'Your current view is up to date.',
-      timer: 1500,
-      showConfirmButton: false
+      title: 'Syncing Data...',
+      text: 'Please wait while we update your current view.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
     });
-  }, 1000); 
-}
+
+    switch (this.view) {
+      case 'stats':
+        this.refreshDashboard();
+        break;
+      case 'providers':
+        this.fetchPendingProviders();
+        break;
+      case 'memories':
+        this.fetchPlatformMemories();
+        break;
+      case 'users':
+        this.fetchAllUsers();
+        break;
+      case 'fleet-detailed':
+        this.fetchAllVehicles();
+        break;
+      case 'costs':
+        this.fetchExpenseList();
+        break;
+    }
+
+    setTimeout(() => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Sync Successful!',
+        text: 'Your current view is up to date.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }, 1000); 
+  }
+
   confirmApproval(provider: any) {
-  Swal.fire({
-    title: 'Approve Fleet Item?',
-    text: `Verify ${provider.vehicleClass}?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#10b981',
-    target: document.querySelector('.modal-card') as HTMLElement || document.body 
-  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
-}
+    Swal.fire({
+      title: 'Approve Fleet Item?',
+      text: `Verify ${provider.vehicleClass}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      target: document.querySelector('.modal-card') as HTMLElement || document.body 
+    }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Approved'); });
+  }
 
-confirmReject(provider: any) {
-  Swal.fire({
-    title: 'Reject Request?',
-    text: `Decline ${provider.vehicleClass}?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444',
-    target: document.querySelector('.modal-card') as HTMLElement || document.body 
-  }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
-}
+  confirmReject(provider: any) {
+    Swal.fire({
+      title: 'Reject Request?',
+      text: `Decline ${provider.vehicleClass}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      target: document.querySelector('.modal-card') as HTMLElement || document.body 
+    }).then(res => { if (res.isConfirmed) this.updateStatus(provider, 'Rejected'); });
+  }
 
- updateStatus(provider: any, status: string) {
+  updateStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
     
     this.adminService.updateProviderStatus(id, status).subscribe(() => {
       this.selectedProvider = null;
       
-      // Increment the correct counter and immediately save it to the browser
       if (status === 'Approved') {
         this.approvedSessionCount++;
         localStorage.setItem('approvedToday', this.approvedSessionCount.toString());
@@ -410,59 +403,58 @@ confirmReject(provider: any) {
     this.costsLoading = true;
     this.adminService.getBudgetDetails().subscribe({
       next: (data: any) => {
-      // 1. Extract the trips array safely
-      const rawTrips = data?.trips || data?.Trips || data || [];
+        const rawTrips = data?.trips || data?.Trips || data || [];
 
-      this.budgetTrips = rawTrips.map((t: any) => ({
-        TripName: t.TripName ?? t.tripname ?? t.tripName ?? 'Untitled Trip',
-        Budgetlimit: t.budgetLimit ?? t.BudgetLimit ?? t.Budgetlimit ?? t.budgetlimit ?? 0,
-        TotalSpent: t.totalSpent ?? t.TotalSpent ?? t.totalspent ?? 0,
-        Route: t.Route ?? t.route ?? (t.departFrom ? `${t.departFrom} → ${t.destination}` : '—'),
-        StartDate: t.StartDate ?? t.startDate,
-        EndDate: t.EndDate ?? t.endDate,
-        CreatedBy: t.CreatedBy ?? t.createdBy,
-        ExpenseCount: t.expenseCount ?? t.ExpenseCount ?? 0,
-        RemainingBudget: t.remainingBudget ?? t.RemainingBudget ?? null,
-        UsagePercent: t.usagePercent ?? t.UsagePercent ?? 0,
-        Status: t.status ?? t.Status ?? null,
-        expenses: t.expenses ?? t.Expenses ?? []
-      }));
+        this.budgetTrips = rawTrips.map((t: any) => ({
+          TripName: t.TripName ?? t.tripname ?? t.tripName ?? 'Untitled Trip',
+          Budgetlimit: t.budgetLimit ?? t.BudgetLimit ?? t.Budgetlimit ?? t.budgetlimit ?? 0,
+          TotalSpent: t.totalSpent ?? t.TotalSpent ?? t.totalspent ?? 0,
+          Route: t.Route ?? t.route ?? (t.departFrom ? `${t.departFrom} → ${t.destination}` : '—'),
+          StartDate: t.StartDate ?? t.startDate,
+          EndDate: t.EndDate ?? t.endDate,
+          CreatedBy: t.CreatedBy ?? t.createdBy,
+          ExpenseCount: t.expenseCount ?? t.ExpenseCount ?? 0,
+          RemainingBudget: t.remainingBudget ?? t.RemainingBudget ?? null,
+          UsagePercent: t.usagePercent ?? t.UsagePercent ?? 0,
+          Status: t.status ?? t.Status ?? null,
+          expenses: t.expenses ?? t.Expenses ?? []
+        }));
 
-      this.expenses = [...this.budgetTrips];
-      this.costSummary = this.calculateCostSummary();
-      this.costsLoading = false;
-    },
-    error: (err) => {
-      console.error('Error loading budget details:', err);
-      this.costsLoading = false;
-    }
-  });
-}
+        this.expenses = [...this.budgetTrips];
+        this.costSummary = this.calculateCostSummary();
+        this.costsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading budget details:', err);
+        this.costsLoading = false;
+      }
+    });
+  }
 
-calculateCostSummary() {
-  let overBudget = 0;
-  let onTrack = 0;
-  let nearLimit = 0;
+  calculateCostSummary() {
+    let overBudget = 0;
+    let onTrack = 0;
+    let nearLimit = 0;
 
-  this.budgetTrips.forEach((trip) => {
-    const status = this.getTripStatus(trip);
+    this.budgetTrips.forEach((trip) => {
+      const status = this.getTripStatus(trip);
 
-    if (status === 'Over Budget') {
-      overBudget++;
-    } else if (status === 'Near Limit') {
-      nearLimit++;
-    } else if (status === 'On Track') {
-      onTrack++;
-    }
-  });
+      if (status === 'Over Budget') {
+        overBudget++;
+      } else if (status === 'Near Limit') {
+        nearLimit++;
+      } else if (status === 'On Track') {
+        onTrack++;
+      }
+    });
 
-  return {
-    totalTrips: this.budgetTrips.length,
-    overBudgetTrips: overBudget,
-    onTrackTrips: onTrack,
-    nearLimitTrips: nearLimit
-  };
-}
+    return {
+      totalTrips: this.budgetTrips.length,
+      overBudgetTrips: overBudget,
+      onTrackTrips: onTrack,
+      nearLimitTrips: nearLimit
+    };
+  }
 
   onReviewFleet() { 
     this.view = 'fleet-detailed'; 
@@ -486,57 +478,117 @@ calculateCostSummary() {
     this.selectedProvider = vehicle; 
   }
 
-// Memory සඳහා පමණක් භාවිතා කරන්න
-viewMemoryDetails(memory: any) {
-  Swal.fire({
-    title: memory.title || 'Trip Memory',
-    html: `
-      <p style="text-align:left;margin-bottom:8px;"><strong>By:</strong> ${memory.fullName || 'Unknown'}</p>
-      <p style="text-align:left;margin-bottom:8px;"><strong>Location:</strong> ${memory.locationName || 'N/A'}</p>
-      <p style="text-align:left;margin-bottom:12px;">${memory.description || 'No description provided.'}</p>
-      ${memory.imageUrl ? `<img src="${memory.imageUrl}" style="max-width:100%;border-radius:12px;" />` : ''}
-    `,
-    width: 640,
-    confirmButtonText: 'Close',
-    confirmButtonColor: '#2563eb'
-  });
-}
+  viewMemoryDetails(m: any) {
+    const imageUrl = m.imageUrl || 'assets/placeholder-travel.jpg';
+    const status = (this.getMemoryStatus ? this.getMemoryStatus(m) : m.status || 'Pending').toLowerCase();
+    const dateAdded = this.getMemoryUploadDate ? this.getMemoryUploadDate(m) : (m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Unknown Date');
+    const tripName = m.tripName || m.tripId || 'Standalone Memory';
+    const description = m.description || 'No caption or description was provided for this memory.';
+    const displayId = m.userId || 'No ID available';
+    const badgeClass = status === 'approved' ? 'badge-approved' : status === 'flagged' ? 'badge-flagged' : 'badge-pending';
 
-confirmMemoryApproval(memory: any) {
-  Swal.fire({
-    title: 'Approve this memory?',
-    text: `Publish "${memory.title || 'this memory'}" as approved content?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#10b981'
-  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Approved'); });
-}
+    Swal.fire({
+      width: '650px',
+      padding: '0', 
+      showCloseButton: true,
+      showConfirmButton: status !== 'approved',
+      confirmButtonText: '<i class="bi bi-check-lg"></i> Approve',
+      confirmButtonColor: '#10b981',
+      showDenyButton: status !== 'flagged',
+      denyButtonText: '<i class="bi bi-flag"></i> Flag',
+      denyButtonColor: '#ef4444',
+      showCancelButton: true,
+      cancelButtonText: 'Close',
+      cancelButtonColor: '#64748b',
+      customClass: { popup: 'memory-detail-swal', actions: 'memory-swal-actions' },
+      html: `
+        <div class="memory-swal-header" style="cursor: zoom-in;" onclick="window.openAdminFullImage('${imageUrl}')">
+          <img src="${imageUrl}" class="memory-swal-img">
+          <div class="expand-hint"><i class="bi bi-arrows-fullscreen"></i></div>
+          
+          <div class="memory-swal-overlay">
+            <span class="memory-swal-status ${badgeClass}">${status}</span>
+            <h2 class="memory-swal-title">${m.title || 'Untitled Memory'}</h2>
+          </div>
+        </div>
+        
+        <div class="memory-swal-body">
+          
+          <!-- GRID MOVED TO THE TOP -->
+          <div class="memory-swal-grid">
+            
+            <!-- Location and Trip moved to the top of the grid -->
+            <div class="memory-swal-info" style="grid-column: span 2;">
+              <span class="info-label"><i class="bi bi-geo-alt"></i> Captured Location</span>
+              <span class="info-val">${m.locationName || m.location || 'Location Not Specified'}</span>
+            </div>
+            
+            <div class="memory-swal-info" style="grid-column: span 2;">
+              <span class="info-label"><i class="bi bi-map"></i> Associated Trip</span>
+              <span class="info-val" style="color: #2563eb;">${tripName}</span>
+            </div>
 
-confirmMemoryFlag(memory: any) {
-  Swal.fire({
-    title: 'Flag this memory?',
-    text: `Flag "${memory.title || 'this memory'}" for review or removal?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444'
-  }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Flagged'); });
-}
+            <!-- Uploaded By and Date pushed below Location/Trip -->
+            <div class="memory-swal-info">
+              <span class="info-label"><i class="bi bi-person"></i> Uploaded By</span>
+              <span class="info-val">${m.fullName || m.userName || 'Unknown Traveler'}</span>
+              <span class="info-email" style="display:block; margin-top:4px; font-size:0.85rem; color:#64748b;">ID: ${displayId}</span>
+            </div>
+            
+            <div class="memory-swal-info">
+              <span class="info-label"><i class="bi bi-calendar-event"></i> Date Added</span>
+              <span class="info-val">${dateAdded}</span>
+            </div>
+          </div>
+          
+          <!-- DESCRIPTION MOVED TO THE BOTTOM (with adjusted margins) -->
+          <div class="memory-swal-desc" style="margin: 20px 0 0 0;">
+            <i class="bi bi-quote" style="font-size: 1.5rem; color: #94a3b8; display: block; margin-bottom: 4px;"></i>
+            ${description}
+          </div>
 
-setMemoryStatus(memory: any, status: string) {
-  const id = memory.id || memory._id;
-  this.adminService.updateMemoryStatus(id, status).subscribe({
-    next: () => {
-      this.fetchPlatformMemories();
-      Swal.fire('Updated', `Memory marked as ${status}.`, 'success');
-    },
-    error: () => Swal.fire('Error', 'Could not update memory status.', 'error')
-  });
-}
+        </div>
+      `
+    }).then((result) => {
+      if (result.isConfirmed) this.setMemoryStatus(m, 'Approved');
+      else if (result.isDenied) this.setMemoryStatus(m, 'Flagged');
+    });
+  }
+  confirmMemoryApproval(memory: any) {
+    Swal.fire({
+      title: 'Approve this memory?',
+      text: `Publish "${memory.title || 'this memory'}" as approved content?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981'
+    }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Approved'); });
+  }
 
-viewExpenditureDetails() {
-  this.view = 'costs';
-  this.fetchExpenseList();
-}
+  confirmMemoryFlag(memory: any) {
+    Swal.fire({
+      title: 'Flag this memory?',
+      text: `Flag "${memory.title || 'this memory'}" for review or removal?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444'
+    }).then(res => { if (res.isConfirmed) this.setMemoryStatus(memory, 'Flagged'); });
+  }
+
+  setMemoryStatus(memory: any, status: string) {
+    const id = memory.id || memory._id;
+    this.adminService.updateMemoryStatus(id, status).subscribe({
+      next: () => {
+        this.fetchPlatformMemories();
+        Swal.fire('Updated', `Memory marked as ${status}.`, 'success');
+      },
+      error: () => Swal.fire('Error', 'Could not update memory status.', 'error')
+    });
+  }
+
+  viewExpenditureDetails() {
+    this.view = 'costs';
+    this.fetchExpenseList();
+  }
 
   changeRole(id: string, role: string) {
     Swal.fire({
@@ -637,25 +689,53 @@ viewExpenditureDetails() {
       }
     });
   }
-  openImage(base64Data: string | undefined) {
-  if (!base64Data) {
-    Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
-    return;
-  }
   
-  const win = window.open("", "_blank");
-  if (win) {
-    win.document.write(`
-      <html>
-        <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#333;">
-          <img src="${base64Data}" style="max-width:100%; max-height:100vh; border: 5px solid #fff;">
-        </body>
-      </html>
-    `);
-  } else {
-    Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
+  openImage(base64Data: string | undefined) {
+    if (!base64Data) {
+      Swal.fire({ title: 'Error', text: 'Image not found!', icon: 'error' });
+      return;
+    }
+    
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(`
+        <html>
+          <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#333;">
+            <img src="${base64Data}" style="max-width:100%; max-height:100vh; border: 5px solid #fff;">
+          </body>
+        </html>
+      `);
+    } else {
+      Swal.fire('Error', 'Please allow pop-ups in your browser!', 'error');
+    }
   }
-}
+
+  compareDocuments(url1: string, url2: string, title1: string, title2: string) {
+    const safeUrl1 = url1 || 'assets/placeholder-document.jpg';
+    const safeUrl2 = url2 || 'assets/placeholder-document.jpg';
+
+    Swal.fire({
+      title: 'Document Cross-Check',
+      width: '85vw',
+      padding: '2em',
+      html: `
+        <div class="compare-modal-flex">
+          <div class="compare-modal-col">
+            <h4 class="compare-modal-title">${title1}</h4>
+            <img src="${safeUrl1}" class="compare-modal-img">
+          </div>
+          <div class="compare-modal-col">
+            <h4 class="compare-modal-title">${title2}</h4>
+            <img src="${safeUrl2}" class="compare-modal-img">
+          </div>
+        </div>
+      `,
+      showCloseButton: true,
+      focusConfirm: false,
+      confirmButtonText: 'Done Comparing',
+      confirmButtonColor: '#3b82f6'
+    });
+  }
 
   // Memory filtering methods
   get filteredMemories(): any[] {
@@ -741,7 +821,6 @@ viewExpenditureDetails() {
     
     return true;
   }
-
 
   // Fleet filtering methods.
   get filteredVehicles(): any[] {
