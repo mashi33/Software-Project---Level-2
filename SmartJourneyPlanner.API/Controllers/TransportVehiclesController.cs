@@ -66,8 +66,8 @@ namespace SmartJourneyPlanner.Controllers
                 // Force new vehicles to be Pending and bind directly to this real account identity string
                 vehicleInfo.ProviderId = loggedInUserEmail.Trim();
                 // Inside your CreateVehicle method, change this line:
-                vehicleInfo.Status = "Pending Approval"; 
-                vehicleInfo.IsVerified = false;
+                vehicleInfo.AdminVerificationStatus = "Pending"; 
+                vehicleInfo.IsAvailableForBooking = false;
 
                 if (string.IsNullOrEmpty(vehicleInfo.Id)) vehicleInfo.Id = null;
 
@@ -95,9 +95,8 @@ namespace SmartJourneyPlanner.Controllers
                 
                 // 🔑 THE FINAL GUARD FILTER: Restrict array elements to EXCLUDE "Pending Approval" or "Pending" items
                 var approvedVehiclesOnly = rawVehiclesList
-                    .Where(v => !string.IsNullOrEmpty(v.Status) && 
-                                !v.Status.Equals("Pending Approval", StringComparison.OrdinalIgnoreCase) &&
-                                !v.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+                    .Where(v => !string.IsNullOrEmpty(v.AdminVerificationStatus) && 
+                                !v.AdminVerificationStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 
                 return Ok(approvedVehiclesOnly);
@@ -124,8 +123,8 @@ namespace SmartJourneyPlanner.Controllers
             // Mark sample vehicles as already approved
             var vehiclesToInsert = vehicles.Select(v => { 
                 v.Id = null; 
-                v.Status = "Approved"; 
-                v.IsVerified = true;
+                v.AdminVerificationStatus = "Approved"; 
+                v.IsAvailableForBooking = true;
                 return v; 
             }).ToList();
 

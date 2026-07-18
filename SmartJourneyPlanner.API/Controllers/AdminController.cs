@@ -55,7 +55,7 @@ namespace SmartJourneyPlanner.API.Controllers
 
             // Count vehicles that are waiting under either pending status variation string
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v =>
-                v.Status == "Pending" || v.Status == "Pending Approval");
+                v.AdminVerificationStatus == "Pending");
 
             var tripsCollection = _database.GetCollection<Trip>("Trips");
             var totalTrips = await tripsCollection.CountDocumentsAsync(_ => true);
@@ -345,11 +345,7 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
         {
-            var pendingFilter = Builders<TransportVehicle>.Filter.Or(
-                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending"),
-                Builders<TransportVehicle>.Filter.Eq(v => v.Status, "Pending Approval")
-            );
-
+            var pendingFilter = Builders<TransportVehicle>.Filter.Eq(v => v.AdminVerificationStatus, "Pending");
             var pending = await _vehicleCollection.Find(pendingFilter).ToListAsync();
             return Ok(pending);
         }
@@ -366,15 +362,13 @@ namespace SmartJourneyPlanner.API.Controllers
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
 
-            var isApproved = newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase);
-
             var update = Builders<TransportVehicle>.Update
-                .Set(v => v.Status, isApproved ? "Unavailable" : newStatus)
-                .Set(v => v.IsVerified, isApproved);
+                .Set(v => v.AdminVerificationStatus, newStatus);
 
             await _vehicleCollection.UpdateOneAsync(filter, update);
             return Ok(new { message = "Status updated" });
         }
+
     }
 
     public class BlockRequest

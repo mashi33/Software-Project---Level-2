@@ -89,6 +89,9 @@ namespace SmartJourneyPlanner.Controllers
             if (booking is null) return NotFound();
 
             booking.Status = dto.Status;
+            
+            booking.StatusChangedDate = DateTime.UtcNow.ToString("o");
+
             await _bookingService.UpdateAsync(id, booking);
             return NoContent();
         }

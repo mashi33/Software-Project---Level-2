@@ -1,37 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { WeatherService } from '../services/weather.service';
+import { MemoryService } from '../services/memory';
 
 @Component({
-  selector: 'app-traveller-dashboard',
+  selector: 'app-traveler-dashboard',
   standalone: true,
   imports: [
     CommonModule,
     RouterModule,
-    HttpClientModule
+    FormsModule
   ],
   templateUrl: './traveller-dashboard.html',
-  styleUrls: ['./traveller-dashboard.css']
+  styleUrls: ['./traveller-dashboard.css'],
+  providers: [DatePipe] 
 })
-export class TravelerDashboardComponent implements OnInit {
+export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
-  // =========================
-  // USER DATA
-  // =========================
   userId: string | null = '';
   userName: string | null = '';
 
-  // =========================
-  // TRIPS DATA
-  // =========================
-  ongoingTripsCount: number = 0;
-  upcomingTripsCount: number = 0;
-  completedTripsCount: number = 0;
+  ongoingTripsCount = 0;
+  upcomingTripsCount = 0;
+  completedTripsCount = 0;
+  memoriesCount = 0;
 
   completedTrips: any[] = [];
   upcomingTrips: any[] = [];
@@ -41,45 +39,27 @@ export class TravelerDashboardComponent implements OnInit {
   visibleUpcomingTrips: any[] = [];
   visibleCompletedTrips: any[] = [];
 
-  showAllOngoing: boolean = false;
-  showAllUpcoming: boolean = false;
-  showAllCompleted: boolean = false;
-
-  // =========================
-// POPUP CONTROL
-// =========================
-showOngoingList: boolean = false;
-showUpcomingList: boolean = false;
-showCompletedList: boolean = false;
-
-showOngoingPopup: boolean = false;
-showUpcomingPopup: boolean = false;
-showCompletedPopup: boolean = false;
+  showOngoingList = false;
+  showUpcomingList = false;
+  showCompletedList = false;
 
   nextTrip: any = null;
-
-  // =========================
-  // WEATHER DATA
-  // =========================
+  searchQuery = '';
   weather: any = null;
-
-  // =========================
-  // COUNTDOWN
-  // =========================
-  daysLeft: number = 0;
+  daysLeft = 0;
+  
+  private countdownInterval: any;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private dashboardService: TravellerDashboardService,
-    private weatherService: WeatherService
+    private weatherService: WeatherService,
+    private datePipe: DatePipe,
+    private memoryService: MemoryService
   ) {}
 
-  // =========================
-  // INIT
-  // =========================
   ngOnInit() {
-
     this.userId = this.authService.getUserId();
     this.userName = this.authService.getUserName();
 
@@ -88,216 +68,282 @@ showCompletedPopup: boolean = false;
       return;
     }
 
+    this.showOngoingList = true;
     this.loadDashboardData();
+    this.loadMemoriesCount();
 
-    // 🔥 auto refresh countdown every hour
-    setInterval(() => {
+    this.countdownInterval = setInterval(() => {
       if (this.nextTrip) {
         this.calculateCountdown(this.nextTrip.startDate);
       }
     }, 3600000);
   }
 
-  // =========================
-  // LOAD DASHBOARD DATA
-  // =========================
-  loadDashboardData() {
-  this.dashboardService.getDashboardData()
-    .subscribe({
-      next: (data) => {
-        console.log("Verified Secure API Payload:", data);
-
-        // Map counts cleanly
-        this.ongoingTripsCount = data.ongoingCount || 0;
-        this.upcomingTripsCount = data.upcomingCount || 0;
-        this.completedTripsCount = data.completedCount || 0;
-
-        // 🌟 HIGHLIGHT: Fallback to an empty array if data fields are null/missing
-        this.completedTrips = data.completedTrips || [];
-        this.upcomingTrips = data.upcomingTrips || [];
-        this.ongoingTrips = data.ongoingTrips || [];
-
-        // 🌟 HIGHLIGHT: Safely populate visible subset cards without template runtime crashes
-        this.visibleOngoingTrips = this.ongoingTrips.slice(0, 3);
-        this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 3);
-        this.visibleCompletedTrips = this.completedTrips.slice(0, 3);
-        
-        this.setNextTrip(this.upcomingTrips);
-      },
-      error: (err) => {
-        console.error('Dashboard loading failed', err);
-      }
-    });
-}
-
-
-// ==========================================
-  // 🌟 HIGHLIGHT: NEW TOGGLE METHOD FOR STAT CARDS
-  // ==========================================
-  toggleList(category: string) {
-    if (category === 'ongoing') {
-      this.showOngoingList = !this.showOngoingList;
-      this.showUpcomingList = false;
-      this.showCompletedList = false;
-    } else if (category === 'upcoming') {
-      this.showUpcomingList = !this.showUpcomingList;
-      this.showOngoingList = false;
-      this.showCompletedList = false;
-    } else if (category === 'completed') {
-      this.showCompletedList = !this.showCompletedList;
-      this.showOngoingList = false;
-      this.showUpcomingList = false;
+  ngOnDestroy() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
     }
   }
 
-  toggleUpcomingTrips() {
+  loadDashboardData() {
+    this.dashboardService.getDashboardData()
+      .subscribe({
+        next: (data) => {
+          this.ongoingTripsCount = data.ongoingCount || 0;
+          this.upcomingTripsCount = data.upcomingCount || 0;
+          this.completedTripsCount = data.completedCount || 0;
+          this.memoriesCount = data.memoriesCount || 0;
 
-  this.showAllUpcoming = !this.showAllUpcoming;
+          this.completedTrips = data.completedTrips || [];
+          this.upcomingTrips = data.upcomingTrips || [];
+          this.ongoingTrips = data.ongoingTrips || [];
 
-  this.visibleUpcomingTrips = this.showAllUpcoming
-    ? this.upcomingTrips
-    : this.upcomingTrips.slice(0, 3);
-}
+          this.visibleOngoingTrips = this.ongoingTrips.slice(0, 2);
+          this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 2);
+          this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
+          
+          this.setNextTrip(this.upcomingTrips);
+        },
+        error: () => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load dashboard data. Please try again.',
+            confirmButtonColor: '#3b82f6'
+          });
+        }
+      });
+  }
 
-toggleCompletedTrips() {
+  loadMemoriesCount() {
+    if (!this.userId) return;
 
-  this.showAllCompleted = !this.showAllCompleted;
+    this.memoryService.getMemoryCount(this.userId).subscribe({
+      next: (res: any) => {
+        this.memoriesCount = res?.count || 0;
+      },
+      error: (err) => {
+        console.error('Failed to load memory count:', err);
+      }
+    });
+  }
 
-  this.visibleCompletedTrips = this.showAllCompleted
-    ? this.completedTrips
-    : this.completedTrips.slice(0, 3);
-}
+  toggleList(category: string) {
+    this.showOngoingList = category === 'ongoing';
+    this.showUpcomingList = category === 'upcoming';
+    this.showCompletedList = category === 'completed';
+  }
 
-toggleOngoingTrips() {
+  filterTrips(): void {
+    const query = this.searchQuery.toLowerCase().trim();
 
-  this.showAllOngoing = !this.showAllOngoing;
+    if (!query) {
+      this.visibleOngoingTrips = this.ongoingTrips.slice(0, 2);
+      this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 2);
+      this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
+      return;
+    }
 
-  this.visibleOngoingTrips = this.showAllOngoing
-    ? this.ongoingTrips
-    : this.ongoingTrips.slice(0, 3);
-}
+    this.visibleOngoingTrips = this.ongoingTrips.filter(trip =>
+      trip.tripName?.toLowerCase().includes(query) ||
+      trip.destination?.toLowerCase().includes(query)
+    ).slice(0, 2);
 
-openUpcomingPopup() {
+    this.visibleUpcomingTrips = this.upcomingTrips.filter(trip =>
+      trip.tripName?.toLowerCase().includes(query) ||
+      trip.destination?.toLowerCase().includes(query)
+    ).slice(0, 2);
 
-  this.showUpcomingPopup = true;
-}
+    this.visibleCompletedTrips = this.completedTrips.filter(trip =>
+      trip.tripName?.toLowerCase().includes(query) ||
+      trip.destination?.toLowerCase().includes(query)
+    ).slice(0, 2);
+  }
 
-closeUpcomingPopup() {
+  showTripsPopup(type: 'ongoing' | 'upcoming' | 'completed'): void {
+    let title = '';
+    let tripsList: any[] = [];
+    let accentColor = '#3b82f6'; 
+    let bgGradient = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+    let iconHtml = '<i class="fas fa-plane"></i>';
+    let badgeText = '';
 
-  this.showUpcomingPopup = false;
-}
+    if (type === 'ongoing') {
+      title = 'Ongoing Journeys';
+      tripsList = this.ongoingTrips;
+      accentColor = '#3b82f6';
+      bgGradient = 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)';
+      iconHtml = '<i class="fas fa-plane-departure"></i>';
+      badgeText = 'Active Now';
+    } else if (type === 'upcoming') {
+      title = 'Upcoming Adventures';
+      tripsList = this.upcomingTrips;
+      accentColor = '#10b981'; 
+      bgGradient = 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)';
+      iconHtml = '<i class="fas fa-compass"></i>';
+      badgeText = 'Planned';
+    } else if (type === 'completed') {
+      title = 'Past Memories';
+      tripsList = this.completedTrips;
+      accentColor = '#6366f1'; 
+      bgGradient = 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)';
+      iconHtml = '<i class="fas fa-award"></i>';
+      badgeText = 'Completed';
+    }
 
+    if (!tripsList || tripsList.length === 0) {
+      Swal.fire({
+        title: title,
+        text: `Your ${type} trip list is currently empty.`,
+        icon: 'info',
+        confirmButtonColor: accentColor
+      });
+      return;
+    }
 
-openOngoingPopup() {
+    let containerHtml = `<div class="premium-swal-container" style="max-height: 420px; overflow-y: auto; padding: 10px 5px; scrollbar-width: thin;">`;
 
-  this.showOngoingPopup = true;
-}
+    tripsList.forEach(trip => {
+      const startDayName = this.datePipe.transform(trip.startDate, 'EEEE');
+      const startDateFormatted = this.datePipe.transform(trip.startDate, 'MMM d, yyyy');
+      const endDateFormatted = this.datePipe.transform(trip.endDate, 'MMM d, yyyy');
+      
+      containerHtml += `
+        <div class="premium-trip-card" data-id="${trip.id || trip.Id}" 
+             style="display: flex; align-items: center; justify-content: space-between; 
+                    background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid ${accentColor};
+                    padding: 16px; margin-bottom: 14px; border-radius: 16px; cursor: pointer;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+                    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;"
+             onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)'; this.style.background='#f8fafc';"
+             onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)'; this.style.background='#ffffff';">
+          
+          <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+            <div style="background: ${bgGradient}; color: ${accentColor}; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+              ${iconHtml}
+            </div>
+            
+            <div style="text-align: left; flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${trip.tripName}</h4>
+                <span style="background: ${accentColor}15; color: ${accentColor}; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">${badgeText}</span>
+              </div>
+              
+              <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                <i class="fas fa-map-marker-alt" style="color: #94a3b8;"></i> ${trip.destination}
+              </p>
+              
+              <span style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px; margin-top: 6px; font-weight: 400;">
+                <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
+                <span>${startDateFormatted}</span>
+                <span style="color: #cbd5e1;">➔</span>
+                <span>${endDateFormatted}</span>
+              </span>
+            </div>
+          </div>
 
-closeOngoingPopup() {
+          <div style="padding-left: 12px; flex-shrink: 0; text-align: right;">
+            <div style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 12px; text-align: center; min-width: 85px;">
+              <span style="font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 700; display: block; letter-spacing: 0.5px; margin-bottom: 1px;">Starts On</span>
+              <span style="font-size: 13px; color: #1e293b; font-weight: 700; display: block;">${startDayName}</span>
+            </div>
+          </div>
 
-  this.showOngoingPopup = false;
-}
+        </div>
+      `;
+    });
 
-openCompletedPopup() {
+    containerHtml += `</div>`;
 
-  this.showCompletedPopup = true;
-}
+    Swal.fire({
+      title: `<div style="text-align: left; padding-left: 5px; font-size: 22px; font-weight: 800; color: #0f172a; font-family: system-ui;">${title}</div>`,
+      html: containerHtml,
+      showCloseButton: true,
+      showConfirmButton: false, 
+      width: '560px', 
+      background: '#ffffff',
+      customClass: {
+        popup: 'premium-modern-popup'
+      },
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        if (popup) {
+          popup.style.borderRadius = '24px';
+        }
 
-closeCompletedPopup() {
+        const cards = document.querySelectorAll('.premium-trip-card');
+        cards.forEach(card => {
+          card.addEventListener('click', () => {
+            const id = card.getAttribute('data-id');
+            if (id) {
+              Swal.close();
+              this.openTripSummary(id);
+            }
+          });
+        });
+      }
+    });
+  }
 
-  this.showCompletedPopup = false;
-}
-
-  // =========================
-  // NEXT TRIP SELECTION
-  // =========================
   setNextTrip(upcomingTrips: any[]) {
-
-    this.nextTrip = upcomingTrips
-      .sort((a, b) =>
-        new Date(a.startDate).getTime() -
-        new Date(b.startDate).getTime()
-      )[0];
+    this.nextTrip = [...upcomingTrips]
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
 
     if (!this.nextTrip) return;
 
-    // =========================
-    // COUNTDOWN CALCULATION
-    // =========================
     this.calculateCountdown(this.nextTrip.startDate);
 
-    // =========================
-    // WEATHER LOAD FLOW
-    // =========================
     this.weatherService
       .getCoordinates(this.nextTrip.destination)
       .subscribe({
-
         next: (res: any) => {
-
           if (!res || !res.length) return;
-
           const lat = res[0].lat;
           const lon = res[0].lon;
-
           const date = this.nextTrip.startDate.split('T')[0];
-
           this.loadWeather(lat, lon, date);
         },
-
-        error: (err) => {
-          console.error('Geo lookup failed', err);
+        error: () => {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Weather Unavailable',
+            text: 'Could not fetch weather data for this destination.',
+            confirmButtonColor: '#3b82f6'
+          });
         }
       });
   }
 
-  // =========================
-  // COUNTDOWN LOGIC
-  // =========================
   calculateCountdown(tripDate: string) {
-
     const today = new Date();
     const trip = new Date(tripDate);
-
     const diffTime = trip.getTime() - today.getTime();
-
     this.daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  // =========================
-  // WEATHER LOADING
-  // =========================
   loadWeather(lat: string, lon: string, date: string) {
-
     this.weatherService
       .getProcessedWeather(lat, lon, date)
       .subscribe({
-
         next: (weather: any) => {
           this.weather = weather;
-          console.log('Weather Loaded', weather);
         },
-
-        error: (err) => {
-          console.error('Weather load failed', err);
+        error: () => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Weather Error',
+            text: 'Failed to load weather information.',
+            confirmButtonColor: '#3b82f6'
+          });
         }
       });
   }
 
-  // =========================
-  // NAVIGATION
-  // =========================
-  navigateToWeather() {
-    this.router.navigate(['/weather']);
-  }
-
-  navigateToMemories() {
-    this.router.navigate(['/memories']);
-  }
+  navigateToWeather() { this.router.navigate(['/weather']); }
+  navigateToMemories() { this.router.navigate(['/memories']); }
 
   openTripSummary(tripId: string) {
     if (!tripId) return;
-
     this.router.navigate(['/trip-summary', tripId]);
   }
 }

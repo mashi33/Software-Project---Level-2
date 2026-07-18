@@ -35,7 +35,19 @@ namespace SmartJourneyPlanner.API.Controllers
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto model)
-        {  
+        {   
+            // Validate password strength
+            var passwordRegex = new System.Text.RegularExpressions.Regex(
+                 @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            );
+
+            if (string.IsNullOrWhiteSpace(model.Password) || !passwordRegex.IsMatch(model.Password))
+             {
+            return BadRequest(new
+             {
+                  message = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+            });
+            }
             // 1. Check if the email is already registered
             var existingUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
             if (existingUser != null)
@@ -250,6 +262,18 @@ namespace SmartJourneyPlanner.API.Controllers
       {
         return BadRequest(new { message = "This reset link has expired. Please request a new one." });
      }
+
+     var passwordRegex = new System.Text.RegularExpressions.Regex(
+    @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    );
+
+    if (string.IsNullOrWhiteSpace(model.NewPassword) || !passwordRegex.IsMatch(model.NewPassword))
+    {
+    return BadRequest(new
+    {
+        message = "Password must be at least 8 characters long and contain an uppercase letter, lowercase letter, number, and special character."
+    });
+    }
 
     // 3. Hash new password and clear token fields
     string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
