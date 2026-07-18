@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 export interface PlacesResult {
   places: any[];
@@ -19,29 +20,22 @@ export class PlacesService {
   private selectedPlaceSource = new BehaviorSubject<string | null>(null);
   selectedPlaceId = this.selectedPlaceSource.asObservable();
 
-  //isLoading state for skeleton loader
   private isLoadingSource = new BehaviorSubject<boolean>(false);
   isLoading$ = this.isLoadingSource.asObservable();
-  
+
   private frontendCache = new Map<string, { data: any, timestamp: number }>();
   private readonly CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
   constructor(private http: HttpClient) {}
 
   fetchPlacesByCity(city: string, filters: any, token: string) {
-    // FIX: city+category cache key 
     const cacheKey = `${city.toLowerCase()}_${filters.category.toLowerCase()}`;
     const cached = this.frontendCache.get(cacheKey);
     const now = Date.now();
 
-    // FIX: Cache hit —Do not send backend request 
     if (cached && (now - cached.timestamp) < this.CACHE_TTL_MS) {
       console.log(`[PlacesService] Frontend cache hit for '${cacheKey}'`);
-
-      // ✅ BUG 10 FIX — clear previous search results before applying filters to avoid showing stale data
-    this.placesSource.next(null);
-
-      // Filter cached data in memory — No API call 
+      this.placesSource.next(null);
       const filtered = this.applyFilters(cached.data, filters);
       this.placesSource.next({
         places: filtered,
@@ -50,16 +44,13 @@ export class PlacesService {
       });
       return;
     }
-    
-    // ✅ BUG 10 FIX — clear previous search results before sending backend request to avoid showing stale data
-     this.placesSource.next(null);
-    //start loading state for skeleton loader 
-     this.isLoadingSource.next(true);
 
-    // Cache miss — send backend request 
+    this.placesSource.next(null);
+    this.isLoadingSource.next(true);
+
     let params = new HttpParams()
       .set('city', city)
-      .set('category', filters.category.toLowerCase()) // ✅ "hotel" lowercase
+      .set('category', filters.category.toLowerCase())
       .set('token', token);
 
     if (filters.budget) params = params.set('budget', filters.budget);
@@ -70,13 +61,133 @@ export class PlacesService {
       .pipe(
         catchError(err => {
           console.error('[PlacesService] Failed to fetch places:', err);
-          //stop loading state on error 
           this.isLoadingSource.next(false);
+
+          // ✅ Messages show according to the error status code
+          if (err.status === 400) {
+            // Empty city name
+            Swal.fire({
+              icon: 'warning',
+              title: 'Invalid Search!',
+              html: `<p style="color:#555; font-size:15px; margin:0;">
+                Please enter a city or town name before searching.
+              </p>`,
+              confirmButtonColor: '#4A90D9',
+              width: 400,
+              padding: '32px',
+              customClass: { popup: 'invalid-popup' },
+              didOpen: () => {
+                if (!document.getElementById('swal-invalid-style')) {
+                  const style = document.createElement('style');
+                  style.id = 'swal-invalid-style';
+                  style.textContent = `.invalid-popup { border-radius: 16px !important; }`;
+                  document.head.appendChild(style);
+                }
+              }
+            });
+          } else if (err.status === 404) {
+            // Invalid city
+            Swal.fire({
+              icon: 'warning',
+              title: 'City Not Found!',
+              html: `<p style="color:#555; font-size:15px; margin:0;">
+                <strong>"${params.get('city')}"</strong> cannot be found.<br>
+                Try a different city or check the spelling.
+              </p>`,
+              confirmButtonColor: '#4A90D9',
+              width: 400,
+              padding: '32px',
+              customClass: { popup: 'notfound-popup' },
+              didOpen: () => {
+                if (!document.getElementById('swal-notfound-style')) {
+                  const style = document.createElement('style');
+                  style.id = 'swal-notfound-style';
+                  style.textContent = `.notfound-popup { border-radius: 16px !important; }`;
+                  document.head.appendChild(style);
+                }
+              }
+            });
+          } else if (err.status === 0) {
+            // No internet
+            Swal.fire({
+              icon: 'error',
+              title: 'No Internet Connection!',
+              html: `<p style="color:#555; font-size:15px; margin:0;">
+                Please check your internet connection and try again.
+              </p>`,
+              confirmButtonColor: '#4A90D9',
+              width: 400,
+              padding: '32px',
+              customClass: { popup: 'network-popup' },
+              didOpen: () => {
+                if (!document.getElementById('swal-network-style')) {
+                  const style = document.createElement('style');
+                  style.id = 'swal-network-style';
+                  style.textContent = `.network-popup { border-radius: 16px !important; }`;
+                  document.head.appendChild(style);
+                }
+              }
+            });
+          } else if (err.status === 500) {
+            // Server error
+            Swal.fire({
+              icon: 'error',
+              title: 'Server Error!',
+              html: `<p style="color:#555; font-size:15px; margin:0;">
+                An unexpected error occurred. Please try again.
+              </p>`,
+              confirmButtonColor: '#4A90D9',
+              width: 400,
+              padding: '32px',
+              customClass: { popup: 'server-popup' },
+              didOpen: () => {
+                if (!document.getElementById('swal-server-style')) {
+                  const style = document.createElement('style');
+                  style.id = 'swal-server-style';
+                  style.textContent = `.server-popup { border-radius: 16px !important; }`;
+                  document.head.appendChild(style);
+                }
+              }
+            });
+            } else if (err.status === 503) {
+              // Backend network error
+              Swal.fire({
+                icon: 'error',
+                title: 'No Internet Connection!',
+                html: `<p style="color:#555; font-size:15px; margin:0;">
+                  Please check your internet connection and try again.
+                </p>`,
+                confirmButtonColor: '#4A90D9',
+                width: 400,
+                padding: '32px',
+                customClass: { popup: 'network-popup' },
+                didOpen: () => {
+                  if (!document.getElementById('swal-network-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'swal-network-style';
+                    style.textContent = `.network-popup { border-radius: 16px !important; }`;
+                    document.head.appendChild(style);
+                  }
+                }
+              });
+            }else {
+            // General error
+            Swal.fire({
+              icon: 'error',
+              title: 'Something Went Wrong!',
+              html: `<p style="color:#555; font-size:15px; margin:0;">
+                Please try again.
+              </p>`,
+              confirmButtonColor: '#4A90D9',
+              width: 400,
+              padding: '32px',
+            });
+          }
+
           return of({ fullDetails: [], centerLat: 0, centerLon: 0 });
         })
       )
       .subscribe(response => {
-        // FIX: Frontend cache save — Cache results based on city+category
         this.frontendCache.set(cacheKey, {
           data: {
             fullDetails: response.fullDetails ?? [],
@@ -87,7 +198,11 @@ export class PlacesService {
         });
 
         const filtered = this.applyFilters(
-          { fullDetails: response.fullDetails ?? [], centerLat: response.centerLat, centerLon: response.centerLon },
+          {
+            fullDetails: response.fullDetails ?? [],
+            centerLat: response.centerLat,
+            centerLon: response.centerLon
+          },
           filters
         );
 
@@ -96,13 +211,11 @@ export class PlacesService {
           centerLat: response.centerLat,
           centerLon: response.centerLon
         });
-        
-        //stop loading state after data is set
+
         this.isLoadingSource.next(false);
       });
   }
 
-  // FIX: Filter in memory — filter without API call
   private applyFilters(data: any, filters: any): any[] {
     let places: any[] = data.fullDetails ?? [];
 

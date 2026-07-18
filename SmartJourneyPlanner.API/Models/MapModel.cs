@@ -16,6 +16,10 @@ namespace SmartJourneyPlanner.Models
     {
         [JsonPropertyName("results")]
         public List<GoogleResult> Results { get; set; } = [];
+
+        // ✅ NEW — add this line
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "";
     }
 
     public class GoogleResult
@@ -81,6 +85,10 @@ namespace SmartJourneyPlanner.Models
     {
         [JsonPropertyName("results")]
         public List<GeocodeResult> Results { get; set; } = [];
+
+         // ✅ NEW
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "";
     }
 
     public class GeocodeResult

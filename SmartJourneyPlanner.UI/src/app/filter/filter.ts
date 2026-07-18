@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { PlacesService } from '../services/places.service';
 import { environment } from '../../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
+import Swal from 'sweetalert2';
 
 declare var google: any;
 
@@ -27,12 +28,20 @@ export class FilterComponent implements OnInit, AfterViewInit {
   activeCategory = 'Hotel';
   hasSearched    = false;
 
+
+    // ✅ NEW — autocomplete flag
+  private isValidSriLankaCity = false;
   // FIX: filter change debounce timer
   private filterDebounceTimer: any;
 
   constructor(private placesService: PlacesService, private route: ActivatedRoute) {}
 
   ngOnInit() {
+    // ✅ NEW — if type manually for city, reset the autocomplete flag
+    this.searchControl.valueChanges.subscribe(() => {
+      this.isValidSriLankaCity = false;
+    });
+
     // use only once query params
     this.route.queryParams.pipe(
       debounceTime(300)
@@ -46,6 +55,8 @@ export class FilterComponent implements OnInit, AfterViewInit {
 
       if (cityFromUrl) {
         this.searchControl.setValue(cityFromUrl);
+        // ✅ mark the city as valid since it came from the URL
+        this.isValidSriLankaCity = true;
         setTimeout(() => {
           this.performSearch();
         }, 500);
@@ -116,6 +127,8 @@ export class FilterComponent implements OnInit, AfterViewInit {
       const place = autocomplete.getPlace();
       if (place && (place.name || place.formatted_address)) {
         this.searchControl.setValue(place.name || place.formatted_address);
+        // ✅ NEW — when select in autocomplete — valid Sri Lanka city
+        this.isValidSriLankaCity = true;
       }
     });
   }
@@ -123,6 +136,34 @@ export class FilterComponent implements OnInit, AfterViewInit {
   performSearch() {
     const cityName = this.searchControl.value?.trim();
     if (!cityName || cityName.length < 3) return;
+
+    // ✅ NEW — autocomplete ලදී select නොකළොත් block
+    if (!this.isValidSriLankaCity) {
+    Swal.fire({
+
+            icon: 'warning',
+            title: 'Please Select from Suggestions!',
+            html: `<p style="color:#555; font-size:15px; margin:0;">
+              Please select a Sri Lankan city from the
+              dropdown suggestions.
+            </p>`,
+            confirmButtonColor: '#4A90D9',
+            width: 400,
+            padding: '32px',
+            showClass: { popup: 'swal2-show' },
+            hideClass: { popup: 'swal2-hide' },
+            customClass: { popup: 'srilanka-popup' },
+            didOpen: () => {
+              if (!document.getElementById('swal-srilanka-style')) {
+                const style = document.createElement('style');
+                style.id = 'swal-srilanka-style';
+                style.textContent = `.srilanka-popup { border-radius: 16px !important; }`;
+                document.head.appendChild(style);
+              }
+            }
+          });
+          return;
+        }
 
     this.hasSearched = true;
 

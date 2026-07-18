@@ -18,6 +18,7 @@ namespace SmartJourneyPlanner.Services
         private readonly IMongoCollection<SavedRoute> _routeCollection;
         private readonly string _apiKey;
         private readonly FuelPriceService _fuelPriceService; // ✅ field declare
+        private readonly BusFareService _busFareService;
 
         // Average fuel consumption per vehicle type (litres per 100km)
         private const double AVG_PETROL_CONSUMPTION = 7.5;
@@ -26,12 +27,13 @@ namespace SmartJourneyPlanner.Services
         /// <summary>
         /// Initializes the service with a MongoDB client, app configuration, and fuel price service.
         /// </summary>
-        public RouteService(IMongoClient client, IConfiguration config, FuelPriceService fuelPriceService) // ✅ parameter add
+        public RouteService(IMongoClient client, IConfiguration config, FuelPriceService fuelPriceService, BusFareService busFareService) // ✅ parameter add
         {
             var database = client.GetDatabase("SmartJourneyDb");
             _routeCollection = database.GetCollection<SavedRoute>("SavedRoutes");
             _apiKey = config["GoogleApi:ApiKey"] ?? string.Empty;
             _fuelPriceService = fuelPriceService; // ✅ assign
+            _busFareService = busFareService;
         }
 
         /// <summary>
@@ -216,6 +218,20 @@ namespace SmartJourneyPlanner.Services
             {
                 return new ObjectResult(new { message = "Error", details = ex.Message }) { StatusCode = 500 };
             }
+        }
+
+        // ✅ ADD THIS ENTIRE METHOD
+        /// <summary>
+        /// Returns NTC bus fare for the given start and end locations.
+        /// Used when user selects Public Transport mode on the frontend.
+        /// </summary>
+        public async Task<IActionResult> GetBusFareAsync(RouteRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Start) || string.IsNullOrWhiteSpace(req.End))
+                return new BadRequestObjectResult("Start and End locations are required.");
+
+            var result = await _busFareService.GetBusFareAsync(req.Start, req.End);
+            return new OkObjectResult(result);
         }
     }
 }

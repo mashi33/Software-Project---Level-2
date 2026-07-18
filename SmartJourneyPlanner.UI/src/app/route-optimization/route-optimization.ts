@@ -46,6 +46,11 @@ export class RouteOptimization implements OnInit, OnDestroy {
   // ✅ Scenic pin — created ONCE in initMarkerOptions(), reused via [content]="scenicPinElement"
   scenicPinElement!: HTMLElement;
 
+  // ✅ Transport mode
+  transportMode: 'private' | 'public' = 'private';
+  busResult: any = null;
+  isBusLoading = false;
+
   // Pre-computed distance cache — avoids O(n) recalculation on every render cycle
   // Key: "lat_lng", Value: formatted distance string
   private distanceCache = new Map<string, string>();
@@ -75,6 +80,11 @@ export class RouteOptimization implements OnInit, OnDestroy {
       this.route.queryParams.subscribe(params => {
         const startParam = params['start'];
         const endParam   = params['end'];
+        const modeParam  = params['mode'];  // ✅ add — restores public/private from QR link
+
+        if (modeParam === 'public' || modeParam === 'private') {
+          this.transportMode = modeParam;
+        }
 
         if (startParam) this.start = startParam;
         if (endParam)   this.end   = endParam;
@@ -245,6 +255,11 @@ export class RouteOptimization implements OnInit, OnDestroy {
    * and pre-computes viewpoint distances once both the path and viewpoints are ready.
    */
   calculate() {
+      // ✅ Public transport mode eki bus fare calculate
+    if (this.transportMode === 'public') {
+      this.calculateBus();
+      return;
+    }
     this.isLoading = true;
     this.routeService.getOptimizedRoutes(this.start, this.end).subscribe({
       next: (res: any) => {
@@ -482,5 +497,41 @@ export class RouteOptimization implements OnInit, OnDestroy {
       this.center = { lat: spot.lat, lng: spot.lng };
       this.zoom = 15;
     }
+  }
+
+  /** Switches transport mode and resets results. */
+  selectTransportMode(mode: 'private' | 'public') {
+    this.transportMode = mode;
+    this.results       = null;
+    this.busResult     = null;
+    this.currentPath   = [];
+    this.distanceCache.clear();
+  }
+
+  /** Calls backend bus fare API for public transport mode. */
+  calculateBus() {
+    if (!this.start || !this.end) return;
+
+    this.isBusLoading = true;
+    this.busResult    = null;
+
+    this.routeService.getBusFare(this.start, this.end).subscribe({
+      next: (res: any) => {
+        this.busResult    = res;
+        this.isBusLoading = false;
+      },
+      error: (err) => {
+        this.isBusLoading = false;
+        console.error('Bus fare error', err);
+      }
+    });
+  }
+
+  // ✅ ADD THIS — merges start/end into busResult for the PDF component.
+  // Angular templates don't support the spread operator, so this is done
+  // in a getter instead of inline in the template.
+  get busDataForPdf(): any {
+    if (!this.busResult) return null;
+    return { ...this.busResult, from: this.start, to: this.end };
   }
 }

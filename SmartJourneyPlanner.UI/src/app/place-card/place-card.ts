@@ -250,13 +250,39 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             this.selectTrip(place, selectedTrip);
           }
         },
-        error: () => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to load trips. Try again.',
-          });
+       error: (err) => {
+  // ✅ Network/server error handle
+  if (err.status === 0 || err.status === 503) {
+    Swal.fire({
+      icon: 'error',
+      title: 'No Internet Connection!',
+      html: `<p style="color:#555; font-size:15px; margin:0;">
+        Please check your internet connection and try again.
+      </p>`,
+      confirmButtonColor: '#4A90D9',
+      position: 'center',
+      width: 400,
+      padding: '32px',
+      showClass: { popup: 'swal2-show' },
+      hideClass: { popup: 'swal2-hide' },
+      customClass: { popup: 'network-popup' },
+      didOpen: () => {
+        if (!document.getElementById('swal-network-style')) {
+          const style = document.createElement('style');
+          style.id = 'swal-network-style';
+          style.textContent = `.network-popup { border-radius: 16px !important; }`;
+          document.head.appendChild(style);
         }
+      }
+    });
+  } else {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Failed to load trips. Try again.',
+    });
+  }
+}
       });
   }
 

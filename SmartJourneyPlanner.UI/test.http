@@ -1,5 +1,5 @@
 
-POST http://localhost:5233/api/discussions/6a37ea5ec175d2bece03fabc/vote
+POST http://localhost:5233/api/discussions/6a54ad77241db7ca6cd3512e/vote
 Content-Type: application/json
 
 {
@@ -129,4 +129,72 @@ Content-Type: application/json
 {
   "optionText": "Disagree",
   "userName": "ama"
+}
+
+###
+
+
+POST http://localhost:5233/api/routes/bus-fare
+Content-Type: application/json
+
+{
+  "start": "Colombo, Sri Lanka",
+  "end": "Matara, Sri Lanka"
+}
+
+### Test 1 — Empty city name
+GET http://localhost:5233/api/places/search?city=&category=hotel
+Content-Type: application/json
+
+### Test 2 — Invalid city
+GET http://localhost:5233/api/places/search?city=invalid123&category=hotel
+Content-Type: application/json
+
+### Test 3 — Empty category
+GET http://localhost:5233/api/places/search?city=Colombo&category=
+Content-Type: application/json
+
+### Test 4 — Special characters in city name
+GET http://localhost:5233/api/places/search?city=C@lombo&category=hotel
+Content-Type: application/json
+
+### Test — No Internet / Network Error
+###
+GET http://localhost:5233/api/trips/by-email/test@gmail.com
+Content-Type: application/json
+
+### Test — with Internet / Network 
+###
+GET http://localhost:5233/api/trips/by-email/test@gmail.com
+Content-Type: application/json
+
+###TC-: Non-PDF file upload
+POST /api/file/upload
+Content-Type: multipart/form-data
+tripId: "6a38f176654a45049fc2c9bb" 
+file: image.png 
+
+###TC: PDF > 20MB
+POST /api/file/upload  
+tripId: "" 
+file: large.pdf (>20MB)
+
+###
+POST http://localhost:5233/api/comments
+Content-Type: application/json
+
+{
+  "tripId": "000000000000000000000000",
+  "user": "sandali",
+  "text": "this is wrong trip message"
+}
+
+###
+POST http://localhost:5233/api/comments
+Content-Type: application/json
+
+{
+  "tripId": "69fb5a7f9a1de85c58c3bb6e",
+  "user": "FAKE_PERSON_XYZ",
+  "text": "fake person message"
 }
