@@ -701,7 +701,25 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.allMemories.forEach(memory => {
       if (!memory.latitude || !memory.longitude) return;
 
-      const marker = leaflet.marker([memory.latitude, memory.longitude]);
+      const pinHtml = `
+        <div class="vignette-pin-container" style="--pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'}">
+          <div class="vignette-image-holder">
+            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
+          </div>
+          <div class="vignette-pin-tail"></div>
+          <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+        </div>
+      `;
+
+      const customIcon = leaflet.divIcon({
+        html: pinHtml,
+        className: 'vignette-map-pin-wrapper', 
+        iconSize: leaflet.point(52, 64),       
+        iconAnchor: [26, 64],                  
+        popupAnchor: [0, -68]                  
+      });
+
+      const marker = leaflet.marker([memory.latitude, memory.longitude], { icon: customIcon });
       const popupHtml = this.getPopupHtml(memory);
 
       marker
