@@ -60,7 +60,9 @@ namespace SmartJourneyPlanner.Services
         public async Task<bool> UpdateBookingStatus(string bookingId, string status)
         {
             var filter = Builders<TransportBooking>.Filter.Eq(booking => booking.Id, bookingId);
-            var update = Builders<TransportBooking>.Update.Set(booking => booking.Status, status);
+            var update = Builders<TransportBooking>.Update
+        .Set(booking => booking.Status, status)
+        .Set(booking => booking.StatusChangedDate, DateTime.UtcNow.ToString("o"));
             
             var result = await _bookingCollection.UpdateOneAsync(filter, update);
             // Returns success indicator so controller can decide appropriate HTTP response

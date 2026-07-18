@@ -33,6 +33,7 @@ export class ProviderDashboardComponent implements OnInit {
   bookingSearchTerm: string = '';
   bookingStatusFilter: string = '';
   bookingProximityFilter: string = '';
+  showOldBookings: boolean = false;
 
   constructor(
     private vehicleService: VehicleService,
@@ -44,9 +45,9 @@ export class ProviderDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
-    console.log('📌 Active Provider Identifier resolved to:', this.providerId);
+    console.log('Active Provider Identifier resolved to:', this.providerId);
     if (!this.providerId) {
-      console.error('❌ Failed to extract provider identifier from authentication context.');
+      console.error('Failed to extract provider identifier from authentication context.');
       Swal.fire({
         icon: 'error',
         title: 'Authentication Error',
@@ -101,7 +102,8 @@ export class ProviderDashboardComponent implements OnInit {
       // 1. Force fallbacks on fields that are empty or undefined in your C# model
       booking.vehicleName = booking.vehicleName || 'Loading vehicle details...';
       
-      //FIX: Calculate durationText here so EVERY booking gets it instantly!
+      booking.statusChangedDate = booking.statusChangedDate || booking.StatusChangedDate || null;
+      // Calculate durationText here so EVERY booking gets it instantly!
       if (booking.startDate && booking.endDate) {
         const sDate = new Date(booking.startDate);
         const eDate = new Date(booking.endDate);
@@ -223,52 +225,78 @@ export class ProviderDashboardComponent implements OnInit {
 
   // Filter bookings based on search term and status
   filterBookings() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const prox = this.bookingProximityFilter;
-  const isSorting = prox.startsWith('sort-');
+    const prox = this.bookingProximityFilter;
+    const isSorting = prox.startsWith('sort-');
 
-  // 1. Filter bookings arrays
-  let result = this.bookings.filter((b: any) => {
-    const matchesSearch = !this.bookingSearchTerm || 
-      (b.userName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase()) ||
-      (b.vehicleName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase());
+    // 1. Filter bookings arrays
+    let result = this.bookings.filter((b: any) => {
+      const matchesSearch = !this.bookingSearchTerm || 
+        (b.userName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase()) ||
+        (b.vehicleName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase());
 
-    // Forces status to be 'Confirmed' if sorting options are active
-    let matchesStatus = false;
-    if (isSorting) {
-      // Must be Confirmed or Pending base state
-      const isAllowedStatus = b.status === 'Confirmed' || b.status === 'Pending';
-      // AND if a user selected a specific option in the status dropdown, it must match that too
-      const matchesDropdown = !this.bookingStatusFilter || b.status === this.bookingStatusFilter;
+      const realStatus = b.Status || b.status || '';
+      const currentStatus = realStatus.toLowerCase(); 
+      const filterStatusSelected = (this.bookingStatusFilter || '').toLowerCase();
+
+      let matchesStatus = false;
+      if (isSorting) {
+        if (filterStatusSelected === 'canceled' || filterStatusSelected === 'cancelled') {
+          matchesStatus = currentStatus === 'canceled' || currentStatus === 'cancelled';
+        } else {
+          const isAllowedStatus = currentStatus === 'confirmed' || currentStatus === 'pending';
+          const matchesDropdown = !this.bookingStatusFilter || currentStatus === filterStatusSelected;
+          matchesStatus = isAllowedStatus && matchesDropdown;
+        }
+      } else {
+        // Standard behavior when sorting is turned off
+        if (!this.bookingStatusFilter) {
+          matchesStatus = true;
+        } else if (filterStatusSelected === 'canceled' || filterStatusSelected === 'cancelled') {
+          matchesStatus = currentStatus === 'canceled' || currentStatus === 'cancelled';
+        } else {
+          matchesStatus = currentStatus === filterStatusSelected;
+        }
+      }
+
+      // Calculate proximity days
+      let matchesProx = true;
+      if (b.startDate && !isSorting && prox) {
+        const diffDays = Math.ceil((new Date(b.startDate).setHours(0,0,0,0) - today.getTime()) / (1000 * 60 * 60 * 24));
+        matchesProx = prox === 'near' ? (diffDays >= 0 && diffDays <= 3) : (diffDays > 7);
+      }
+
+      let matchesAge = true;
+      const targetsForAgeCheck = ['completed', 'rejected', 'cancelled', 'canceled'];
+      const realStatusDate = b.StatusChangedDate || b.statusChangedDate || null;
       
-      matchesStatus = isAllowedStatus && matchesDropdown;
-    } else {
-      // Standard behavior when sorting is turned off
-      matchesStatus = !this.bookingStatusFilter || b.status === this.bookingStatusFilter;
-    }
+      if (!this.showOldBookings && realStatusDate && targetsForAgeCheck.includes(currentStatus)) {
+        const changedDate = new Date(realStatusDate);
+        
+        // 30 days=1 month
+        const diffTime = Math.abs(today.getTime() - changedDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 30) {
+          matchesAge = false; // hide if old more than 1 month
+        }
+      }
 
-    // Calculate proximity days
-    let matchesProx = true;
-    if (b.startDate && !isSorting && prox) {
-      const diffDays = Math.ceil((new Date(b.startDate).setHours(0,0,0,0) - today.getTime()) / (1000 * 60 * 60 * 24));
-      matchesProx = prox === 'near' ? (diffDays >= 0 && diffDays <= 3) : (diffDays > 7);
-    }
-
-    return matchesSearch && matchesStatus && matchesProx;
-  });
-
-  // 2. Sort results if necessary
-  if (isSorting) {
-    result.sort((a: any, b: any) => {
-      const diff = new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime();
-      return prox === 'sort-near-to-far' ? diff : -diff;
+      return matchesSearch && matchesStatus && matchesProx && matchesAge;
     });
-  }
 
-  this.filteredBookings = result;
-}
+    // 2. Sort results if necessary
+    if (isSorting) {
+      result.sort((a: any, b: any) => {
+        const diff = new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime();
+        return prox === 'sort-near-to-far' ? diff : -diff;
+      });
+    }
+
+    this.filteredBookings = result;
+  }
 
   toggleAvailability(vehicle: any) {
     const targetId = vehicle.id || vehicle._id;
@@ -342,6 +370,8 @@ export class ProviderDashboardComponent implements OnInit {
   acceptBooking(booking: Booking) {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
+      booking.status = 'Confirmed';
+      booking.statusChangedDate = new Date().toISOString();
       Swal.fire('Confirmed!', 'The booking has been successfully accepted.', 'success');
       this.loadAll();
     });
@@ -351,6 +381,8 @@ export class ProviderDashboardComponent implements OnInit {
     if (!booking.id) return;
     this.bookingService.updateBookingStatus(booking.id, 'Completed').subscribe({
       next: () => {
+        booking.status = 'Completed';
+        booking.statusChangedDate = new Date().toISOString();
         Swal.fire('Completed!', 'Trip marked as completed.', 'success');
         this.loadAll();
       },
@@ -375,6 +407,8 @@ export class ProviderDashboardComponent implements OnInit {
         const bookingId: string = booking.id!;
         this.bookingService.updateBookingStatus(bookingId, 'Rejected').subscribe({
           next: () => {
+            booking.status = 'Rejected';
+            booking.statusChangedDate = new Date().toISOString();
             Swal.fire('Rejected', 'The booking request was turned down.', 'info');
             this.loadAll();
           },
@@ -387,6 +421,10 @@ export class ProviderDashboardComponent implements OnInit {
   viewBookingDetails(id: string | undefined) {
   const b = this.bookings.find(x => x.id === id);
   if (!b) return;
+
+  const formattedStatusDate = b.statusChangedDate 
+      ? new Date(b.statusChangedDate).toLocaleDateString() + ' ' + new Date(b.statusChangedDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      : 'Not Updated Yet';
 
   const s = b.startDate ? new Date(b.startDate).setHours(0,0,0,0) : 0;
   const e = b.endDate ? new Date(b.endDate).setHours(0,0,0,0) : 0;
@@ -412,6 +450,7 @@ export class ProviderDashboardComponent implements OnInit {
           <p class="m-0"><strong>Name:</strong> ${b.userName || 'N/A'}</p>
           <p class="m-1 0"><strong>Phone:</strong> ${b.contactNumber || 'Not Provided'}</p>
           <p class="m-0"><strong>Status:</strong> <span class="badge bg-warning text-dark">${b.status}</span></p>
+          <p class="m-0 mt-1"><small class="text-muted"><strong>Last Status Update:</strong> ${formattedStatusDate}</small></p>
         </div>
 
         <h6 class="text-primary fw-bold mb-1">Trip Itinerary</h6>

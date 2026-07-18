@@ -189,7 +189,16 @@
             <option value="Confirmed">Confirmed</option>
             <option value="Completed">Completed</option>
             <option value="Rejected">Rejected</option>
+            <option value="Canceled">Cancelled</option>
           </select>
+
+          <div class="form-check form-switch my-2">
+  <input class="form-check-input" type="checkbox" 
+    id="showOldBookingsCheck" [(ngModel)]="showOldBookings" (change)="filterBookings()">
+  <label class="form-check-input-label" for="showOldBookingsCheck">
+    Show history older than 1 month
+  </label>
+</div>
         </div>
       </div>
 

@@ -108,6 +108,7 @@ export interface Booking {
   hasBeenRated?: boolean; // True if the user already reviewed this trip
   vehicleName: string;
   totalPrice: number;
+  statusChangedDate?: string;
   
   // Trip details provided by the traveler
   pickupAddress?: string;
