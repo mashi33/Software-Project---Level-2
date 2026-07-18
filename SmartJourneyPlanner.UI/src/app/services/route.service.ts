@@ -48,4 +48,14 @@ export class RouteService {
     console.log("Calling API at:", apiUrl);
     return this.http.post<any>(apiUrl, { start, end });
   }
+
+  /**
+   * Sends start and end locations to the backend and returns NTC bus fare details.
+   * Used when user selects Public Transport mode.
+   */
+  getBusFare(start: string, end: string) {
+    const apiUrl = 'http://localhost:5233/api/routes/bus-fare';
+    console.log("Calling Bus Fare API at:", apiUrl);
+    return this.http.post<any>(apiUrl, { start, end });
+  }
 }

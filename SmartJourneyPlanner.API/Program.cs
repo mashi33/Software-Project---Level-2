@@ -81,10 +81,14 @@ builder.Services.AddSingleton<DiscussionsService>();
 builder.Services.AddSingleton<CommentsService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddSingleton<FuelPriceService>();
+builder.Services.AddSingleton<BusFareService>();
 builder.Services.AddSingleton<FileStorageService>();
 builder.Services.AddSingleton<TransportVehicleService>();
 builder.Services.AddSingleton<TransportBookingService>();
-builder.Services.AddHttpClient<PlacesService>();
+builder.Services.AddHttpClient<PlacesService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10); // 10s timeout — no internet crash 
+});
 builder.Services.AddHttpClient<VotePlacesService>();
 builder.Services.AddSingleton<MemoryService>();
 builder.Services.AddSingleton<AchievementService>();
@@ -105,6 +109,28 @@ if (app.Environment.IsDevelopment()) {
 
 // This allows browser to access 'http://localhost:5233/uploads/...' without 404/401 errors
 app.UseStaticFiles();
+
+// ✅ Global Exception Middleware — network/crash handle
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Global Error]: {ex.Message}");
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        var errorResponse = new {
+            message = "Network connection failed. Please check your internet connection.",
+            error = ex.Message
+        };
+
+        await context.Response.WriteAsJsonAsync(errorResponse);
+    }
+});
 
 app.UseRouting();
 app.UseCors("AllowAngularApp");

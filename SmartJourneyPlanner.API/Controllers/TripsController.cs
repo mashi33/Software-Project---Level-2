@@ -141,10 +141,22 @@ namespace SmartJourneyPlanner.API.Controllers
                 var trips = await _tripsCollection.Find(filter).ToListAsync();
                 return Ok(trips);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Error fetching trips: " + ex.Message });
-            }
+            catch (MongoDB.Driver.MongoConnectionException ex)
+    {
+        Console.WriteLine($"[MongoDB Connection Error]: {ex.Message}");
+        // ✅ 503 return —in frontend  network error popup
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+    }
+    catch (TimeoutException ex)
+    {
+        Console.WriteLine($"[MongoDB Timeout]: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[TripsController Error]: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+    }
         }
 
         // Dashboard data for logged-in user only

@@ -10,36 +10,75 @@ namespace SmartJourneyPlanner.Services
     private readonly HttpClient _httpClient = httpClient;
     private readonly string _apiKey = configuration.GetSection("GoogleApi")["ApiKey"] ?? "";
 
+    // ✅ NEW — check if API key is missing in controller
+    public string ApiKey => _apiKey;
+
+    public bool LastGeocodeNetworkError { get; private set; } = false;
+
     // Converts a city name into geographic coordinates (latitude and longitude) using the Google Geocoding API
-    public async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
-    {
-      string url = $"https://maps.googleapis.com/maps/api/geocode/json" +
-                   $"?address={Uri.EscapeDataString(cityName)}" +
-                   $"&key={_apiKey}";
-
-      Console.WriteLine($"[Geocode Request]: {url}");
-
-      try
+        public async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
       {
-        var response = await _httpClient.GetFromJsonAsync<GeocodeResponse>(url);
 
-        if (response?.Results == null || response.Results.Count == 0)
-        {
-          Console.WriteLine($"[Geocode] No results for '{cityName}'");
-          return null;
-        }
+          // ✅ Reset flag on every call
+          LastGeocodeNetworkError = false;
 
-        var location = response.Results[0].Geometry.Location;
-        Console.WriteLine($"[Geocode] '{cityName}' → lat:{location.Lat}, lon:{location.Lng}");
+          if (string.IsNullOrWhiteSpace(cityName))
+              return null;
 
-        return (location.Lat, location.Lng);
+          string url = $"https://maps.googleapis.com/maps/api/geocode/json" +
+                      $"?address={Uri.EscapeDataString(cityName)}" +
+                      $"&key={_apiKey}";
+
+          Console.WriteLine($"[Geocode Request]: {url}");
+
+          try
+          {
+              var response = await _httpClient.GetFromJsonAsync<GeocodeResponse>(url);
+
+               // ✅ API key invalid check
+              if (response?.Status == "REQUEST_DENIED")
+              {
+                  Console.WriteLine($"[Geocode] Request denied — Invalid API key.");
+                  return null;
+              }
+
+              if (response?.Results == null || response.Results.Count == 0)
+              {
+                  Console.WriteLine($"[Geocode] No results for '{cityName}'");
+                  return null;
+              }
+
+              var location = response.Results[0].Geometry.Location;
+              Console.WriteLine($"[Geocode] '{cityName}' → lat:{location.Lat}, lon:{location.Lng}");
+
+              return (location.Lat, location.Lng);
+          }
+          catch (HttpRequestException ex)
+          {
+              Console.WriteLine($"[Geocode Network Error]: {ex.Message}");
+              LastGeocodeNetworkError = true; // ✅ network error flag set
+              return null;
+          }
+          catch (ArgumentOutOfRangeException ex)
+          {
+              Console.WriteLine($"[Geocode DNS Error — No Internet]: {ex.Message}");
+              LastGeocodeNetworkError = true; // ✅ network error flag set
+              return null;
+          }
+          // ✅ NEW — catch timeout exception catch 
+          catch (TaskCanceledException ex)
+          {
+              Console.WriteLine($"[Geocode Timeout — No Internet]: {ex.Message}");
+              LastGeocodeNetworkError = true; // ✅ network error flag set
+              return null;
+          }
+          catch (Exception ex)
+          {
+              Console.WriteLine($"[Geocode Error]: {ex.Message}");
+              LastGeocodeNetworkError = true; // ✅ network error flag set
+              return null;
+          }
       }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"[Geocode Error]: {ex.Message}");
-        return null;
-      }
-    }
 
     // Haversine formula to calculate the distance in kilometers between two geographic coordinates
     public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
@@ -85,6 +124,19 @@ namespace SmartJourneyPlanner.Services
 
         var response = System.Text.Json.JsonSerializer.Deserialize<GoogleResponse>(raw);
 
+        // ✅ API key invalid or quota exceeded check
+        if (response?.Status == "REQUEST_DENIED")
+        {
+            Console.WriteLine($"[Google API] Request denied — Invalid API key or billing issue.");
+            return [];
+        }
+
+        if (response?.Status == "OVER_QUERY_LIMIT")
+        {
+            Console.WriteLine($"[Google API] Quota exceeded.");
+            return [];
+        }
+
         if (response?.Results == null || response.Results.Count == 0)
         {
           Console.WriteLine($"[Google API No Data]: {raw}");
@@ -106,11 +158,21 @@ namespace SmartJourneyPlanner.Services
           IsOpenNow = r.OpeningHours?.OpenNow
         }).ToList();
       }
-      catch (Exception ex)
-      {
+      catch (TaskCanceledException ex)
+    {
+        Console.WriteLine($"[PlacesService Timeout — No Internet]: {ex.Message}");
+        return [];
+    }
+     catch (HttpRequestException ex)
+    {
+        Console.WriteLine($"[PlacesService Network Error]: {ex.Message}");
+        return [];
+    }
+    catch (Exception ex)
+    {
         Console.WriteLine($"[PlacesService Error]: {ex.Message}");
         return [];
-      }
+    }
     }
   }
 }

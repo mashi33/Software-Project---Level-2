@@ -13,6 +13,8 @@ import QRCode from 'qrcode';
 })
 export class GenerationComponent implements OnInit, OnChanges {
   @Input() routeData: any;
+  @Input() busData: any  = null;  // ✅ add
+  @Input() transportMode: 'private' | 'public' = 'private'; // ✅ add
   mapBase64:    string  = '';
   isLoadingMap: boolean = false;
   today:        number  = Date.now();
@@ -82,51 +84,54 @@ export class GenerationComponent implements OnInit, OnChanges {
   // ── TRANSLATE SPOT NAME TO ENGLISH VIA GOOGLE GEOCODING ──
   // Uses lat/lng to get the official English place name
   private async getEnglishName(spot: any): Promise<string> {
-    // If name is already English (no Sinhala/Tamil unicode), return as-is
-    const hasSinhala = /[\u0D80-\u0DFF]/.test(spot.name); // Sinhala unicode range
-    const hasTamil   = /[\u0B80-\u0BFF]/.test(spot.name); // Tamil unicode range
+    const hasSinhala = /[\u0D80-\u0DFF]/.test(spot.name);
+    const hasTamil   = /[\u0B80-\u0BFF]/.test(spot.name);
 
-    if (!hasSinhala && !hasTamil) {
-      return spot.name; // ✅ Already English — no API call needed
+    // ✅ Already English — return as-is
+    if (!hasSinhala && !hasTamil) return spot.name;
+
+    // ✅ Extract English portion from mixed name
+    // eg: "වයඹ - Wayamba Army War Memorial" → "Wayamba Army War Memorial"
+    const englishPart = spot.name
+      .split(/[\s\-–|]+/)  // split by spaces, dashes, pipes
+      .filter((word: string) => /^[a-zA-Z0-9\s.,()'-]+$/.test(word) && word.trim().length > 1)
+      .join(' ')
+      .trim();
+
+    if (englishPart.length > 3) {
+      console.log(`✅ Extracted English "${spot.name}" → "${englishPart}"`);
+      return englishPart;
     }
 
-    // Only call Geocoding API if name has Sinhala or Tamil characters
+    // ✅ Fully Sinhala/Tamil — try Places API with English language
     try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json`
-        + `?latlng=${spot.lat},${spot.lng}`
-        + `&language=en`           // ← forces English response
+      const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`
+        + `?location=${spot.lat},${spot.lng}`
+        + `&radius=200`
+        + `&language=en`
         + `&key=${this.apiKey}`;
 
-      const response = await fetch(url);
-      const data     = await response.json();
+      const placesRes  = await fetch(placesUrl);
+      const placesData = await placesRes.json();
 
-      if (data.status === 'OK' && data.results?.length > 0) {
-        // Use the most specific result name available
-        const result = data.results[0];
+      if (placesData.status === 'OK' && placesData.results?.length > 0) {
+        for (const place of placesData.results) {
+          const name       = place.name;
+          const isSinhala  = /[\u0D80-\u0DFF]/.test(name);
+          const isTamil    = /[\u0B80-\u0BFF]/.test(name);
+          const isPlusCode = /^[23456789CFGHJMPQRVWX]{4,8}\+/.test(name);
 
-        // Try to find a named establishment or point of interest first
-        const poiComponent = result.address_components?.find((c: any) =>
-          c.types.includes('point_of_interest') ||
-          c.types.includes('establishment') ||
-          c.types.includes('natural_feature') ||
-          c.types.includes('park')
-        );
-
-        if (poiComponent) {
-          console.log(`✅ Translated "${spot.name}" → "${poiComponent.long_name}"`);
-          return poiComponent.long_name;
+          if (!isSinhala && !isTamil && !isPlusCode && name.length > 2) {
+            console.log(`✅ Places API "${spot.name}" → "${name}"`);
+            return name;
+          }
         }
-
-        // Fallback to formatted address first part
-        const formattedName = result.formatted_address?.split(',')[0];
-        console.log(`✅ Translated "${spot.name}" → "${formattedName}"`);
-        return formattedName || spot.name;
       }
     } catch (err) {
-      console.error('❌ Geocoding failed for spot:', spot.name, err);
+      console.error('❌ Translation failed:', spot.name, err);
     }
 
-    // If API fails for any reason, return original name
+    // ✅ Last resort — return original
     return spot.name;
   }
 
@@ -205,12 +210,17 @@ export class GenerationComponent implements OnInit, OnChanges {
   }
 
   async downloadPDF() {
+    // ✅ ADD THIS
+  if (this.transportMode === 'public') {
+    await this.downloadBusPDF();
+    return;
+  }
     if (!this.routeData)   { alert('No route data available.');         return; }
     if (this.isLoadingMap) { alert('Please wait for the map to load.'); return; }
     if (!this.mapBase64)   { alert('Map image is not ready yet.');      return; }
 
     // ✅ Generate QR code
-  const appUrl = `http://localhost:4200/explore/route-optimization?start=${encodeURIComponent(this.routeData.startLocation)}&end=${encodeURIComponent(this.routeData.endLocation)}`;
+  const appUrl = `http://localhost:4200/explore/route-optimization?start=${encodeURIComponent(this.routeData.startLocation)}&end=${encodeURIComponent(this.routeData.endLocation)}&mode=private`;
   const qrBase64 = await QRCode.toDataURL(appUrl, {
     width: 150,
     margin: 1,
@@ -418,5 +428,210 @@ export class GenerationComponent implements OnInit, OnChanges {
 
     // ── SAVE ─────────────────────────────────────────────────
     doc.save(`Journey_Plan_${this.routeData.endLocation || 'Report'}.pdf`);
+  }
+
+  /**
+   * ── PUBLIC TRANSPORT (BUS) PDF ─────────────────────────────
+   * Generates a standalone PDF for bus journeys, kept fully separate
+   * from the private route PDF above. Shares the same visual language
+   * (header bar, footer bar, QR share section) but contains only
+   * bus-specific content — no map, no route comparison table.
+   */
+  private async downloadBusPDF(): Promise<void> {
+    if (!this.busData) { alert('No bus data available.'); return; }
+
+    const doc        = new jsPDF('p', 'mm', 'a4');
+    const pageWidth  = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // ── HEADER (same style as private PDF) ─────────────────
+    doc.setFillColor(26, 86, 219);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Smart Journey Planner', 14, 12);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Public Transport Report', 14, 22);
+    doc.setFontSize(9);
+    doc.text(
+      new Date().toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'long', year: 'numeric'
+      }),
+      pageWidth - 14, 22, { align: 'right' }
+    );
+
+    // ── TRIP INFO ───────────────────────────────────────────
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('From:', 14, 38);
+    doc.setFont('helvetica', 'normal');
+    doc.text(this.busData.from || '', 30, 38);
+    doc.setFont('helvetica', 'bold');
+    doc.text('To:', 14, 46);
+    doc.setFont('helvetica', 'normal');
+    doc.text(this.busData.to || '', 30, 46);
+
+    // ── BUS JOURNEY DETAILS TITLE ────────────────────────────
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('Bus Journey Details', 14, 58);
+    doc.setDrawColor(26, 86, 219);
+    doc.setLineWidth(0.5);
+    doc.line(14, 60, pageWidth - 14, 60);
+
+    let yPos = 66;
+
+    // ── DIRECT ROUTE ─────────────────────────────────────────
+    if (!this.busData.isMultiLeg) {
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(14, yPos, pageWidth - 28, 40, 2, 2, 'F');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Bus Route ${this.busData.routeNo}`, 20, yPos + 10);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      doc.text(`From : ${this.busData.from}`, 20, yPos + 20);
+      doc.text(`To   : ${this.busData.to}`,   20, yPos + 28);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Fare : Rs. ${this.busData.fare}`, 20, yPos + 36);
+
+      yPos += 50;
+    }
+    // ── MULTI-LEG ROUTE ──────────────────────────────────────
+    else {
+      // Leg 1 card
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(14, yPos, pageWidth - 28, 34, 2, 2, 'F');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Bus ${this.busData.routeNo1}`, 20, yPos + 10);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      doc.text(`From : ${this.busData.from}`,        20, yPos + 18);
+      doc.text(`To   : ${this.busData.interchange}`, 20, yPos + 26);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Fare : Rs. ${this.busData.fareLeg1}`, pageWidth - 20, yPos + 18, { align: 'right' });
+
+      yPos += 40;
+
+      // Interchange notice
+      doc.setFillColor(249, 250, 251);
+      doc.roundedRect(14, yPos, pageWidth - 28, 14, 2, 2, 'F');
+      doc.setDrawColor(26, 86, 219);
+      doc.setLineWidth(0.5);
+      doc.line(14, yPos, 14, yPos + 14);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Change bus at: ${this.busData.interchange}`, 20, yPos + 9);
+      yPos += 22;
+
+      // Leg 2 card
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(14, yPos, pageWidth - 28, 34, 2, 2, 'F');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Bus ${this.busData.routeNo2}`, 20, yPos + 10);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      doc.text(`From : ${this.busData.interchange}`, 20, yPos + 18);
+      doc.text(`To   : ${this.busData.to}`,          20, yPos + 26);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 86, 219);
+      doc.text(`Fare : Rs. ${this.busData.fareLeg2}`, pageWidth - 20, yPos + 18, { align: 'right' });
+
+      yPos += 40;
+
+      // Total fare banner
+      doc.setFillColor(26, 86, 219);
+      doc.roundedRect(14, yPos, pageWidth - 28, 16, 2, 2, 'F');
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Total Bus Fare', 20, yPos + 10);
+      doc.text(`Rs. ${this.busData.totalFare}`, pageWidth - 20, yPos + 10, { align: 'right' });
+
+      yPos += 26;
+    }
+
+    // ── QR CODE SECTION (same style as private PDF) ─────────
+    const appUrl = `http://localhost:4200/explore/route-optimization` +
+                  `?start=${encodeURIComponent(this.busData.from || '')}` +
+                  `&end=${encodeURIComponent(this.busData.to || '')}` +
+                  `&mode=public`;
+    const qrBase64 = await QRCode.toDataURL(appUrl, {
+      width: 150,
+      margin: 1,
+      color: { dark: '#1a56db', light: '#ffffff' }
+    });
+
+    const shareTitleY = yPos + 10;
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Share This Route', 14, shareTitleY);
+    doc.setDrawColor(26, 86, 219);
+    doc.line(14, shareTitleY + 2, pageWidth - 14, shareTitleY + 2);
+
+    const qrY = shareTitleY + 8;
+    doc.addImage(qrBase64, 'PNG', 14, qrY, 50, 50);
+
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Open in Smart Journey Planner', 72, qrY + 15);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Scan this QR code to open this route', 72, qrY + 25);
+    doc.text('directly in the app on your device.', 72, qrY + 33);
+
+    doc.setFontSize(8);
+    doc.setTextColor(26, 86, 219);
+    doc.text(appUrl, 14, qrY + 58);
+
+    // ── FOOTER ON EVERY PAGE (dynamic, same as private PDF) ──
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFillColor(26, 86, 219);
+      doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        'Smart Journey Planner  •  support@smartjourney.com',
+        14, pageHeight - 3
+      );
+      doc.text(
+        `Page ${i} of ${totalPages}`,
+        pageWidth - 14, pageHeight - 3, { align: 'right' }
+      );
+    }
+
+    // ── SAVE ─────────────────────────────────────────────────
+    doc.save(`Bus_Report_${this.busData.to || 'Report'}.pdf`);
   }
 }

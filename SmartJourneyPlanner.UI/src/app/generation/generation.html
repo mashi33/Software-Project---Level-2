@@ -1,10 +1,23 @@
 <div class="generation-wrapper">
-  <button 
-    (click)="downloadPDF()" 
-    class="btn-download" 
-    [disabled]="isLoadingMap">
-    <span *ngIf="isLoadingMap">🚀 Making map for ready... (Loading Map)</span>
-    <span *ngIf="!isLoadingMap">📥 Download PDF Report</span>
-  </button>
+  <button
+    (click)="downloadPDF()"
+    class="btn-download"
+    [disabled]="isLoadingMap && transportMode === 'private'">
 
-  </div>
+    <!-- Private transport loading -->
+    <span *ngIf="isLoadingMap && transportMode === 'private'">
+      🚀 Making map ready... (Loading Map)
+    </span>
+
+    <!-- Private transport ready -->
+    <span *ngIf="!isLoadingMap && transportMode === 'private'">
+      📥 Download PDF Report
+    </span>
+
+    <!-- Public transport — no map loading needed -->
+    <span *ngIf="transportMode === 'public'">
+      🚌 Download Bus Report
+    </span>
+
+  </button>
+</div>

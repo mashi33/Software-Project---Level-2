@@ -12,5 +12,11 @@ namespace SmartJourneyPlanner.Interfaces
         /// Returns optimized route options (fastest, cheapest, scenic) for the given request.
         /// </summary>
         Task<IActionResult> GetOptimizedRoutesAsync(RouteRequest req);
+
+        /// <summary>
+        /// Returns NTC bus fare for the given start and end locations.
+        /// Supports direct and 2-leg interchange routes.
+        /// </summary>
+        Task<IActionResult> GetBusFareAsync(RouteRequest req);
     }
 }
