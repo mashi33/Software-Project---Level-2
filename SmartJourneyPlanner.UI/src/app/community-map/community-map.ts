@@ -526,8 +526,26 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         const popupHtml = this.getPopupHtml(memory);
         marker.setPopupContent(popupHtml);
       } else {
-        // Create new marker
-        const marker = leaflet.marker([memory.latitude, memory.longitude]);
+        const pinHtml = `
+          <div class="vignette-pin-container" style="--pin-color: #6366f1">
+            <div class="vignette-image-holder">
+              <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${this.escapeHtml(memory.title)}" />
+            </div>
+            <div class="vignette-pin-tail"></div>
+            <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+          </div>
+        `;
+
+        const customIcon = leaflet.divIcon({
+          html: pinHtml,
+          className: 'vignette-map-pin-wrapper', 
+          iconSize: leaflet.point(52, 64),       
+          iconAnchor: [26, 64],                  
+          popupAnchor: [0, -68]                  
+        });
+
+        // Create new marker with custom 3D icon
+        const marker = leaflet.marker([memory.latitude, memory.longitude], { icon: customIcon });
         const popupHtml = this.getPopupHtml(memory);
         marker.bindPopup(popupHtml, {
           maxWidth: 320,

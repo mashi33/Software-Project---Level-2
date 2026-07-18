@@ -5,6 +5,11 @@ import { timeout } from 'rxjs/operators';
 import { TripMemory } from '../models/memory.model';
 import { environment } from '../../environments/environment';
 
+export interface LikeRequest {
+  userId: string;
+  fullName: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MemoryService {
   private readonly apiUrl = `${environment.apiUrl}/memories`;
@@ -39,6 +44,12 @@ export class MemoryService {
   toggleLike(memoryId: string, userId: string, fullName: string): Observable<TripMemory> {
     const payload = { userId, fullName };
     return this.http.post<TripMemory>(`${this.apiUrl}/${memoryId}/like`, payload).pipe(
+      timeout(this.requestTimeout)
+    );
+  }
+
+  deleteMemory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       timeout(this.requestTimeout)
     );
   }
