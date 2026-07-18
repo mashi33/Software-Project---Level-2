@@ -37,6 +37,7 @@ namespace SmartJourneyPlanner.Models
         public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o"); // Exact time booking was made
         public bool? HasBeenRated { get; set; }                 // True if the user has already left a review
 
+        public string? StatusChangedDate { get; set; }
 
         // Specific Trip Requirements
         public string? PickupAddress { get; set; }              // Where the driver picks up the traveler
