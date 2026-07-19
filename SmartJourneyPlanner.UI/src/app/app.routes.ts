@@ -30,7 +30,7 @@ import { ResetPasswordComponent } from './reset-password/reset-password';
 import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
-
+import { SlideshowComponent } from './slideshow/slideshow';
 
 export const routes: Routes = [
   //  PUBLIC ROUTES 
@@ -56,6 +56,7 @@ export const routes: Routes = [
   { path: 'achievements', component: AchievementsComponent, canActivate: [authGuard, roleGuard], data: { expectedRoles: ['Traveller', 'Traveler'] } },
   { path: 'help', component: HelpComponent, canActivate: [authGuard] },
   {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
+  {path: 'slideshow/:tripName',component: SlideshowComponent, canActivate: [authGuard]},
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },

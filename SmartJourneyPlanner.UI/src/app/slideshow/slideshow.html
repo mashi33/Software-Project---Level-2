@@ -1,0 +1,244 @@
+<div #container class="trip-recap-container" [class.is-view-fullscreen]="isFullscreen">
+  
+  <!-- LEAFLET MAP BACKGROUND -->
+<div class="map-layer" id="leaflet-map-background" [hidden]="isFullscreen"></div>
+
+  <!-- HEADER NAVIGATION -->
+  <header class="header-bar glass-panel" *ngIf="!isFullscreen">
+    <button class="btn btn-back" (click)="goBackToSummary()">
+      <span>⬅ Back</span>
+    </button>
+    
+    <div class="header-title-group">
+      <h1 class="header-main-title">✨ Trip Memories Recap ✨</h1>
+      <p class="header-subtitle">Relive the best moments of our amazing journey</p>
+    </div>
+
+    <!-- HEADER ACTION SET -->
+    <div class="header-actions">
+      <button class="btn btn-action btn-album" [disabled]="isAlbumDownloading" (click)="downloadAlbumAsPhotos()">
+        <span>{{ isAlbumDownloading ? '⏳ Downloading...' : '📸 Download Photo Album' }}</span>
+      </button>
+
+      <button class="btn btn-action btn-video" [disabled]="isDownloading" (click)="downloadCurrentVideo()">
+        <span>{{ isDownloading ? '⏳ Compiling...' : '📥 Save Video Recap' }}</span>
+      </button>
+
+      <button class="btn btn-action btn-fullscreen" (click)="toggleFullscreen()">
+        <span>🖵 Fullscreen</span>
+      </button>
+    </div>
+  </header>
+
+   <!-- SLIDESHOW RESUME FLOATING BUTTON -->
+  <div class="resume-action-container" *ngIf="!showCloseButton && !isFullscreen">
+    <button class="btn-professional-resume" (click)="onReopenSlideshow()" aria-label="Resume Slideshow">
+      <i class="fas fa-play icon-play"></i>
+      <span class="btn-text">Resume Slideshow</span>
+    </button>
+  </div>
+
+  <!-- MAIN PLAYSPACE GRID -->
+  <main class="main-layout" *ngIf="filteredMemories.length > 0; else noMemoriesTemplate">
+    
+    <!-- LEFT COLUMN - Hidden in Fullscreen -->
+    <section class="sidebar-left glass-card" *ngIf="!isFullscreen">
+      <div class="sidebar-header">
+        Trip Highlights
+      </div>
+      
+      <div class="stat-item" *ngIf="tripDurationDays > 0">
+        <div class="stat-icon calendar-blue">📅</div>
+        <div class="stat-details">
+          <div class="stat-value">{{ tripDurationDays }} Days</div>
+          <div class="stat-label">Duration</div>
+        </div>
+      </div>
+
+      <div class="stat-item">
+        <div class="stat-icon image-pink">📷</div>
+        <div class="stat-details">
+          <div class="stat-value">{{ filteredMemories.length }} Memories</div>
+          <div class="stat-label">Captured</div>
+        </div>
+      </div>
+
+      <div class="stat-item" *ngIf="memberCount > 0">
+        <div class="stat-icon members-orange">👥</div>
+        <div class="stat-details">
+          <div class="stat-value">
+             {{ tripMembers.length }} Members
+          </div>
+          <div class="stat-label">Joined</div>
+        </div>
+      </div>
+
+      <div class="stat-item">
+        <div class="stat-icon map-green">📍</div>
+        <div class="stat-details">
+          <div class="stat-value">{{ filteredMemories.length * 15 }} km</div>
+          <div class="stat-label">Traveled</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MIDDLE WORKSPACE -->
+    <section class="slideshow-center-wrapper">
+      <button 
+        class="slideshow-close-btn" 
+        *ngIf="showCloseButton && !isFullscreen"
+        (click)="onClose()" 
+        title="Close Slideshow" 
+        aria-label="Close slideshow">
+        <i class="fas fa-times"></i>
+      </button>
+      <!-- CENTRAL ACTIVE PHOTO SCREEN -->
+      <div #slideshowScreen class="slideshow-screen-box glass-card" *ngIf="showCloseButton">
+        
+        <!-- EXIT FULLSCREEN FLOATER -->
+        <button class="btn btn-exit-fs" *ngIf="isFullscreen" (click)="toggleFullscreen()">
+          Exit Fullscreen 🖵
+        </button>
+
+        <div class="image-container-frame">
+          <img [src]="filteredMemories[activeIndex].imageUrl" alt="Active Memory" class="main-featured-image">
+          
+          <div class="screen-text-overlay">
+            <h2 class="memory-title">
+              {{ filteredMemories[activeIndex].title }} <span class="decor-emoji">🌋</span>
+            </h2>
+            <p class="memory-quote">
+              “{{ filteredMemories[activeIndex].description || 'An unforgettable moment along our track!' }}”
+            </p>
+            
+            <div class="meta-footer-row">
+              <span class="meta-timestamp">
+                📅 {{ (filteredMemories[activeIndex].startDate || filteredMemories[activeIndex].createdAt) | date:'mediumDate' }}
+              </span>
+              <span class="meta-creator">
+                👤 {{ filteredMemories[activeIndex].fullName || 'Traveller' }}
+              </span>
+              <span class="badge-creator">
+                by {{ filteredMemories[activeIndex].fullName?.split(' ')[0] || 'Member' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYBACK CONTROLLER DECK -->
+       <div class="central-player-deck-wrapper">
+      <div class="central-player-deck">
+        <div class="player-controls-row">
+          <button class="player-btn prev" (click)="prevSlide()">
+            <span class="player-icon">⏮</span>
+            <span class="player-text">Previous</span>
+          </button>
+          
+          <button class="player-btn play-pause-core" [class.playing]="isPlaying" (click)="togglePlay()">
+            <span class="player-icon-center">{{ isPlaying ? '⏸' : '▶' }}</span>
+            <span class="player-text">{{ isPlaying ? 'Pause' : 'Play' }}</span>
+          </button>
+          
+          <button class="player-btn next" (click)="nextSlide()">
+            <span class="player-icon">⏭</span>
+            <span class="player-text">Next</span>
+          </button>
+        </div>
+
+        <!-- TIMELINE INDICATOR -->
+        <div class="timeline-indicator-track">
+          <span class="time-label">00:00</span>
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar-fill" [style.width.%]="((activeIndex + 1) / filteredMemories.length) * 100"></div>
+            <div class="progress-bar-scrub-pin" [style.left.%]="((activeIndex + 1) / filteredMemories.length) * 100"></div>
+          </div>
+          <span class="time-label-current">Memory {{ activeIndex + 1 }} of {{ filteredMemories.length }}</span>
+        </div>
+      </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN - Hidden in Fullscreen -->
+    <section class="right-column-stack" *ngIf="!isFullscreen">
+      
+      <!-- TOP-RIGHT: TRIP NAME CARD -->
+      <div class="trip-name-display-card glass-card">
+        <div class="icon-indicator-globe">🌍</div>
+        <div class="trip-identity-details">
+          <h4 class="trip-card-sublabel">Active Recap for:</h4>
+          <h2 class="trip-card-title">{{ selectedTripName }}</h2>
+        </div>
+      </div>
+
+      <!-- BOTTOM-RIGHT: TRIP MEMBERS HUD -->
+      <div class="sidebar-right glass-card">
+        <div class="sidebar-header">
+          <span class="icon">👥</span> Trip Members
+        </div>
+        <ul class="member-list">
+          <li *ngFor="let member of tripMembers" class="member-card-item">
+            <div class="member-avatar">
+              <span class="avatar-letter">{{ member.name?.charAt(0) }}</span>
+            </div>
+            <div class="member-info">
+              <span class="member-name">{{ member.name }}</span>
+              <span
+            class="member-status-tag"
+            [class.admin]="member.role === 'Organizer'">
+
+            {{ member.role }}
+
+        </span>
+            </div>
+            <span
+        class="status-indicator-dot"
+        *ngIf="member.hasMemory">
+
+    </span>
+          </li>
+        </ul>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- BOTTOM HORIZONTAL PREVIEW FILMSTRIP / IMAGE ROLLER -->
+  <footer class="bottom-filmstrip-carousel" *ngIf="filteredMemories.length > 0">
+    <div 
+      class="carousel-track" 
+      cdkDropList 
+      cdkDropListOrientation="horizontal"
+      (cdkDropListDropped)="onThumbnailDrop($event)"
+    >
+      <!-- Added cdkDrag to preview cards -->
+      <div 
+        class="filmstrip-card" 
+        *ngFor="let item of filteredMemories; let i = index"
+        [class.active-item]="i === activeIndex"
+        (click)="setActiveIndex(i)"
+        cdkDrag
+      >
+        <!-- This handles an elegant, semi-transparent ghost preview while dragging -->
+        <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+        <span class="sequence-badge">{{ i + 1 }}</span>
+        <div class="img-wrapper">
+          <img [src]="item.imageUrl" alt="thumbnail preview">
+        </div>
+        <div class="thumb-label">{{ item.title }}</div>
+      </div>
+    </div>
+  </footer>
+
+  <ng-template #noMemoriesTemplate>
+    <div class="fallback-empty-container glass-card">
+      <div class="fallback-graphic">🧭</div>
+      <h2>No Recap Memories Found</h2>
+      <p>There are no public memories posted for <strong>"{{ selectedTripName }}"</strong> yet.</p>
+    </div>
+  </ng-template>
+
+</div>
