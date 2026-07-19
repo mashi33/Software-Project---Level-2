@@ -13,9 +13,13 @@ import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 
+
+
+type CommunityMemory = TripMemory & { priorityScore?: number };
+
 interface CommunityAlbum {
   tripName: string;
-  memories: TripMemory[];
+  memories: CommunityMemory[]; 
   latestImage: string;
   latestDate: string | Date;
   currentDisplayImage: string;
@@ -50,11 +54,11 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   );
 
   searchQuery = '';
-  allMemories: TripMemory[] = [];
-  filteredMemories: TripMemory[] = [];
+  allMemories: CommunityMemory[] = [];
+  filteredMemories: CommunityMemory[] = [];
+  topRatedMemories: CommunityMemory[] = [];
+  selectedMemory: CommunityMemory | null = null;
   groupedAlbums: CommunityAlbum[] = [];
-  topRatedMemories: TripMemory[] = [];
-  selectedMemory: TripMemory | null = null;
   selectedAlbum: CommunityAlbum | null = null;
   currentMemoryIndex = 0;
   isLightboxOpen = false;
@@ -138,8 +142,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   private applyFilters(): void {
-    let memories = [...this.allMemories];
-
+    let memories: CommunityMemory[] = [...this.allMemories];
     if (this.searchQuery?.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       memories = memories.filter(m =>
@@ -147,7 +150,14 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       );
     }
 
-    this.filteredMemories = this.sortMemoriesByLikesAndDate(memories);
+    const now = Date.now();
+
+    memories = memories.map(m => ({
+      ...m,
+      priorityScore: this.calculatePriorityScore(m, now)
+    }));
+    this.filteredMemories = memories.sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
+
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
@@ -222,9 +232,8 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return score;
   }
 
-  private getTopRatedMemories(memories: TripMemory[], count: number = 10): TripMemory[] {
-    const sorted = this.sortMemoriesByLikesAndDate(memories);
-    return sorted.slice(0, count);
+  private getTopRatedMemories(memories: CommunityMemory[], count: number = 10): CommunityMemory[] {
+    return memories.slice(0, count);
   }
 
   private groupMemoriesByTrip(memories: TripMemory[]): void {
@@ -398,7 +407,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
-  getPriorityScore(memory: TripMemory): number {
+ getPriorityScore(memory: TripMemory): number {
     return this.calculatePriorityScore(memory);
   }
 

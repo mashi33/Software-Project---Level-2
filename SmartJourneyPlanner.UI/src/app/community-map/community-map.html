@@ -61,7 +61,7 @@
             <div class="img-container">
               <img [src]="memory.imageUrl" class="thumb-img" [alt]="memory.title" loading="lazy">
               <span class="album-badge">
-                <i class="bi bi-star-fill"></i> {{ getPriorityScore(memory) | number:'1.1' }}
+                 <i class="bi bi-star-fill"></i> {{ $any(memory).priorityScore | number:'1.1' }}
               </span>
             </div>
             <div class="thumb-info">
