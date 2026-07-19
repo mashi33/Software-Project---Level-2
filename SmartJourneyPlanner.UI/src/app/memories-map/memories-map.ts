@@ -188,13 +188,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       this.currentMemoryIndex = album.memories.findIndex((m: any) => m.id === memory.id);
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
-      const matchingAlbum = this.groupedAlbums.find(a =>
-        a.memories.some((m: any) => m.id === memory.id)
-      );
-      this.selectedAlbum = matchingAlbum || null;
-      this.currentMemoryIndex = matchingAlbum
-        ? matchingAlbum.memories.findIndex((m: any) => m.id === memory.id)
-        : 0;
+      this.selectedAlbum = null;
+    this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;

@@ -386,7 +386,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         this.selectedAlbum = refreshed;
         this.selectedMemory = refreshed.memories[this.currentMemoryIndex] || null;
       }
-    } else if (this.selectedMemory?.id === memoryId) {
+    } else if (this.selectedMemory && this.selectedMemory.id === memoryId) {
       this.selectedMemory = { ...this.selectedMemory, ...updatedMemory };
     }
 
@@ -422,13 +422,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       this.currentMemoryIndex = album.memories.findIndex(m => m.id === memory.id);
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
-      const matchingAlbum = this.groupedAlbums.find(a =>
-        a.memories.some(m => m.id === memory.id)
-      );
-      this.selectedAlbum = matchingAlbum || null;
-      this.currentMemoryIndex = matchingAlbum
-        ? matchingAlbum.memories.findIndex(m => m.id === memory.id)
-        : 0;
+      // Map pin හෝ Popular memory එකකින් ආවොත් ඇල්බම සම්බන්ධ නොකරන්න
+    this.selectedAlbum = null;
+    this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;
