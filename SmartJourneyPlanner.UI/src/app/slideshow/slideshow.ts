@@ -153,20 +153,37 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   this.tripMembers = [];
   const seenEmails = new Set<string>();
 
+  const uploaderSet = new Set<string>();
+  
+  this.filteredMemories.forEach(m => {
+    if (m.userId) uploaderSet.add(m.userId.toLowerCase().trim());
+    if (m.fullName) uploaderSet.add(m.fullName.toLowerCase().trim());
+    if (m.email) uploaderSet.add(m.email.toLowerCase().trim());
+    if (m.createdBy) uploaderSet.add(m.createdBy.toLowerCase().trim());
+  });
+
+  console.log('EXTRACTED UPLOADER SET', uploaderSet);
+
   if (Array.isArray(rawMembers)) {
     rawMembers.forEach((m: any) => {
-      const email = (m.email || '').toLowerCase();
-      
+      const email = (m.email || '').toLowerCase().trim();
       const displayName = m.name || m.Name || m.email || 'Member';
       const role = m.role || m.Role || 'Member';
+      const memberId = (m.id || m.userId || '').toLowerCase().trim();
 
       if (email && !seenEmails.has(email)) {
         seenEmails.add(email);
+
+        const hasUploaded = 
+          uploaderSet.has(email) || 
+          uploaderSet.has(displayName.toLowerCase().trim()) ||
+          (memberId !== '' && uploaderSet.has(memberId));
         
         this.tripMembers.push({
           name: displayName, 
           email: m.email || '',
-          role: role.toLowerCase() === 'owner' ? 'Organizer' : role
+          role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
+          hasMemory: hasUploaded 
         });
       }
     });
@@ -216,6 +233,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         } else {
           this.filteredMemories = sortedDefault;
         }
+
+      if (this.tripDetails) {
+        this.buildTripMembers();
+      }
 
         if (this.filteredMemories.length > 0) {
           if (!this.tripId && this.filteredMemories[0].tripId) {
