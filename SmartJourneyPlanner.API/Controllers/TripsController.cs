@@ -107,29 +107,40 @@ public async Task<IActionResult> GetTrip(string id)
             .SortByDescending(h => h.EditedAt)
             .ToListAsync();
 
+        var usersCollection = _tripsCollection.Database.GetCollection<User>("Users");
 
         var allMembers = new List<object>();
 
-        // Add owner
+         // Add owner
+        var ownerEmail = trip.CreatorEmail ?? trip.CreatedBy;
+        
+        var ownerUser = await usersCollection.Find(u => u.Email == ownerEmail || u.Id == trip.CreatedBy).FirstOrDefaultAsync();
+        
+        var ownerDisplayName = !string.IsNullOrEmpty(ownerUser?.FullName) ? ownerUser.FullName : ownerEmail;
+
         allMembers.Add(new
         {
-            Email = trip.CreatorEmail ?? trip.CreatedBy,
+            Name = ownerDisplayName,
+            Email = ownerEmail, 
             Role = "Owner"
         });
 
-
-        // Add invited members
         foreach (var m in trip.Members)
         {
+            var memberEmail = m.Email;
+            
+            var memberUser = await usersCollection.Find(u => u.Email == memberEmail).FirstOrDefaultAsync();
+            
+            var memberDisplayName = !string.IsNullOrEmpty(memberUser?.FullName) ? memberUser.FullName : memberEmail;
+
             allMembers.Add(new
             {
-                Email = m.Email,
+                Name = memberDisplayName,
+                Email = memberEmail, 
                 Role = m.Role
             });
         }
 
-
-        // Return trip details
         return Ok(new
         {
             trip.Id,
