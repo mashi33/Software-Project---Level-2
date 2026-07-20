@@ -589,13 +589,9 @@
   border-radius: 50%;
 }
 
-.status-indicator-dot.online {
+.status-indicator-dot{
   background-color: #22c55e;
   box-shadow: 0 0 8px #22c55e;
-}
-
-.status-indicator-dot.offline{
-    background:#cbd5e1;
 }
 
 /* FILMSTRIP CAROUSEL */
