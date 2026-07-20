@@ -6,6 +6,7 @@ import { TripMemory } from '../models/memory.model';
 import * as L from 'leaflet';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-slideshow',
@@ -80,66 +81,66 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-  const tripParam = this.route.snapshot.paramMap.get('tripName');
-  if (tripParam) {
-    this.selectedTripName = decodeURIComponent(tripParam);
+    const tripParam = this.route.snapshot.paramMap.get('tripName');
+    if (tripParam) {
+      this.selectedTripName = decodeURIComponent(tripParam);
+    }
+
+    const idParam = this.route.snapshot.queryParamMap.get('tripId');
+    if (idParam) {
+      this.tripId = idParam;
+      this.loadTripMetadata();
+    } else {
+      const navigation = this.router.getCurrentNavigation();
+      if (navigation?.extras.state && navigation.extras.state['tripId']) {
+        this.tripId = navigation.extras.state['tripId'];
+        this.loadTripMetadata();
+      } else if (history.state && history.state.tripId) {
+        this.tripId = history.state.tripId;
+        this.loadTripMetadata();
+      }
+    }
+
+    this.loadAndFilterMemories();
+    document.addEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
   }
 
-  const idParam = this.route.snapshot.queryParamMap.get('tripId');
-  if (idParam) {
-    this.tripId = idParam;
-    this.loadTripMetadata();
-  } else {
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras.state && navigation.extras.state['tripId']) {
-      this.tripId = navigation.extras.state['tripId'];
-      this.loadTripMetadata();
-    } else if (history.state && history.state.tripId) {
-      this.tripId = history.state.tripId;
-      this.loadTripMetadata();
+  ngOnDestroy(): void {
+    if (this.playbackInterval) {
+      clearInterval(this.playbackInterval);
+    }
+
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+
+    document.removeEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
+
+    if (this.map) {
+      this.map.off();
+      this.map.remove();
     }
   }
 
-  this.loadAndFilterMemories();
-  document.addEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
-}
-
-  ngOnDestroy(): void {
-  if (this.playbackInterval) {
-    clearInterval(this.playbackInterval);
-  }
-
-  if (this.animationFrameId) {
-    cancelAnimationFrame(this.animationFrameId);
-  }
-
-  document.removeEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
-
-  if (this.map) {
-    this.map.off();
-    this.map.remove();
-  }
-}
-
   ngAfterViewInit(): void {}
 
-goBackToSummary(): void {
-  let targetId = this.tripId;
+  goBackToSummary(): void {
+    let targetId = this.tripId;
 
-  if (!targetId && this.tripDetails) {
-    targetId = this.tripDetails.id || this.tripDetails._id;
-  }
+    if (!targetId && this.tripDetails) {
+      targetId = this.tripDetails.id || this.tripDetails._id;
+    }
 
-  if (!targetId && this.filteredMemories.length > 0) {
-    targetId = this.filteredMemories[0].tripId;
-  }
+    if (!targetId && this.filteredMemories.length > 0) {
+      targetId = this.filteredMemories[0].tripId;
+    }
 
-  if (targetId) {
-    this.router.navigate(['/trip-summary', targetId]);
-  } else {
-    this.router.navigate(['/dashboard']);
+    if (targetId) {
+      this.router.navigate(['/trip-summary', targetId]);
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
   }
-}
 
   private buildTripMembers(): void {
     if (!this.tripDetails) return;
@@ -213,62 +214,62 @@ goBackToSummary(): void {
           this.filteredMemories = sortedDefault;
         }
 
-if (this.filteredMemories.length > 0) {
-  if (!this.tripId && this.filteredMemories[0].tripId) {
-    this.tripId = this.filteredMemories[0].tripId;
-  }
+        if (this.filteredMemories.length > 0) {
+          if (!this.tripId && this.filteredMemories[0].tripId) {
+            this.tripId = this.filteredMemories[0].tripId;
+          }
 
-  setTimeout(() => { this.initMap(); }, 200);
-}
+          setTimeout(() => { this.initMap(); }, 200);
+        }
       },
       error: (err: any) => { console.error('Failed to load memories:', err); }
     });
   }
 
   private initMap(): void {
-  const mapElement = document.getElementById('leaflet-map-background');
-  if (this.filteredMemories.length === 0 || !mapElement) return;
+    const mapElement = document.getElementById('leaflet-map-background');
+    if (this.filteredMemories.length === 0 || !mapElement) return;
 
-  if (this.map) {
-    this.map.off();
-    this.map.remove();
+    if (this.map) {
+      this.map.off();
+      this.map.remove();
+    }
+
+    const activeCoords = this.filteredMemories[this.activeIndex];
+    if (!activeCoords || !activeCoords.latitude || !activeCoords.longitude) return;
+
+    this.map = L.map('leaflet-map-background', {
+      center: [activeCoords.latitude, activeCoords.longitude],
+      zoom: 10,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    this.lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
+    this.darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png');
+    
+    if (this.isLightMode) {
+      this.lightTileLayer.addTo(this.map);
+    } else {
+      this.darkTileLayer.addTo(this.map);
+    }
+
+    const latLngList = this.filteredMemories
+      .filter(m => m.latitude && m.longitude)
+      .map(m => L.latLng(m.latitude, m.longitude));
+
+    this.pathLine = L.polyline(latLngList, { color: '#8b5cf6', weight: 4, dashArray: '8, 12' }).addTo(this.map);
+
+    this.renderImageMarkers();
+
+    const vehicleIcon = L.divIcon({
+      className: 'custom-vehicle-marker',
+      html: `<div class="vehicle-emoji">🚗</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+    this.vehicleMarker = L.marker([activeCoords.latitude, activeCoords.longitude], { icon: vehicleIcon, zIndexOffset: 1000 }).addTo(this.map);
   }
-
-  const activeCoords = this.filteredMemories[this.activeIndex];
-  if (!activeCoords || !activeCoords.latitude || !activeCoords.longitude) return;
-
-  this.map = L.map('leaflet-map-background', {
-    center: [activeCoords.latitude, activeCoords.longitude],
-    zoom: 10,
-    zoomControl: false,
-    attributionControl: false
-  });
-
-  this.lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
-  this.darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png');
-  
-  if (this.isLightMode) {
-    this.lightTileLayer.addTo(this.map);
-  } else {
-    this.darkTileLayer.addTo(this.map);
-  }
-
-  const latLngList = this.filteredMemories
-    .filter(m => m.latitude && m.longitude)
-    .map(m => L.latLng(m.latitude, m.longitude));
-
-  this.pathLine = L.polyline(latLngList, { color: '#8b5cf6', weight: 4, dashArray: '8, 12' }).addTo(this.map);
-
-  this.renderImageMarkers();
-
-  const vehicleIcon = L.divIcon({
-    className: 'custom-vehicle-marker',
-    html: `<div class="vehicle-emoji">🚗</div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
-  });
-  this.vehicleMarker = L.marker([activeCoords.latitude, activeCoords.longitude], { icon: vehicleIcon, zIndexOffset: 1000 }).addTo(this.map);
-}
 
   private renderImageMarkers(): void {
     this.markersGroup.clearLayers();
@@ -322,50 +323,75 @@ if (this.filteredMemories.length > 0) {
     setTimeout(() => {
       window.open(currentStop.imageUrl, '_blank');
       this.isDownloading = false;
+      Swal.fire({
+        icon: 'success',
+        title: 'Download Started',
+        text: 'Your image/video is opening in a new window.',
+        timer: 2000,
+        showConfirmButton: false
+      });
     }, 1000);
   }
 
-public async downloadAlbumAsPhotos(): Promise<void> {
-  if (this.filteredMemories.length === 0) {
-    alert('No images to dounload');
-    return;
-  }
-
-  this.isAlbumDownloading = true;
-
-  try {
-    for (let i = 0; i < this.filteredMemories.length; i++) {
-      const memory = this.filteredMemories[i];
-      
-      if (memory.imageUrl) {
-        const response = await fetch(memory.imageUrl);
-        const blob = await response.blob();
-
-        const downloadUrl = window.URL.createObjectURL(blob);
-
-        const anchor = document.createElement('a');
-        anchor.href = downloadUrl;
-        
-        const fileExtension = blob.type.split('/')[1] || 'jpg';
-        anchor.download = `${this.selectedTripName.replace(/\s+/g, '_')}_Photo_${i + 1}.${fileExtension}`;
-
-        document.body.appendChild(anchor);
-        anchor.click();
-
-        // memory Cleanup
-        document.body.removeChild(anchor);
-        window.URL.revokeObjectURL(downloadUrl);
-
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
+  public async downloadAlbumAsPhotos(): Promise<void> {
+    if (this.filteredMemories.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Images Found',
+        text: 'There are no images available to download in this album.',
+        confirmButtonColor: '#8b5cf6'
+      });
+      return;
     }
-  } catch (err) {
-    console.error('There is a problem while dounloading images:', err);
-    alert('Some images had not been dounloaded');
-  } finally {
-    this.isAlbumDownloading = false;
+
+    this.isAlbumDownloading = true;
+
+    try {
+      for (let i = 0; i < this.filteredMemories.length; i++) {
+        const memory = this.filteredMemories[i];
+        
+        if (memory.imageUrl) {
+          const response = await fetch(memory.imageUrl);
+          const blob = await response.blob();
+
+          const downloadUrl = window.URL.createObjectURL(blob);
+
+          const anchor = document.createElement('a');
+          anchor.href = downloadUrl;
+          
+          const fileExtension = blob.type.split('/')[1] || 'jpg';
+          anchor.download = `${this.selectedTripName.replace(/\s+/g, '_')}_Photo_${i + 1}.${fileExtension}`;
+
+          document.body.appendChild(anchor);
+          anchor.click();
+
+          // memory Cleanup
+          document.body.removeChild(anchor);
+          window.URL.revokeObjectURL(downloadUrl);
+
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Album Downloaded!',
+        text: 'All available photos have been downloaded to your machine.',
+        confirmButtonColor: '#8b5cf6'
+      });
+
+    } catch (err) {
+      console.error('There is a problem while downloading images:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Download Failed',
+        text: 'Some images could not be downloaded. Please check your network connection.',
+        confirmButtonColor: '#e11d48'
+      });
+    } finally {
+      this.isAlbumDownloading = false;
+    }
   }
-}
 
   private animateVehicle(fromCoords: L.LatLngLiteral, toCoords: L.LatLngLiteral, duration: number = 1800): void {
     const startTime = performance.now();
@@ -419,20 +445,20 @@ public async downloadAlbumAsPhotos(): Promise<void> {
   }
 
   toggleFullscreen(): void {
-  // if Slideshow is closed, reopen it before go to Fullscreen 
-  if (!this.showCloseButton) {
-    this.onReopenSlideshow();
-  }
+     // if Slideshow is closed, reopen it before go to Fullscreen 
+    if (!this.showCloseButton) {
+      this.onReopenSlideshow();
+    }
 
-  const element = this.containerRef.nativeElement;
-  if (!document.fullscreenElement) {
-    element.requestFullscreen().then(() => {
-      this.isFullscreen = true;
-    }).catch((err: any) => console.error('Error entering fullscreen:', err));
-  } else {
-    document.exitFullscreen();
+    const element = this.containerRef.nativeElement;
+    if (!document.fullscreenElement) {
+      element.requestFullscreen().then(() => {
+        this.isFullscreen = true;
+      }).catch((err: any) => console.error('Error entering fullscreen:', err));
+    } else {
+      document.exitFullscreen();
+    }
   }
-}
 
   private onFullscreenChange(): void {
     this.isFullscreen = !!document.fullscreenElement;
