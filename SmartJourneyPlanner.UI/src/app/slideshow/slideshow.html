@@ -50,8 +50,8 @@
       <div class="stat-item" *ngIf="tripDurationDays > 0">
         <div class="stat-icon calendar-blue">📅</div>
         <div class="stat-details">
-          <div class="stat-value">{{ tripDurationDays }} Days</div>
-          <div class="stat-label">Duration</div>
+          <div class="stat-value">{{ tripDurationDays || 0 }} Days</div>
+          <div class="stat-label">Travel Days</div>
         </div>
       </div>
 
@@ -73,13 +73,6 @@
         </div>
       </div>
 
-      <div class="stat-item">
-        <div class="stat-icon map-green">📍</div>
-        <div class="stat-details">
-          <div class="stat-value">{{ filteredMemories.length * 15 }} km</div>
-          <div class="stat-label">Traveled</div>
-        </div>
-      </div>
     </section>
 
     <!-- MIDDLE WORKSPACE -->

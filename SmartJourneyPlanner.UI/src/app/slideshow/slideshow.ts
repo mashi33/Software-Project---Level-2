@@ -198,6 +198,19 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     this.tripService.getTripById(this.tripId).subscribe({
       next: (trip: any) => {
         this.tripDetails = trip;
+
+        const details = trip.data || trip;
+
+      if (details.duration || details.tripDurationDays) {
+        this.tripDurationDays = details.duration || details.tripDurationDays;
+      } 
+      else if (details.startDate && details.endDate) {
+        const start = new Date(details.startDate).getTime();
+        const end = new Date(details.endDate).getTime();
+        const diffTime = Math.abs(end - start);
+        this.tripDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+      }
+
         this.buildTripMembers();
       },
       error: err => console.error('Error fetching trip details:', err)
