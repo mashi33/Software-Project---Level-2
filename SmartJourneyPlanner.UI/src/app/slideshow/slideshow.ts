@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MemoryService } from '../services/memory'; 
 import { TripService } from '../services/trip.service'; 
@@ -56,7 +56,8 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly memoryService: MemoryService,
     private readonly tripService: TripService, 
     private readonly route: ActivatedRoute,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly cdr: ChangeDetectorRef // For UI Refresh 
   ) {}
 
   public onClose(): void {
@@ -89,16 +90,17 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     const idParam = this.route.snapshot.queryParamMap.get('tripId');
     if (idParam) {
       this.tripId = idParam;
-      this.loadTripMetadata();
     } else {
       const navigation = this.router.getCurrentNavigation();
       if (navigation?.extras.state && navigation.extras.state['tripId']) {
         this.tripId = navigation.extras.state['tripId'];
-        this.loadTripMetadata();
       } else if (history.state && history.state.tripId) {
         this.tripId = history.state.tripId;
-        this.loadTripMetadata();
       }
+    }
+
+    if (this.tripId) {
+      this.loadTripMetadata();
     }
 
     this.loadAndFilterMemories();
@@ -143,35 +145,36 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildTripMembers(): void {
-    if (!this.tripDetails) return;
-    this.tripMembers = [];
+  if (!this.tripDetails) return;
 
-    const organizerName =
-      this.tripDetails.createdByName ||
-      this.tripDetails.creatorName ||
-      this.tripDetails.createdBy ||
-      this.tripDetails.CreatedByName || 
-      "Organizer";
+  const details = this.tripDetails.data || this.tripDetails;
+  const rawMembers: any[] = details.members || details.Members || [];
 
-    const organizerEmail = this.tripDetails.createdByEmail || this.tripDetails.CreatedByEmail || "";
+  this.tripMembers = [];
+  const seenEmails = new Set<string>();
 
-    this.tripMembers.push({ name: organizerName, email: organizerEmail, role: "Organizer" });
+  if (Array.isArray(rawMembers)) {
+    rawMembers.forEach((m: any) => {
+      const email = (m.email || '').toLowerCase();
+      
+      const displayName = m.name || m.Name || m.email || 'Member';
+      const role = m.role || m.Role || 'Member';
 
-    const rawMembers = this.tripDetails.members || this.tripDetails.Members || [];
-
-    if (Array.isArray(rawMembers)) {
-      rawMembers.forEach((member: any) => {
-        const extractedName =
-          member.name || member.Name || member.fullName || member.FullName ||
-          member.userName || member.UserName || member.email || member.Email || "Unknown Member";
-
-        const extractedEmail = member.email || member.Email || "";
-        this.tripMembers.push({ name: extractedName, email: extractedEmail, role: "Member" });
-      });
-    }
-
-    this.memberCount = this.tripMembers.length;
+      if (email && !seenEmails.has(email)) {
+        seenEmails.add(email);
+        
+        this.tripMembers.push({
+          name: displayName, 
+          email: m.email || '',
+          role: role.toLowerCase() === 'owner' ? 'Organizer' : role
+        });
+      }
+    });
   }
+
+  this.memberCount = this.tripMembers.length;
+  if (this.cdr) this.cdr.detectChanges();
+}
 
   private loadTripMetadata(): void {
     if (!this.tripId) return;
@@ -180,7 +183,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         this.tripDetails = trip;
         this.buildTripMembers();
       },
-      error: err => console.error(err)
+      error: err => console.error('Error fetching trip details:', err)
     });
   }
 
@@ -217,6 +220,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.filteredMemories.length > 0) {
           if (!this.tripId && this.filteredMemories[0].tripId) {
             this.tripId = this.filteredMemories[0].tripId;
+            this.loadTripMetadata();
           }
 
           setTimeout(() => { this.initMap(); }, 200);
