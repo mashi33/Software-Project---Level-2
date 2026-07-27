@@ -97,6 +97,10 @@ namespace SmartJourneyPlanner.Models
         public List<string> AvailableDates { get; set; } = new();
         [BsonElement("BookedDates")]
         public List<string> BookedDates { get; set; } = new();     // Dates when the vehicle is busy
+        [BsonElement("MaintenanceDates")]
+        public List<string> MaintenanceDates { get; set; } = new(); // Dates blocked for maintenance/personal use
+        [BsonElement("BlockedDateRanges")]
+        public List<BlockedDateRange> BlockedDateRanges { get; set; } = new(); // Structured blocked date ranges with reason
 
         // Customer Feedback
         [BsonElement("Reviews")]
@@ -145,5 +149,26 @@ namespace SmartJourneyPlanner.Models
         public int Rating { get; set; }         // 1 to 5 stars
         public string Comment { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
+    }
+
+    /**
+     * Blocked date range with optional reason for maintenance/personal use
+     */
+    public class BlockedDateRange
+    {
+        [BsonElement("Id")]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [BsonElement("StartDate")]
+        public string StartDate { get; set; } = string.Empty; // Format: yyyy-MM-dd
+        
+        [BsonElement("EndDate")]
+        public string EndDate { get; set; } = string.Empty;   // Format: yyyy-MM-dd
+        
+        [BsonElement("Reason")]
+        public string Reason { get; set; } = string.Empty;    // Optional reason for blocking
+        
+        [BsonElement("CreatedAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
