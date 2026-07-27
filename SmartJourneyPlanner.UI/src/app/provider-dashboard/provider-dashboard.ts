@@ -35,6 +35,14 @@ export class ProviderDashboardComponent implements OnInit {
   bookingProximityFilter: string = '';
   showOldBookings: boolean = false;
 
+  // Blocked Date Ranges properties
+  showBlockedRangesModal: boolean = false;
+  blockedRangesVehicle: any = null;
+  blockedRangesStartDate: string = '';
+  blockedRangesEndDate: string = '';
+  blockedRangesReason: string = '';
+  blockedRangesList: any[] = [];
+
   constructor(
     private vehicleService: VehicleService,
     private transportVehicleService: TransportVehicleService,
@@ -476,5 +484,127 @@ export class ProviderDashboardComponent implements OnInit {
       </div>
     `
   });
-}
+  }
+
+  // Blocked Date Ranges Methods
+  openBlockedRangesModal(vehicle: any) {
+    this.blockedRangesVehicle = vehicle;
+    this.blockedRangesStartDate = '';
+    this.blockedRangesEndDate = '';
+    this.blockedRangesReason = '';
+    this.blockedRangesList = [];
+    this.showBlockedRangesModal = true;
+    this.loadBlockedRanges(vehicle.id || vehicle._id);
+  }
+
+  closeBlockedRangesModal() {
+    this.showBlockedRangesModal = false;
+    this.blockedRangesVehicle = null;
+  }
+
+  loadBlockedRanges(vehicleId: string) {
+    this.vehicleService.getBlockedDateRanges(vehicleId).subscribe({
+      next: (ranges) => {
+        this.blockedRangesList = ranges || [];
+      },
+      error: (err) => {
+        console.error('Error loading blocked ranges:', err);
+        this.blockedRangesList = [];
+      }
+    });
+  }
+
+  addBlockedRange() {
+    if (!this.blockedRangesVehicle || !this.blockedRangesStartDate || !this.blockedRangesEndDate) {
+      Swal.fire('Error', 'Please select both start and end dates', 'error');
+      return;
+    }
+
+    const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+    console.log('Adding blocked range for vehicle:', vehicleId);
+    console.log('Start date:', this.blockedRangesStartDate);
+    console.log('End date:', this.blockedRangesEndDate);
+    console.log('Reason:', this.blockedRangesReason);
+    
+    this.vehicleService.addBlockedDateRange(vehicleId, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
+      next: () => {
+        Swal.fire('Success', 'Blocked date range added successfully', 'success');
+        this.blockedRangesStartDate = '';
+        this.blockedRangesEndDate = '';
+        this.blockedRangesReason = '';
+        this.loadBlockedRanges(vehicleId);
+      },
+      error: (err) => {
+        console.error('Error adding blocked range:', err);
+        const errorMessage = err.error?.message || 'Failed to add blocked date range';
+        Swal.fire('Error!', errorMessage, 'error');
+      }
+    });
+  }
+
+  editBlockedRange(range: any) {
+    Swal.fire({
+      title: 'Edit Blocked Date Range',
+      html: `
+        <input id="swal-start" class="swal2-input" placeholder="Start Date (YYYY-MM-DD)" value="${range.startDate}">
+        <input id="swal-end" class="swal2-input" placeholder="End Date (YYYY-MM-DD)" value="${range.endDate}">
+        <input id="swal-reason" class="swal2-input" placeholder="Reason (Optional)" value="${range.reason || ''}">
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Update',
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        const startDate = (document.getElementById('swal-start') as HTMLInputElement).value;
+        const endDate = (document.getElementById('swal-end') as HTMLInputElement).value;
+        const reason = (document.getElementById('swal-reason') as HTMLInputElement).value;
+        
+        if (!startDate || !endDate) {
+          Swal.showValidationMessage('Please enter both start and end dates');
+        }
+        
+        return { startDate, endDate, reason };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+        this.vehicleService.editBlockedDateRange(vehicleId, range.id, result.value.startDate, result.value.endDate, result.value.reason).subscribe({
+          next: () => {
+            Swal.fire('Success', 'Blocked date range updated successfully', 'success');
+            this.loadBlockedRanges(vehicleId);
+          },
+          error: (err) => {
+            console.error('Error editing blocked range:', err);
+            const errorMessage = err.error?.message || 'Failed to update blocked date range';
+            Swal.fire('Error!', errorMessage, 'error');
+          }
+        });
+      }
+    });
+  }
+
+  deleteBlockedRange(range: any) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "Do you want to delete this blocked date range?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+        this.vehicleService.deleteBlockedDateRange(vehicleId, range.id).subscribe({
+          next: () => {
+            Swal.fire('Deleted!', 'Blocked date range has been deleted.', 'success');
+            this.loadBlockedRanges(vehicleId);
+          },
+          error: (err) => {
+            console.error('Error deleting blocked range:', err);
+            Swal.fire('Error!', 'Failed to delete blocked date range', 'error');
+          }
+        });
+      }
+    });
+  }
 }

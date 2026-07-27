@@ -21,11 +21,13 @@ namespace SmartJourneyPlanner.Controllers
     public class TransportBookingsController : ControllerBase
     {
         private readonly TransportBookingService _bookingService;
+        private readonly ProviderDashboardService _providerDashboardService;
 
         // Constructor injects the service that handles database work
-        public TransportBookingsController(TransportBookingService bookingService)
+        public TransportBookingsController(TransportBookingService bookingService, ProviderDashboardService providerDashboardService)
         {
             _bookingService = bookingService;
+            _providerDashboardService = providerDashboardService;
         }
 
         /**
@@ -85,14 +87,28 @@ namespace SmartJourneyPlanner.Controllers
         [HttpPatch("{id:length(24)}/status")]
         public async Task<IActionResult> PatchStatus(string id, [FromBody] StatusUpdateDto dto)
         {
+            System.Console.WriteLine($"=== TransportBookingsController.PatchStatus ===");
+            System.Console.WriteLine($"Booking ID: {id}");
+            System.Console.WriteLine($"New Status: {dto.Status}");
+
             var booking = await _bookingService.GetAsync(id);
             if (booking is null) return NotFound();
 
+            System.Console.WriteLine($"Old Status: {booking.Status}");
+            System.Console.WriteLine($"Vehicle ID: {booking.VehicleId}");
+            System.Console.WriteLine($"Start Date: {booking.StartDate}");
+            System.Console.WriteLine($"End Date: {booking.EndDate}");
+
+            // Update the booking status
             booking.Status = dto.Status;
-            
             booking.StatusChangedDate = DateTime.UtcNow.ToString("o");
 
             await _bookingService.UpdateAsync(id, booking);
+            System.Console.WriteLine("Booking status updated in database");
+
+            // Call ProviderDashboardService to update vehicle's bookedDates based on status
+            await _providerDashboardService.UpdateBookingStatus(id, dto.Status);
+
             return NoContent();
         }
 
