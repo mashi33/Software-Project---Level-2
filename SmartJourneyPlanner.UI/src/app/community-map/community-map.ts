@@ -335,24 +335,25 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
 
   // Flying Hearts Spawn Function (Exact Mouse Position Target)
 spawnFlyingHearts(event: MouseEvent): void {
-  const heartCount = 6;
+  const heartCount = 5;
   const clickX = event.clientX;
   const clickY = event.clientY;
 
   for (let i = 0; i < heartCount; i++) {
     const heart = document.createElement('i');
-    heart.className = 'bi bi-heart-fill floating-heart';
+    heart.className = 'floating-heart';
+    heart.innerHTML = '❤️';
 
     const xOffset = (Math.random() - 0.5) * 60;
     const rotate = (Math.random() - 0.5) * 40;
-    const size = 14 + Math.random() * 10;
+    const size = 14 ;
 
     heart.style.left = `${clickX}px`;
     heart.style.top = `${clickY}px`;
     heart.style.fontSize = `${size}px`;
     heart.style.setProperty('--x-offset', `${xOffset}px`);
     heart.style.setProperty('--rotate', `${rotate}deg`);
-    heart.style.animationDelay = `${i * 0.08}s`;
+    heart.style.animationDelay = `${i * 0.18}s`;
 
     document.body.appendChild(heart);
 
