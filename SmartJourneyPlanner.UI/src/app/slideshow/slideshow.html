@@ -104,9 +104,6 @@
               <span class="meta-timestamp">
                 📅 {{ (filteredMemories[activeIndex].startDate || filteredMemories[activeIndex].createdAt) | date:'mediumDate' }}
               </span>
-              <span class="meta-creator">
-                👤 {{ filteredMemories[activeIndex].fullName || 'Traveller' }}
-              </span>
               <span class="badge-creator">
                 by {{ filteredMemories[activeIndex].fullName?.split(' ')[0] || 'Member' }}
               </span>
