@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, HostListener, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
@@ -14,7 +14,7 @@ import Swal from 'sweetalert2';
   templateUrl: './memories-map.html',
   styleUrls: ['./memories-map.css']
 })
-export class MemoriesMapComponent implements OnInit, AfterViewInit {
+export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private map!: leaflet.Map;
   private markersLayer = (leaflet as any).markerClusterGroup({
     iconCreateFunction: (cluster: any) => {
@@ -51,6 +51,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   myRecentUploads: any[] = [];
   selectedMemory: any | null = null;
   allTrips: any[] = [];
+  selectedTripId: string = '';
   selectedTrip: any = null;
   groupedAlbums: any[] = [];
   selectedAlbum: any | null = null;
@@ -76,6 +77,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.initMap();
   }
+
+  ngOnDestroy(): void {}
 
   setActiveTab(tab: 'upload' | 'albums') {
     this.activeTab = tab;
@@ -597,6 +600,30 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   // MAP POPUP 
 
+  private isUserLiked(memory: any): boolean {
+    const userName = localStorage.getItem('userName');
+    if (!userName || !memory.likedByUsers) return false;
+    return memory.likedByUsers.includes(userName);
+  }
+
+  private getHeartAnimationHtml(memory: any): string {
+    if (!this.isUserLiked(memory)) return '';
+    
+    return `
+      <div class="heart-animation-container" id="heart-anim-${memory.id}">
+        <svg class="floating-heart" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <svg class="floating-heart" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <svg class="floating-heart" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </div>
+    `;
+  }
+
   private escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text ?? '';
@@ -696,8 +723,11 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.allMemories.forEach(memory => {
       if (!memory.latitude || !memory.longitude) return;
 
+      const heartAnimationHtml = this.getHeartAnimationHtml(memory);
+
       const pinHtml = `
         <div class="vignette-pin-container" style="--pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'}">
+          ${heartAnimationHtml}
           <div class="vignette-image-holder">
             <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
           </div>
@@ -714,7 +744,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
         popupAnchor: [0, -68]                  
       });
 
-      const marker = leaflet.marker([memory.latitude, memory.longitude], { icon: customIcon });
+      const marker = leaflet.marker([memory.latitude, memory.longitude], { 
+  icon: customIcon,
+  riseOnHover: true 
+});
       const popupHtml = this.getPopupHtml(memory);
 
       marker
