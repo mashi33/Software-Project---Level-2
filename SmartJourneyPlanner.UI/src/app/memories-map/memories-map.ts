@@ -720,21 +720,28 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   refreshMapMarkers() {
     this.markersLayer.clearLayers();
 
-    this.allMemories.forEach(memory => {
+    const totalPins = this.allMemories.length;
+
+    this.allMemories.forEach((memory, index) => {
       if (!memory.latitude || !memory.longitude) return;
 
       const heartAnimationHtml = this.getHeartAnimationHtml(memory);
 
-      const pinHtml = `
-        <div class="vignette-pin-container" style="--pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'}">
-          ${heartAnimationHtml}
-          <div class="vignette-image-holder">
-            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
-          </div>
-          <div class="vignette-pin-tail"></div>
-          <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+    const pinHtml = `
+      <div class="vignette-pin-container" style="
+        --pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'};
+        --pin-index: ${index};
+        --total-pins: ${totalPins};
+        --pin-delay: calc(2s + (${index} * 10s));
+      ">
+        ${heartAnimationHtml}
+        <div class="vignette-image-holder">
+          <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
         </div>
-      `;
+        <div class="vignette-pin-tail"></div>
+        <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+      </div>
+    `;
 
       const customIcon = leaflet.divIcon({
         html: pinHtml,
