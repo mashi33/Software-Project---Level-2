@@ -284,7 +284,7 @@
               visibility 0.4s !important;
 }
 
-/* 2. Define how it hides when the vehicle starts moving */
+/* Define how it hides when the vehicle starts moving */
 .slideshow-screen-box.hide-during-move {
   opacity: 0 !important;
   visibility: hidden !important;

@@ -278,19 +278,6 @@
         {{ selectedMemory?.description }}
       </p>
 
-      <!-- VISIBILITY TOGGLE IN LIGHTBOX -->
-      <div class="lightbox-visibility-section">
-        <label class="field-label">Visibility</label>
-        <div class="visibility-options lightbox-visibility">
-          <label class="visibility-checkbox">
-            <input type="checkbox"
-                   [checked]="selectedMemory?.isPublic"
-                   (change)="toggleMemoryVisibility(selectedMemory)">
-            <span>Make this memory public</span>
-          </label>
-        </div>
-      </div>
-
       <div class="like-badge-lightbox" *ngIf="selectedMemory?.isPublic" (click)="toggleLikedUsers()" style="cursor: pointer;">
         <i class="bi bi-heart-fill"></i>
         {{ selectedMemory?.likeCount || 0 }} loved this

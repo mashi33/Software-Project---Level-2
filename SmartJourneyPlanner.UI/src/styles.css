@@ -245,7 +245,7 @@ popup-like-btn {
 }
 
 /* Community Map Click Flying Hearts */
-.floating-heart {
+.like-floating-heart {
   position: fixed;
   pointer-events: none;
   color: #be123c;

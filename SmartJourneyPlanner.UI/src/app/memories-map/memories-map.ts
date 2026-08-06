@@ -224,25 +224,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedMemory = null;
   }
 
-  toggleMemoryVisibility(memory: any) {
-    if (!memory) return;
-    memory.isPublic = !memory.isPublic;
-    this.http.patch(`${this.apiUrl}/${memory.id}`, { isPublic: memory.isPublic }).subscribe({
-      next: () => {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: memory.isPublic ? 'Memory is now public' : 'Memory is now private',
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true
-        });
-      },
-      error: () => this.showError('Update failed', 'Could not update memory visibility.')
-    });
-  }
-
   // TRIPS
 
   loadAccessibleTrips() {
