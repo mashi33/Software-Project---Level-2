@@ -224,25 +224,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedMemory = null;
   }
 
-  toggleMemoryVisibility(memory: any) {
-    if (!memory) return;
-    memory.isPublic = !memory.isPublic;
-    this.http.patch(`${this.apiUrl}/${memory.id}`, { isPublic: memory.isPublic }).subscribe({
-      next: () => {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: memory.isPublic ? 'Memory is now public' : 'Memory is now private',
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true
-        });
-      },
-      error: () => this.showError('Update failed', 'Could not update memory visibility.')
-    });
-  }
-
   // TRIPS
 
   loadAccessibleTrips() {
@@ -625,10 +606,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text ?? '';
-    return div.innerHTML;
-  }
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
   private getPopupHtml(memory: any): string {
     if (!memory) return '<div class="map-popup">No data available</div>';
@@ -646,13 +631,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
            </svg>
            <span>${memory.likeCount || 0}</span>
-         </div>`
-      : '';
-
-    const likedUsersHtml = memory.isPublic && memory.likedByUsers && memory.likedByUsers.length > 0
-      ? `<div class="popup-liked-users">
-           <span class="popup-liked-label">Liked by:</span>
-           <span class="popup-liked-names">${memory.likedByUsers.map((u: string) => this.escapeHtml(u)).join(', ')}</span>
          </div>`
       : '';
 
@@ -679,8 +657,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           </p>
 
           ${likeHtml}
-
-          ${likedUsersHtml}
 
           <div class="popup-actions">
             <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">
@@ -717,53 +693,67 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  refreshMapMarkers() {
-    this.markersLayer.clearLayers();
+  refreshMapMarkers(): void {
+  this.markersLayer.clearLayers();
 
-    this.allMemories.forEach(memory => {
-      if (!memory.latitude || !memory.longitude) return;
+  const likedMemories = this.allMemories.filter(memory => this.isUserLiked(memory));
+  const totalLikedPins = likedMemories.length;
 
-      const heartAnimationHtml = this.getHeartAnimationHtml(memory);
+  this.allMemories.forEach((memory) => {
+    if (!memory.latitude || !memory.longitude) return;
 
-      const pinHtml = `
-        <div class="vignette-pin-container" style="--pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'}">
-          ${heartAnimationHtml}
-          <div class="vignette-image-holder">
-            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
-          </div>
-          <div class="vignette-pin-tail"></div>
-          <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+    const likedIndex = likedMemories.findIndex(m => m.id === memory.id);
+    const isLikedMemory = likedIndex !== -1;
+
+    const heartAnimationHtml = isLikedMemory ? this.getHeartAnimationHtml(memory) : '';
+
+    const pinStyle = isLikedMemory ? `
+      --pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'};
+      --pin-index: ${likedIndex};
+      --total-pins: ${totalLikedPins};
+      --pin-delay: calc(2s + (${likedIndex} * 10s));
+    ` : `
+      --pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'};
+    `;
+    const pinHtml = `
+      <div class="vignette-pin-container" style="${pinStyle}">
+        ${heartAnimationHtml}
+        <div class="vignette-image-holder">
+          <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${this.escapeHtml(memory.title || '')}" />
         </div>
-      `;
+        <div class="vignette-pin-tail"></div>
+        <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
+      </div>
+    `;
 
-      const customIcon = leaflet.divIcon({
-        html: pinHtml,
-        className: 'vignette-map-pin-wrapper', 
-        iconSize: leaflet.point(52, 64),       
-        iconAnchor: [26, 64],                  
-        popupAnchor: [0, -68]                  
+    const customIcon = leaflet.divIcon({
+      html: pinHtml,
+      className: 'vignette-map-pin-wrapper', 
+      iconSize: leaflet.point(52, 64),       
+      iconAnchor: [26, 64],                  
+      popupAnchor: [0, -68]                  
+    });
+
+    const marker = leaflet.marker([memory.latitude, memory.longitude], { 
+      icon: customIcon,
+      riseOnHover: true 
+    });
+    const popupHtml = this.getPopupHtml(memory);
+
+    marker
+      .bindPopup(popupHtml, {
+        maxWidth: 320,
+        minWidth: 280,
+        className: 'memory-popup-wrapper'
+      })
+      .on('popupopen', (e: any) => {
+        const popupEl = e.popup.getElement();
+        if (popupEl) this.attachPopupListeners(popupEl, memory);
       });
 
-      const marker = leaflet.marker([memory.latitude, memory.longitude], { 
-  icon: customIcon,
-  riseOnHover: true 
-});
-      const popupHtml = this.getPopupHtml(memory);
-
-      marker
-        .bindPopup(popupHtml, {
-          maxWidth: 320,
-          minWidth: 280,
-          className: 'memory-popup-wrapper'
-        })
-        .on('popupopen', (e: any) => {
-          const popupEl = e.popup.getElement();
-          if (popupEl) this.attachPopupListeners(popupEl, memory);
-        });
-
-      this.markersLayer.addLayer(marker);
-    });
-  }
+    this.markersLayer.addLayer(marker);
+  });
+}
 
   // SLIDESHOW 
 

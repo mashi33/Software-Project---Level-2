@@ -341,7 +341,7 @@ spawnFlyingHearts(event: MouseEvent): void {
 
   for (let i = 0; i < heartCount; i++) {
     const heart = document.createElement('i');
-    heart.className = 'floating-heart';
+    heart.className = 'like-floating-heart';
     heart.innerHTML = '❤️';
 
     const xOffset = (Math.random() - 0.5) * 60;

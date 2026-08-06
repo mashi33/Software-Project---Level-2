@@ -245,7 +245,7 @@ popup-like-btn {
 }
 
 /* Community Map Click Flying Hearts */
-.floating-heart {
+.like-floating-heart {
   position: fixed;
   pointer-events: none;
   color: #be123c;
@@ -289,13 +289,13 @@ popup-like-btn {
   fill: #ef4444;
   opacity: 0;
   will-change: transform, opacity;
-  animation: floatHeart 10s infinite linear;
+  animation: floatHeart calc(var(--total-pins, 1) * 10s) infinite linear;
 }
 
 /* Define positions, delays & unique movement paths */
 .floating-heart:nth-child(1) {
   left: 4px;
-  animation-delay: 0s;
+  animation-delay: calc(var(--pin-delay, 0s) + 0s);
   --tx-mid: -10px; --tx-end: -15px;
   --rot-start: -12deg; --rot-mid: 4deg; --rot-end: -10deg;
   --scale-mid: 1.05;
@@ -303,7 +303,7 @@ popup-like-btn {
 
 .floating-heart:nth-child(2) {
   left: 16px;
-  animation-delay: 1.5s;
+  animation-delay: calc(var(--pin-delay, 0s) + 1.3s);
   --tx-mid: 12px; --tx-end: 18px;
   --rot-start: 10deg; --rot-mid: -6deg; --rot-end: 12deg;
   --scale-mid: 1.18;
@@ -311,24 +311,25 @@ popup-like-btn {
 
 .floating-heart:nth-child(3) {
   left: 8px;
-  animation-delay: 3s;
+  animation-delay: calc(var(--pin-delay, 0s) + 2.6s);
   --tx-mid: -6px; --tx-end: 8px;
   --rot-start: -6deg; --rot-mid: 10deg; --rot-end: -8deg;
   --scale-mid: 0.95;
 }
 
-/* Single reusable keyframe animation for all hearts */
 @keyframes floatHeart {
   0% {
     opacity: 0;
     transform: translate(0, 0) scale(0.5) rotate(var(--rot-start));
   }
-  3% { opacity: 1; }
-  15% {
+  2% { 
+    opacity: 1; 
+  }
+  10% {
     opacity: 0.9;
     transform: translate(var(--tx-mid), -42px) scale(var(--scale-mid)) rotate(var(--rot-mid));
   }
-  22%, 100% {
+  15%, 100% {
     opacity: 0;
     transform: translate(var(--tx-end), -62px) scale(0.8) rotate(var(--rot-end));
   }
