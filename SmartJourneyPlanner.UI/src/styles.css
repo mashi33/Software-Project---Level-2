@@ -185,9 +185,13 @@ popup-like-btn {
 
 .vignette-location-badge {
   position: absolute;
-  left: 58px; 
-  top: 10px;
-  background: rgba(15, 23, 42, 0.85); 
+  bottom: 100%;                
+  left: 50% !important;        
+  transform: translate(-50%, 6px); 
+  margin-bottom: 8px;
+  top: auto;
+
+  background: rgba(15, 23, 42, 0.90); 
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -198,13 +202,23 @@ popup-like-btn {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.3px;
-  white-space: nowrap;
+  white-space: nowrap;       
   pointer-events: none; 
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  animation: badgeSlideIn 0.3s ease-out forwards;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
 }
 
 /* INTERACTION & ANIMATIONS (Hover States) */
+
+.vignette-map-pin-wrapper:hover .vignette-location-badge,
+.vignette-pin-container:hover .vignette-location-badge {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
 
 .vignette-map-pin-wrapper:hover .vignette-pin-container {
   transform: scale(1.18) translateY(-5px);
@@ -253,6 +267,70 @@ popup-like-btn {
       calc(-50% + var(--x-offset)),
       calc(-50% - 90px)
     ) scale(1.3) rotate(var(--rotate));
+  }
+}
+
+/* ULTRA-CLEAN CSS (Single Keyframe using CSS Variables) */
+.heart-animation-container {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.floating-heart {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  fill: #ef4444;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: floatHeart 10s infinite linear;
+}
+
+/* Define positions, delays & unique movement paths */
+.floating-heart:nth-child(1) {
+  left: 4px;
+  animation-delay: 0s;
+  --tx-mid: -10px; --tx-end: -15px;
+  --rot-start: -12deg; --rot-mid: 4deg; --rot-end: -10deg;
+  --scale-mid: 1.05;
+}
+
+.floating-heart:nth-child(2) {
+  left: 16px;
+  animation-delay: 1.5s;
+  --tx-mid: 12px; --tx-end: 18px;
+  --rot-start: 10deg; --rot-mid: -6deg; --rot-end: 12deg;
+  --scale-mid: 1.18;
+}
+
+.floating-heart:nth-child(3) {
+  left: 8px;
+  animation-delay: 3s;
+  --tx-mid: -6px; --tx-end: 8px;
+  --rot-start: -6deg; --rot-mid: 10deg; --rot-end: -8deg;
+  --scale-mid: 0.95;
+}
+
+/* Single reusable keyframe animation for all hearts */
+@keyframes floatHeart {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5) rotate(var(--rot-start));
+  }
+  3% { opacity: 1; }
+  15% {
+    opacity: 0.9;
+    transform: translate(var(--tx-mid), -42px) scale(var(--scale-mid)) rotate(var(--rot-mid));
+  }
+  22%, 100% {
+    opacity: 0;
+    transform: translate(var(--tx-end), -62px) scale(0.8) rotate(var(--rot-end));
   }
 }
 
