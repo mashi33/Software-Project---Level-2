@@ -164,16 +164,6 @@
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
 }
 
-.btn-video {
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25);
-}
-
-.btn-video:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.35);
-}
-
 .btn-fullscreen {
   background: linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%);
 }

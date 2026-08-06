@@ -24,7 +24,9 @@
             {{ startDate | date:'mediumDate' }} – {{ endDate | date:'mediumDate' }}
           </p>
         </div>
-
+           <button class="btn btn-recap" [routerLink]="['/slideshow', tripName]">
+           🎬 View Recap Slideshow
+           </button>
         <div class="hero-actions d-flex gap-2 flex-wrap">
           <div class="dropdown">
             <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2"

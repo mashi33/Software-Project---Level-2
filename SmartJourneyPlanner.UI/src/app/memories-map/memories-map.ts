@@ -634,13 +634,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
          </div>`
       : '';
 
-    const likedUsersHtml = memory.isPublic && memory.likedByUsers && memory.likedByUsers.length > 0
-      ? `<div class="popup-liked-users">
-           <span class="popup-liked-label">Liked by:</span>
-           <span class="popup-liked-names">${memory.likedByUsers.map((u: string) => this.escapeHtml(u)).join(', ')}</span>
-         </div>`
-      : '';
-
     return `
       <div class="map-popup" data-memory-id="${id}">
         <div class="popup-image-wrap view-big-image" data-memory-id="${id}" title="Click to view full size">
@@ -664,8 +657,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           </p>
 
           ${likeHtml}
-
-          ${likedUsersHtml}
 
           <div class="popup-actions">
             <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">
