@@ -26,10 +26,8 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   tripDurationDays: number = 0;      
   tripDetails: any = null;
 
-  isLightMode: boolean = true; 
   isFullscreen: boolean = false;
   isPlaying: boolean = false;
-  isDownloading: boolean = false; 
   isAlbumDownloading: boolean = false;
   activeIndex: number = 0; 
   playbackInterval: any;
@@ -38,8 +36,6 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   private markersGroup = L.layerGroup(); 
   private mapMarkers: L.Marker[] = [];
   private pathLine!: L.Polyline;
-  private lightTileLayer!: L.TileLayer;
-  private darkTileLayer!: L.TileLayer;
   private vehicleMarker!: L.Marker;
   private animationFrameId: number | null = null;
 
@@ -145,53 +141,50 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildTripMembers(): void {
-  if (!this.tripDetails) return;
+    if (!this.tripDetails) return;
 
-  const details = this.tripDetails.data || this.tripDetails;
-  const rawMembers: any[] = details.members || details.Members || [];
+    const details = this.tripDetails.data || this.tripDetails;
+    const rawMembers: any[] = details.members || details.Members || [];
 
-  this.tripMembers = [];
-  const seenEmails = new Set<string>();
-
-  const uploaderSet = new Set<string>();
-  
-  this.filteredMemories.forEach(m => {
-    if (m.userId) uploaderSet.add(m.userId.toLowerCase().trim());
-    if (m.fullName) uploaderSet.add(m.fullName.toLowerCase().trim());
-    if (m.email) uploaderSet.add(m.email.toLowerCase().trim());
-    if (m.createdBy) uploaderSet.add(m.createdBy.toLowerCase().trim());
-  });
-
-  console.log('EXTRACTED UPLOADER SET', uploaderSet);
-
-  if (Array.isArray(rawMembers)) {
-    rawMembers.forEach((m: any) => {
-      const email = (m.email || '').toLowerCase().trim();
-      const displayName = m.name || m.Name || m.email || 'Member';
-      const role = m.role || m.Role || 'Member';
-      const memberId = (m.id || m.userId || '').toLowerCase().trim();
-
-      if (email && !seenEmails.has(email)) {
-        seenEmails.add(email);
-
-        const hasUploaded = 
-          uploaderSet.has(email) || 
-          uploaderSet.has(displayName.toLowerCase().trim()) ||
-          (memberId !== '' && uploaderSet.has(memberId));
-        
-        this.tripMembers.push({
-          name: displayName, 
-          email: m.email || '',
-          role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
-          hasMemory: hasUploaded 
-        });
-      }
+    this.tripMembers = [];
+    const seenEmails = new Set<string>();
+    const uploaderSet = new Set<string>();
+    
+    this.filteredMemories.forEach(m => {
+      if (m.userId) uploaderSet.add(m.userId.toLowerCase().trim());
+      if (m.fullName) uploaderSet.add(m.fullName.toLowerCase().trim());
+      if (m.email) uploaderSet.add(m.email.toLowerCase().trim());
+      if (m.createdBy) uploaderSet.add(m.createdBy.toLowerCase().trim());
     });
-  }
 
-  this.memberCount = this.tripMembers.length;
-  if (this.cdr) this.cdr.detectChanges();
-}
+    if (Array.isArray(rawMembers)) {
+      rawMembers.forEach((m: any) => {
+        const email = (m.email || '').toLowerCase().trim();
+        const displayName = m.name || m.Name || m.email || 'Member';
+        const role = m.role || m.Role || 'Member';
+        const memberId = (m.id || m.userId || '').toLowerCase().trim();
+
+        if (email && !seenEmails.has(email)) {
+          seenEmails.add(email);
+
+          const hasUploaded = 
+            uploaderSet.has(email) || 
+            uploaderSet.has(displayName.toLowerCase().trim()) ||
+            (memberId !== '' && uploaderSet.has(memberId));
+          
+          this.tripMembers.push({
+            name: displayName, 
+            email: m.email || '',
+            role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
+            hasMemory: hasUploaded 
+          });
+        }
+      });
+    }
+
+    this.memberCount = this.tripMembers.length;
+    if (this.cdr) this.cdr.detectChanges();
+  }
 
   private loadTripMetadata(): void {
     if (!this.tripId) return;
@@ -201,15 +194,15 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const details = trip.data || trip;
 
-      if (details.duration || details.tripDurationDays) {
-        this.tripDurationDays = details.duration || details.tripDurationDays;
-      } 
-      else if (details.startDate && details.endDate) {
-        const start = new Date(details.startDate).getTime();
-        const end = new Date(details.endDate).getTime();
-        const diffTime = Math.abs(end - start);
-        this.tripDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-      }
+        if (details.duration || details.tripDurationDays) {
+          this.tripDurationDays = details.duration || details.tripDurationDays;
+        } 
+        else if (details.startDate && details.endDate) {
+          const start = new Date(details.startDate).getTime();
+          const end = new Date(details.endDate).getTime();
+          const diffTime = Math.abs(end - start);
+          this.tripDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        }
 
         this.buildTripMembers();
       },
@@ -247,9 +240,9 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
           this.filteredMemories = sortedDefault;
         }
 
-      if (this.tripDetails) {
-        this.buildTripMembers();
-      }
+        if (this.tripDetails) {
+          this.buildTripMembers();
+        }
 
         if (this.filteredMemories.length > 0) {
           if (!this.tripId && this.filteredMemories[0].tripId) {
@@ -282,16 +275,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       zoomControl: false,
       attributionControl: false
     });
-
-    this.lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
-    this.darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png');
     
-    if (this.isLightMode) {
-      this.lightTileLayer.addTo(this.map);
-    } else {
-      this.darkTileLayer.addTo(this.map);
-    }
-
     const latLngList = this.filteredMemories
       .filter(m => m.latitude && m.longitude)
       .map(m => L.latLng(m.latitude, m.longitude));
@@ -351,24 +335,6 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   private getPinColor(index: number): string {
     const colors = ['#e11d48', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
     return colors[index % colors.length];
-  }
-
-  downloadCurrentVideo(): void {
-    const currentStop = this.filteredMemories[this.activeIndex];
-    if (!currentStop || !currentStop.imageUrl) return;
-
-    this.isDownloading = true;
-    setTimeout(() => {
-      window.open(currentStop.imageUrl, '_blank');
-      this.isDownloading = false;
-      Swal.fire({
-        icon: 'success',
-        title: 'Download Started',
-        text: 'Your image/video is opening in a new window.',
-        timer: 2000,
-        showConfirmButton: false
-      });
-    }, 1000);
   }
 
   public async downloadAlbumAsPhotos(): Promise<void> {
@@ -469,21 +435,8 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     this.animationFrameId = requestAnimationFrame(step);
   }
 
-  toggleTheme(): void {
-    this.isLightMode = !this.isLightMode;
-    if (this.map) {
-      if (this.isLightMode) {
-        this.map.removeLayer(this.darkTileLayer);
-        this.lightTileLayer.addTo(this.map); 
-      } else {
-        this.map.removeLayer(this.lightTileLayer);
-        this.darkTileLayer.addTo(this.map);
-      }
-    }
-  }
-
   toggleFullscreen(): void {
-     // if Slideshow is closed, reopen it before go to Fullscreen 
+    // if Slideshow is closed, reopen it before go to Fullscreen 
     if (!this.showCloseButton) {
       this.onReopenSlideshow();
     }
