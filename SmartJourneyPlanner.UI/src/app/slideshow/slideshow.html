@@ -20,10 +20,6 @@
         <span>{{ isAlbumDownloading ? '⏳ Downloading...' : '📸 Download Photo Album' }}</span>
       </button>
 
-      <button class="btn btn-action btn-video" [disabled]="isDownloading" (click)="downloadCurrentVideo()">
-        <span>{{ isDownloading ? '⏳ Compiling...' : '📥 Save Video Recap' }}</span>
-      </button>
-
       <button class="btn btn-action btn-fullscreen" (click)="toggleFullscreen()">
         <span>🖵 Fullscreen</span>
       </button>
