@@ -233,10 +233,14 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       this.memoryService.getTripMemories(this.tripId).subscribe({
         next: (data: TripMemory[]) => {
           this.allMemories = data;
-          this.filteredMemories = this.allMemories.map(m => ({
-            ...m,
-            visibility: m.visibility ?? 'private'
-          }));
+          
+          // Filter to only show public and trip members memories
+          this.filteredMemories = this.allMemories
+            .map(m => ({
+              ...m,
+              visibility: m.visibility ?? 'private'
+            }))
+            .filter(m => m.visibility === 'public' || m.visibility === 'tripMembers');
 
           const sortedDefault = this.filteredMemories.sort((a, b) => {
             const dateA = new Date(a.createdAt || a.startDate || '').getTime();
