@@ -120,10 +120,6 @@
         </div>
       </div>
 
-       <!--<div class="glass-card reveal" style="height: 400px; padding: 0; overflow: hidden;">
-  <div id="map" style="width: 100%; height: 100%; border-radius: 18px;"></div>
-</div>
--->
       <div class="feature-grid">
         <div class="feature-card reveal">
           <div class="feature-ico">📅</div>
@@ -184,11 +180,11 @@
           </div>
           <div class="stat">
             <span class="stat-ico">💨</span>
-            <div><p class="stat-val">{{ weatherCategory }}</p><p class="stat-key">Wind</p></div>
+            <div><p class="stat-val">{{ weatherData.windSpeed }} km/h</p><p class="stat-key">Wind</p></div>
           </div>
           <div class="stat">
             <span class="stat-ico">☔</span>
-            <div><p class="stat-val">{{ selectedDate | date:'MMM d' }}</p><p class="stat-key">Rain Total</p></div>
+            <div><p class="stat-val">{{ weatherData.precipitation }} mm</p><p class="stat-key">Hourly Rain</p></div>
           </div>
         </div>
       </div>
@@ -208,24 +204,6 @@
           <span class="adv-unit">mm</span>
         </div>
       </div>
-
-      <!-- CONDITION DETAILS GRID --><!--
-      <div class="glass-card details-card reveal">
-        <h3 class="card-title">Conditions Detail</h3>
-        <div class="details-grid">-->
-          <!-- feels-like respects the unit toggle -->
-          <!--<div class="detail-tile">
-            <span class="detail-ico">🌡️</span>
-            <p class="detail-val">{{ displayTemp(feelsLikeC) }}°{{ unit }}</p>
-            <p class="detail-key">Feels Like</p>
-          </div>
-          <div class="detail-tile" *ngFor="let d of weatherDetails">
-            <span class="detail-ico">{{ d.ico }}</span>
-            <p class="detail-val">{{ d.value }}</p>
-            <p class="detail-key">{{ d.label }}</p>
-          </div>
-        </div>
-      </div>-->
 
       <!-- HOURLY FORECAST -->
       <div class="glass-card hourly-card reveal" *ngIf="hourlyForecast.length > 0">
@@ -247,24 +225,6 @@
           </div>
         </div>
       </div>
-
-      <!-- HOURLY PRECIPITATION CHART (mm) --><!--
-      <div class="glass-card precip-card reveal" *ngIf="hourlyForecast.length > 0">
-        <div class="precip-head">
-          <h3 class="card-title">Precipitation</h3>
-          <span class="precip-total">Total {{ totalMm }} mm</span>
-        </div>
-        <div class="precip-chart">
-          <div class="precip-col" *ngFor="let h of hourlyForecast">
-            <span class="precip-mm">{{ h.mm }}</span>
-            <div class="precip-track">
-              <div class="precip-bar" [style.height.%]="h.height"></div>
-            </div>
-            <span class="precip-time">{{ h.time }}</span>
-          </div>
-        </div>
-      </div>
-      -->
 
       <!-- 7-DAY FORECAST -->
       <div class="glass-card forecast-card reveal" *ngIf="weatherRange.length > 0">

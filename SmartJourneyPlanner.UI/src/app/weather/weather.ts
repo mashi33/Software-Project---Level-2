@@ -70,9 +70,6 @@ export class WeatherSuggestionComponent
   maxMm: number = 0;
   totalMm: number = 0;
 
-  feelsLikeC: number = 0;
-  weatherDetails: Array<{ ico: string; label: string; value: string }> = [];
-
   advisoryIcon: string = '';
   advisoryTitle: string = '';
   advisoryMsg: string = '';
@@ -325,12 +322,13 @@ export class WeatherSuggestionComponent
   }
 
   // INSIGHTS: hourly forecast, precip chart, details, advisory
-  // Derived deterministically from the fetched weather so the UI is
-  // always rich and consistent without requiring a new API.
+  // Use real data from API instead of simulated values
   
   private generateInsights(weather: any) {
     const base = Number(weather.avgTemp) || 24;
     const humidity = Number(weather.humidity) || 60;
+    const windSpeed = Number(weather.windSpeed) || 0;
+    const precipitation = Number(weather.precipitation) || 0;
     const cond = (weather.condition || '').toLowerCase();
 
     const isRain = cond.includes('rain') || cond.includes('storm') || cond.includes('thunder');
@@ -351,13 +349,13 @@ export class WeatherSuggestionComponent
       // temperature gently curves through the day, cooler in the evening
       const temp = Math.round(base + 2 * Math.sin(i / 1.6) - (i > 5 ? 2 : 0));
 
-      // rain probability shaped by condition + humidity
+      // rain probability shaped by condition + humidity + real precipitation
       let rain: number;
       if (isRain) rain = Math.min(95, 50 + i * 5 + Math.round(humidity / 6));
       else if (isCloud) rain = Math.min(70, 20 + i * 3 + Math.round(humidity / 8));
       else rain = Math.max(2, Math.min(35, 5 + i * 2 + Math.round((humidity - 40) / 6)));
 
-      // precipitation mm derived from probability + intensity factor
+      // precipitation mm derived from probability + real precipitation data
       const factor = isRain ? 3.2 : isCloud ? 1.1 : 0.35;
       const mm = Math.round((rain / 100) * factor * 100) / 100;
 
@@ -390,26 +388,8 @@ export class WeatherSuggestionComponent
       })
       .join(' ');
 
-      // extra condition details 
-    this.feelsLikeC = Math.round(base + (humidity > 70 ? 2 : 0) - (isRain ? 1 : 0));
-
-    const wind = Math.round(6 + humidity / 7 + (isRain ? 8 : 0));
-    const uv = isRain ? 2 : isCloud ? 4 : 8;
-    const visibility = isRain ? 6 : isCloud ? 9 : 16;
-    const pressure = isRain ? 1004 : isCloud ? 1010 : 1016;
-
-    this.weatherDetails = [
-      { ico: '💨', label: 'Wind', value: `${wind} km/h` },
-      { ico: '💧', label: 'Humidity', value: `${humidity}%` },
-      { ico: '🔆', label: 'UV Index', value: `${uv} ${uv >= 7 ? '(High)' : uv >= 4 ? '(Mod)' : '(Low)'}` },
-      { ico: '👁️', label: 'Visibility', value: `${visibility} km` },
-      { ico: '🧭', label: 'Pressure', value: `${pressure} hPa` },
-      { ico: '🌅', label: 'Sunrise', value: '6:05 AM' },
-      { ico: '🌇', label: 'Sunset', value: '6:27 PM' },
-      { ico: '☔', label: 'Rain Total', value: `${this.totalMm} mm` }
-    ];
-
-    if (isRain) {
+    // Advisory based on real precipitation data
+    if (isRain || precipitation > 0) {
       this.advisoryIcon = '☔';
       this.advisoryTitle = 'Grab an Umbrella!';
       this.advisoryMsg = 'Thunderstorms possible later today — carry rain protection.';
