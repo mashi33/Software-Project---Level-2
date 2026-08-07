@@ -531,37 +531,6 @@
 .adv-num { font-size: 2.4rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
 .adv-unit { font-size: 1rem; font-weight: 700; opacity: 0.9; }
 
-/* CONDITION DETAILS GRID */
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.detail-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(12px);
-  transition: transform .18s, box-shadow .2s, border-color .15s;
-}
-.detail-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--brand); background: #ffffff; }
-.detail-ico {
-  font-size: 1.2rem;
-  width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--brand-soft);
-  color: var(--brand-dark);
-  border-radius: 11px;
-  margin-bottom: 4px;
-}
-.detail-val { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--ink); }
-.detail-key { margin: 0; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
-
 /* HOURLY FORECAST */
 .hourly-wrap { position: relative; }
 .trend-svg {
@@ -614,69 +583,6 @@
   box-shadow: 0 2px 6px rgba(6, 182, 212, 0.5);
 }
 .hour-rain { font-size: 0.72rem; color: var(--brand-dark); font-weight: 800; }
-
-/* PRECIPITATION CHART */
-.precip-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-.precip-total {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--brand-dark);
-  background: var(--brand-soft);
-  padding: 5px 12px;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(0, 180, 216, 0.15);
-}
-.precip-chart {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-  align-items: end;
-  height: 170px;
-}
-.precip-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  height: 100%;
-}
-.precip-mm { font-size: 0.72rem; font-weight: 700; color: var(--brand-dark); }
-.precip-track {
-  width: 100%;
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-.precip-bar {
-  width: 70%;
-  max-width: 34px;
-  min-height: 6px;
-  border-radius: 8px 8px 4px 4px;
-  background: linear-gradient(180deg, #38bdf8, #0077b6);
-  box-shadow: 0 4px 12px rgba(0, 119, 182, 0.25);
-  transform-origin: bottom;
-  animation: grow-bar 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.precip-col:nth-child(1) .precip-bar { animation-delay: .04s; }
-.precip-col:nth-child(2) .precip-bar { animation-delay: .10s; }
-.precip-col:nth-child(3) .precip-bar { animation-delay: .16s; }
-.precip-col:nth-child(4) .precip-bar { animation-delay: .22s; }
-.precip-col:nth-child(5) .precip-bar { animation-delay: .28s; }
-.precip-col:nth-child(6) .precip-bar { animation-delay: .34s; }
-.precip-col:nth-child(7) .precip-bar { animation-delay: .40s; }
-.precip-col:nth-child(8) .precip-bar { animation-delay: .46s; }
-@keyframes grow-bar { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
-.precip-time { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
-@media (prefers-reduced-motion: reduce) {
-  .precip-bar, .trend-line { animation: none; stroke-dashoffset: 0; }
-}
 
 /* 7-DAY FORECAST */
 .forecast-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }

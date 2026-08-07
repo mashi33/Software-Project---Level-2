@@ -4,6 +4,7 @@ import { MemoryService } from '../services/memory';
 import { TripService } from '../services/trip.service'; 
 import { TripMemory } from '../models/memory.model';
 import * as L from 'leaflet';
+import 'leaflet.markercluster';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
@@ -35,13 +36,23 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   playbackInterval: any;
 
   private map!: L.Map;
-  private markersGroup = L.layerGroup(); 
+  private markersClusterGroup = (L as any).markerClusterGroup({
+    iconCreateFunction: (cluster: any) => {
+      const count = cluster.getChildCount();
+      return L.divIcon({
+        html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
+        className: 'my-cluster-wrapper',
+        iconSize: L.point(40, 40)
+      });
+    }
+  });
   private mapMarkers: L.Marker[] = [];
   private pathLine!: L.Polyline;
   private lightTileLayer!: L.TileLayer;
   private darkTileLayer!: L.TileLayer;
   private vehicleMarker!: L.Marker;
   private animationFrameId: number | null = null;
+  private currentOpenCluster: any = null;
 
   // Data Binding Variables
   allMemories: TripMemory[] = [];
@@ -317,7 +328,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderImageMarkers(): void {
-    this.markersGroup.clearLayers();
+    this.markersClusterGroup.clearLayers();
     this.mapMarkers = [];
 
     this.filteredMemories.forEach((memory, idx) => {
@@ -348,16 +359,84 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
           });
 
         this.mapMarkers.push(marker);
-        this.markersGroup.addLayer(marker);
+        this.markersClusterGroup.addLayer(marker);
       }
     });
 
-    this.markersGroup.addTo(this.map);
+    this.markersClusterGroup.addTo(this.map);
+    
+    // Add cluster click handler for manual opening
+    this.markersClusterGroup.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      this.currentOpenCluster = cluster;
+      cluster.spiderfy();
+    });
+    
+    // Add spiderfy event to track when cluster is opened
+    this.markersClusterGroup.on('spiderfied', (e: any) => {
+      this.currentOpenCluster = e.cluster;
+    });
+    
+    // Add unspiderfy event to track when cluster is closed
+    this.markersClusterGroup.on('unspiderfied', () => {
+      this.currentOpenCluster = null;
+    });
+    
+    // Add map move handler to close cluster when moving away
+    this.map.on('moveend', () => {
+      if (this.currentOpenCluster) {
+        try {
+          this.currentOpenCluster.unspiderfy();
+        } catch (e) {
+          // Cluster might already be closed
+        }
+        this.currentOpenCluster = null;
+      }
+    });
   }
 
   private getPinColor(index: number): string {
     const colors = ['#e11d48', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
     return colors[index % colors.length];
+  }
+
+  private autoOpenClusterAtLocation(lat: number, lng: number): void {
+    if (!this.map || !this.markersClusterGroup) return;
+    
+    console.log('Auto-opening cluster at:', lat, lng, 'for index:', this.activeIndex);
+    
+    // Find the marker for the current memory
+    const targetMarker = this.mapMarkers.find((marker, idx) => 
+      idx === this.activeIndex
+    );
+    
+    if (!targetMarker) {
+      console.log('No target marker found');
+      return;
+    }
+    
+    // Use setTimeout to ensure map has finished updating after vehicle animation
+    setTimeout(() => {
+      try {
+        // Get all layers in the cluster group
+        this.markersClusterGroup.eachLayer((layer: any) => {
+          // Check if this layer is a cluster
+          if (layer.getChildCount && layer.getChildCount() > 1) {
+            // Check if this cluster contains our target marker
+            const layers = layer.getAllChildMarkers();
+            const containsMarker = layers.some((m: any) => m === targetMarker);
+            
+            if (containsMarker) {
+              console.log('Found cluster containing target marker, spiderfying...');
+              this.currentOpenCluster = layer;
+              layer.spiderfy();
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Error spiderfying cluster:', e);
+      }
+    }, 100); // Very short delay after animation completes
   }
 
   downloadCurrentVideo(): void {
@@ -438,7 +517,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private animateVehicle(fromCoords: L.LatLngLiteral, toCoords: L.LatLngLiteral, duration: number = 1800): void {
+  private animateVehicle(fromCoords: L.LatLngLiteral, toCoords: L.LatLngLiteral, onComplete?: () => void, duration: number = 1800): void {
     const startTime = performance.now();
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
@@ -469,6 +548,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         this.animationFrameId = null;
         if (this.slideshowScreenRef) {
           this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
+        }
+        // Call the completion callback when animation finishes
+        if (onComplete) {
+          onComplete();
         }
       }
     };
@@ -532,7 +615,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lng: this.filteredMemories[this.activeIndex].longitude 
     };
     
-    this.animateVehicle(oldCoords, newCoords);
+    // Animate vehicle and auto-open cluster when animation completes
+    this.animateVehicle(oldCoords, newCoords, () => {
+      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
+    });
   }
 
   prevSlide(): void {
@@ -547,7 +633,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lng: this.filteredMemories[this.activeIndex].longitude 
     };
     
-    this.animateVehicle(oldCoords, newCoords);
+    // Animate vehicle and auto-open cluster when animation completes
+    this.animateVehicle(oldCoords, newCoords, () => {
+      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
+    });
   }
 
   nextSlide(): void {
@@ -562,7 +651,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lng: this.filteredMemories[this.activeIndex].longitude 
     };
     
-    this.animateVehicle(oldCoords, newCoords);
+    // Animate vehicle and auto-open cluster when animation completes
+    this.animateVehicle(oldCoords, newCoords, () => {
+      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
+    });
   }
 
   togglePlay(): void {
