@@ -701,17 +701,6 @@ select.form-input {
 
 :host ::ng-deep .popup-btn-delete:hover { background: var(--danger); color: #fff; }
 
-:host ::ng-deep .custom-cluster-icon {
-  width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
 
 /* LIGHTBOX — LARGER IMAGE */
 .lightbox-overlay {

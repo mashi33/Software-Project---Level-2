@@ -630,20 +630,6 @@
   border-color: var(--like);
 }
 
-:host ::ng-deep .custom-cluster-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
 /* Lightbox */
 .lightbox-overlay {
   position: fixed;
@@ -794,7 +780,7 @@
   border-radius: 99px;
 }
 
-.visibility-chip.public { color: #166534; background: #ecfdf5; border: 1px solid #bbf7d0; }
+.visibility-chip.public { color: #6366f1; background: #dbeafe; border: 1px solid #93c5fd; }
 
 .lightbox-title {
   margin: 0 0 1rem;
