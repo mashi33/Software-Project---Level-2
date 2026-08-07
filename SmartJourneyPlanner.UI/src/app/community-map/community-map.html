@@ -45,15 +45,20 @@
       </section>
 
       <!-- TOP RATED MEMORIES SECTION -->
-      <section class="top-rated-section" *ngIf="activeTab === 'popular' && topRatedMemories.length > 0">
+      <section class="top-rated-section" *ngIf="activeTab === 'popular'">
         <div class="section-heading">
           <i class="bi bi-trophy-fill"></i>
           <span>Top Rated Memories</span>
         </div>
-        <div class="albums-header">
+        <div class="albums-header" *ngIf="topRatedMemories.length > 0">
           <span class="albums-count">{{ topRatedMemories.length }} top memories</span>
         </div>
         <div class="gallery-grid">
+          <div class="empty-state" *ngIf="topRatedMemories.length === 0">
+            <i class="bi bi-trophy"></i>
+            <p>No popular memories yet</p>
+            <small>Public memories with likes will appear here.</small>
+          </div>
           <article *ngFor="let memory of displayedTopRatedMemories; let i = index"
                    class="thumb-card"
                    (click)="openTopRatedMemory(memory)">
@@ -94,7 +99,7 @@
       </section>
 
       <!-- ALL ALBUMS SECTION -->
-      <section class="albums-section" *ngIf="activeTab === 'albums' && groupedAlbums.length > 0">
+      <section class="albums-section" *ngIf="activeTab === 'albums'">
         <div class="albums-header" *ngIf="groupedAlbums.length > 0">
 
         <span class="albums-count">
@@ -172,9 +177,14 @@
 
   <main class="map-container">
     <div id="map"></div>
-    <div class="map-hint">
+    <div class="map-hint" *ngIf="filteredMemories.length > 0">
       <i class="bi bi-hand-index-thumb"></i>
       Click a pin to view memory details
+    </div>
+    <div class="empty-state-map" *ngIf="filteredMemories.length === 0">
+      <i class="bi bi-globe-asia-australia"></i>
+      <p>No public memories on map</p>
+      <small>Public memories shared by travelers will appear here.</small>
     </div>
   </main>
 </div>

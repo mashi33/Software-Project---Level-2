@@ -246,6 +246,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onTripChange(event: any) {
     const tripId = event.target.value;
+    this.selectedTripId = tripId;
     this.selectedTrip = this.allTrips.find(t => t.id == tripId) || null;
   }
 
@@ -456,6 +457,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.visibilityStatus = 'private';
         this.searchQuery = '';
         this.selectedTrip = null;
+        this.selectedTripId = '';
         this.cdr.detectChanges();
 
         this.showSuccess('Memory pinned!', 'Your memory has been saved and added to the map.');
@@ -827,7 +829,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       .map((m: any) => new Date(m.createdAt))
       .filter((d: Date) => !isNaN(d.getTime()));
 
-    return dates.length ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
+    return dates.length > 0 ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
   }
 
   getNewestCreatedAt(album: any): Date | null {
@@ -837,7 +839,19 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       .map((m: any) => new Date(m.createdAt))
       .filter((d: Date) => !isNaN(d.getTime()));
 
-    return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+    return dates.length > 0 ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+  }
+
+  getVisibilityLabel(visibility: string): string {
+    switch (visibility) {
+      case 'public':
+        return 'Public';
+      case 'tripMembers':
+        return 'Only for trip members';
+      case 'private':
+      default:
+        return 'Private';
+    }
   }
 
   // EVENTS 

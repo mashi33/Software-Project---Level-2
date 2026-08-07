@@ -310,9 +310,29 @@ select.form-input {
   border-color: #6366f1;
   background: #eff6ff;
   color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
-.visibility-radio.public-option.active i { color: #3b82f6; }
+.visibility-radio.public-option.active i { color: #6366f1; }
+
+.visibility-message {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  margin-top: 0.25rem;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.visibility-message i {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: #15803d;
+}
 
 .btn-save {
   width: 100%;
@@ -856,8 +876,9 @@ select.form-input {
   border-radius: 99px;
 }
 
-.visibility-chip.public { color: #166534; background: #ecfdf5; border: 1px solid #bbf7d0; }
-.visibility-chip.private { color: #92400e; background: #fffbeb; border: 1px solid #fde68a; }
+.visibility-chip.public { color: #1e40af; background: #dbeafe; border: 1px solid #93c5fd; }
+.visibility-chip.private { color: #b45309; background: #fef3c7; border: 1px solid #fcd34d; }
+.visibility-chip.trip-members { color: #047857; background: #d1fae5; border: 1px solid #6ee7b7; }
 
 .lightbox-title {
   margin: 0 0 1rem;

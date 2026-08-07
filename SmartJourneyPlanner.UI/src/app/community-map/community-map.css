@@ -1,3 +1,31 @@
+.empty-state-map {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--muted);
+  z-index: 10;
+}
+
+.empty-state-map i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state-map p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--ink);
+}
+
+.empty-state-map small {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
 .main-wrapper {
   display: flex;
   width: 100%;
