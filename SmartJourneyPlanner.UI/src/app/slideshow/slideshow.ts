@@ -280,7 +280,14 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       center: [activeCoords.latitude, activeCoords.longitude],
       zoom: 10,
       zoomControl: false,
-      attributionControl: false
+      attributionControl: false,
+      // Enable all touch and mouse interactions for full map control
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
+      scrollWheelZoom: true,
+      boxZoom: true,
+      bounceAtZoomLimits: true
     });
 
     this.lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');

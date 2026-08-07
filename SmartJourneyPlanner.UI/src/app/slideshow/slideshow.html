@@ -1,4 +1,4 @@
-<div #container class="trip-recap-container" [class.is-view-fullscreen]="isFullscreen">
+<div #container class="trip-recap-container" [class.is-view-fullscreen]="isFullscreen" [class.map-view-mode]="!showCloseButton">
   
   <!-- LEAFLET MAP BACKGROUND -->
 <div class="map-layer" id="leaflet-map-background" [hidden]="isFullscreen"></div>

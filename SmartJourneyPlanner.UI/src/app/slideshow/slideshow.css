@@ -47,6 +47,21 @@
   box-sizing: border-box;
 }
 
+/* When slideshow is hidden, allow pointer events to pass through to map */
+.trip-recap-container.map-view-mode {
+  pointer-events: none;
+}
+
+/* Re-enable pointer events for interactive elements when map-view-mode is active */
+.trip-recap-container.map-view-mode .header-bar,
+.trip-recap-container.map-view-mode .sidebar-left,
+.trip-recap-container.map-view-mode .sidebar-right,
+.trip-recap-container.map-view-mode .bottom-filmstrip-carousel,
+.trip-recap-container.map-view-mode .resume-action-container,
+.trip-recap-container.map-view-mode .central-player-deck-wrapper {
+  pointer-events: auto !important;
+}
+
 .map-layer {
   position: absolute;
   top: 0;
@@ -55,6 +70,7 @@
   height: 100%;
   z-index: 1;
   filter: contrast(102%) saturate(110%);
+  pointer-events: auto;
 }
 
 .leaflet-container {
@@ -103,6 +119,7 @@
   letter-spacing: -0.02em;
   background: var(--deep-blue-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1.2;
 }
@@ -348,7 +365,7 @@
   transition: transform 0.6s ease;
 }
 
-/* CLEAN CAPTION OVERLAY - REMOVED HEAVY BLUE BACKGROUND */
+/* CAPTION OVERLAY */
 .screen-text-overlay {
   position: absolute;
   bottom: 0;
@@ -431,7 +448,7 @@
   box-shadow: 0 6px 20px rgba(0, 180, 216, 0.6);
 }
 
-/* PLAYBACK DECK & TIMELINE (BLUE THEME) */
+/* PLAYBACK DECK & TIMELINE (HIDDEN BY DEFAULT, SHOWN ONLY ON HOVER OVER DECK AREA) */
 .central-player-deck-wrapper {
   position: absolute !important;
   bottom: 2.5rem;      
@@ -439,7 +456,25 @@
   transform: translateX(-50%); 
   width: 100%;
   max-width: 580px;
-  z-index: 99;      
+  z-index: 1000;      
+  pointer-events: auto !important;
+  opacity: 0; /* Hidden by default */
+  visibility: visible !important;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease;
+}
+
+/* REVEAL ONLY WHEN CURSOR HOVERS DIRECTLY OVER THE PLAYBACK DECK AREA */
+.central-player-deck-wrapper:hover {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* MAP VIEW MODE PLAYBACK DECK POSITIONING */
+.central-player-deck-wrapper.map-view-mode {
+  bottom: 8rem;
+  z-index: 1001;
+  opacity: 0;
+  pointer-events: auto !important;
 }
 
 .central-player-deck {
@@ -456,15 +491,8 @@
   border: 1px solid rgba(0, 180, 216, 0.4);
   border-radius: 99px;
   box-shadow: 0 15px 35px rgba(0, 119, 182, 0.4);
-  opacity: 0;
-  pointer-events: none; 
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.central-player-deck-wrapper:hover .central-player-deck {
   opacity: 1;
-  pointer-events: auto; 
-  transform: translateY(-4px);
+  pointer-events: auto !important;
 }
 
 .player-controls-row {
@@ -486,6 +514,7 @@
   font-weight: 700;
   font-size: 0.84rem;
   transition: all 0.2s ease;
+  pointer-events: auto !important;
 }
 
 .player-btn:hover {
@@ -559,6 +588,7 @@
   cursor: pointer;
   box-shadow: 0 0 12px rgba(0, 180, 216, 0.8);
   transition: transform 0.2s ease;
+  pointer-events: auto !important;
 }
 
 .progress-bar-scrub-pin:hover {
@@ -721,10 +751,10 @@
   50% { transform: scale(1.4); opacity: 0.7; }
 }
 
-/* HIGHLY TRANSPARENT FROSTED BLUE REEL */
+/* BOTTOM FILMSTRIP CAROUSEL */
 .bottom-filmstrip-carousel {
   position: relative;
-  z-index: 15; 
+  z-index: 100; 
   overflow-x: auto;
   padding: 1.25rem 0.65rem;
   background: rgba(0, 119, 182, 0.2) !important;
@@ -733,9 +763,10 @@
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md), var(--shadow-ocean-glow);
+  pointer-events: auto !important;
+  margin-top: auto;
 }
 
-/* TRANSPARENT SPROCKET HOLES (TOP & BOTTOM) */
 .bottom-filmstrip-carousel::before,
 .bottom-filmstrip-carousel::after {
   content: "";
@@ -755,13 +786,8 @@
   opacity: 0.85;
 }
 
-.bottom-filmstrip-carousel::before {
-  top: 6px;
-}
-
-.bottom-filmstrip-carousel::after {
-  bottom: 6px;
-}
+.bottom-filmstrip-carousel::before { top: 6px; }
+.bottom-filmstrip-carousel::after { bottom: 6px; }
 
 .carousel-track {
   display: flex;
@@ -769,8 +795,6 @@
   padding: 0.8rem 0.6rem;
   overflow-x: auto;
   position: relative;
-
-  /* SUBTLE FROSTED GLASS DIVIDER LINES */
   background-image: repeating-linear-gradient(
     90deg,
     transparent 0px,
@@ -780,22 +804,19 @@
     rgba(255, 255, 255, 0.1) 127px,  
     transparent 127px
   );
-
-  /* VERTICAL GRADIENT MASK */
   -webkit-mask-image: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(0, 0, 0, 1) 20%,
-    rgba(0, 0, 0, 1) 80%,
+    180deg, 
+    transparent 0%, rgba(0, 0, 0, 1) 20%, 
+    rgba(0, 0, 0, 1) 80%, 
     transparent 100%
-  );
+    );
   mask-image: linear-gradient(
-    180deg,
-    transparent 0%,
+    180deg, 
+    transparent 0%, 
     rgba(0, 0, 0, 1) 20%,
-    rgba(0, 0, 0, 1) 80%,
-    transparent 100%
-  );
+     rgba(0, 0, 0, 1) 80%, 
+     transparent 100%
+     );
 }
 
 .filmstrip-card {
@@ -947,6 +968,7 @@
   font-size: 0.85rem;
   box-shadow: 0 10px 25px rgba(0,0,0,0.4);
   transition: all 0.25s ease;
+  pointer-events: auto !important;
 }
 
 .is-view-fullscreen .btn-exit-fs:hover {
@@ -954,6 +976,11 @@
   background: var(--sky-ocean-gradient);
   border-color: transparent;
   box-shadow: var(--shadow-ocean-glow);
+}
+
+.is-view-fullscreen .central-player-deck-wrapper {
+  bottom: 3rem;
+  z-index: 2000;
 }
 
 .is-view-fullscreen .bottom-filmstrip-carousel {
@@ -977,13 +1004,15 @@
   margin-bottom: 1rem;
   animation: float 3s ease-in-out infinite;
 }
+
 /* FLOATING RESUME BUTTON */
 .resume-action-container {
   position: absolute !important;
   top: 6.5rem; 
   left: 50%;
   transform: translateX(-50%);
-  z-index: 999; 
+  z-index: 1002;
+  pointer-events: auto !important;
   animation: smoothDropIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -1002,6 +1031,7 @@
   padding: 0.75rem 2.25rem;
   border-radius: 9999px;
   cursor: pointer;
+  pointer-events: auto !important;
   box-shadow: var(--shadow-ocean-glow);
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
