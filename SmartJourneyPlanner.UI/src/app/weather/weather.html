@@ -1,12 +1,12 @@
-<!-- ================= FULL PAGE LAYOUT ================= -->
+<!-- FULL PAGE LAYOUT -->
 <div class="app-shell">
 
-  <!-- decorative ambient background (purely visual, fills empty space) -->
+  <!-- decorative ambient background -->
   <div class="bg-orb bg-orb-a"></div>
   <div class="bg-orb bg-orb-b"></div>
   <div class="bg-orb-c"></div>
 
-  <!-- =================== LEFT SIDEBAR =================== -->
+  <!-- LEFT SIDEBAR -->
   <aside class="left-panel">
 
     <!-- BRAND -->
@@ -90,13 +90,10 @@
 
   </aside>
 
-  <!-- =================== RIGHT COLUMN =================== -->
+  <!-- RIGHT COLUMN -->
   <main class="right-panel">
 
-    <!-- ===================================================== -->
-    <!-- EMPTY STATE (shown before a search)                   -->
-    <!-- ===================================================== -->
-    <div class="empty-hero" *ngIf="!weatherData && !loading">
+    <div class="empty-hero" *ngIf="!weatherData && !loading && showSearchHero">
       <div class="hero-top reveal">
         <div class="hero-icon">🌤️</div>
         <h1 class="hero-title">Know Before You Go</h1>
@@ -106,7 +103,6 @@
         </p>
       </div>
 
-      <!-- trust / capability highlight strip -->
       <div class="hero-stats reveal">
         <div class="hero-stat">
           <span class="hs-num">200k+</span>
@@ -124,12 +120,10 @@
         </div>
       </div>
 
-      <!--<div class="glass-card reveal" style="height: 400px; padding: 0; overflow: hidden;">
+       <!--<div class="glass-card reveal" style="height: 400px; padding: 0; overflow: hidden;">
   <div id="map" style="width: 100%; height: 100%; border-radius: 18px;"></div>
 </div>
 -->
-
-      <!-- feature highlights -->
       <div class="feature-grid">
         <div class="feature-card reveal">
           <div class="feature-ico">📅</div>
@@ -154,17 +148,12 @@
       </div>
     </div>
 
-    <!-- ===================================================== -->
-    <!-- LOADING STATE                                         -->
-    <!-- ===================================================== -->
+    <!-- LOADING STATE -->
     <div class="loading-state" *ngIf="loading">
       <div class="spinner"></div>
       <p>Fetching the latest weather...</p>
     </div>
 
-    <!-- ===================================================== -->
-    <!-- RESULTS                                               -->
-    <!-- ===================================================== -->
     <ng-container *ngIf="weatherData && !loading">
 
       <!-- CURRENT WEATHER (HERO) -->
@@ -184,7 +173,6 @@
           </div>
         </div>
 
-        <!-- weather stat strip -->
         <div class="stat-strip">
           <div class="stat">
             <span class="stat-ico">🌡️</span>
@@ -205,7 +193,7 @@
         </div>
       </div>
 
-      <!-- ADVISORY BANNER ("Grab an Umbrella!" style) -->
+      <!-- ADVISORY BANNER -->
       <div class="advisory-card reveal" *ngIf="advisoryTitle"
            [class.adv-rain]="weatherCategory === 'Rainy'"
            [class.adv-cloud]="weatherCategory === 'Cloudy'"
@@ -239,13 +227,12 @@
         </div>
       </div>-->
 
-      <!-- HOURLY FORECAST (temp trend + rain probability) -->
+      <!-- HOURLY FORECAST -->
       <div class="glass-card hourly-card reveal" *ngIf="hourlyForecast.length > 0">
         <h3 class="card-title">Hourly Forecast</h3>
         <div class="hourly-wrap">
-          <!-- temperature trend line overlay -->
-          <svg class="trend-svg" viewBox="0 0 100 40" preserveAspectRatio="none"
-               aria-hidden="true">
+          <svg class="trend-svg" viewBox="0 0 100 40" preserveAspectRatio="none" 
+          aria-hidden="true">
             <polyline class="trend-line" [attr.points]="tempTrendPoints" />
           </svg>
 
