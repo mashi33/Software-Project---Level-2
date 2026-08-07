@@ -424,11 +424,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       tripName: this.selectedTrip?.tripName || null
     };
 
-    console.log('Saving memory with body:', body);
-    console.log('Selected trip:', this.selectedTrip);
-    console.log('TripId being saved:', body.tripId);
-    console.log('Visibility being saved:', body.visibility);
-
     Swal.fire({
       title: 'Saving memory...',
       allowOutsideClick: false,

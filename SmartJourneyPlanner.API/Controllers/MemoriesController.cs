@@ -63,13 +63,7 @@ public async Task<ActionResult<List<TripMemory>>> GetTripMemories(string tripId,
 {
     try
     {
-        Console.WriteLine($"GetTripMemories called with tripId: {tripId}, userId: {userId}");
         var memories = await _memoryService.GetTripMemoriesAsync(tripId, userId);
-        Console.WriteLine($"Returning {memories.Count} memories for trip {tripId}");
-        foreach (var memory in memories)
-        {
-            Console.WriteLine($"Memory: {memory.Title}, Visibility: {memory.Visibility}, TripId: {memory.TripId}");
-        }
         return Ok(memories);
     }
     catch (Exception ex)

@@ -36,17 +36,13 @@ namespace SmartJourneyPlanner.API.Services
 
 public async Task<List<TripMemory>> GetPublicMemoriesAsync() =>
     await _memoriesCollection
-        .Find(memory => 
-            (memory.Visibility == "public" || (string.IsNullOrEmpty(memory.Visibility) && memory.IsPublic == true)) 
-            && memory.Status != "Flagged")
+        .Find(memory => memory.Visibility == "public" && memory.Status != "Flagged")
         .ToListAsync();
 
 public async Task<List<TripMemory>> GetTripMemoriesAsync(string tripId, string? userId = null) =>
     await _memoriesCollection
         .Find(memory => memory.TripId == tripId && 
-            ((memory.Visibility == "public") || 
-             (memory.Visibility == "tripMembers") ||
-             (string.IsNullOrEmpty(memory.Visibility) && memory.IsPublic == true)) && 
+            (memory.Visibility == "public" || memory.Visibility == "tripMembers") && 
             memory.Status != "Flagged")
         .ToListAsync();
 

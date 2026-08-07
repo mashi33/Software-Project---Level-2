@@ -64,10 +64,6 @@ public class TripMemory
     [JsonPropertyName("status")]
     public string Status { get; set; } = "Approved";
 
-    [BsonElement("isPublic")]
-    [JsonPropertyName("isPublic")]
-    public bool? IsPublic { get; set; } // Kept for backward compatibility with old data
-
     [BsonElement("visibility")]
     [JsonPropertyName("visibility")]
     public string Visibility { get; set; } = "private"; // Options: "private", "public", "tripMembers"
