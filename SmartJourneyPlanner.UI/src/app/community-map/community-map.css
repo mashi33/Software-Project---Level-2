@@ -1,3 +1,31 @@
+.empty-state-map {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--muted);
+  z-index: 10;
+}
+
+.empty-state-map i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state-map p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--ink);
+}
+
+.empty-state-map small {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
 .main-wrapper {
   display: flex;
   width: 100%;
@@ -630,20 +658,6 @@
   border-color: var(--like);
 }
 
-:host ::ng-deep .custom-cluster-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
 /* Lightbox */
 .lightbox-overlay {
   position: fixed;
@@ -794,7 +808,7 @@
   border-radius: 99px;
 }
 
-.visibility-chip.public { color: #166534; background: #ecfdf5; border: 1px solid #bbf7d0; }
+.visibility-chip.public { color: #6366f1; background: #dbeafe; border: 1px solid #93c5fd; }
 
 .lightbox-title {
   margin: 0 0 1rem;
