@@ -99,7 +99,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.memoryService.getPublicMemories().subscribe({
       next: (data) => {
         this.allMemories = data
-          .filter(m => m.isPublic)
+          .filter(m => m.visibility === 'public')
           .map(m => this.formatData(m))
           .slice(0, 500);
         this.applyFilters();
@@ -120,7 +120,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       locationName: (memory['locationName'] || memory['LocationName'] || 'Unknown Location') as string,
       startDate: memory['startDate'] as Date,
       endDate: memory['endDate'] as Date,
-      isPublic: Boolean(memory['isPublic'] ?? memory['IsPublic'] ?? false),
+      visibility: (memory['visibility'] ?? memory['Visibility'] ?? 'private') as string,
       likeCount: Number(memory['likeCount'] || memory['LikeCount'] || 0),
       likedByUsers: (memory['likedByUsers'] || memory['LikedByUsers'] || []) as string[],
       tripId: (memory['tripId'] || memory['TripId']) as string | undefined,
@@ -608,6 +608,8 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const id = this.escapeHtml(String(memory.id));
     const tripName = this.escapeHtml(memory.tripName || 'Unknown Trip');
     const liked = this.hasUserLiked(memory);
+    const visibility = memory.visibility === 'public' ? 'Public' : memory.visibility === 'tripMembers' ? 'Only for trip members' : 'Private';
+    const visibilityClass = memory.visibility === 'public' ? 'public' : memory.visibility === 'tripMembers' ? 'trip-members' : 'private';
 
     return `
 
@@ -624,7 +626,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         <div class="popup-body">
           <div class="popup-header">
             <h6 class="popup-title">${title}</h6>
-            <span class="popup-visibility public">Public</span>
+            <span class="popup-visibility ${visibilityClass}">${visibility}</span>
           </div>
 
           <span class="popup-trip-badge">${tripName}</span>

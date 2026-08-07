@@ -407,7 +407,7 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.badge-creator, .memory-role-wrapper {
+.badge-creator, .memory-role-wrapper, .badge-visibility {
   background: rgba(0, 180, 216, 0.4) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -418,6 +418,18 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: 0 2px 12px rgba(0, 180, 216, 0.3);
+}
+
+.badge-visibility.visibility-public {
+  background: rgba(59, 130, 246, 0.5) !important;
+  border-color: rgba(147, 197, 253, 0.8) !important;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.4);
+}
+
+.badge-visibility.visibility-trip-members {
+  background: rgba(16, 185, 129, 0.5) !important;
+  border-color: rgba(110, 231, 183, 0.8) !important;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
 }
 
 /* CLOSE BUTTON */

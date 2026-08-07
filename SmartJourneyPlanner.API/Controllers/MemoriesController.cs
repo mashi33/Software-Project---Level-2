@@ -57,6 +57,28 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
     }
 }
 
+// GET MEMORIES FOR A TRIP (public + tripMembers only)
+[HttpGet("trip/{tripId}")]
+public async Task<ActionResult<List<TripMemory>>> GetTripMemories(string tripId, [FromQuery] string? userId = null)
+{
+    try
+    {
+        Console.WriteLine($"GetTripMemories called with tripId: {tripId}, userId: {userId}");
+        var memories = await _memoryService.GetTripMemoriesAsync(tripId, userId);
+        Console.WriteLine($"Returning {memories.Count} memories for trip {tripId}");
+        foreach (var memory in memories)
+        {
+            Console.WriteLine($"Memory: {memory.Title}, Visibility: {memory.Visibility}, TripId: {memory.TripId}");
+        }
+        return Ok(memories);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error occurred while fetching trip memories.");
+        return StatusCode(500, "An internal server error occurred.");
+    }
+}
+
     //Saves your Frontend form data to MongoDB
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] TripMemory newMemory)
@@ -64,7 +86,7 @@ public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
         try 
         {
         //Log the incoming data to see if it even reaches the API
-            Console.WriteLine($"Incoming Data: {newMemory.Title}, {newMemory.LocationName}");
+            Console.WriteLine($"Incoming Data: {newMemory.Title}, {newMemory.LocationName}, Visibility: {newMemory.Visibility}");
 
         // Server-side timestamp ensures trustable creation time regardless of client input
             newMemory.CreatedAt = DateTime.UtcNow;

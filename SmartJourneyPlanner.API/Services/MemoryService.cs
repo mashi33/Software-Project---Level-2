@@ -21,7 +21,7 @@ namespace SmartJourneyPlanner.API.Services
             {
                 throw new ArgumentNullException(nameof(newMemory), "Memory object cannot be null.");
             }
-            Console.WriteLine($"Saving Memory: {newMemory.Title}, IsPublic: {newMemory.IsPublic}");
+            Console.WriteLine($"Saving Memory: {newMemory.Title}, Visibility: {newMemory.Visibility}");
    
             await _memoriesCollection.InsertOneAsync(newMemory);
         }
@@ -36,7 +36,18 @@ namespace SmartJourneyPlanner.API.Services
 
 public async Task<List<TripMemory>> GetPublicMemoriesAsync() =>
     await _memoriesCollection
-        .Find(memory => memory.IsPublic == true && memory.Status != "Flagged")
+        .Find(memory => 
+            (memory.Visibility == "public" || (string.IsNullOrEmpty(memory.Visibility) && memory.IsPublic == true)) 
+            && memory.Status != "Flagged")
+        .ToListAsync();
+
+public async Task<List<TripMemory>> GetTripMemoriesAsync(string tripId, string? userId = null) =>
+    await _memoriesCollection
+        .Find(memory => memory.TripId == tripId && 
+            ((memory.Visibility == "public") || 
+             (memory.Visibility == "tripMembers") ||
+             (string.IsNullOrEmpty(memory.Visibility) && memory.IsPublic == true)) && 
+            memory.Status != "Flagged")
         .ToListAsync();
 
         public async Task<int> GetCountByUserIdAsync(string userId)

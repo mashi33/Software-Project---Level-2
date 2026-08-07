@@ -34,7 +34,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private apiUrl = 'http://localhost:5233/api/memories';
 
-  visibilityStatus: string = 'public';
+  visibilityStatus: string = 'private';
 
   newMemory = {
     title: '',
@@ -43,7 +43,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     description: '',
     latitude: 0,
     longitude: 0,
-    isPublic: true
+    visibility: 'private'
   };
 
   searchQuery: string = '';
@@ -262,7 +262,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       locationName: memory.locationName || memory.LocationName || 'Unknown Location',
       startDate: memory.startDate,
       endDate: memory.endDate,
-      isPublic: memory.isPublic ?? memory.IsPublic ?? false,
+      visibility: memory.visibility ?? memory.Visibility ?? 'private',
       likeCount: memory.likeCount || 0,
       likedByUsers: memory.likedByUsers || memory.LikedByUsers || [],
       tripId: memory.tripId || memory.TripId || null,
@@ -413,16 +413,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.newMemory.isPublic = this.visibilityStatus === 'public';
+    this.newMemory.visibility = this.visibilityStatus;
 
     const body = {
       ...this.newMemory,
       userId,
       fullName,
-      isPublic: this.newMemory.isPublic,
+      visibility: this.newMemory.visibility,
       tripId: this.selectedTrip?.id || null,
       tripName: this.selectedTrip?.tripName || null
     };
+
+    console.log('Saving memory with body:', body);
+    console.log('Selected trip:', this.selectedTrip);
+    console.log('TripId being saved:', body.tripId);
+    console.log('Visibility being saved:', body.visibility);
 
     Swal.fire({
       title: 'Saving memory...',
@@ -451,9 +456,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           description: '',
           latitude: 0,
           longitude: 0,
-          isPublic: true
+          visibility: 'private'
         };
-        this.visibilityStatus = 'public';
+        this.visibilityStatus = 'private';
         this.searchQuery = '';
         this.selectedTrip = null;
         this.cdr.detectChanges();
@@ -622,10 +627,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const location = this.escapeHtml(memory.locationName || 'Unknown');
     const imageUrl = this.escapeHtml(memory.imageUrl || '');
     const id = this.escapeHtml(String(memory.id));
-    const visibility = memory.isPublic ? 'Public' : 'Private';
-    const visibilityClass = memory.isPublic ? 'public' : 'private';
+    const visibility = memory.visibility === 'public' ? 'Public' : memory.visibility === 'tripMembers' ? 'Only for trip members' : 'Private';
+    const visibilityClass = memory.visibility === 'public' ? 'public' : memory.visibility === 'tripMembers' ? 'trip-members' : 'private';
 
-    const likeHtml = memory.isPublic
+    const likeHtml = memory.visibility === 'public'
       ? `<div class="popup-likes">
            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
@@ -708,12 +713,12 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const heartAnimationHtml = isLikedMemory ? this.getHeartAnimationHtml(memory) : '';
 
     const pinStyle = isLikedMemory ? `
-      --pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'};
+      --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
       --pin-index: ${likedIndex};
       --total-pins: ${totalLikedPins};
       --pin-delay: calc(2s + (${likedIndex} * 10s));
     ` : `
-      --pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'};
+      --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
     `;
     const pinHtml = `
       <div class="vignette-pin-container" style="${pinStyle}">
