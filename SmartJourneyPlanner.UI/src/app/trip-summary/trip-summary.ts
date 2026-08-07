@@ -332,6 +332,15 @@ export class TripSummaryComponent implements OnInit {
     this.router.navigate(['/weather']);
   }
 
+  navigateToSlideshow() {
+    const actualTripId = this.tripId; // Use the tripId from URL parameter
+    const actualTripName = this.tripName;
+    
+    if (actualTripId && actualTripName) {
+      this.router.navigate(['/slideshow', actualTripName], { queryParams: { tripId: actualTripId } });
+    }
+  }
+
   confirmAndSave() {
     Swal.fire({
       icon: 'success',

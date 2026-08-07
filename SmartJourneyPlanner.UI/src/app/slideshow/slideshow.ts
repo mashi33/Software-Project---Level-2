@@ -229,50 +229,59 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadAndFilterMemories(): void {
-    this.memoryService.getPublicMemories().subscribe({
-      next: (data: TripMemory[]) => {
-        this.allMemories = data;
-        const tripFiltered = this.allMemories.filter(
-          m => m.tripName && m.tripName.toLowerCase() === this.selectedTripName.toLowerCase()
-        );
+    if (this.tripId) {
+      this.memoryService.getTripMemories(this.tripId).subscribe({
+        next: (data: TripMemory[]) => {
+          this.allMemories = data;
+          
+          // Filter to only show public and trip members memories
+          this.filteredMemories = this.allMemories
+            .map(m => ({
+              ...m,
+              visibility: m.visibility ?? 'private'
+            }))
+            .filter(m => m.visibility === 'public' || m.visibility === 'tripMembers');
 
-        const sortedDefault = tripFiltered.sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.startDate || '').getTime();
-          const dateB = new Date(b.createdAt || b.startDate || '').getTime();
-          return dateA - dateB;
-        });
+          const sortedDefault = this.filteredMemories.sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.startDate || '').getTime();
+            const dateB = new Date(b.createdAt || b.startDate || '').getTime();
+            return dateA - dateB;
+          });
 
-        const savedOrderIds = localStorage.getItem(`trip_order_${this.tripId || this.selectedTripName}`);
-        
-        if (savedOrderIds) {
-          const idArray: string[] = JSON.parse(savedOrderIds);
-          this.filteredMemories = idArray
-            .map(id => sortedDefault.find(m => m.id === id || (m as any)._id === id))
-            .filter(m => m !== undefined) as any[];
+          const savedOrderIds = localStorage.getItem(`trip_order_${this.tripId || this.selectedTripName}`);
+          
+          if (savedOrderIds) {
+            const idArray: string[] = JSON.parse(savedOrderIds);
+            this.filteredMemories = idArray
+              .map(id => sortedDefault.find(m => m.id === id || (m as any)._id === id))
+              .filter(m => m !== undefined) as any[];
 
-          const missingMemories = sortedDefault.filter(
-            orig => !this.filteredMemories.some(m => m.id === orig.id || (m as any)._id === (orig as any)._id)
-          );
-          this.filteredMemories = [...this.filteredMemories, ...missingMemories];
-        } else {
-          this.filteredMemories = sortedDefault;
-        }
-
-      if (this.tripDetails) {
-        this.buildTripMembers();
-      }
-
-        if (this.filteredMemories.length > 0) {
-          if (!this.tripId && this.filteredMemories[0].tripId) {
-            this.tripId = this.filteredMemories[0].tripId;
-            this.loadTripMetadata();
+            const missingMemories = sortedDefault.filter(
+              orig => !this.filteredMemories.some(m => m.id === orig.id || (m as any)._id === (orig as any)._id)
+            );
+            this.filteredMemories = [...this.filteredMemories, ...missingMemories];
+          } else {
+            this.filteredMemories = sortedDefault;
           }
 
-          setTimeout(() => { this.initMap(); }, 200);
-        }
-      },
-      error: (err: any) => { console.error('Failed to load memories:', err); }
-    });
+          if (this.tripDetails) {
+            this.buildTripMembers();
+          }
+
+          if (this.filteredMemories.length > 0) {
+            if (!this.tripId && this.filteredMemories[0].tripId) {
+              this.tripId = this.filteredMemories[0].tripId;
+              this.loadTripMetadata();
+            }
+
+            setTimeout(() => { this.initMap(); }, 200);
+          }
+        },
+        error: (err: any) => { console.error('Failed to load memories:', err); }
+      });
+    } else {
+      console.error('No tripId available to load memories');
+    }
   }
 
   private initMap(): void {

@@ -558,7 +558,7 @@
   border-radius: 99px;
 }
 
-:host ::ng-deep .popup-visibility.public { color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; }
+:host ::ng-deep .popup-visibility.public { color: #6366f1; background: #dbeafe; border: 1px solid #93c5fd; }
 
 :host ::ng-deep .popup-trip-badge {
   display: inline-block;

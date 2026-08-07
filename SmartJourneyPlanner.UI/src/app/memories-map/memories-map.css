@@ -289,23 +289,30 @@ select.form-input {
 
 .visibility-radio i { font-size: 0.95rem; color: var(--muted); transition: color 0.18s; }
 
-.visibility-radio.active {
-  border-color: var(--brand);
-  background: var(--brand-soft);
-  color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.visibility-radio.active i { color: var(--brand); }
 
 .visibility-radio.private-option.active {
-  border-color: #d97706;
+  border-color: #f59e0b;
   background: #fffbeb;
-  color: #92400e;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+  color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
+.visibility-radio.private-option.active i { color: #f59e0b; }
 
-.visibility-radio.private-option.active i { color: #d97706; }
+.visibility-radio.trip-members-option.active {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.visibility-radio.trip-members-option.active i { color: #10b981; }
+
+.visibility-radio.public-option.active {
+  border-color: #6366f1;
+  background: #eff6ff;
+  color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.visibility-radio.public-option.active i { color: #3b82f6; }
 
 .btn-save {
   width: 100%;
@@ -613,8 +620,9 @@ select.form-input {
   border-radius: 99px;
 }
 
-:host ::ng-deep .popup-visibility.public { color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; }
-:host ::ng-deep .popup-visibility.private { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
+:host ::ng-deep .popup-visibility.public { color: #1e40af; background: #dbeafe; border: 1px solid #93c5fd; }
+:host ::ng-deep .popup-visibility.private { color: #b45309; background: #fef3c7; border: 1px solid #fcd34d; }
+:host ::ng-deep .popup-visibility.trip-members { color: #047857; background: #d1fae5; border: 1px solid #6ee7b7; }
 
 :host ::ng-deep .popup-location {
   display: flex;

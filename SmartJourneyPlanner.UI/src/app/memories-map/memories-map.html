@@ -96,19 +96,24 @@
           </div>
         </section>
 
-        <!-- ORIGINAL VISIBILITY OPTION -->
+        <!-- VISIBILITY OPTION -->
         <section class="form-section">
           <label class="field-label">Visibility</label>
           <div class="visibility-options">
-            <label class="visibility-radio public-option" [class.active]="visibilityStatus === 'public'">
-              <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-globe2"></i>
-              <span>Public</span>
-            </label>
             <label class="visibility-radio private-option" [class.active]="visibilityStatus === 'private'">
               <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
               <i class="bi bi-lock-fill"></i>
               <span>Private</span>
+            </label>
+            <label class="visibility-radio trip-members-option" [class.active]="visibilityStatus === 'tripMembers'">
+              <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
+              <i class="bi bi-people-fill"></i>
+              <span>Only for trip members</span>
+            </label>
+            <label class="visibility-radio public-option" [class.active]="visibilityStatus === 'public'">
+              <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
+              <i class="bi bi-globe2"></i>
+              <span>Public</span>
             </label>
           </div>
         </section>
