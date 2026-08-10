@@ -1155,6 +1155,10 @@
   transition: all 0.2s ease;
 }
 
+.range-actions .btn-icon:hover {
+  background: #e5e7eb;
+}
+
 .range-actions .edit-btn:hover {
   background: #dbeafe;
   color: #2563eb;

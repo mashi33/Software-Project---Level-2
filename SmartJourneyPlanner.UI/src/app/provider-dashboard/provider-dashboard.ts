@@ -593,6 +593,60 @@ export class ProviderDashboardComponent implements OnInit {
     this.blockedRangesReason = '';
   }
 
+  showVehicleDetails(vehicle: any) {
+    // Use pre-calculated rating from backend if available, otherwise calculate from reviews
+    let ratingDisplay = 'No ratings yet';
+    
+    // Check for pre-calculated rating fields from backend
+    const backendRating = vehicle.averageRating || vehicle.AverageRating || vehicle.rating || vehicle.Rating;
+    
+    if (typeof backendRating === 'number' && backendRating > 0) {
+      // Backend provides pre-calculated rating
+      const reviewCount = vehicle.reviewCount || vehicle.ReviewCount || vehicle.reviews?.length || vehicle.Reviews?.length || 0;
+      ratingDisplay = `${backendRating.toFixed(1)} / 5.0 ⭐${reviewCount > 0 ? ` (${reviewCount} review${reviewCount > 1 ? 's' : ''})` : ''}`;
+    } else {
+      // Fallback: calculate from reviews array
+      const reviews = vehicle.reviews || vehicle.Reviews || [];
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
+        const averageRating = totalRating / reviews.length;
+        ratingDisplay = `${averageRating.toFixed(1)} / 5.0 ⭐ (${reviews.length} review${reviews.length > 1 ? 's' : ''})`;
+      }
+    }
+    
+    Swal.fire({
+      title: vehicle.ModelName || vehicle.modelName || 'Vehicle Details',
+      width: '620px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#0c92f4',
+      html: `
+        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+          <h6 class="text-primary fw-bold mb-1">Basic Information</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Model:</strong> ${vehicle.ModelName || vehicle.modelName || 'N/A'}</p>
+            <p class="m-0"><strong>Class:</strong> ${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</p>
+            <p class="m-0"><strong>Year:</strong> ${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</p>
+            <p class="m-0"><strong>Registration:</strong> ${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Specifications</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Capacity:</strong> ${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</p>
+            <p class="m-0"><strong>Fuel Type:</strong> ${vehicle.FuelType || vehicle.fuelType || 'N/A'}</p>
+            <p class="m-0"><strong>Transmission:</strong> ${vehicle.Transmission || vehicle.transmission || 'N/A'}</p>
+            <p class="m-0"><strong>Air Conditioning:</strong> ${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Pricing & Rating</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
+            <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
+          </div>
+        </div>
+      `
+    });
+  }
+
   deleteBlockedRange(range: any) {
     Swal.fire({
       title: 'Are you sure?',

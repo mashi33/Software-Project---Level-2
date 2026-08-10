@@ -128,7 +128,7 @@
           
           <div class="vehicle-details">
             <div class="vehicle-main-details">
-              <h3 class="vehicle-title">{{ vehicle.ModelName || vehicle.modelName }}</h3>
+              <h3 class="vehicle-title" (click)="showVehicleDetails(vehicle)" style="cursor: pointer;">{{ vehicle.ModelName || vehicle.modelName }}</h3>
               <p class="vehicle-subtitle">{{ vehicle.VehicleClass || vehicle.vehicleClass }} • {{ vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A' }}</p>
             </div>
 
