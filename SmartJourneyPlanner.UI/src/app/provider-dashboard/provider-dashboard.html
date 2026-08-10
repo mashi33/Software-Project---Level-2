@@ -24,6 +24,16 @@
         <h3>{{stats.totalVehicles || 0}}</h3>
         <p>Total Vehicles</p>
       </div>
+      <div class="vehicle-status-text">
+    <span class="status-text-item accepted">
+      <span class="dot green-dot"></span>
+      <strong>{{ stats.acceptedVehicles || 0 }}</strong> Approved
+    </span>
+    <span class="status-text-item pending">
+      <span class="dot orange-dot"></span>
+      <strong>{{ stats.pendingVehicles || 0 }}</strong> Pending Approval
+    </span>
+  </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon bookings">
