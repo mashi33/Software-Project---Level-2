@@ -267,7 +267,7 @@
 <div *ngIf="showBlockedRangesModal" class="modal-overlay" (click)="closeBlockedRangesModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Manage Blocked Date Ranges</h3>
+      <h3>{{ editingBlockedRange ? 'Edit Blocked Date Range' : 'Manage Blocked Date Ranges' }}</h3>
       <button class="modal-close" (click)="closeBlockedRangesModal()">&times;</button>
     </div>
     <div class="modal-body">
@@ -284,7 +284,10 @@
           <label>Reason (Optional)</label>
           <input type="text" [(ngModel)]="blockedRangesReason" placeholder="e.g., Maintenance, Personal use" class="form-control">
         </div>
-        <button class="btn-primary" (click)="addBlockedRange()">Add Blocked Range</button>
+        <div class="form-actions">
+          <button *ngIf="editingBlockedRange" class="btn-secondary" (click)="cancelEditBlockedRange()">Cancel</button>
+          <button class="btn-primary" (click)="addBlockedRange()">{{ editingBlockedRange ? 'Update Blocked Range' : 'Add Blocked Range' }}</button>
+        </div>
       </div>
 
       <div class="blocked-ranges-list">

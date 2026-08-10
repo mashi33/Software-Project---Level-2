@@ -97,30 +97,54 @@
         </section>
 
         <!-- VISIBILITY OPTION -->
-        <section class="form-section">
-          <label class="field-label">Visibility</label>
-          <div class="visibility-options">
-            <label class="visibility-radio private-option" [class.active]="visibilityStatus === 'private'">
-              <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-lock-fill"></i>
-              <span>Private</span>
-            </label>
-            <label class="visibility-radio trip-members-option" [class.active]="visibilityStatus === 'tripMembers'">
-              <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-people-fill"></i>
-              <span>Only for trip members</span>
-            </label>
-            <label class="visibility-radio public-option" [class.active]="visibilityStatus === 'public'">
-              <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-globe2"></i>
-              <span>Public</span>
-            </label>
-          </div>
-          <div class="visibility-message" *ngIf="visibilityStatus === 'tripMembers'">
-            <i class="bi bi-check-circle-fill"></i>
-            <span>This memory will be visible to all members of "{{ selectedTrip?.tripName || 'this trip' }}" in the slideshow.</span>
-          </div>
-        </section>
+        <!-- VISIBILITY OPTION -->
+<section class="form-section">
+  <label class="field-label">Visibility</label>
+  <div class="visibility-options vertical-cards">
+    
+    <!-- PRIVATE OPTION -->
+    <label class="visibility-card private-card" [class.active]="visibilityStatus === 'private'">
+      <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-lock-fill"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Private</span>
+        <span class="card-desc">Only visible to you.</span>
+      </div>
+    </label>
+
+    <!-- TRIP MEMBERS OPTION -->
+    <label class="visibility-card trip-card" [class.active]="visibilityStatus === 'tripMembers'">
+      <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Trip Members</span>
+        <span class="card-desc">Only visible to people added to this trip.</span>
+      </div>
+    </label>
+
+    <!-- PUBLIC OPTION -->
+    <label class="visibility-card public-card" [class.active]="visibilityStatus === 'public'">
+      <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-globe2"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Public</span>
+        <span class="card-desc">Anyone can see this memories.</span>
+      </div>
+    </label>
+
+  </div>
+
+  <div class="visibility-message" *ngIf="visibilityStatus === 'tripMembers'">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>This memory will be visible to all members of "{{ selectedTrip?.tripName || 'this trip' }}" in the slideshow.</span>
+  </div>
+</section>
 
         <button (click)="saveMemory()" class="btn-save"
                 [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">

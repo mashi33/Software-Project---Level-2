@@ -116,6 +116,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadAndFilterMemories();
     document.addEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
+    document.addEventListener('keydown', this.handleKeyboard.bind(this));
   }
 
   ngOnDestroy(): void {
@@ -128,6 +129,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     document.removeEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
+    document.removeEventListener('keydown', this.handleKeyboard.bind(this));
 
     if (this.map) {
       this.map.off();
@@ -610,6 +612,25 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     }, 250);
+  }
+
+  private handleKeyboard(event: KeyboardEvent): void {
+    switch (event.code) {
+      case 'Space':
+        event.preventDefault();
+        this.togglePlay();
+        break;
+      case 'ArrowLeft':
+      case 'End':
+        event.preventDefault();
+        this.prevSlide();
+        break;
+      case 'ArrowRight':
+      case 'Home':
+        event.preventDefault();
+        this.nextSlide();
+        break;
+    }
   }
 
   setActiveIndex(index: number): void {
