@@ -261,58 +261,90 @@ select.form-input {
 .btn-remove:hover { background: var(--danger); }
 
 /* VISIBILITY (ORIGINAL STYLE) */
-.visibility-options {
+/* VISIBILITY (VERTICAL RADIO CARDS) */
+.visibility-options.vertical-cards {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
-.visibility-radio {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.65rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink-soft);
+.visibility-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
   background: #fafbfc;
   border: 1.5px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 0.18s, background 0.18s, color 0.18s, box-shadow 0.18s;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
   user-select: none;
 }
 
-.visibility-radio input { display: none; }
+.visibility-card input[type="radio"] {
+  display: none;
+}
 
-.visibility-radio i { font-size: 0.95rem; color: var(--muted); transition: color 0.18s; }
+.visibility-card .card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  transition: color 0.18s;
+}
 
+.visibility-card .card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
 
-.visibility-radio.private-option.active {
+.visibility-card .card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.visibility-card .card-desc {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ACTIVE STATES */
+.visibility-card.private-card.active {
   border-color: #f59e0b;
   background: #fffbeb;
-  color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
-.visibility-radio.private-option.active i { color: #f59e0b; }
+.visibility-card.private-card.active .card-icon,
+.visibility-card.private-card.active .card-title {
+  color: #d97706;
+}
 
-.visibility-radio.trip-members-option.active {
+.visibility-card.trip-card.active {
   border-color: #10b981;
   background: #ecfdf5;
-  color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
-.visibility-radio.trip-members-option.active i { color: #10b981; }
+.visibility-card.trip-card.active .card-icon,
+.visibility-card.trip-card.active .card-title {
+  color: #059669;
+}
 
-.visibility-radio.public-option.active {
+.visibility-card.public-card.active {
   border-color: #6366f1;
   background: #eff6ff;
-  color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
-.visibility-radio.public-option.active i { color: #6366f1; }
+.visibility-card.public-card.active .card-icon,
+.visibility-card.public-card.active .card-title {
+  color: #4f46e5;
+}
 
 .visibility-message {
   display: flex;

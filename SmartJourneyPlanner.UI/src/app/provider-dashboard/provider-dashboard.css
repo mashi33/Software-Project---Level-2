@@ -1039,6 +1039,46 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.blocked-ranges-form .form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.blocked-ranges-form .btn-primary {
+  flex: 1;
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.blocked-ranges-form .btn-primary:hover {
+  background: #2563eb;
+}
+
+.blocked-ranges-form .btn-secondary {
+  padding: 10px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.blocked-ranges-form .btn-secondary:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
 .blocked-ranges-list h4 {
   font-size: 14px;
   font-weight: 600;

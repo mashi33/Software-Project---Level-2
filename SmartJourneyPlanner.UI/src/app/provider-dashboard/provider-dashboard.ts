@@ -42,6 +42,7 @@ export class ProviderDashboardComponent implements OnInit {
   blockedRangesEndDate: string = '';
   blockedRangesReason: string = '';
   blockedRangesList: any[] = [];
+  editingBlockedRange: any = null;
 
   constructor(
     private vehicleService: VehicleService,
@@ -493,6 +494,7 @@ export class ProviderDashboardComponent implements OnInit {
     this.blockedRangesEndDate = '';
     this.blockedRangesReason = '';
     this.blockedRangesList = [];
+    this.editingBlockedRange = null;
     this.showBlockedRangesModal = true;
     this.loadBlockedRanges(vehicle.id || vehicle._id);
   }
@@ -500,6 +502,7 @@ export class ProviderDashboardComponent implements OnInit {
   closeBlockedRangesModal() {
     this.showBlockedRangesModal = false;
     this.blockedRangesVehicle = null;
+    this.editingBlockedRange = null;
   }
 
   loadBlockedRanges(vehicleId: string) {
@@ -521,65 +524,60 @@ export class ProviderDashboardComponent implements OnInit {
     }
 
     const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
-    console.log('Adding blocked range for vehicle:', vehicleId);
-    console.log('Start date:', this.blockedRangesStartDate);
-    console.log('End date:', this.blockedRangesEndDate);
-    console.log('Reason:', this.blockedRangesReason);
     
-    this.vehicleService.addBlockedDateRange(vehicleId, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
-      next: () => {
-        Swal.fire('Success', 'Blocked date range added successfully', 'success');
-        this.blockedRangesStartDate = '';
-        this.blockedRangesEndDate = '';
-        this.blockedRangesReason = '';
-        this.loadBlockedRanges(vehicleId);
-      },
-      error: (err) => {
-        console.error('Error adding blocked range:', err);
-        const errorMessage = err.error?.message || 'Failed to add blocked date range';
-        Swal.fire('Error!', errorMessage, 'error');
-      }
-    });
+    if (this.editingBlockedRange) {
+      // Update existing range
+      this.vehicleService.editBlockedDateRange(vehicleId, this.editingBlockedRange.id, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
+        next: () => {
+          Swal.fire('Success', 'Blocked date range updated successfully', 'success');
+          this.blockedRangesStartDate = '';
+          this.blockedRangesEndDate = '';
+          this.blockedRangesReason = '';
+          this.editingBlockedRange = null;
+          this.loadBlockedRanges(vehicleId);
+        },
+        error: (err) => {
+          console.error('Error editing blocked range:', err);
+          const errorMessage = err.error?.message || 'Failed to update blocked date range';
+          Swal.fire('Error!', errorMessage, 'error');
+        }
+      });
+    } else {
+      // Add new range
+      console.log('Adding blocked range for vehicle:', vehicleId);
+      console.log('Start date:', this.blockedRangesStartDate);
+      console.log('End date:', this.blockedRangesEndDate);
+      console.log('Reason:', this.blockedRangesReason);
+      
+      this.vehicleService.addBlockedDateRange(vehicleId, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
+        next: () => {
+          Swal.fire('Success', 'Blocked date range added successfully', 'success');
+          this.blockedRangesStartDate = '';
+          this.blockedRangesEndDate = '';
+          this.blockedRangesReason = '';
+          this.loadBlockedRanges(vehicleId);
+        },
+        error: (err) => {
+          console.error('Error adding blocked range:', err);
+          const errorMessage = err.error?.message || 'Failed to add blocked date range';
+          Swal.fire('Error!', errorMessage, 'error');
+        }
+      });
+    }
   }
 
   editBlockedRange(range: any) {
-    Swal.fire({
-      title: 'Edit Blocked Date Range',
-      html: `
-        <input id="swal-start" class="swal2-input" placeholder="Start Date (YYYY-MM-DD)" value="${range.startDate}">
-        <input id="swal-end" class="swal2-input" placeholder="End Date (YYYY-MM-DD)" value="${range.endDate}">
-        <input id="swal-reason" class="swal2-input" placeholder="Reason (Optional)" value="${range.reason || ''}">
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Update',
-      cancelButtonText: 'Cancel',
-      preConfirm: () => {
-        const startDate = (document.getElementById('swal-start') as HTMLInputElement).value;
-        const endDate = (document.getElementById('swal-end') as HTMLInputElement).value;
-        const reason = (document.getElementById('swal-reason') as HTMLInputElement).value;
-        
-        if (!startDate || !endDate) {
-          Swal.showValidationMessage('Please enter both start and end dates');
-        }
-        
-        return { startDate, endDate, reason };
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
-        this.vehicleService.editBlockedDateRange(vehicleId, range.id, result.value.startDate, result.value.endDate, result.value.reason).subscribe({
-          next: () => {
-            Swal.fire('Success', 'Blocked date range updated successfully', 'success');
-            this.loadBlockedRanges(vehicleId);
-          },
-          error: (err) => {
-            console.error('Error editing blocked range:', err);
-            const errorMessage = err.error?.message || 'Failed to update blocked date range';
-            Swal.fire('Error!', errorMessage, 'error');
-          }
-        });
-      }
-    });
+    this.editingBlockedRange = range;
+    this.blockedRangesStartDate = range.startDate;
+    this.blockedRangesEndDate = range.endDate;
+    this.blockedRangesReason = range.reason || '';
+  }
+
+  cancelEditBlockedRange() {
+    this.editingBlockedRange = null;
+    this.blockedRangesStartDate = '';
+    this.blockedRangesEndDate = '';
+    this.blockedRangesReason = '';
   }
 
   deleteBlockedRange(range: any) {
