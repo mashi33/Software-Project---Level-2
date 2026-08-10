@@ -43,6 +43,24 @@
         <h3>{{stats.totalBookings || 0}}</h3>
         <p>Total Bookings</p>
       </div>
+      <div class="booking-status-breakdown">
+          <div class="status-breakdown-item pending" *ngIf="stats.pendingBookings > 0">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ stats.pendingBookings }} Pending</span>
+          </div>
+          <div class="status-breakdown-item accepted" *ngIf="stats.acceptedBookings > 0">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ stats.acceptedBookings }} Confirmed</span>
+          </div>
+          <div class="status-breakdown-item completed" *ngIf="stats.completedBookings > 0">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ stats.completedBookings }} Completed</span>
+          </div>
+          <div class="status-breakdown-item other" (click)="showBookingStatusDetails()" *ngIf="stats.rejectedBookings > 0 || stats.canceledBookings > 0" style="cursor: pointer;">
+            <span class="status-dot"></span>
+            <span class="status-text">+{{ stats.rejectedBookings + stats.canceledBookings }} Other</span>
+          </div>
+        </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon rating">

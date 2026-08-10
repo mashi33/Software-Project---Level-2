@@ -18,7 +18,7 @@ import Swal from 'sweetalert2';
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0 };
+  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0, pendingBookings: 0, acceptedBookings: 0, completedBookings: 0, rejectedBookings: 0, canceledBookings: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
   filteredVehicles: any[] = [];
@@ -158,6 +158,15 @@ export class ProviderDashboardComponent implements OnInit {
 
       return booking;
     });
+
+    // Calculate booking status counts
+    this.stats.totalBookings = this.bookings.length;
+    this.stats.pendingBookings = this.bookings.filter((b: any) => b.status === 'Pending').length;
+    this.stats.acceptedBookings = this.bookings.filter((b: any) => b.status === 'Confirmed').length;
+    this.stats.completedBookings = this.bookings.filter((b: any) => b.status === 'Completed').length;
+    this.stats.rejectedBookings = this.bookings.filter((b: any) => b.status === 'Rejected').length;
+    this.stats.canceledBookings = this.bookings.filter((b: any) => b.status === 'Cancelled' || b.status === 'Canceled').length;
+
         // Find current booking in progress (Confirmed and within date range)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -642,6 +651,29 @@ export class ProviderDashboardComponent implements OnInit {
             <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
             <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
           </div>
+        </div>
+      `
+    });
+  }
+
+  showBookingStatusDetails() {
+    const rejectedCount = this.stats.rejectedBookings || 0;
+    const canceledCount = this.stats.canceledBookings || 0;
+    
+    Swal.fire({
+      title: 'Booking Status Breakdown',
+      width: '500px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#0c92f4',
+      html: `
+        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+          <h6 class="text-primary fw-bold mb-1">Other Bookings</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>❌ Rejected:</strong> <span class="badge bg-danger text-white">${rejectedCount}</span></p>
+            <p class="m-0"><strong>🚫 Canceled:</strong> <span class="badge bg-secondary text-white">${canceledCount}</span></p>
+            <p class="m-0 mt-2"><strong>Total:</strong> <span class="badge bg-dark text-white">${rejectedCount + canceledCount}</span></p>
+          </div>
+          <p class="m-0 text-muted small">These bookings were either rejected by you or canceled by customers.</p>
         </div>
       `
     });
