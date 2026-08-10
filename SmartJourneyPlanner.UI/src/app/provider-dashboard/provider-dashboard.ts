@@ -662,18 +662,28 @@ export class ProviderDashboardComponent implements OnInit {
     
     Swal.fire({
       title: 'Booking Status Breakdown',
-      width: '500px',
+      width: '450px',
       confirmButtonText: 'Close',
       confirmButtonColor: '#0c92f4',
       html: `
-        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-          <h6 class="text-primary fw-bold mb-1">Other Bookings</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>❌ Rejected:</strong> <span class="badge bg-danger text-white">${rejectedCount}</span></p>
-            <p class="m-0"><strong>🚫 Canceled:</strong> <span class="badge bg-secondary text-white">${canceledCount}</span></p>
-            <p class="m-0 mt-2"><strong>Total:</strong> <span class="badge bg-dark text-white">${rejectedCount + canceledCount}</span></p>
+        <div class="text-start" style="font-family: sans-serif;">
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-size: 14px; color: #495057; font-weight: 500;">❌Rejected</span>
+              <span style="font-size: 16px; color: #212529; font-weight: 700;">${rejectedCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-size: 14px; color: #495057; font-weight: 500;">🚫Canceled</span>
+              <span style="font-size: 16px; color: #212529; font-weight: 700;">${canceledCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0 0;">
+              <span style="font-size: 14px; color: #212529; font-weight: 600;">Total</span>
+              <span style="font-size: 18px; color: #212529; font-weight: 700;">${rejectedCount + canceledCount}</span>
+            </div>
           </div>
-          <p class="m-0 text-muted small">These bookings were either rejected by you or canceled by customers.</p>
+          <p style="font-size: 12px; color: #6c757d; margin: 0; line-height: 1.5;">
+            These bookings were either rejected by you or canceled by customers.
+          </p>
         </div>
       `
     });
