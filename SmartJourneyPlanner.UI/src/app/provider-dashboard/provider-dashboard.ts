@@ -18,7 +18,7 @@ import Swal from 'sweetalert2';
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0 };
+  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
   filteredVehicles: any[] = [];
@@ -79,6 +79,17 @@ export class ProviderDashboardComponent implements OnInit {
     // Load vehicles
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
+        // Calculate accepted and pending counts
+        this.stats.acceptedVehicles = data.filter((vehicle: any) => {
+          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
+          return adminStatus === 'Approved' || adminStatus === 'Verified' || adminStatus !== 'Pending';
+        }).length;
+
+        this.stats.pendingVehicles = data.filter((vehicle: any) => {
+          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
+          return adminStatus === 'Pending';
+        }).length;
+
         const approvedFleetOnly = data.filter((vehicle: any) => {
           // checks the admin's verification status
           const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
@@ -97,6 +108,8 @@ export class ProviderDashboardComponent implements OnInit {
       } else {
         this.vehicles = [];
         this.filteredVehicles = [];
+        this.stats.acceptedVehicles = 0;
+        this.stats.pendingVehicles = 0;
       }
     });
 
@@ -108,7 +121,7 @@ export class ProviderDashboardComponent implements OnInit {
     
     //Process each booking to dynamically pull vehicle data using vehicleId
     this.bookings = data.map((booking: any) => {
-      // 1. Force fallbacks on fields that are empty or undefined in your C# model
+      //  Force fallbacks on fields that are empty or undefined in your C# model
       booking.vehicleName = booking.vehicleName || 'Loading vehicle details...';
       
       booking.statusChangedDate = booking.statusChangedDate || booking.StatusChangedDate || null;
@@ -126,7 +139,7 @@ export class ProviderDashboardComponent implements OnInit {
         booking.durationText = 'N/A';
       }
 
-      // 2. Safely call your vehicle service to fetch the real name from MongoDB dynamically!
+      //  Safely call your vehicle service to fetch the real name from MongoDB dynamically!
       if (booking.vehicleId) {
         this.transportVehicleService.getVehicleById(booking.vehicleId).subscribe({
           next: (vehicle: any) => {
@@ -161,12 +174,12 @@ export class ProviderDashboardComponent implements OnInit {
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(0, 0, 0, 0);
 
-      // 1. Calculate Day Count duration cleanly
+      //  Calculate Day Count duration cleanly
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 captures partial checkout blocks
       booking.durationText = `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
 
-      // 2. Assign conditional labels based on calendar deadlines
+      // Assign conditional labels based on calendar deadlines
       if (today.getTime() === endDate.getTime()) {
         booking.displayStatus = 'Pending Return';
         booking.statusClass = 'badge-pending-return'; // Style handle for label component
@@ -240,7 +253,7 @@ export class ProviderDashboardComponent implements OnInit {
     const prox = this.bookingProximityFilter;
     const isSorting = prox.startsWith('sort-');
 
-    // 1. Filter bookings arrays
+    // Filter bookings arrays
     let result = this.bookings.filter((b: any) => {
       const matchesSearch = !this.bookingSearchTerm || 
         (b.userName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase()) ||
@@ -296,7 +309,7 @@ export class ProviderDashboardComponent implements OnInit {
       return matchesSearch && matchesStatus && matchesProx && matchesAge;
     });
 
-    // 2. Sort results if necessary
+    // Sort results if necessary
     if (isSorting) {
       result.sort((a: any, b: any) => {
         const diff = new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime();
@@ -351,7 +364,7 @@ export class ProviderDashboardComponent implements OnInit {
   deleteVehicle(id: string) {
     if (!id) return;
 
-    // 🟩 SWEETALERT: Beautiful Interactive Confirmation Dialog
+    // Beautiful Interactive Confirmation Dialog
     Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this asset deletion!",
@@ -578,6 +591,60 @@ export class ProviderDashboardComponent implements OnInit {
     this.blockedRangesStartDate = '';
     this.blockedRangesEndDate = '';
     this.blockedRangesReason = '';
+  }
+
+  showVehicleDetails(vehicle: any) {
+    // Use pre-calculated rating from backend if available, otherwise calculate from reviews
+    let ratingDisplay = 'No ratings yet';
+    
+    // Check for pre-calculated rating fields from backend
+    const backendRating = vehicle.averageRating || vehicle.AverageRating || vehicle.rating || vehicle.Rating;
+    
+    if (typeof backendRating === 'number' && backendRating > 0) {
+      // Backend provides pre-calculated rating
+      const reviewCount = vehicle.reviewCount || vehicle.ReviewCount || vehicle.reviews?.length || vehicle.Reviews?.length || 0;
+      ratingDisplay = `${backendRating.toFixed(1)} / 5.0 ⭐${reviewCount > 0 ? ` (${reviewCount} review${reviewCount > 1 ? 's' : ''})` : ''}`;
+    } else {
+      // Fallback: calculate from reviews array
+      const reviews = vehicle.reviews || vehicle.Reviews || [];
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
+        const averageRating = totalRating / reviews.length;
+        ratingDisplay = `${averageRating.toFixed(1)} / 5.0 ⭐ (${reviews.length} review${reviews.length > 1 ? 's' : ''})`;
+      }
+    }
+    
+    Swal.fire({
+      title: vehicle.ModelName || vehicle.modelName || 'Vehicle Details',
+      width: '620px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#0c92f4',
+      html: `
+        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+          <h6 class="text-primary fw-bold mb-1">Basic Information</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Model:</strong> ${vehicle.ModelName || vehicle.modelName || 'N/A'}</p>
+            <p class="m-0"><strong>Class:</strong> ${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</p>
+            <p class="m-0"><strong>Year:</strong> ${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</p>
+            <p class="m-0"><strong>Registration:</strong> ${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Specifications</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Capacity:</strong> ${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</p>
+            <p class="m-0"><strong>Fuel Type:</strong> ${vehicle.FuelType || vehicle.fuelType || 'N/A'}</p>
+            <p class="m-0"><strong>Transmission:</strong> ${vehicle.Transmission || vehicle.transmission || 'N/A'}</p>
+            <p class="m-0"><strong>Air Conditioning:</strong> ${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Pricing & Rating</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
+            <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
+          </div>
+        </div>
+      `
+    });
   }
 
   deleteBlockedRange(range: any) {

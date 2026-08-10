@@ -1,6 +1,4 @@
-/* =========================
-   DASHBOARD CONTAINER
-   ========================= */
+/* DASHBOARD CONTAINER */
 .dashboard-container {
   min-height: 100vh;
   background: #ffffff;
@@ -8,9 +6,7 @@
   padding: 0;
 }
 
-/* =========================
-   HEADER SECTION
-   ========================= */
+/* HEADER SECTION */
 .dashboard-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
@@ -92,9 +88,7 @@
   color: #dc2626;
 }
 
-/* =========================
-   STATS SECTION
-   ========================= */
+/* STATS SECTION */
 .stats-section {
   max-width: 1400px;
   margin: 24px auto 0;
@@ -156,6 +150,42 @@
   line-height: 1;
 }
 
+.vehicle-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: auto; 
+}
+
+.status-text-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #111827;
+}
+
+.status-text-item strong {
+  font-weight: 700;
+}
+
+/* Green and Orange Dots */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.green-dot {
+  background-color: #10b981; 
+}
+
+.orange-dot {
+  background-color: #f59e0b; 
+}
+
 .stat-info p {
   font-size: 12px;
   color: #6b7280;
@@ -165,9 +195,7 @@
   letter-spacing: 0.5px;
 }
 
-/* =========================
-   CURRENT BOOKING SECTION
-   ========================= */
+/* CURRENT BOOKING SECTION */
 .activity-card {
   max-width: 1400px;
   margin: 24px auto 0;
@@ -262,9 +290,7 @@
   text-align: center;
 }
 
-/* =========================
-   CONTENT GRID
-   ========================= */
+/* CONTENT GRID */
 .content-grid {
   max-width: 1400px;
   margin: 24px auto 32px;
@@ -274,9 +300,7 @@
   gap: 24px;
 }
 
-/* =========================
-   SECTIONS
-   ========================= */
+/* SECTIONS */
 .fleet-section,
 .bookings-section {
   background: #ffffff;
@@ -391,9 +415,7 @@
   transform: translateY(-1px);
 }
 
-/* =========================
-   FLEET LIST
-   ========================= */
+/* FLEET LIST */
 .fleet-list,
 .bookings-list {
   padding: 20px;
@@ -419,9 +441,7 @@
   font-weight: 500;
 }
 
-/* =========================
-   VEHICLE CARD
-   ========================= */
+/* VEHICLE CARD */
 .vehicle-card {
   display: flex;
   align-items: center;
@@ -627,9 +647,7 @@
   transform: translateY(-1px);
 }
 
-/* =========================
-   BOOKING CARD
-   ========================= */
+/* BOOKING CARD */
 .booking-card {
   background: #ffffff;
   border-radius: 12px;
@@ -820,9 +838,7 @@
   transform: translateY(-1px);
 }
 
-/* =========================
-   RESPONSIVE DESIGN
-   ========================= */
+/* RESPONSIVE DESIGN */
 @media (max-width: 1200px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -1137,6 +1153,10 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.range-actions .btn-icon:hover {
+  background: #e5e7eb;
 }
 
 .range-actions .edit-btn:hover {
