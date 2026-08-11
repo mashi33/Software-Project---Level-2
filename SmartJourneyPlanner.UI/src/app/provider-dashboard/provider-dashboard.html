@@ -328,14 +328,10 @@
               <option value="Rejected">Rejected</option>
               <option value="Canceled">Cancelled</option>
             </select>
-
-            <div class="form-check form-switch my-2">
-              <input class="form-check-input" type="checkbox" 
-                id="showOldBookingsCheck" [(ngModel)]="showOldBookings" (change)="filterBookings()">
-              <label class="form-check-input-label" for="showOldBookingsCheck">
-                Show history older than 1 month
-              </label>
-            </div>
+            <button class="btn-outline" (click)="showOldBookings = !showOldBookings; filterBookings()" title="Bookings older than 30 days">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {{ showOldBookings ? 'Hide History' : 'Show History' }}
+            </button>
           </div>
         </div>
 
