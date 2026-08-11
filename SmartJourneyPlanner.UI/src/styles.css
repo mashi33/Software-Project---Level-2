@@ -79,6 +79,7 @@ popup-like-btn {
 .like-num {
   font-weight: 700;
   margin-left: 2px;
+  color: #be123c;
 }
 
 .popup-like-btn:hover {

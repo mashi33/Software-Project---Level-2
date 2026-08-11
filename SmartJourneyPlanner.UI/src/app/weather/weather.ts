@@ -239,7 +239,7 @@ export class WeatherSuggestionComponent
           radius: 15,
           fillOpacity: 0.7
         }).addTo(this.map)
-        .bindPopup(`උෂ්ණත්වය: ${temp}°C<br>වර්ෂාපතනය: ${precip}mm`)
+        .bindPopup(`Temperature: ${temp}°C<br>Precipitation: ${precip}mm`)
         .openPopup();
       }
     });
