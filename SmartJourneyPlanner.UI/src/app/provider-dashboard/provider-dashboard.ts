@@ -35,6 +35,9 @@ export class ProviderDashboardComponent implements OnInit {
   bookingProximityFilter: string = '';
   showOldBookings: boolean = false;
 
+  // Panel navigation
+  activePanel: 'fleet' | 'bookings' = 'fleet';
+
   // Blocked Date Ranges properties
   showBlockedRangesModal: boolean = false;
   blockedRangesVehicle: any = null;
@@ -51,6 +54,10 @@ export class ProviderDashboardComponent implements OnInit {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  switchPanel(panel: 'fleet' | 'bookings') {
+    this.activePanel = panel;
+  }
 
   ngOnInit() {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
