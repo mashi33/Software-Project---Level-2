@@ -252,6 +252,58 @@
 
 .gallery-grid { display: flex; flex-direction: column; gap: 0.65rem; }
 
+.popular-memory-grid {
+  position: relative;
+  isolation: isolate;
+}
+
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.sort-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-right: 0.15rem;
+}
+
+.sort-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--ink-soft);
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+.sort-btn:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: #bfdbfe;
+  background: var(--brand-soft);
+}
+
+.sort-btn.active {
+  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.sort-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -278,9 +330,68 @@
   border-radius: var(--radius);
   cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  will-change: auto;
 }
 
-.thumb-card:hover { transform: translateY(-2px); border-color: #bfdbfe; box-shadow: var(--shadow-md); }
+/* Staggered entrance animation for popular memories */
+.top-rated-section .popular-memory-grid:not(.entrance-complete) .thumb-card {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+}
+
+.top-rated-section .popular-memory-grid.entrance-complete .thumb-card {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.top-rated-section .popular-memory-grid .thumb-card.animate-in {
+  animation: popularSlideUpFade 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--stagger-index, 0) * 0.1s);
+}
+
+@keyframes popularSlideUpFade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* FLIP reorder — cards visibly cross and swap positions */
+.popular-memory-grid.is-reordering {
+  pointer-events: none;
+}
+
+.popular-memory-grid.is-reordering .thumb-card {
+  transition: none !important;
+}
+
+.popular-memory-grid .thumb-card.is-flipping {
+  pointer-events: none;
+  will-change: transform;
+}
+
+.popular-memory-grid .thumb-card.flip-up {
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
+  border-color: #bfdbfe;
+}
+
+.popular-memory-grid .thumb-card.flip-down {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.popular-memory-grid.is-reordering .rank-badge {
+  transition: transform 0.35s ease, background 0.35s ease;
+}
+
+.top-rated-section .popular-memory-grid .thumb-card:not(.is-flipping):hover {
+  transform: translate3d(0, -2px, 0);
+  border-color: #bfdbfe;
+  box-shadow: var(--shadow-md);
+}
 
 .img-container {
   position: relative;

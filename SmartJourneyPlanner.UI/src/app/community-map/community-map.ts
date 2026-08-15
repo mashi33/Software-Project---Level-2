@@ -1,4 +1,4 @@
-import {Component,OnInit,HostListener,AfterViewInit,ChangeDetectorRef} from '@angular/core';
+import {Component,OnInit,HostListener,AfterViewInit,ChangeDetectorRef,ElementRef,ViewChild} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -22,6 +22,8 @@ interface CommunityAlbum {
   slideIndex: number;
   slideshowInterval?: ReturnType<typeof setInterval> | null;
 }
+
+type PopularSortMode = 'score' | 'date' | 'likes' | 'location';
 
 @Component({
   selector: 'app-community-map',
@@ -64,6 +66,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   albumLikeInProgress = false;
   private searchSubject = new Subject<string>();
   private markerCache = new Map<string, leaflet.Marker>();
+  shouldAnimateTopRated = false;
+  isPopularReordering = false;
+  popularEntranceComplete = false;
+  sortMode: PopularSortMode = 'score';
+
+  @ViewChild('popularGrid') popularGridRef?: ElementRef<HTMLElement>;
 
   constructor(
     private readonly memoryService: MemoryService,
@@ -137,7 +145,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.searchSubject.next(this.searchQuery);
   }
 
-  private applyFilters(): void {
+  private applyFilters(options?: { flipFrom?: Map<string, DOMRect> }): void {
     let memories = [...this.allMemories];
 
     if (this.searchQuery?.trim()) {
@@ -147,11 +155,123 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       );
     }
 
-    this.filteredMemories = this.sortMemoriesByLikesAndDate(memories);
+    this.filteredMemories = this.sortMemories(memories, this.sortMode);
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
-    //this.cdr.detectChanges();
+
+    if (options?.flipFrom?.size) {
+      this.cdr.detectChanges();
+      requestAnimationFrame(() => this.playFlipAnimation(options.flipFrom!));
+    } else if (!this.shouldAnimateTopRated) {
+      this.shouldAnimateTopRated = true;
+      this.cdr.detectChanges();
+      window.setTimeout(() => {
+        this.popularEntranceComplete = true;
+        this.cdr.detectChanges();
+      }, 1200);
+    }
+  }
+
+  setSortMode(mode: PopularSortMode): void {
+    if (this.sortMode === mode || this.isPopularReordering) return;
+    const flipFrom = this.capturePopularCardRects();
+    this.sortMode = mode;
+    this.applyFilters({ flipFrom });
+  }
+
+  trackByMemoryId(_index: number, memory: TripMemory): string {
+    return memory.id || String(_index);
+  }
+
+  private sortMemories(memories: TripMemory[], mode: PopularSortMode): TripMemory[] {
+    const sorted = [...memories];
+
+    switch (mode) {
+      case 'likes':
+        return sorted.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      case 'date':
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
+          const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+      case 'location':
+        return sorted.sort((a, b) =>
+          (a.locationName || '').localeCompare(b.locationName || '', undefined, { sensitivity: 'base' })
+        );
+      case 'score':
+      default:
+        return this.sortMemoriesByLikesAndDate(sorted);
+    }
+  }
+
+  private capturePopularCardRects(): Map<string, DOMRect> {
+    const rects = new Map<string, DOMRect>();
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid) return rects;
+
+    grid.querySelectorAll<HTMLElement>('.thumb-card[data-memory-id]').forEach(card => {
+      const id = card.dataset['memoryId'];
+      if (id) rects.set(id, card.getBoundingClientRect());
+    });
+
+    return rects;
+  }
+
+  private playFlipAnimation(beforeRects: Map<string, DOMRect>): void {
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid || !beforeRects.size) return;
+
+    const cards = Array.from(
+      grid.querySelectorAll<HTMLElement>('.thumb-card[data-memory-id]')
+    );
+    if (!cards.length) return;
+
+    this.isPopularReordering = true;
+    grid.classList.add('is-reordering');
+
+    cards.forEach(card => {
+      const id = card.dataset['memoryId'];
+      if (!id) return;
+
+      const before = beforeRects.get(id);
+      if (!before) return;
+
+      const after = card.getBoundingClientRect();
+      const deltaY = before.top - after.top;
+      if (Math.abs(deltaY) < 2) return;
+
+      const movingUp = deltaY > 0;
+      const travelSteps = Math.min(12, Math.max(1, Math.round(Math.abs(deltaY) / 60)));
+
+      card.classList.add('is-flipping');
+      card.classList.add(movingUp ? 'flip-up' : 'flip-down');
+      card.style.zIndex = movingUp ? String(30 + travelSteps) : String(10);
+      card.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+      card.style.transition = 'none';
+
+      card.offsetHeight;
+
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 1.05s cubic-bezier(0.34, 1.08, 0.46, 1)';
+        card.style.transform = 'translate3d(0, 0, 0)';
+      });
+    });
+
+    window.setTimeout(() => {
+      cards.forEach(card => {
+        card.classList.remove('is-flipping', 'flip-up', 'flip-down');
+        card.style.transform = '';
+        card.style.transition = '';
+        card.style.zIndex = '';
+      });
+      grid.classList.remove('is-reordering');
+      this.isPopularReordering = false;
+      this.cdr.detectChanges();
+    }, 1100);
   }
 
 
@@ -223,8 +343,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   private getTopRatedMemories(memories: TripMemory[], count: number = 10): TripMemory[] {
-    const sorted = this.sortMemoriesByLikesAndDate(memories);
-    return sorted.slice(0, count);
+    return memories.slice(0, count);
   }
 
   private groupMemoriesByTrip(memories: TripMemory[]): void {
@@ -306,26 +425,28 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     event?.stopPropagation();
     event?.preventDefault();
 
-    if (!memoryId) return;
+    if (!memoryId || this.isPopularReordering) return;
     const currentUserId = this.authService.getUserId();
     const currentUserName = this.authService.getUserName();
     if (!currentUserId) return;
     const memory = this.allMemories.find(m => m.id === memoryId);
     const isLiked = memory ? this.hasUserLiked(memory) : false;
-    this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
+    const flipFrom = this.capturePopularCardRects();
 
+    this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
       next: (updatedMemory) => {
         this.updateLocalMemoryState(memoryId, updatedMemory);
-        this.applyFilters();
+        this.applyFilters({ flipFrom });
         const newLikeCount = updatedMemory.likeCount || 0;
         const action = isLiked ? 'unlike' : 'like';
         const message = isLiked
           ? `Removed like! (${newLikeCount} likes)`
           : `Liked! (${newLikeCount} likes)`;
-          
-      if (!isLiked && event && event instanceof MouseEvent) {
-        this.spawnFlyingHearts(event);
-      }
+
+        if (!isLiked && event && event instanceof MouseEvent) {
+          this.spawnFlyingHearts(event);
+        }
+
         this.showSweetAlert(message, action);
       },
 
@@ -367,7 +488,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     const currentUserId = this.authService.getUserId();
     const currentUserName = this.authService.getUserName();
-    if (!currentUserId || this.albumLikeInProgress) return;
+    if (!currentUserId || this.albumLikeInProgress || this.isPopularReordering) return;
     const allLiked = this.isAlbumFullyLiked(album);
     const targets = album.memories.filter(m =>
       m.id && (allLiked ? this.hasUserLiked(m) : !this.hasUserLiked(m))
@@ -375,6 +496,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     if (!targets.length) return;
     this.albumLikeInProgress = true;
+    const flipFrom = this.capturePopularCardRects();
     const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId, currentUserName || ''));
 
     forkJoin(requests).subscribe({
@@ -382,17 +504,17 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         updatedMemories.forEach(m => {
           if (m.id) this.updateLocalMemoryState(m.id, m);
         });
-        this.applyFilters();
+        this.applyFilters({ flipFrom });
         this.albumLikeInProgress = false;
         const totalLikes = this.getTotalLikes(album);
         const action = allLiked ? 'album_unlike' : 'album_like';
         const message = allLiked
           ? `Removed likes from ${targets.length} memories! (${totalLikes} total)`
           : `Liked ${targets.length} memories! (${totalLikes} total)`;
-          
-      if (!allLiked && event && event instanceof MouseEvent) {
-        this.spawnFlyingHearts(event);
-      }
+
+        if (!allLiked && event && event instanceof MouseEvent) {
+          this.spawnFlyingHearts(event);
+        }
         this.showSweetAlert(message, action);
         this.cdr.detectChanges();
       },
