@@ -443,10 +443,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
           ? `Removed like! (${newLikeCount} likes)`
           : `Liked! (${newLikeCount} likes)`;
 
-        if (!isLiked && event && event instanceof MouseEvent) {
-          this.spawnFlyingHearts(event);
-        }
-
         this.showSweetAlert(message, action);
       },
 
@@ -454,33 +450,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // Flying Hearts Spawn Function (Exact Mouse Position Target)
-spawnFlyingHearts(event: MouseEvent): void {
-  const heartCount = 5;
-  const clickX = event.clientX;
-  const clickY = event.clientY;
-
-  for (let i = 0; i < heartCount; i++) {
-    const heart = document.createElement('i');
-    heart.className = 'like-floating-heart';
-    heart.innerHTML = '❤️';
-
-    const xOffset = (Math.random() - 0.5) * 60;
-    const rotate = (Math.random() - 0.5) * 40;
-    const size = 14 ;
-
-    heart.style.left = `${clickX}px`;
-    heart.style.top = `${clickY}px`;
-    heart.style.fontSize = `${size}px`;
-    heart.style.setProperty('--x-offset', `${xOffset}px`);
-    heart.style.setProperty('--rotate', `${rotate}deg`);
-    heart.style.animationDelay = `${i * 0.18}s`;
-
-    document.body.appendChild(heart);
-
-    setTimeout(() => heart.remove(), 1200);
-  }
-}
 
 toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     event?.stopPropagation();
@@ -512,9 +481,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
           ? `Removed likes from ${targets.length} memories! (${totalLikes} total)`
           : `Liked ${targets.length} memories! (${totalLikes} total)`;
 
-        if (!allLiked && event && event instanceof MouseEvent) {
-          this.spawnFlyingHearts(event);
-        }
         this.showSweetAlert(message, action);
         this.cdr.detectChanges();
       },
