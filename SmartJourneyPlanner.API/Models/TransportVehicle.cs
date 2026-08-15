@@ -74,11 +74,18 @@ namespace SmartJourneyPlanner.Models
         public string? RevenueLicenseUrl { get; set; }
         [BsonElement("RevenueLicenseExpiry")]
         public string? RevenueLicenseExpiry { get; set; }
+        [BsonElement("RegistrationCertificateUrl")]
+        public string? RegistrationCertificateUrl { get; set; }
 
         // Verification Status
+        private bool _isVerified = false;
         [BsonElement("IsVerified")]
-        public bool IsVerified { get; set; } = false;              // Becomes TRUE only after Admin check
-        [BsonElement("Status")]
+        public bool IsVerified 
+        { 
+            get => _isVerified || Status == "Approved"; 
+            set => _isVerified = value; 
+        }              // Becomes TRUE only after Admin check
+        [BsonElement("AdminVerificationStatus")]
         public string Status { get; set; } = "Pending";           // "Pending", "Approved", or "Rejected"
 
         // Extra Amenities

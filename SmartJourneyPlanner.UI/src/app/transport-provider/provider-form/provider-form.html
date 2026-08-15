@@ -441,15 +441,6 @@
           </div>
           <div *ngIf="fileErrors['insurance']" class="pf-error-text">{{fileErrors['insurance']}}</div>
           <div *ngIf="isFileMissing('insurance')" class="pf-error-text">Insurance document is required</div>
-          <div class="mt-2">
-            <label class="form-label small mb-1">Insurance Expiry Date</label>
-            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry" [min]="todayStr">
-            <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text">
-              <i class="bi bi-exclamation-circle"></i> 
-              <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['required']">Insurance expiry date is required</span>
-              <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['min']">Expiry date cannot be in the past</span>
-            </div>
-          </div>
         </div>
 
         <!-- Revenue License -->
@@ -469,13 +460,51 @@
           </div>
           <div *ngIf="fileErrors['revenue']" class="pf-error-text">{{fileErrors['revenue']}}</div>
           <div *ngIf="isFileMissing('revenue')" class="pf-error-text">Revenue license is required</div>
-          <div class="mt-2">
-            <label class="form-label small mb-1">Revenue License Expiry</label>
-            <input type="date" class="form-control pf-input form-control-sm" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry" [min]="todayStr">
-            <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text">
-              <i class="bi bi-exclamation-circle"></i> 
-              <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['required']">Revenue license expiry is required</span>
-              <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['min']">Expiry date cannot be in the past</span>
+        </div>
+
+        <!-- Certificate of Registration -->
+        <div class="col-md-6">
+          <div class="pf-upload-box verification" 
+               [class.success]="registrationCertificatePreview && !fileErrors['registrationCertificate']"
+               [class.error]="fileErrors['registrationCertificate']"
+               [class.missing]="isFileMissing('registrationCertificate')">
+            <input type="file" (change)="onFileSelected($event, 'registrationCertificate')" accept="image/jpeg,image/png,application/pdf" id="up_reg_cert">
+            <label for="up_reg_cert">
+              <img *ngIf="registrationCertificatePreview" [src]="registrationCertificatePreview" alt="Certificate of Registration">
+              <div *ngIf="!registrationCertificatePreview" class="upload-content">
+                <i class="bi bi-file-earmark-check"></i>
+                <span>Certificate of Registration</span>
+              </div>
+            </label>
+          </div>
+          <div *ngIf="fileErrors['registrationCertificate']" class="pf-error-text">{{fileErrors['registrationCertificate']}}</div>
+          <div *ngIf="isFileMissing('registrationCertificate')" class="pf-error-text">Certificate of Registration is required</div>
+        </div>
+
+        <!-- Expiry Dates Card -->
+        <div class="col-md-6">
+          <div class="pf-expiry-card d-flex align-items-center" style="border: 2px solid #e5e7eb; border-radius: 1.25rem; padding: 1.5rem; height: 200px; background: #ffffff;">
+            <div class="row w-100 g-3">
+              <!-- Insurance Expiry -->
+              <div class="col-6">
+                <label class="form-label small fw-semibold mb-1">Insurance Expiry</label>
+                <input type="date" class="form-control pf-input form-control-sm w-100" [class.is-invalid]="isFieldInvalid('insuranceExpiry')" formControlName="insuranceExpiry" [min]="todayStr">
+                <div *ngIf="isFieldInvalid('insuranceExpiry')" class="pf-error-text mt-1">
+                  <i class="bi bi-exclamation-circle"></i> 
+                  <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['required']">Required</span>
+                  <span *ngIf="vehicleForm.get('insuranceExpiry')?.errors?.['min']">Invalid Date</span>
+                </div>
+              </div>
+              <!-- Revenue Expiry -->
+              <div class="col-6">
+                <label class="form-label small fw-semibold mb-1">Revenue Expiry</label>
+                <input type="date" class="form-control pf-input form-control-sm w-100" [class.is-invalid]="isFieldInvalid('revenueLicenseExpiry')" formControlName="revenueLicenseExpiry" [min]="todayStr">
+                <div *ngIf="isFieldInvalid('revenueLicenseExpiry')" class="pf-error-text mt-1">
+                  <i class="bi bi-exclamation-circle"></i> 
+                  <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['required']">Required</span>
+                  <span *ngIf="vehicleForm.get('revenueLicenseExpiry')?.errors?.['min']">Invalid Date</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

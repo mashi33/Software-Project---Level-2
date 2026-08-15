@@ -315,6 +315,10 @@
   background: #f0fdf4; 
   color: #16a34a; 
 }
+.d-icon.registration { 
+  background: #faf5ff; 
+  color: #9333ea; 
+}
 
 .d-content { 
   flex-grow: 1; 
