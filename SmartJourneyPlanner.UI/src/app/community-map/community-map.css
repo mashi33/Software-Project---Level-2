@@ -330,7 +330,10 @@
   border-radius: var(--radius);
   cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
-  will-change: auto;
+}
+
+.popular-memory-grid.is-reordering .thumb-card {
+  transition: none !important;
 }
 
 /* Staggered entrance animation for popular memories */
@@ -365,9 +368,6 @@
   pointer-events: none;
 }
 
-.popular-memory-grid.is-reordering .thumb-card {
-  transition: none !important;
-}
 
 .popular-memory-grid .thumb-card.is-flipping {
   pointer-events: none;
