@@ -85,4 +85,12 @@ export class AdminService {
   deleteUser(userId: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/Admin/delete-user/${userId}`);
   }
+
+  getVehicleBookings(vehicleId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/vehicle-bookings/${vehicleId}`);
+  }
+
+  getAllBookings(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-bookings`);
+  }
 }

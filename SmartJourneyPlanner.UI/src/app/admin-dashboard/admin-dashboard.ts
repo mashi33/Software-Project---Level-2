@@ -56,6 +56,11 @@ export class AdminDashboardComponent implements OnInit {
   fleetTypeFilter = 'all';
   fleetBookingFilter = 'all';
 
+  // Vehicle bookings
+  allBookings: any[] = [];
+  vehicleBookings: { [vehicleId: string]: any[] } = {};
+  expandedVehicleBookings: { [vehicleId: string]: boolean } = {};
+
   // Provider filtering
   providerSearch = '';
   providerTypeFilter = 'all';
@@ -136,9 +141,49 @@ export class AdminDashboardComponent implements OnInit {
     return this.getUserRole(user) !== 'Admin';
   }
 
+  getVehicleId(vehicle: any): string {
+    return vehicle?.id || vehicle?._id || vehicle?.Id || '';
+  }
+
+  isActiveBookingStatus(status: string | undefined): boolean {
+    const normalized = (status || '').toLowerCase();
+    return normalized === 'pending' || normalized === 'confirmed' || normalized === 'approved';
+  }
+
   isVehicleBooked(vehicle: any): boolean {
     const dates = vehicle?.bookedDates || vehicle?.BookedDates;
-    return Array.isArray(dates) && dates.length > 0;
+    const embeddedBookings = vehicle?.bookings || vehicle?.Bookings;
+    const isBookedFlag = vehicle?.isBooked || vehicle?.IsBooked;
+
+    console.log('isVehicleBooked check for vehicle:', vehicle?.vehicleClass || vehicle?.VehicleClass);
+    console.log('  - bookedDates:', dates);
+    console.log('  - isBookedFlag:', isBookedFlag);
+    console.log('  - embeddedBookings:', embeddedBookings);
+
+    if (Array.isArray(dates) && dates.length > 0) {
+      console.log('  -> booked via bookedDates');
+      return true;
+    }
+    if (isBookedFlag === true) {
+      console.log('  -> booked via isBookedFlag');
+      return true;
+    }
+
+    if (Array.isArray(embeddedBookings) && embeddedBookings.some((b: any) => this.isActiveBookingStatus(b?.status || b?.Status))) {
+      console.log('  -> booked via embeddedBookings');
+      return true;
+    }
+
+    const vehicleId = this.getVehicleId(vehicle);
+    console.log('  - vehicleId:', vehicleId);
+    console.log('  - vehicleBookings for this vehicle:', this.vehicleBookings[vehicleId]);
+
+    if (!vehicleId) return false;
+
+    const linkedBookings = this.vehicleBookings[vehicleId] || [];
+    const isBookedViaLinked = linkedBookings.some((booking: any) => this.isActiveBookingStatus(booking?.status || booking?.Status));
+    console.log('  -> booked via linkedBookings:', isBookedViaLinked);
+    return isBookedViaLinked;
   }
 
   logout() {
@@ -396,7 +441,49 @@ export class AdminDashboardComponent implements OnInit {
   fetchAllVehicles() {
     this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
       this.allVehicles = data;
+      this.fetchAllBookings();
     });
+  }
+
+  fetchAllBookings() {
+    this.adminService.getAllBookings().subscribe({
+      next: (data: any) => {
+        this.allBookings = data || [];
+        this.organizeBookingsByVehicle();
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading fleet bookings:', err);
+        this.allBookings = [];
+        this.vehicleBookings = {};
+        this.cd.detectChanges();
+      }
+    });
+  }
+
+  organizeBookingsByVehicle() {
+    this.vehicleBookings = {};
+    this.allBookings.forEach((booking: any) => {
+      const vehicleId = booking.vehicleId || booking.VehicleId || booking.vehicle?.id || booking.vehicle?._id;
+      if (vehicleId) {
+        if (!this.vehicleBookings[vehicleId]) {
+          this.vehicleBookings[vehicleId] = [];
+        }
+        this.vehicleBookings[vehicleId].push(booking);
+      }
+    });
+  }
+
+  toggleVehicleBookings(vehicleId: string) {
+    this.expandedVehicleBookings[vehicleId] = !this.expandedVehicleBookings[vehicleId];
+  }
+
+  getVehicleBookings(vehicleId: string): any[] {
+    return this.vehicleBookings[vehicleId] || [];
+  }
+
+  isVehicleBookingsExpanded(vehicleId: string): boolean {
+    return this.expandedVehicleBookings[vehicleId] || false;
   }
 
   fetchExpenseList() {
@@ -868,6 +955,51 @@ export class AdminDashboardComponent implements OnInit {
   getBookedVehiclesCount(): number {
     if (!this.allVehicles) return 0;
     return this.allVehicles.filter(v => this.isVehicleBooked(v)).length;
+  }
+
+  getBookingStatusClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'confirmed': return 'booking-status-confirmed';
+      case 'pending': return 'booking-status-pending';
+      case 'cancelled': return 'booking-status-cancelled';
+      case 'completed': return 'booking-status-completed';
+      default: return 'booking-status-default';
+    }
+  }
+
+  getTotalBookingCounts(): { approved: number; pending: number; rejected: number } {
+    let approved = 0;
+    let pending = 0;
+    let rejected = 0;
+
+    console.log('getTotalBookingCounts called');
+    console.log('allBookings:', this.allBookings);
+    console.log('allVehicles:', this.allVehicles);
+
+    if (this.allBookings && this.allBookings.length > 0 && this.allVehicles && this.allVehicles.length > 0) {
+      // Get all vehicle IDs from the fleet
+      const vehicleIds = new Set(this.allVehicles.map(v => this.getVehicleId(v)).filter(Boolean));
+      console.log('Vehicle IDs in fleet:', vehicleIds);
+      
+      // Only count bookings that belong to vehicles in the fleet
+      this.allBookings.forEach((booking: any) => {
+        const vehicleId = booking.vehicleId || booking.VehicleId || booking.vehicle?._id;
+        console.log('Booking vehicleId:', vehicleId, 'Status:', booking.status || booking.Status);
+        if (vehicleId && vehicleIds.has(vehicleId)) {
+          const status = (booking.status || booking.Status)?.toLowerCase();
+          if (status === 'confirmed' || status === 'approved') {
+            approved++;
+          } else if (status === 'pending') {
+            pending++;
+          } else if (status === 'rejected' || status === 'cancelled') {
+            rejected++;
+          }
+        }
+      });
+    }
+
+    console.log('Total counts:', { approved, pending, rejected });
+    return { approved, pending, rejected };
   }
 
   getFleetStatusClass(status: string): string {

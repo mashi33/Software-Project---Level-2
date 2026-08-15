@@ -97,6 +97,24 @@ namespace SmartJourneyPlanner.API.Controllers
             var vehicles = await _vehicleCollection.Find(_ => true).ToListAsync();
             return Ok(vehicles);
         }
+
+        [HttpGet("all-bookings")]
+        public async Task<IActionResult> GetAllBookings()
+        {
+            var bookings = await _database.GetCollection<TransportBooking>("TransportBookings")
+                .Find(_ => true)
+                .ToListAsync();
+            return Ok(bookings);
+        }
+
+        [HttpGet("vehicle-bookings/{vehicleId}")]
+        public async Task<IActionResult> GetVehicleBookings(string vehicleId)
+        {
+            var bookings = await _database.GetCollection<TransportBooking>("TransportBookings")
+                .Find(b => b.VehicleId == vehicleId)
+                .ToListAsync();
+            return Ok(bookings);
+        }
         [HttpGet("all-memories")]
         public async Task<IActionResult> GetAllMemories()
         {
