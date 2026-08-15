@@ -18,12 +18,13 @@ import Swal from 'sweetalert2';
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0, pendingBookings: 0, acceptedBookings: 0, completedBookings: 0, rejectedBookings: 0, canceledBookings: 0 };
+  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0, pendingBookings: 0, acceptedBookings: 0, completedBookings: 0, rejectedBookings: 0, canceledBookings: 0, pendingComplete: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
   filteredVehicles: any[] = [];
   filteredBookings: Booking[] = [];
   currentBookingsInProgress: any[] = [];
+  pendingCompleteBookings: any[] = [];
   providerId: string | null = null;
   userName: string = '';
 
@@ -34,6 +35,9 @@ export class ProviderDashboardComponent implements OnInit {
   bookingStatusFilter: string = '';
   bookingProximityFilter: string = '';
   showOldBookings: boolean = false;
+
+  // Panel navigation
+  activePanel: 'fleet' | 'bookings' = 'fleet';
 
   // Blocked Date Ranges properties
   showBlockedRangesModal: boolean = false;
@@ -51,6 +55,10 @@ export class ProviderDashboardComponent implements OnInit {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  switchPanel(panel: 'fleet' | 'bookings') {
+    this.activePanel = panel;
+  }
 
   ngOnInit() {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
@@ -167,9 +175,18 @@ export class ProviderDashboardComponent implements OnInit {
     this.stats.rejectedBookings = this.bookings.filter((b: any) => b.status === 'Rejected').length;
     this.stats.canceledBookings = this.bookings.filter((b: any) => b.status === 'Cancelled' || b.status === 'Canceled').length;
 
+    // Calculate pending complete bookings (bookings past end date but not marked as completed)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.pendingCompleteBookings = this.bookings.filter((booking: any) => {
+      if (booking.status !== 'Confirmed' && booking.status !== 'On-going') return false;
+      const endDate = new Date(booking.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      return today > endDate; // Past the end date
+    });
+    this.stats.pendingComplete = this.pendingCompleteBookings.length;
+
         // Find current booking in progress (Confirmed and within date range)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         this.currentBookingsInProgress = this.bookings.filter((booking: any) => {
           if (booking.status !== 'Confirmed' && booking.status !== 'On-going') return false;
           const startDate = new Date(booking.startDate);

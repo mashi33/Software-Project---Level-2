@@ -24,9 +24,6 @@
             {{ startDate | date:'mediumDate' }} – {{ endDate | date:'mediumDate' }}
           </p>
         </div>
-           <button class="btn btn-recap" (click)="navigateToSlideshow()">
-           🎬 View Recap Slideshow
-           </button>
         <div class="hero-actions d-flex gap-2 flex-wrap">
           <div class="dropdown">
             <button class="btn btn-header-outline dropdown-toggle d-flex align-items-center gap-2"
@@ -84,6 +81,10 @@
           <button class="btn btn-header-outline btn-sm shadow-sm" type="button"
                   data-bs-toggle="modal" data-bs-target="#membersModal">
             <i class="bi bi-people me-1"></i> Members ({{ membersCount }})
+          </button>
+
+          <button class="btn btn-header-outline btn-sm shadow-sm" (click)="navigateToSlideshow()">
+            <i class="bi bi-film me-1"></i> View Recap
           </button>
 
           <button *ngIf="isOwner" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm border-0"

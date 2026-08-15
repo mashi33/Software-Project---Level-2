@@ -79,6 +79,7 @@ popup-like-btn {
 .like-num {
   font-weight: 700;
   margin-left: 2px;
+  color: #be123c;
 }
 
 .popup-like-btn:hover {
@@ -244,33 +245,7 @@ popup-like-btn {
   }
 }
 
-/* Community Map Click Flying Hearts */
-.like-floating-heart {
-  position: fixed;
-  pointer-events: none;
-  color: #be123c;
-  z-index: 9999;
-  animation: flyUpAndFade 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-@keyframes flyUpAndFade {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
-  }
-  50% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(
-      calc(-50% + var(--x-offset)),
-      calc(-50% - 90px)
-    ) scale(1.3) rotate(var(--rotate));
-  }
-}
-
-/* ULTRA-CLEAN CSS (Single Keyframe using CSS Variables) */
+/* Memory map flying hearts */
 .heart-animation-container {
   position: absolute;
   top: -15px;
