@@ -763,6 +763,14 @@
                   <i class="bi bi-eye"></i> View Document
                 </button>
               </div>
+              <div class="doc-card" *ngIf="selectedProvider.registrationCertificateUrl" (click)="openImage(selectedProvider.registrationCertificateUrl)">
+                <div class="d-icon registration">📜</div>
+                <div class="d-content">
+                  <span class="d-title">Certificate of Registration</span>
+                  <span class="d-status">✅ Available</span>
+                </div>
+                <div class="d-arrow">→</div>
+              </div>
             </div>
           </div>
         </div>

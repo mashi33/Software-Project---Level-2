@@ -62,12 +62,13 @@ export class ProviderForm implements OnInit {
   licensePreview: string | ArrayBuffer | null = null;
   insurancePreview: string | ArrayBuffer | null = null;
   revenuePreview: string | ArrayBuffer | null = null;
+  registrationCertificatePreview: string | ArrayBuffer | null = null;
   
   isSubmitting = false; // Flag to prevent multiple clicks on Submit button
 
   // Tracks error messages for each specific file upload
   fileErrors: { [key: string]: string | null } = {
-    interior: null, exterior: null, nic: null, license: null, insurance: null, revenue: null
+    interior: null, exterior: null, nic: null, license: null, insurance: null, revenue: null, registrationCertificate: null
   };
   submitted = false; // Becomes true once the user clicks "Submit"
 
@@ -213,7 +214,7 @@ export class ProviderForm implements OnInit {
    * Handles selecting photos and PDF documents.
    * Checks for valid formats (PNG/JPG/PDF) and file size (Max 5MB).
    */
-  onFileSelected(event: any, type: 'interior' | 'exterior' | 'nic' | 'license' | 'insurance' | 'revenue') {
+  onFileSelected(event: any, type: 'interior' | 'exterior' | 'nic' | 'license' | 'insurance' | 'revenue' | 'registrationCertificate') {
     const file = event.target.files[0];
     this.fileErrors[type] = null;
 
@@ -243,6 +244,7 @@ export class ProviderForm implements OnInit {
           case 'license': this.licensePreview = result; break;
           case 'insurance': this.insurancePreview = result; break;
           case 'revenue': this.revenuePreview = result; break;
+          case 'registrationCertificate': this.registrationCertificatePreview = result; break;
         }
       };
       reader.readAsDataURL(file);
@@ -257,6 +259,7 @@ export class ProviderForm implements OnInit {
       case 'license': this.licensePreview = null; break;
       case 'insurance': this.insurancePreview = null; break;
       case 'revenue': this.revenuePreview = null; break;
+      case 'registrationCertificate': this.registrationCertificatePreview = null; break;
     }
   }
 
@@ -405,7 +408,7 @@ export class ProviderForm implements OnInit {
     }
 
     // Step 3: Check for missing mandatory uploads
-    if (!this.exteriorPreview || !this.interiorPreview || !this.nicPreview || !this.licensePreview || !this.insurancePreview || !this.revenuePreview) {
+    if (!this.exteriorPreview || !this.interiorPreview || !this.nicPreview || !this.licensePreview || !this.insurancePreview || !this.revenuePreview || !this.registrationCertificatePreview) {
       Swal.fire('Missing Documents', 'Please upload all required photos and verification documents.', 'warning');
       return;
     }
@@ -421,6 +424,7 @@ export class ProviderForm implements OnInit {
       driverLicenseUrl: this.licensePreview as string,
       insuranceDocUrl: this.insurancePreview as string,
       revenueLicenseUrl: this.revenuePreview as string,
+      registrationCertificateUrl: this.registrationCertificatePreview as string,
       isVerified: false,
       status: 'Pending',
       reviews: [], availableDates: [], bookedDates: []
@@ -456,6 +460,6 @@ export class ProviderForm implements OnInit {
       features: { luggage: 2, safety: false, airbags: true },
       languages: [], transmission: 'Automatic', fuelType: 'Petrol', termsAccepted: false
     });
-    this.interiorPreview = this.exteriorPreview = this.nicPreview = this.licensePreview = this.insurancePreview = this.revenuePreview = null;
+    this.interiorPreview = this.exteriorPreview = this.nicPreview = this.licensePreview = this.insurancePreview = this.revenuePreview = this.registrationCertificatePreview = null;
   }
 }

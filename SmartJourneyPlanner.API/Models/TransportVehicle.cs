@@ -74,6 +74,8 @@ namespace SmartJourneyPlanner.Models
         public string? RevenueLicenseUrl { get; set; }
         [BsonElement("RevenueLicenseExpiry")]
         public string? RevenueLicenseExpiry { get; set; }
+        [BsonElement("RegistrationCertificateUrl")]
+        public string? RegistrationCertificateUrl { get; set; }
 
         // Verification & Availability Status
         [BsonElement("AdminVerificationStatus")]

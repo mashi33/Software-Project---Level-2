@@ -2009,6 +2009,10 @@
   margin-top: 3px;
   flex-shrink: 0;
 }
+.d-icon.registration { 
+  background: #faf5ff; 
+  color: #9333ea; 
+}
 
 .checklist-content strong {
   display: block;
