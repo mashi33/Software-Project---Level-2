@@ -894,6 +894,15 @@ export class AdminDashboardComponent implements OnInit {
       case 'license': return !!(vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl);
       case 'nic': return !!(vehicle.driverNicUrl || vehicle.DriverNicUrl);
       case 'revenue': return !!(vehicle.revenueLicenseUrl || vehicle.RevenueLicenseUrl);
+      case 'insurance': return !!(vehicle.insuranceDocumentUrl || vehicle.InsuranceDocumentUrl);
+      case 'registration': return !!(
+        vehicle.certificateOfRegistrationUrl || 
+        vehicle.CertificateOfRegistrationUrl || 
+        vehicle.registrationCertificateUrl || 
+        vehicle.RegistrationCertificateUrl ||
+        vehicle.registrationUrl ||
+        vehicle.RegistrationUrl
+      );
       default: return false;
     }
   }

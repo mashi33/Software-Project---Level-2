@@ -392,6 +392,10 @@
               <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'revenue')" [class.doc-incomplete]="!hasDocument(v, 'revenue')">
                 <i class="bi bi-receipt"></i> Revenue
               </div>
+              <!-- Added Certificate of Registration Mini-Badge -->
+              <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'registration')" [class.doc-incomplete]="!hasDocument(v, 'registration')">
+                <i class="bi bi-file-earmark-richtext"></i> Reg
+              </div>
             </div>
 
             <div class="fleet-action-buttons">
@@ -763,13 +767,28 @@
                   <i class="bi bi-eye"></i> View Document
                 </button>
               </div>
-              <div class="doc-card" *ngIf="selectedProvider.registrationCertificateUrl" (click)="openImage(selectedProvider.registrationCertificateUrl)">
-                <div class="d-icon registration">📜</div>
-                <div class="d-content">
-                  <span class="d-title">Certificate of Registration</span>
-                  <span class="d-status">✅ Available</span>
+              <div class="doc-card-premium">
+                <div class="doc-card-premium-left">
+                  <span class="doc-card-icon-premium">📜</span>
+                  <div>
+                    <div class="doc-card-title-premium">Certificate of Registration</div>
+                    <div class="doc-card-subtitle-premium">
+                      {{ hasDocument(selectedProvider, 'registration') ? 'Resource Available' : 'Not Provided' }}
+                    </div>
+                  </div>
                 </div>
-                <div class="d-arrow">→</div>
+                <button class="btn-action-smart btn-doc-view-smart" 
+                        [disabled]="!hasDocument(selectedProvider, 'registration')"
+                        (click)="openImage(
+                          selectedProvider.certificateOfRegistrationUrl || 
+                          selectedProvider.CertificateOfRegistrationUrl || 
+                          selectedProvider.registrationCertificateUrl || 
+                          selectedProvider.RegistrationCertificateUrl ||
+                          selectedProvider.registrationUrl ||
+                          selectedProvider.RegistrationUrl
+                        )">
+                  <i class="bi bi-eye"></i> View Document
+                </button>
               </div>
             </div>
           </div>
@@ -817,6 +836,34 @@
                 </div>
               </div>
             </label>
+            <!-- Rule 3: Registration Certificate Verification -->
+            <label class="checklist-item checklist-item-relative">
+              <input type="checkbox" class="checklist-cb" #check3>
+              <div class="checklist-content w-100">
+                <div class="checklist-compare-row">
+                  <div>
+                    <strong>Registration Certificate Validity (CR ↔️ Revenue)</strong>
+                    <p>Verified that the Certificate of Registration is valid and matches vehicle details.</p>
+                  </div>
+                  <!-- The Compare Button -->
+                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini" 
+                          [disabled]="!hasDocument(selectedProvider, 'registration') || !hasDocument(selectedProvider, 'revenue')"
+                          (click)="$event.preventDefault(); compareDocuments(
+                            selectedProvider.certificateOfRegistrationUrl || 
+                            selectedProvider.CertificateOfRegistrationUrl || 
+                            selectedProvider.registrationCertificateUrl || 
+                            selectedProvider.RegistrationCertificateUrl ||
+                            selectedProvider.registrationUrl ||
+                            selectedProvider.RegistrationUrl,
+                            selectedProvider.revenueLicenseUrl || selectedProvider.RevenueLicenseUrl,
+                            'Certificate of Registration',
+                            'Revenue License'
+                          )">
+                    <i class="bi bi-layout-split"></i> Compare
+                  </button>
+                </div>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -832,7 +879,7 @@
           </button>
           <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Approved'" 
                   class="btn-ctrl-vibrant btn-modal-approve" 
-                  [disabled]="!check1.checked || !check2.checked"
+                  [disabled]="!check1.checked || !check2.checked || !check3.checked"
                   (click)="confirmApproval(selectedProvider)">
             Approve Vehicle
           </button>
