@@ -12,6 +12,8 @@ import { MemoryService } from '../services/memory';
 import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
+import gsap from 'gsap';
+import { Flip } from 'gsap/Flip';
 
 interface CommunityAlbum {
   tripName: string;
@@ -145,7 +147,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.searchSubject.next(this.searchQuery);
   }
 
-  private applyFilters(options?: { flipFrom?: Map<string, DOMRect> }): void {
+  private applyFilters(options?: { flipFrom?: Map<string, DOMRect>; likedMemoryId?: string }): void {
     let memories = [...this.allMemories];
 
     if (this.searchQuery?.trim()) {
@@ -162,14 +164,13 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
 
     if (options?.flipFrom?.size) {
       this.cdr.detectChanges();
-      requestAnimationFrame(() => this.playFlipAnimation(options.flipFrom!));
+      requestAnimationFrame(() => this.playGSAPFlipAnimation(options.flipFrom!, options.likedMemoryId));
     } else if (!this.shouldAnimateTopRated) {
       this.shouldAnimateTopRated = true;
       this.cdr.detectChanges();
-      window.setTimeout(() => {
-        this.popularEntranceComplete = true;
-        this.cdr.detectChanges();
-      }, 1200);
+      setTimeout(() => {
+        this.playGSAPStaggeredEntrance();
+      }, 100);
     }
   }
 
@@ -220,7 +221,37 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return rects;
   }
 
-  private playFlipAnimation(beforeRects: Map<string, DOMRect>): void {
+  private playGSAPStaggeredEntrance(): void {
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.thumb-card'));
+    if (!cards.length) return;
+
+    // Set initial state for entrance animation
+    gsap.set(cards, {
+      opacity: 0,
+      y: 50,
+      scale: 0.9
+    });
+
+    // Staggered entrance animation
+    gsap.to(cards, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: 'back.out(1.7)',
+      onComplete: () => {
+        this.popularEntranceComplete = true;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private playGSAPFlipAnimation(beforeRects: Map<string, DOMRect>, likedMemoryId?: string): void {
     const grid = this.popularGridRef?.nativeElement
       ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
     if (!grid || !beforeRects.size) return;
@@ -233,6 +264,9 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.isPopularReordering = true;
     grid.classList.add('is-reordering');
 
+    // Calculate movements and organize by direction
+    const movements: Array<{ element: HTMLElement; deltaY: number; distance: number; direction: 'up' | 'down' }> = [];
+
     cards.forEach(card => {
       const id = card.dataset['memoryId'];
       if (!id) return;
@@ -244,34 +278,94 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       const deltaY = before.top - after.top;
       if (Math.abs(deltaY) < 2) return;
 
-      const movingUp = deltaY > 0;
-      const travelSteps = Math.min(12, Math.max(1, Math.round(Math.abs(deltaY) / 60)));
-
-      card.classList.add('is-flipping');
-      card.classList.add(movingUp ? 'flip-up' : 'flip-down');
-      card.style.zIndex = movingUp ? String(30 + travelSteps) : String(10);
-      card.style.transform = `translate3d(0, ${deltaY}px, 0)`;
-      card.style.transition = 'none';
-
-      card.offsetHeight;
-
-      requestAnimationFrame(() => {
-        card.style.transition = 'transform 1.05s cubic-bezier(0.34, 1.08, 0.46, 1)';
-        card.style.transform = 'translate3d(0, 0, 0)';
+      movements.push({
+        element: card,
+        deltaY,
+        distance: Math.abs(deltaY),
+        direction: deltaY > 0 ? 'up' : 'down'
       });
     });
 
-    window.setTimeout(() => {
-      cards.forEach(card => {
-        card.classList.remove('is-flipping', 'flip-up', 'flip-down');
-        card.style.transform = '';
-        card.style.transition = '';
-        card.style.zIndex = '';
+    // Find the liked box and calculate cascading timing
+    const likedMovement = movements.find(m => m.element.dataset['memoryId'] === likedMemoryId);
+    const otherMovements = movements.filter(m => m.element.dataset['memoryId'] !== likedMemoryId);
+
+    // Sort other movements by their position relative to liked box
+    otherMovements.sort((a, b) => {
+      // Sort by distance from liked box's starting position
+      const likedStartY = likedMovement?.deltaY || 0;
+      const aDistanceFromLiked = Math.abs(a.deltaY - likedStartY);
+      const bDistanceFromLiked = Math.abs(b.deltaY - likedStartY);
+      return aDistanceFromLiked - bDistanceFromLiked;
+    });
+
+    // Create GSAP timeline for cascading animation
+    const timeline = gsap.timeline({
+      onComplete: () => {
+        grid.classList.remove('is-reordering');
+        this.isPopularReordering = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Start with liked box if it exists
+    if (likedMovement) {
+      const { element, deltaY, direction } = likedMovement;
+
+      gsap.set(element, {
+        y: deltaY,
+        scale: 1.05,
+        zIndex: 1000,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+        border: '3px solid rgba(99, 102, 241, 0.6)'
       });
-      grid.classList.remove('is-reordering');
-      this.isPopularReordering = false;
-      this.cdr.detectChanges();
-    }, 1100);
+
+      timeline.to(element, {
+        y: 0,
+        scale: 1,
+        duration: 0.8,
+        ease: 'power2.inOut',
+        boxShadow: '0 0 0 rgba(0,0,0,0)',
+        border: '0px solid rgba(99, 102, 241, 0)',
+        zIndex: 1,
+        onComplete: () => {
+          gsap.set(element, { clearProps: 'all' });
+        }
+      }, 0);
+    }
+
+    // Add other movements with cascading timing based on when liked box crosses their positions
+    otherMovements.forEach((movement, index) => {
+      const { element, deltaY, direction } = movement;
+
+      // Calculate when this box should start based on liked box's progress
+      const likedDistance = likedMovement?.distance || 1;
+      const thisDistance = movement.distance;
+      const progressRatio = thisDistance / (likedDistance + thisDistance);
+      const startTime = likedMovement ? (progressRatio * 0.6) : (index * 0.2);
+
+      const zIndex = direction === 'up' ? 100 + index : 50 + index;
+      gsap.set(element, {
+        y: deltaY,
+        scale: 1.02,
+        zIndex: zIndex,
+        boxShadow: direction === 'up' ? '0 12px 24px rgba(0,0,0,0.25)' : '0 6px 16px rgba(0,0,0,0.15)',
+        border: direction === 'up' ? '2px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(99, 102, 241, 0.2)'
+      });
+
+      timeline.to(element, {
+        y: 0,
+        scale: 1,
+        duration: 0.6,
+        ease: 'power2.inOut',
+        boxShadow: '0 0 0 rgba(0,0,0,0)',
+        border: '0px solid rgba(99, 102, 241, 0)',
+        zIndex: 1,
+        onComplete: () => {
+          gsap.set(element, { clearProps: 'all' });
+        }
+      }, startTime);
+    });
   }
 
 
@@ -436,7 +530,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
       next: (updatedMemory) => {
         this.updateLocalMemoryState(memoryId, updatedMemory);
-        this.applyFilters({ flipFrom });
+        this.applyFilters({ flipFrom, likedMemoryId: memoryId });
         const newLikeCount = updatedMemory.likeCount || 0;
         const action = isLiked ? 'unlike' : 'like';
         const message = isLiked
