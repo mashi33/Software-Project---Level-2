@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
+import { SignalrService } from '../services/signalr.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -23,6 +24,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // 💡 Subscription
   private userSub!: Subscription;
+  private notificationSub!: Subscription;
 
   // UI State management
   isDropdownOpen: boolean = false;
@@ -38,7 +40,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private dashboardService: TravellerDashboardService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private signalrService: SignalrService
   ) {}
 
   ngOnInit(): void {
@@ -77,12 +80,28 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const savedName = localStorage.getItem('userName');
     this.userName = savedName ? savedName : 'User';
     this.loadNotifications();
+
+    // Subscribe to real-time notifications via SignalR
+    this.notificationSub = this.signalrService.notificationReceived.subscribe({
+      next: (notif: any) => {
+        const userId = this.authService.getUserId();
+        if (notif && notif.userId === userId) {
+          // Add the new notification to the beginning of the list
+          this.notifications.unshift(notif);
+          this.updateUnreadCount();
+        }
+      },
+      error: (err) => console.error('Navbar SignalR notification error:', err)
+    });
   }
 
   // 💡 Component destruction
   ngOnDestroy(): void {
     if (this.userSub) {
       this.userSub.unsubscribe();
+    }
+    if (this.notificationSub) {
+      this.notificationSub.unsubscribe();
     }
   }
 
