@@ -23,6 +23,8 @@ import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
 import { VerifyEmailComponent } from './verify-email/verify-email';
+import { SettingsComponent } from './settings/settings';
+import { NotificationsComponent } from './notifications/notifications';
 import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
@@ -44,6 +46,8 @@ export const routes: Routes = [
   //  PROTECTED ROUTES 
   //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
   { path: 'memories-welcome', component: MemoriesWelcomeComponent, canActivate: [authGuard] },

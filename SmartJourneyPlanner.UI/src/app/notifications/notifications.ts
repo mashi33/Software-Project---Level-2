@@ -1,92 +1,35 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { RouterModule, Router } from '@angular/router'; 
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
-import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-navbar',
+  selector: 'app-notifications',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './navbar.html',
-  styleUrls: ['./navbar.css']
+  templateUrl: './notifications.html',
+  styleUrls: ['./notifications.css']
 })
-export class NavbarComponent implements OnInit, OnDestroy {
-  // User profile details
-  userName: string = 'User';
-  profilePic: string = '/profilePic.jpg';
-
-  // 🔑 THE FIX: Declare the missing variable so the HTML template can find it!
-  userRole: string = 'Traveler';
-
-  // 💡 Subscription
-  private userSub!: Subscription;
-
-  // UI State management
-  isDropdownOpen: boolean = false;
-  isMemoryDropdownOpen: boolean = false;
-  isNotificationDropdownOpen: boolean = false;
-  dropdownLabel: string = 'Memory';
-
-  // Notification State management
+export class NotificationsComponent implements OnInit {
   notifications: any[] = [];
+  filteredNotifications: any[] = [];
+  filterTab: string = 'all';
   unreadCount: number = 0;
+  readCount: number = 0;
 
   constructor(
     private authService: AuthService,
-    private router: Router,
     private dashboardService: TravellerDashboardService,
     private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        
-        // 🔑 THE FIX: Comprehensive role-matching verification hierarchy 
-        this.userRole = tokenPayload.UserType || 
-                        tokenPayload.userType || 
-                        tokenPayload.role || 
-                        tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                        'Traveler';
-                        
-        console.log("Current session validation check. Decoded UserType value:", this.userRole);
-      }
-    } catch (e) {
-      console.error("Failed to extract active claim structures:", e);
-      this.userRole = 'Traveler';
-    }
-
-    // Subscriptions
-    this.userSub = this.authService.userNameSubject$.subscribe({
-      next: (name: string) => {
-        this.userName = name || 'User';
-      },
-      error: (err) => console.error('Navbar subscription error:', err)
-    });
-
-    const savedPic = localStorage.getItem('profilePic');
-    if (savedPic) {
-      this.profilePic = savedPic;
-    }
-
-    const savedName = localStorage.getItem('userName');
-    this.userName = savedName ? savedName : 'User';
-    this.loadNotifications();
+    this.loadAllNotifications();
   }
 
-  // 💡 Component destruction
-  ngOnDestroy(): void {
-    if (this.userSub) {
-      this.userSub.unsubscribe();
-    }
-  }
-
-  loadNotifications() {
+  loadAllNotifications() {
     const userType = this.authService.getUserSystemType();
     const userId = this.authService.getUserId();
 
@@ -95,7 +38,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.notificationService.getNotifications(userId, userType).subscribe({
       next: (dbNotifications) => {
         this.notifications = dbNotifications;
-        this.updateUnreadCount();
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
 
         // Dynamically fetch traveler upcoming trips to inject countdown notification
         if (userType !== 'TransportProvider' && userType !== 'Provider') {
@@ -140,7 +84,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
                       countdownNotification,
                       ...dbNotifications.filter(n => n.id !== 'countdown-999')
                     ];
-                    this.updateUnreadCount();
+                    this.updateCounts();
+                    this.applyFilter(this.filterTab);
                   }
                 }
               }
@@ -157,8 +102,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  updateUnreadCount() {
+  updateCounts() {
     this.unreadCount = this.notifications.filter(n => !n.isRead).length;
+    this.readCount = this.notifications.filter(n => n.isRead).length;
+  }
+
+  applyFilter(filter: string) {
+    this.filterTab = filter;
+    if (filter === 'unread') {
+      this.filteredNotifications = this.notifications.filter(n => !n.isRead);
+    } else if (filter === 'read') {
+      this.filteredNotifications = this.notifications.filter(n => n.isRead);
+    } else {
+      this.filteredNotifications = [...this.notifications];
+    }
   }
 
   markAllAsRead() {
@@ -169,7 +126,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
       next: () => {
         this.notifications.forEach(n => n.isRead = true);
         this.notifications = [...this.notifications];
-        this.updateUnreadCount();
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
       },
       error: (err) => console.error('Failed to mark all as read', err)
     });
@@ -178,7 +136,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
   markAsRead(notification: any) {
     if (notification.id === 'countdown-999') {
       notification.isRead = true;
-      this.updateUnreadCount();
+      this.updateCounts();
+      this.applyFilter(this.filterTab);
       return;
     }
 
@@ -186,61 +145,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
       next: () => {
         notification.isRead = true;
         this.notifications = [...this.notifications];
-        this.updateUnreadCount();
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
       },
       error: (err) => console.error('Failed to mark notification as read', err)
     });
-  }
-
-  toggleDropdown(menu?: string) {
-    if (menu === 'memory') {
-      this.isMemoryDropdownOpen = !this.isMemoryDropdownOpen;
-      this.isDropdownOpen = false;
-      this.isNotificationDropdownOpen = false;
-    } else if (menu === 'notification') {
-      this.isNotificationDropdownOpen = !this.isNotificationDropdownOpen;
-      this.isDropdownOpen = false;
-      this.isMemoryDropdownOpen = false;
-    } else {
-      this.isDropdownOpen = !this.isDropdownOpen;
-      this.isMemoryDropdownOpen = false;
-      this.isNotificationDropdownOpen = false;
-    }
-  }
-
-  closeDropdown() {
-    this.isDropdownOpen = false;
-    this.isMemoryDropdownOpen = false;
-    this.isNotificationDropdownOpen = false;
-  }
-
-  @HostListener('document:click', ['$event'])
-  clickout(event: Event) {
-    const clickedElement = event.target as HTMLElement;
-    
-    if (!clickedElement.closest('.notification-dropdown')) {
-      this.isNotificationDropdownOpen = false;
-    }
-    
-    if (!clickedElement.closest('.profile-dropdown')) {
-      this.isDropdownOpen = false;
-    }
-    
-    if (!clickedElement.closest('.memory-dropdown')) {
-      this.isMemoryDropdownOpen = false;
-    }
-  }
-
-  // Handles user logout
-  onLogout(): void {
-    this.authService.logout();
-    this.closeDropdown();
-    this.router.navigate(['/login']);
-    console.log('User logged out successfully');
-  }
-
-  selectOption(option: string) {
-    this.dropdownLabel = option;
-    this.isMemoryDropdownOpen = false;
   }
 }

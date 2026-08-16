@@ -1,0 +1,178 @@
+<div class="settings-container container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="settings-content shadow p-4">
+        
+        <div class="content-header mb-4 text-center">
+          <div class="settings-icon-header mb-2">
+            <i class="bi bi-bell-fill"></i>
+          </div>
+          <h4>Notification Preferences</h4>
+          <p class="text-muted">
+            Control how you receive notifications and updates as a 
+            <strong>{{ isProvider ? 'Transport Provider' : 'Traveler' }}</strong>.
+          </p>
+        </div>
+
+        <!-- PROVIDER PREFERENCES -->
+        <div *ngIf="isProvider" class="settings-group">
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>New Booking Requests</h6>
+              <small class="text-muted">Get notified immediately when a traveler requests a new vehicle booking.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="bookingRequestsSwitch" [(ngModel)]="providerSettings.bookingRequests">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Booking Cancellations</h6>
+              <small class="text-muted">Receive alerts if a traveler cancels their confirmed vehicle booking request.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="cancellationsSwitch" [(ngModel)]="providerSettings.cancellations">
+            </div>
+          </div>
+
+
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Vehicle Listing Approvals</h6>
+              <small class="text-muted">Receive updates when administration reviews, approves, or rejects your registered vehicle listings.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="vehicleApprovalsSwitch" [(ngModel)]="providerSettings.vehicleApprovals">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Customer Reviews & Ratings</h6>
+              <small class="text-muted">Get notified when travelers leave stars, feedback, and reviews on your fleet.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="customerReviewsSwitch" [(ngModel)]="providerSettings.customerReviews">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>System Fee & Policy Updates</h6>
+              <small class="text-muted">Receive updates regarding platform service fees, host policy changes, and system rules.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="policyUpdatesSwitch" [(ngModel)]="providerSettings.policyUpdates">
+            </div>
+          </div>
+
+          <!-- General Delivery Channels -->
+          <h5 class="mt-4 mb-3 text-secondary font-weight-bold" style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Delivery Channels</h5>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Email Delivery</h6>
+              <small class="text-muted">Send updates and summaries to your registered email address.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="providerEmailAlerts" [(ngModel)]="providerSettings.emailAlerts">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3">
+            <div class="settings-item-info">
+              <h6>Real-time Push Alerts</h6>
+              <small class="text-muted">Receive browser desktop notifications instantly while active on the dashboard.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="providerPushAlerts" [(ngModel)]="providerSettings.pushAlerts">
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAVELER PREFERENCES -->
+        <div *ngIf="!isProvider" class="settings-group">
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Booking Confirmations</h6>
+              <small class="text-muted">Get notified as soon as a transport provider confirms your vehicle booking reservation.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="bookingConfirmationsSwitch" [(ngModel)]="travelerSettings.bookingConfirmations">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Trip Reminders & Timelines</h6>
+              <small class="text-muted">Get alerts about starting times, timelines, and schedules for your upcoming trips.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="tripRemindersSwitch" [(ngModel)]="travelerSettings.tripReminders">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Weather Advisory Alerts</h6>
+              <small class="text-muted">Receive weather suggestion advisory alerts for Nuwara Eliya, Ella, and destinations.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="weatherAlertsSwitch" [(ngModel)]="travelerSettings.weatherAlerts">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Trip Budget Warnings</h6>
+              <small class="text-muted">Get warnings when your expenses exceed 80% of your pre-planned trip budget.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="budgetAlertsSwitch" [(ngModel)]="travelerSettings.budgetAlerts">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Memory & Journal Prompts</h6>
+              <small class="text-muted">Reminders to upload photos and save memories of completed journeys to your map.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="memoryPromptsSwitch" [(ngModel)]="travelerSettings.memoryPrompts">
+            </div>
+          </div>
+
+          <!-- General Delivery Channels -->
+          <h5 class="mt-4 mb-3 text-secondary font-weight-bold" style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Delivery Channels</h5>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3 border-bottom">
+            <div class="settings-item-info">
+              <h6>Email Delivery</h6>
+              <small class="text-muted">Send updates and summaries to your registered email address.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="travelerEmailAlerts" [(ngModel)]="travelerSettings.emailAlerts">
+            </div>
+          </div>
+
+          <div class="settings-item d-flex justify-content-between align-items-center py-3">
+            <div class="settings-item-info">
+              <h6>Real-time Push Alerts</h6>
+              <small class="text-muted">Receive browser desktop notifications instantly while active on the dashboard.</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input custom-switch" type="checkbox" id="travelerPushAlerts" [(ngModel)]="travelerSettings.pushAlerts">
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <button class="btn btn-save" (click)="onSaveSettings()" id="saveNotificationSettingsBtn">Save Preferences</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
