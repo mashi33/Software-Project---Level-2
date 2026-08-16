@@ -2,6 +2,8 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { RouterModule } from '@angular/router'; 
 import { AuthService } from '../services/auth.service';
+import { TravellerDashboardService } from '../services/travellerDashboard';
+import { NotificationService } from '../services/notification.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -26,7 +28,11 @@ export class NavbarComponent implements OnInit {
   notifications: any[] = [];
   unreadCount: number = 0;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private dashboardService: TravellerDashboardService,
+    private notificationService: NotificationService
+  ) {}
 
   
   //Lifecycle hook that initializes the component.
@@ -39,236 +45,73 @@ export class NavbarComponent implements OnInit {
 
   loadNotifications() {
     const userType = this.authService.getUserSystemType();
-    
-    if (userType === 'TransportProvider' || userType === 'Provider') {
-      this.notifications = [
-        {
-          id: 1,
-          icon: 'bi-card-list',
-          iconColorClass: 'icon-blue',
-          title: 'New booking request received from traveler Dinuri for Toyota KDH',
-          time: '30 mins ago',
-          isRead: false,
-          linkText: 'View Request',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 2,
-          icon: 'bi-x-circle-fill',
-          iconColorClass: 'icon-red',
-          title: 'Booking request #B102 has been cancelled by traveler Sasini',
-          time: '3 hours ago',
-          isRead: false,
-          linkText: 'Check Status',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 3,
-          icon: 'bi-check-circle-fill',
-          iconColorClass: 'icon-green',
-          title: 'Booking #B105 with traveler Sandali has been completed. Check your dashboard statistics!',
-          time: '12 hours ago',
-          isRead: true,
-          linkText: 'View Stats',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 4,
-          icon: 'bi-star-fill',
-          iconColorClass: 'icon-orange',
-          title: 'Traveler Malpawani Poornima left a 5-star review for your Toyota Axio',
-          time: '1 day ago',
-          isRead: true,
-          linkText: 'View Review',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 5,
-          icon: 'bi-patch-check-fill',
-          iconColorClass: 'icon-green',
-          title: 'Your vehicle Toyota KDH listing has been approved by the administrator and is now active!',
-          time: '3 days ago',
-          isRead: true,
-          linkText: 'Manage Fleet',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 6,
-          icon: 'bi-exclamation-octagon-fill',
-          iconColorClass: 'icon-red',
-          title: 'Your vehicle Honda Vezel listing request was rejected by the administrator. Please update details and re-submit',
-          time: '5 days ago',
-          isRead: true,
-          linkText: 'Edit Listing',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 7,
-          icon: 'bi-clock-history',
-          iconColorClass: 'icon-green',
-          title: 'Reminder: Booking #B102 starts tomorrow morning at 6:00 AM. Traveler Contact: +94771234567',
-          time: '1 week ago',
-          isRead: true,
-          linkText: 'View Details',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 8,
-          icon: 'bi-exclamation-triangle-fill',
-          iconColorClass: 'icon-orange',
-          title: 'Action Required: You have a pending booking request from traveler Sandali waiting for more than 24 hours',
-          time: '1 week ago',
-          isRead: true,
-          linkText: 'Accept/Reject',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 9,
-          icon: 'bi-cash-coin',
-          iconColorClass: 'icon-green',
-          title: 'Advance payment of Rs 15,000 confirmed for Booking #B105',
-          time: '1 week 2 days ago',
-          isRead: true,
-          linkText: 'View Payments',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 10,
-          icon: 'bi-info-circle-fill',
-          iconColorClass: 'icon-blue',
-          title: 'System update: New service fee rules are now active on your dashboard',
-          time: '2 weeks ago',
-          isRead: true,
-          linkText: 'Read Updates',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 11,
-          icon: 'bi-card-list',
-          iconColorClass: 'icon-blue',
-          title: 'New booking request received from traveler Nimasha for Honda Vezel',
-          time: '2 weeks ago',
-          isRead: true,
-          linkText: 'View Request',
-          route: '/provider-dashboard'
-        },
-        {
-          id: 12,
-          icon: 'bi-star-fill',
-          iconColorClass: 'icon-orange',
-          title: 'Traveler Sandali Poornima left a 4-star review for your KDH Van',
-          time: '3 weeks ago',
-          isRead: true,
-          linkText: 'View Review',
-          route: '/provider-dashboard'
+    const userId = this.authService.getUserId();
+
+    if (!userId) return;
+
+    this.notificationService.getNotifications(userId, userType).subscribe({
+      next: (dbNotifications) => {
+        this.notifications = dbNotifications;
+        this.updateUnreadCount();
+
+        // Dynamically fetch traveler upcoming trips to inject countdown notification
+        if (userType !== 'TransportProvider' && userType !== 'Provider') {
+          this.dashboardService.getDashboardData().subscribe({
+            next: (data) => {
+              const upcomingTrips = data.upcomingTrips || [];
+              if (upcomingTrips.length > 0) {
+                const nextTrip = upcomingTrips
+                  .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+                
+                if (nextTrip) {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tripDate = new Date(nextTrip.startDate);
+                  tripDate.setHours(0, 0, 0, 0);
+
+                  const diffTime = tripDate.getTime() - today.getTime();
+                  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  if (daysLeft >= 0) {
+                    let title = '';
+                    if (daysLeft === 0) {
+                      title = `Your trip to ${nextTrip.destination || 'your destination'} is starting today! Pack your bags.`;
+                    } else if (daysLeft === 1) {
+                      title = `Only 1 day left until your trip to ${nextTrip.destination || 'your destination'}! Double check your checklist.`;
+                    } else {
+                      title = `Only ${daysLeft} days left until your trip to ${nextTrip.destination || 'your destination'}!`;
+                    }
+
+                    const countdownNotification = {
+                      id: 'countdown-999',
+                      icon: 'bi-clock-fill',
+                      iconColorClass: 'icon-orange',
+                      title: title,
+                      time: 'Just now',
+                      isRead: false,
+                      linkText: 'View Trip',
+                      route: '/trip-summary/' + (nextTrip.id || nextTrip.Id)
+                    };
+
+                    this.notifications = [
+                      countdownNotification,
+                      ...dbNotifications.filter(n => n.id !== 'countdown-999')
+                    ];
+                    this.updateUnreadCount();
+                  }
+                }
+              }
+            },
+            error: (err) => {
+              console.error('Failed to load dashboard data for notification countdown', err);
+            }
+          });
         }
-      ];
-    } else {
-      // Default to Traveler
-      this.notifications = [
-        {
-          id: 1,
-          icon: 'bi-calendar-event',
-          iconColorClass: 'icon-blue',
-          title: 'Due on Monday, 15 June 2026, 8:00 AM: Trip to Ella starting',
-          time: '2 hours ago',
-          isRead: false,
-          linkText: 'View Trip',
-          route: '/traveller-dashboard'
-        },
-        {
-          id: 2,
-          icon: 'bi-check-circle-fill',
-          iconColorClass: 'icon-green',
-          title: 'Your booking for Honda Vezel has been confirmed by provider',
-          time: '1 day 4 hours ago',
-          isRead: false,
-          linkText: 'View Booking',
-          route: '/transport'
-        },
-        {
-          id: 3,
-          icon: 'bi-cloud-rain-fill',
-          iconColorClass: 'icon-blue',
-          title: 'New weather advisory: Heavy rain expected in Nuwara Eliya tomorrow',
-          time: '3 days ago',
-          isRead: true,
-          linkText: 'Check Weather',
-          route: '/weather'
-        },
-        {
-          id: 4,
-          icon: 'bi-camera-fill',
-          iconColorClass: 'icon-orange',
-          title: 'Don\'t forget to add memories to your recent trip to Galle!',
-          time: '5 days ago',
-          isRead: true,
-          linkText: 'Add Memory',
-          route: '/memories'
-        },
-        {
-          id: 5,
-          icon: 'bi-exclamation-triangle-fill',
-          iconColorClass: 'icon-red',
-          title: 'Budget alert: You have reached 80% of your estimated trip budget',
-          time: '6 days ago',
-          isRead: true,
-          linkText: 'View Budget',
-          route: '/budget'
-        },
-        {
-          id: 6,
-          icon: 'bi-check-circle-fill',
-          iconColorClass: 'icon-green',
-          title: 'Your booking request #B104 has been accepted by provider Nimal',
-          time: '1 week ago',
-          isRead: true,
-          linkText: 'View Booking',
-          route: '/transport'
-        },
-        {
-          id: 7,
-          icon: 'bi-calendar-check',
-          iconColorClass: 'icon-blue',
-          title: 'Reminder: Your trip to Galle starts in 2 days. Check your checklist!',
-          time: '1 week 1 day ago',
-          isRead: true,
-          linkText: 'View Checklist',
-          route: '/traveller-dashboard'
-        },
-        {
-          id: 8,
-          icon: 'bi-cloud-wind',
-          iconColorClass: 'icon-blue',
-          title: 'New weather advisory: Heavy wind expected in Ella tomorrow morning',
-          time: '1 week 3 days ago',
-          isRead: true,
-          linkText: 'Check Weather',
-          route: '/weather'
-        },
-        {
-          id: 9,
-          icon: 'bi-exclamation-triangle-fill',
-          iconColorClass: 'icon-red',
-          title: 'Budget alert: You have reached 95% of your estimated trip budget',
-          time: '2 weeks ago',
-          isRead: true,
-          linkText: 'Manage Expenses',
-          route: '/budget'
-        },
-        {
-          id: 10,
-          icon: 'bi-shield-check',
-          iconColorClass: 'icon-green',
-          title: 'System update: New traveler security policies have been updated',
-          time: '3 weeks ago',
-          isRead: true,
-          linkText: 'Read Security',
-          route: '/traveller-dashboard'
-        }
-      ];
-    }
-    this.updateUnreadCount();
+      },
+      error: (err) => {
+        console.error('Failed to load notifications from database', err);
+      }
+    });
   }
 
   updateUnreadCount() {
@@ -276,15 +119,34 @@ export class NavbarComponent implements OnInit {
   }
 
   markAllAsRead() {
-    this.notifications.forEach(n => n.isRead = true);
-    this.notifications = [...this.notifications];
-    this.updateUnreadCount();
+    const userId = this.authService.getUserId();
+    if (!userId) return;
+
+    this.notificationService.markAllAsRead(userId).subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.isRead = true);
+        this.notifications = [...this.notifications];
+        this.updateUnreadCount();
+      },
+      error: (err) => console.error('Failed to mark all as read', err)
+    });
   }
 
   markAsRead(notification: any) {
-    notification.isRead = true;
-    this.notifications = [...this.notifications];
-    this.updateUnreadCount();
+    if (notification.id === 'countdown-999') {
+      notification.isRead = true;
+      this.updateUnreadCount();
+      return;
+    }
+
+    this.notificationService.markAsRead(notification.id).subscribe({
+      next: () => {
+        notification.isRead = true;
+        this.notifications = [...this.notifications];
+        this.updateUnreadCount();
+      },
+      error: (err) => console.error('Failed to mark notification as read', err)
+    });
   }
 
   toggleDropdown(menu?: string) {

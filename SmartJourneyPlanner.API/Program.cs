@@ -74,6 +74,7 @@ builder.Services.AddCors(options => {
 
 // --- 7. SERVICES REGISTRATION ---
 builder.Services.AddSingleton<AdminService>(); 
+builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<BudgetService>();
 builder.Services.AddSingleton<TimelineService>(); 
 builder.Services.AddSingleton<DiscussionsService>();
