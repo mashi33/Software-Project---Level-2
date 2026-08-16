@@ -53,14 +53,51 @@
         <div class="albums-header" *ngIf="topRatedMemories.length > 0">
           <span class="albums-count">{{ topRatedMemories.length }} top memories</span>
         </div>
-        <div class="gallery-grid">
+
+        <div class="sort-bar" *ngIf="topRatedMemories.length > 0">
+          <span class="sort-label">Sort by</span>
+          <button type="button"
+                  class="sort-btn"
+                  [class.active]="sortMode === 'score'"
+                  [disabled]="isPopularReordering"
+                  (click)="setSortMode('score')">
+            Score
+          </button>
+          <button type="button"
+                  class="sort-btn"
+                  [class.active]="sortMode === 'date'"
+                  [disabled]="isPopularReordering"
+                  (click)="setSortMode('date')">
+            Date
+          </button>
+          <button type="button"
+                  class="sort-btn"
+                  [class.active]="sortMode === 'likes'"
+                  [disabled]="isPopularReordering"
+                  (click)="setSortMode('likes')">
+            Likes
+          </button>
+          <button type="button"
+                  class="sort-btn"
+                  [class.active]="sortMode === 'location'"
+                  [disabled]="isPopularReordering"
+                  (click)="setSortMode('location')">
+            Location
+          </button>
+        </div>
+
+        <div class="gallery-grid popular-memory-grid"
+             #popularGrid
+             [class.entrance-complete]="popularEntranceComplete">
           <div class="empty-state" *ngIf="topRatedMemories.length === 0">
             <i class="bi bi-trophy"></i>
             <p>No popular memories yet</p>
             <small>Public memories with likes will appear here.</small>
           </div>
-          <article *ngFor="let memory of displayedTopRatedMemories; let i = index"
+          <article *ngFor="let memory of displayedTopRatedMemories; let i = index; trackBy: trackByMemoryId"
                    class="thumb-card"
+                   [attr.data-memory-id]="memory.id"
+                   [style.--stagger-index]="i"
                    (click)="openTopRatedMemory(memory)">
             <div class="rank-badge">#{{ i + 1 }}</div>
             <div class="img-container">
