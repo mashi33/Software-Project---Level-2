@@ -114,13 +114,7 @@ export class ProviderDashboardComponent implements OnInit {
           return adminStatus === 'Pending';
         }).length;
 
-        const approvedFleetOnly = data.filter((vehicle: any) => {
-          // checks the admin's verification status
-          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
-          return adminStatus !== 'Pending';
-        });
-
-        this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
+        this.vehicles = data.map((vehicle: any) => ({
           ...vehicle,
           id: vehicle.id || vehicle._id
         }));

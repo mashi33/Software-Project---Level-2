@@ -50,8 +50,11 @@ export class TransportVehicleService {
   /**
    * Updates an existing vehicle's information (e.g. price, features).
    */
-  updateVehicle(id: string, vehicle: Vehicle): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl}/${id}`, vehicle);
+  updateVehicle(id: string, vehicle: Vehicle): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    return this.http.put<any>(`${this.apiUrl}/${id}`, vehicle, { headers });
   }
 
   /**

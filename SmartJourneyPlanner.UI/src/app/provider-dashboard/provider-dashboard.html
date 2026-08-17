@@ -250,7 +250,16 @@
             
             <div class="vehicle-details">
               <div class="vehicle-main-details">
-                <h3 class="vehicle-title" (click)="showVehicleDetails(vehicle)" style="cursor: pointer;">{{ vehicle.ModelName || vehicle.modelName }}</h3>
+                <h3 class="vehicle-title" (click)="showVehicleDetails(vehicle)" style="cursor: pointer;">
+                  {{ vehicle.ModelName || vehicle.modelName }}
+                  <span class="badge ms-2" [ngClass]="{
+                    'bg-warning text-dark': (vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || 'Pending') === 'Pending',
+                    'bg-success text-white': (vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus) === 'Approved' || (vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus) === 'Verified',
+                    'bg-danger text-white': (vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus) === 'Rejected'
+                  }" style="font-size: 0.7rem; padding: 0.2rem 0.4rem; border-radius: 0.4rem; vertical-align: middle;">
+                    {{ vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || 'Pending' }}
+                  </span>
+                </h3>
                 <p class="vehicle-subtitle">{{ vehicle.VehicleClass || vehicle.vehicleClass }} • {{ vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A' }}</p>
               </div>
 

@@ -5,8 +5,8 @@
     </a>
   </div>
   <div class="pf-header">
-    <h2>List Your Vehicle</h2>
-    <p>Join our secure provider network</p>
+    <h2>{{ isEditMode ? 'Edit Your Vehicle' : 'List Your Vehicle' }}</h2>
+    <p>{{ isEditMode ? 'Update your vehicle details and documentation' : 'Join our secure provider network' }}</p>
   </div>
 
   <form [formGroup]="vehicleForm" (ngSubmit)="submitForm()" class="pf-form">
@@ -525,8 +525,8 @@
 
     <div class="text-center mt-4 mb-3">
       <button type="submit" class="pf-btn-submit" [disabled]="!vehicleForm.valid || isSubmitting">
-        <span *ngIf="!isSubmitting"><i class="bi bi-check2-circle me-2"></i> Submit Listing</span>
-        <span *ngIf="isSubmitting"><span class="spinner-border spinner-border-sm me-2"></span> Submitting...</span>
+        <span *ngIf="!isSubmitting"><i class="bi bi-check2-circle me-2"></i> {{ isEditMode ? 'Save Changes' : 'Submit Listing' }}</span>
+        <span *ngIf="isSubmitting"><span class="spinner-border spinner-border-sm me-2"></span> {{ isEditMode ? 'Saving...' : 'Submitting...' }}</span>
       </button>
       <div *ngIf="vehicleForm.invalid && vehicleForm.touched" class="text-danger mt-2 small">
         Please complete all required fields and agree to the terms.

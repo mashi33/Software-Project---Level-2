@@ -80,6 +80,7 @@ export const routes: Routes = [
 
   { path: 'transport', component: TransportProvider, canActivate: [authGuard] },
   { path: 'register-vehicle', component: RegisterVehicleComponent, canActivate: [authGuard] },
+  { path: 'edit-vehicle/:id', component: RegisterVehicleComponent, canActivate: [authGuard] },
   {
     path: 'vehicle/:id',
     canActivate: [authGuard],
