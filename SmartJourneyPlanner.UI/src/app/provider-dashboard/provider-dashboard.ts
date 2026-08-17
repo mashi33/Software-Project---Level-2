@@ -94,23 +94,25 @@ export class ProviderDashboardComponent implements OnInit {
 
         this.filterBookings();
 
-        setTimeout(() => {
-          const element = document.querySelector(`.booking-highlighted`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            element.classList.add('pulse-highlight');
-            setTimeout(() => {
-              element.classList.remove('pulse-highlight');
-            }, 3000);
-          }
-          // Clear query parameter to avoid auto-scrolling again on refreshes or subsequent navigation
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { bookingId: null },
-            queryParamsHandling: 'merge',
-            replaceUrl: true
-          });
-        }, 600);
+        // Case B: If bookings are already loaded, scroll and clear query params immediately
+        if (this.bookings && this.bookings.length > 0) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 300);
+        }
       }
     });
   }
@@ -255,6 +257,27 @@ export class ProviderDashboardComponent implements OnInit {
     });
         // Apply initial filter
         this.filterBookings();
+
+        // Case A: If targetBookingId was set during initialization but bookings were not loaded yet, scroll now!
+        if (this.targetBookingId) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            // Clear query parameter now that target card is rendered
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 400);
+        }
       });
     }
   }
