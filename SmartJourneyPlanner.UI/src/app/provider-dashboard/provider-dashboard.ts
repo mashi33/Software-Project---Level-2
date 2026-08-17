@@ -84,12 +84,33 @@ export class ProviderDashboardComponent implements OnInit {
         this.activePanel = 'bookings';
       }
       if (params['bookingId']) {
+        this.activePanel = 'bookings';
         this.targetBookingId = params['bookingId'];
         // Clear filter terms so the requested booking is visible
         this.bookingSearchTerm = '';
         this.bookingStatusFilter = '';
         this.bookingProximityFilter = '';
         this.showOldBookings = true;
+
+        this.filterBookings();
+
+        setTimeout(() => {
+          const element = document.querySelector(`.booking-highlighted`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('pulse-highlight');
+            setTimeout(() => {
+              element.classList.remove('pulse-highlight');
+            }, 3000);
+          }
+          // Clear query parameter to avoid auto-scrolling again on refreshes or subsequent navigation
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { bookingId: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+          });
+        }, 600);
       }
     });
   }
@@ -234,15 +255,6 @@ export class ProviderDashboardComponent implements OnInit {
     });
         // Apply initial filter
         this.filterBookings();
-
-        if (this.targetBookingId) {
-          setTimeout(() => {
-            const element = document.querySelector(`.booking-highlighted`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 800);
-        }
       });
     }
   }
