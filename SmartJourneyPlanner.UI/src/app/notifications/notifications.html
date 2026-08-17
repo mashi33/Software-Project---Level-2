@@ -48,7 +48,7 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
                   <span class="unread-dot-indicator" *ngIf="!n.isRead">New Alert</span>
-                  <a [routerLink]="n.route" class="btn btn-sm btn-link p-0 text-decoration-none text-primary font-weight-bold">{{ n.linkText }} &rarr;</a>
+                  <a style="cursor: pointer;" (click)="navigateToRoute(n.route)" class="btn btn-sm btn-link p-0 text-decoration-none text-primary font-weight-bold">{{ n.linkText }} &rarr;</a>
                 </div>
               </div>
             </div>

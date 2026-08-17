@@ -102,7 +102,7 @@ namespace SmartJourneyPlanner.Controllers
                     Time = "Just now",
                     IsRead = false,
                     LinkText = "View Request",
-                    Route = "/provider-dashboard"
+                    Route = $"/provider-dashboard?panel=bookings&bookingId={newBooking.Id}"
                 };
                 await _notificationService.CreateNotificationAsync(providerNotification);
                 await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);
@@ -124,7 +124,7 @@ namespace SmartJourneyPlanner.Controllers
                     Time = "Just now",
                     IsRead = false,
                     LinkText = "Check Status",
-                    Route = "/traveller-dashboard"
+                    Route = $"/transport?tab=bookings&bookingId={newBooking.Id}"
                 };
                 await _notificationService.CreateNotificationAsync(travelerNotification);
                 await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
@@ -180,7 +180,7 @@ namespace SmartJourneyPlanner.Controllers
                         Time = "Just now",
                         IsRead = false,
                         LinkText = "View Details",
-                        Route = "/traveller-dashboard"
+                        Route = $"/transport?tab=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(travelerNotification);
                     await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
@@ -196,7 +196,7 @@ namespace SmartJourneyPlanner.Controllers
                         Time = "Just now",
                         IsRead = false,
                         LinkText = "View Dashboard",
-                        Route = "/traveller-dashboard"
+                        Route = $"/transport?tab=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(travelerNotification);
                     await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
@@ -212,7 +212,7 @@ namespace SmartJourneyPlanner.Controllers
                         Time = "Just now",
                         IsRead = false,
                         LinkText = "Check Status",
-                        Route = "/provider-dashboard"
+                        Route = $"/provider-dashboard?panel=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(providerNotification);
                     await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);

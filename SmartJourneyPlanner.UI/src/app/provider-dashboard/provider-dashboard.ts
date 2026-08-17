@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 import { TransportBookingService } from '../services/transport-booking.service';
 import { AuthService } from '../services/auth.service';
@@ -27,6 +27,7 @@ export class ProviderDashboardComponent implements OnInit {
   pendingCompleteBookings: any[] = [];
   providerId: string | null = null;
   userName: string = '';
+  targetBookingId: string | null = null;
 
   // Filter properties
   vehicleSearchTerm: string = '';
@@ -53,7 +54,8 @@ export class ProviderDashboardComponent implements OnInit {
     private transportVehicleService: TransportVehicleService,
     private bookingService: TransportBookingService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   switchPanel(panel: 'fleet' | 'bookings') {
@@ -76,6 +78,20 @@ export class ProviderDashboardComponent implements OnInit {
     }
     this.userName = this.authService.getUserName() || 'Provider';
     this.loadAll();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['panel'] === 'bookings') {
+        this.activePanel = 'bookings';
+      }
+      if (params['bookingId']) {
+        this.targetBookingId = params['bookingId'];
+        // Clear filter terms so the requested booking is visible
+        this.bookingSearchTerm = '';
+        this.bookingStatusFilter = '';
+        this.bookingProximityFilter = '';
+        this.showOldBookings = true;
+      }
+    });
   }
 
   loadAll() {
@@ -218,6 +234,15 @@ export class ProviderDashboardComponent implements OnInit {
     });
         // Apply initial filter
         this.filterBookings();
+
+        if (this.targetBookingId) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 800);
+        }
       });
     }
   }

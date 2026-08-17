@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-notifications',
@@ -22,7 +23,8 @@ export class NotificationsComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private dashboardService: TravellerDashboardService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -150,5 +152,9 @@ export class NotificationsComponent implements OnInit {
       },
       error: (err) => console.error('Failed to mark notification as read', err)
     });
+  }
+
+  navigateToRoute(route: string) {
+    this.router.navigateByUrl(route);
   }
 }

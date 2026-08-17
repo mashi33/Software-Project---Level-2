@@ -341,7 +341,7 @@
             <p>No bookings found</p>
           </div>
 
-          <div *ngFor="let booking of filteredBookings" class="booking-card" [class.status-pending]="booking.status === 'Pending'" [class.status-confirmed]="booking.status === 'Confirmed'" [class.status-completed]="booking.status === 'Completed'" [class.status-rejected]="booking.status === 'Rejected'">
+          <div *ngFor="let booking of filteredBookings" class="booking-card" [class.booking-highlighted]="booking.id === targetBookingId" [class.status-pending]="booking.status === 'Pending'" [class.status-confirmed]="booking.status === 'Confirmed'" [class.status-completed]="booking.status === 'Completed'" [class.status-rejected]="booking.status === 'Rejected'">
             <div class="booking-header">
               <div class="booking-user">
                 <div class="user-avatar">
