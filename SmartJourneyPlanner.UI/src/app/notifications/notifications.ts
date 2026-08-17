@@ -39,7 +39,11 @@ export class NotificationsComponent implements OnInit {
 
     this.notificationService.getNotifications(userId, userType).subscribe({
       next: (dbNotifications) => {
-        this.notifications = dbNotifications;
+        const mapped = dbNotifications.map((n: any) => ({
+          ...n,
+          time: this.getRelativeTime(n.createdAt)
+        }));
+        this.notifications = mapped;
         this.updateCounts();
         this.applyFilter(this.filterTab);
 
@@ -84,7 +88,7 @@ export class NotificationsComponent implements OnInit {
 
                     this.notifications = [
                       countdownNotification,
-                      ...dbNotifications.filter(n => n.id !== 'countdown-999')
+                      ...this.notifications.filter(n => n.id !== 'countdown-999')
                     ];
                     this.updateCounts();
                     this.applyFilter(this.filterTab);
@@ -156,5 +160,40 @@ export class NotificationsComponent implements OnInit {
 
   navigateToRoute(route: string) {
     this.router.navigateByUrl(route);
+  }
+
+  getRelativeTime(createdAt: any): string {
+    if (!createdAt) return 'Just now';
+    try {
+      const createdDate = new Date(createdAt);
+      const now = new Date();
+      const diffMs = now.getTime() - createdDate.getTime();
+      
+      if (diffMs < 60000) {
+        return 'Just now';
+      }
+      
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) {
+        return `${diffMins}m ago`;
+      }
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) {
+        return `${diffHours}h ago`;
+      }
+      
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) {
+        return 'Yesterday';
+      }
+      if (diffDays < 7) {
+        return `${diffDays}d ago`;
+      }
+      
+      return createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Just now';
+    }
   }
 }
