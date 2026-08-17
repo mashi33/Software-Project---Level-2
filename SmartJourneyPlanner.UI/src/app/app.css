@@ -1,0 +1,56 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f1f5f9;
+  color: #0f172a;
+  line-height: 1.6;
+  padding-top: 70px;
+}
+
+/* LAYOUT CONTAINER */
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-area {
+  flex: 1;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* SIDEBAR LAYOUT ADJUSTMENTS */
+/* When sidebar is open and not collapsed */
+app-sidebar.sidebar-open ~ .layout-container .content-area {
+  margin-left: 280px;
+}
+
+/* When sidebar is collapsed */
+app-sidebar.sidebar-collapsed ~ .layout-container .content-area {
+  margin-left: 70px;
+}
+
+/* Mobile: no margin when sidebar is open (overlay mode) */
+@media (max-width: 768px) {
+  app-sidebar.sidebar-open ~ .layout-container .content-area {
+    margin-left: 0;
+  }
+
+  app-sidebar.sidebar-collapsed ~ .layout-container .content-area {
+    margin-left: 0;
+  }
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    padding-top: 60px;
+  }
+}
