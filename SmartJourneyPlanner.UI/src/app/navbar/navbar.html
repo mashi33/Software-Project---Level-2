@@ -92,7 +92,7 @@
                 <div class="notification-item-content">
                   <div class="notification-item-title">{{ n.title }}</div>
                   <div class="notification-item-time">{{ n.time }}</div>
-                  <a class="notification-item-link" [routerLink]="n.route" (click)="closeDropdown(); $event.stopPropagation()">{{ n.linkText }}</a>
+                  <a class="notification-item-link" style="cursor: pointer;" (click)="navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
                 </div>
               </li>
             </ul>

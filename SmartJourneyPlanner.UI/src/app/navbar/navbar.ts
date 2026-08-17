@@ -45,41 +45,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        
-        // 🔑 THE FIX: Comprehensive role-matching verification hierarchy 
-        this.userRole = tokenPayload.UserType || 
-                        tokenPayload.userType || 
-                        tokenPayload.role || 
-                        tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                        'Traveler';
-                        
-        console.log("Current session validation check. Decoded UserType value:", this.userRole);
-      }
-    } catch (e) {
-      console.error("Failed to extract active claim structures:", e);
-      this.userRole = 'Traveler';
-    }
-
     // Subscriptions
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {
         this.userName = name || 'User';
+        this.refreshUserSession();
       },
       error: (err) => console.error('Navbar subscription error:', err)
     });
 
-    const savedPic = localStorage.getItem('profilePic');
-    if (savedPic) {
-      this.profilePic = savedPic;
-    }
-
-    const savedName = localStorage.getItem('userName');
-    this.userName = savedName ? savedName : 'User';
-    this.loadNotifications();
+    this.refreshUserSession();
 
     // Subscribe to real-time notifications via SignalR
     this.notificationSub = this.signalrService.notificationReceived.subscribe({
@@ -209,6 +184,39 @@ export class NavbarComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.error('Failed to mark notification as read', err)
     });
+  }
+
+  navigateToRoute(route: string) {
+    this.closeDropdown();
+    this.router.navigateByUrl(route);
+  }
+
+  refreshUserSession() {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        this.userRole = tokenPayload.UserType || 
+                        tokenPayload.userType || 
+                        tokenPayload.role || 
+                        tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                        'Traveler';
+        console.log("Navbar session updated. Decoded UserType value:", this.userRole);
+      } else {
+        this.userRole = 'Traveler';
+      }
+    } catch (e) {
+      console.error("Failed to parse token payload in navbar:", e);
+      this.userRole = 'Traveler';
+    }
+
+    const savedPic = localStorage.getItem('profilePic');
+    this.profilePic = savedPic ? savedPic : '/profilePic.jpg';
+
+    // Clear and reload notifications for the active user session
+    this.notifications = [];
+    this.unreadCount = 0;
+    this.loadNotifications();
   }
 
   toggleDropdown(menu?: string) {

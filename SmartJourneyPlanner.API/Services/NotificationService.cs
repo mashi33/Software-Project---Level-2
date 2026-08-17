@@ -10,11 +10,13 @@ namespace SmartJourneyPlanner.API.Services
     {
         private readonly IMongoCollection<Notification> _notificationsCollection;
         private readonly IMongoCollection<NotificationSettings> _settingsCollection;
+        private readonly IMongoCollection<User> _usersCollection;
 
         public NotificationService(IMongoDatabase database)
         {
             _notificationsCollection = database.GetCollection<Notification>("Notifications");
             _settingsCollection = database.GetCollection<NotificationSettings>("NotificationSettings");
+            _usersCollection = database.GetCollection<User>("Users");
         }
 
         public async Task<List<Notification>> GetNotificationsByUserIdAsync(string userId, string userType)
@@ -28,6 +30,15 @@ namespace SmartJourneyPlanner.API.Services
 
         public async Task CreateNotificationAsync(Notification newNotification)
         {
+            if (!string.IsNullOrEmpty(newNotification.UserId) && newNotification.UserId.Contains("@"))
+            {
+                var user = await _usersCollection.Find(u => u.Email == newNotification.UserId).FirstOrDefaultAsync();
+                if (user != null && !string.IsNullOrEmpty(user.Id))
+                {
+                    newNotification.UserId = user.Id;
+                }
+            }
+
             newNotification.CreatedAt = DateTime.UtcNow;
             await _notificationsCollection.InsertOneAsync(newNotification);
         }
