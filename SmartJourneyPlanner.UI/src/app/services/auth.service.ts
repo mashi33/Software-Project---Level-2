@@ -81,7 +81,17 @@ export class AuthService {
 
   // Method to retrieve the user identifier from localStorage, which can be used for session management and API calls
   getUserId(): string | null {
-    return localStorage.getItem('userId');
+    const userId = localStorage.getItem('userId');
+    if (userId) return userId;
+
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const decoded: any = jwtDecode(token);
+      return decoded.userId || decoded.Id || decoded.id || null;
+    } catch {
+      return null;
+    }
   }
 
   // Method to retrieve the user's display name from localStorage, which can be used for personalization across the app
