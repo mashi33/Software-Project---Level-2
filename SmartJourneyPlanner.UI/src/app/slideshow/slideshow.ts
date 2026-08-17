@@ -1,13 +1,15 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import {Component,OnInit,AfterViewInit,OnDestroy,ElementRef,ViewChild,Input,Output,EventEmitter,ChangeDetectorRef,inject} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MemoryService } from '../services/memory'; 
-import { TripService } from '../services/trip.service'; 
-import { TripMemory } from '../models/memory.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import Swal from 'sweetalert2';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ActivatedRoute, Router } from '@angular/router';
-import Swal from 'sweetalert2';
+
+import { MemoryService } from '../services/memory';
+import { TripService } from '../services/trip.service';
+import { MapAnimationService } from '../services/map-animation.service';
+import { TripMemory } from '../models/memory.model';
 
 @Component({
   selector: 'app-slideshow',
@@ -23,20 +25,20 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() showCloseButton: boolean = true;
   @Output() close = new EventEmitter<void>();
 
-  tripId: string = '';               
-  tripDurationDays: number = 0;      
+  tripId: string = '';
+  tripDurationDays: number = 0;
   tripDetails: any = null;
 
-  isLightMode: boolean = true; 
+  isLightMode: boolean = true;
   isFullscreen: boolean = false;
   isPlaying: boolean = false;
-  isDownloading: boolean = false; 
+  isDownloading: boolean = false;
   isAlbumDownloading: boolean = false;
-  activeIndex: number = 0; 
+  activeIndex: number = 0;
   playbackInterval: any;
 
   private map!: L.Map;
-  private markersClusterGroup = (L as any).markerClusterGroup({
+  private markersClusterGroup: any = (L as any).markerClusterGroup({
     iconCreateFunction: (cluster: any) => {
       const count = cluster.getChildCount();
       return L.divIcon({
@@ -51,46 +53,23 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   private lightTileLayer!: L.TileLayer;
   private darkTileLayer!: L.TileLayer;
   private vehicleMarker!: L.Marker;
-  private animationFrameId: number | null = null;
-  private currentOpenCluster: any = null;
 
   // Data Binding Variables
   allMemories: TripMemory[] = [];
-  filteredMemories: any[] = []; 
-  selectedTripName: string = ''; 
+  filteredMemories: any[] = [];
+  selectedTripName: string = '';
 
   // Member Tracking Variables
   tripMembers: any[] = [];
   memberCount: number = 0;
 
-  constructor(
-    private readonly memoryService: MemoryService,
-    private readonly tripService: TripService, 
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly cdr: ChangeDetectorRef // For UI Refresh 
-  ) {}
-
-  public onClose(): void {
-    this.showCloseButton = false; 
-    this.close.emit();
-
-    this.renderImageMarkers();
-
-    if (this.filteredMemories.length > 0) {
-      const bounds = this.filteredMemories
-        .filter(m => m.latitude && m.longitude)
-        .map(m => L.latLng(m.latitude, m.longitude));
-        
-      if (bounds.length > 0) {
-        this.map.fitBounds(L.latLngBounds(bounds), { padding: [50, 50], maxZoom: 14 });
-      }
-    }
-  }
-
-  public onReopenSlideshow(): void {
-    this.showCloseButton = true; 
-  }
+  // Angular Services Injection
+  private readonly memoryService = inject(MemoryService);
+  private readonly tripService = inject(TripService);
+  private readonly mapAnimationService = inject(MapAnimationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     const tripParam = this.route.snapshot.paramMap.get('tripName');
@@ -119,13 +98,11 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     document.addEventListener('keydown', this.handleKeyboard.bind(this));
   }
 
+  ngAfterViewInit(): void {}
+
   ngOnDestroy(): void {
     if (this.playbackInterval) {
       clearInterval(this.playbackInterval);
-    }
-
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
     }
 
     document.removeEventListener('fullscreenchange', this.onFullscreenChange.bind(this));
@@ -137,7 +114,26 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit(): void {}
+  public onClose(): void {
+    this.showCloseButton = false;
+    this.close.emit();
+
+    this.renderImageMarkers();
+
+    if (this.filteredMemories.length > 0) {
+      const bounds = this.filteredMemories
+        .filter((m) => m.latitude && m.longitude)
+        .map((m) => L.latLng(m.latitude, m.longitude));
+
+      if (bounds.length > 0) {
+        this.map.fitBounds(L.latLngBounds(bounds), { padding: [50, 50], maxZoom: 14 });
+      }
+    }
+  }
+
+  public onReopenSlideshow(): void {
+    this.showCloseButton = true;
+  }
 
   goBackToSummary(): void {
     let targetId = this.tripId;
@@ -158,75 +154,70 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildTripMembers(): void {
-  if (!this.tripDetails) return;
+    if (!this.tripDetails) return;
 
-  const details = this.tripDetails.data || this.tripDetails;
-  const rawMembers: any[] = details.members || details.Members || [];
+    const details = this.tripDetails.data || this.tripDetails;
+    const rawMembers: any[] = details.members || details.Members || [];
 
-  this.tripMembers = [];
-  const seenEmails = new Set<string>();
+    this.tripMembers = [];
+    const seenEmails = new Set<string>();
+    const uploaderSet = new Set<string>();
 
-  const uploaderSet = new Set<string>();
-  
-  this.filteredMemories.forEach(m => {
-    if (m.userId) uploaderSet.add(m.userId.toLowerCase().trim());
-    if (m.fullName) uploaderSet.add(m.fullName.toLowerCase().trim());
-    if (m.email) uploaderSet.add(m.email.toLowerCase().trim());
-    if (m.createdBy) uploaderSet.add(m.createdBy.toLowerCase().trim());
-  });
-
-  console.log('EXTRACTED UPLOADER SET', uploaderSet);
-
-  if (Array.isArray(rawMembers)) {
-    rawMembers.forEach((m: any) => {
-      const email = (m.email || '').toLowerCase().trim();
-      const displayName = m.name || m.Name || m.email || 'Member';
-      const role = m.role || m.Role || 'Member';
-      const memberId = (m.id || m.userId || '').toLowerCase().trim();
-
-      if (email && !seenEmails.has(email)) {
-        seenEmails.add(email);
-
-        const hasUploaded = 
-          uploaderSet.has(email) || 
-          uploaderSet.has(displayName.toLowerCase().trim()) ||
-          (memberId !== '' && uploaderSet.has(memberId));
-        
-        this.tripMembers.push({
-          name: displayName, 
-          email: m.email || '',
-          role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
-          hasMemory: hasUploaded 
-        });
-      }
+    this.filteredMemories.forEach((m) => {
+      if (m.userId) uploaderSet.add(m.userId.toLowerCase().trim());
+      if (m.fullName) uploaderSet.add(m.fullName.toLowerCase().trim());
+      if (m.email) uploaderSet.add(m.email.toLowerCase().trim());
+      if (m.createdBy) uploaderSet.add(m.createdBy.toLowerCase().trim());
     });
-  }
 
-  this.memberCount = this.tripMembers.length;
-  if (this.cdr) this.cdr.detectChanges();
-}
+    if (Array.isArray(rawMembers)) {
+      rawMembers.forEach((m: any) => {
+        const email = (m.email || '').toLowerCase().trim();
+        const displayName = m.name || m.Name || m.email || 'Member';
+        const role = m.role || m.Role || 'Member';
+        const memberId = (m.id || m.userId || '').toLowerCase().trim();
+
+        if (email && !seenEmails.has(email)) {
+          seenEmails.add(email);
+
+          const hasUploaded =
+            uploaderSet.has(email) ||
+            uploaderSet.has(displayName.toLowerCase().trim()) ||
+            (memberId !== '' && uploaderSet.has(memberId));
+
+          this.tripMembers.push({
+            name: displayName,
+            email: m.email || '',
+            role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
+            hasMemory: hasUploaded
+          });
+        }
+      });
+    }
+
+    this.memberCount = this.tripMembers.length;
+    this.cdr.detectChanges();
+  }
 
   private loadTripMetadata(): void {
     if (!this.tripId) return;
     this.tripService.getTripById(this.tripId).subscribe({
       next: (trip: any) => {
         this.tripDetails = trip;
-
         const details = trip.data || trip;
 
-      if (details.duration || details.tripDurationDays) {
-        this.tripDurationDays = details.duration || details.tripDurationDays;
-      } 
-      else if (details.startDate && details.endDate) {
-        const start = new Date(details.startDate).getTime();
-        const end = new Date(details.endDate).getTime();
-        const diffTime = Math.abs(end - start);
-        this.tripDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-      }
+        if (details.duration || details.tripDurationDays) {
+          this.tripDurationDays = details.duration || details.tripDurationDays;
+        } else if (details.startDate && details.endDate) {
+          const start = new Date(details.startDate).getTime();
+          const end = new Date(details.endDate).getTime();
+          const diffTime = Math.abs(end - start);
+          this.tripDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
 
         this.buildTripMembers();
       },
-      error: err => console.error('Error fetching trip details:', err)
+      error: (err) => console.error('Error fetching trip details:', err)
     });
   }
 
@@ -235,31 +226,30 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       this.memoryService.getTripMemories(this.tripId).subscribe({
         next: (data: TripMemory[]) => {
           this.allMemories = data;
-          
-          // Filter to only show public and trip members memories
+
           this.filteredMemories = this.allMemories
-            .map(m => ({
+            .map((m) => ({
               ...m,
               visibility: m.visibility ?? 'private'
             }))
-            .filter(m => m.visibility === 'public' || m.visibility === 'tripMembers');
+            .filter((m) => m.visibility === 'public' || m.visibility === 'tripMembers');
 
-          const sortedDefault = this.filteredMemories.sort((a, b) => {
+          const sortedDefault = [...this.filteredMemories].sort((a, b) => {
             const dateA = new Date(a.createdAt || a.startDate || '').getTime();
             const dateB = new Date(b.createdAt || b.startDate || '').getTime();
             return dateA - dateB;
           });
 
           const savedOrderIds = localStorage.getItem(`trip_order_${this.tripId || this.selectedTripName}`);
-          
+
           if (savedOrderIds) {
             const idArray: string[] = JSON.parse(savedOrderIds);
             this.filteredMemories = idArray
-              .map(id => sortedDefault.find(m => m.id === id || (m as any)._id === id))
-              .filter(m => m !== undefined) as any[];
+              .map((id) => sortedDefault.find((m) => m.id === id || (m as any)._id === id))
+              .filter((m) => m !== undefined) as any[];
 
             const missingMemories = sortedDefault.filter(
-              orig => !this.filteredMemories.some(m => m.id === orig.id || (m as any)._id === (orig as any)._id)
+              (orig) => !this.filteredMemories.some((m) => m.id === orig.id || (m as any)._id === (orig as any)._id)
             );
             this.filteredMemories = [...this.filteredMemories, ...missingMemories];
           } else {
@@ -276,10 +266,14 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
               this.loadTripMetadata();
             }
 
-            setTimeout(() => { this.initMap(); }, 200);
+            setTimeout(() => {
+              this.initMap();
+            }, 200);
           }
         },
-        error: (err: any) => { console.error('Failed to load memories:', err); }
+        error: (err: any) => {
+          console.error('Failed to load memories:', err);
+        }
       });
     } else {
       console.error('No tripId available to load memories');
@@ -303,7 +297,6 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       zoom: 10,
       zoomControl: false,
       attributionControl: false,
-      // Enable all touch and mouse interactions for full map control
       dragging: true,
       touchZoom: true,
       doubleClickZoom: true,
@@ -314,7 +307,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
     this.darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png');
-    
+
     if (this.isLightMode) {
       this.lightTileLayer.addTo(this.map);
     } else {
@@ -322,8 +315,8 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const latLngList = this.filteredMemories
-      .filter(m => m.latitude && m.longitude)
-      .map(m => L.latLng(m.latitude, m.longitude));
+      .filter((m) => m.latitude && m.longitude)
+      .map((m) => L.latLng(m.latitude, m.longitude));
 
     this.pathLine = L.polyline(latLngList, { color: '#8b5cf6', weight: 4, dashArray: '8, 12' }).addTo(this.map);
 
@@ -335,7 +328,14 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       iconSize: [30, 30],
       iconAnchor: [15, 15]
     });
-    this.vehicleMarker = L.marker([activeCoords.latitude, activeCoords.longitude], { icon: vehicleIcon, zIndexOffset: 1000 }).addTo(this.map);
+    this.vehicleMarker = L.marker([activeCoords.latitude, activeCoords.longitude], {
+      icon: vehicleIcon,
+      zIndexOffset: 1000
+    }).addTo(this.map);
+
+    this.map.on('moveend', () => {
+      this.mapAnimationService.resetOpenCluster();
+    });
   }
 
   private renderImageMarkers(): void {
@@ -344,7 +344,6 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.filteredMemories.forEach((memory, idx) => {
       if (memory.latitude && memory.longitude) {
-        
         const pinColor = this.getPinColor(idx);
         const locationName = memory.title ? memory.title.split(' ')[0] : 'Stop';
 
@@ -363,11 +362,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
           iconAnchor: [30, 75]
         });
 
-        const marker = L.marker([memory.latitude, memory.longitude], { icon: customPinIcon })
-          .on('click', () => {
-            this.setActiveIndex(idx);
-            this.onReopenSlideshow(); 
-          });
+        const marker = L.marker([memory.latitude, memory.longitude], { icon: customPinIcon }).on('click', () => {
+          this.setActiveIndex(idx);
+          this.onReopenSlideshow();
+        });
 
         this.mapMarkers.push(marker);
         this.markersClusterGroup.addLayer(marker);
@@ -375,34 +373,9 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.markersClusterGroup.addTo(this.map);
-    
-    // Add cluster click handler for manual opening
+
     this.markersClusterGroup.on('clusterclick', (e: any) => {
-      const cluster = e.layer;
-      this.currentOpenCluster = cluster;
-      cluster.spiderfy();
-    });
-    
-    // Add spiderfy event to track when cluster is opened
-    this.markersClusterGroup.on('spiderfied', (e: any) => {
-      this.currentOpenCluster = e.cluster;
-    });
-    
-    // Add unspiderfy event to track when cluster is closed
-    this.markersClusterGroup.on('unspiderfied', () => {
-      this.currentOpenCluster = null;
-    });
-    
-    // Add map move handler to close cluster when moving away
-    this.map.on('moveend', () => {
-      if (this.currentOpenCluster) {
-        try {
-          this.currentOpenCluster.unspiderfy();
-        } catch (e) {
-          // Cluster might already be closed
-        }
-        this.currentOpenCluster = null;
-      }
+      e.layer.spiderfy();
     });
   }
 
@@ -411,61 +384,77 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     return colors[index % colors.length];
   }
 
-  private autoOpenClusterAtLocation(lat: number, lng: number): void {
-    if (!this.map || !this.markersClusterGroup) return;
-    
-    console.log('Auto-opening cluster at:', lat, lng, 'for index:', this.activeIndex);
-    
-    // Find the marker for the current memory
-    const targetMarker = this.mapMarkers.find((marker, idx) => 
-      idx === this.activeIndex
-    );
-    
-    if (!targetMarker) {
-      console.log('No target marker found');
-      return;
+  private async executeSequentialAnimation(
+    oldCoords: L.LatLngLiteral,
+    newCoords: L.LatLngLiteral
+  ): Promise<void> {
+    if (this.slideshowScreenRef && !this.isFullscreen) {
+      this.slideshowScreenRef.nativeElement.classList.add('hide-during-move');
     }
-    
-    // Use setTimeout to ensure map has finished updating after vehicle animation
-    setTimeout(() => {
-      try {
-        // Get all layers in the cluster group
-        this.markersClusterGroup.eachLayer((layer: any) => {
-          // Check if this layer is a cluster
-          if (layer.getChildCount && layer.getChildCount() > 1) {
-            // Check if this cluster contains our target marker
-            const layers = layer.getAllChildMarkers();
-            const containsMarker = layers.some((m: any) => m === targetMarker);
-            
-            if (containsMarker) {
-              console.log('Found cluster containing target marker, spiderfying...');
-              this.currentOpenCluster = layer;
-              layer.spiderfy();
-            }
-          }
-        });
-      } catch (e) {
-        console.error('Error spiderfying cluster:', e);
-      }
-    }, 100); // Very short delay after animation completes
+
+    await this.mapAnimationService.animateVehicleMovement(
+      this.vehicleMarker,
+      this.map,
+      oldCoords,
+      newCoords,
+      this.isFullscreen
+    );
+
+    if (this.slideshowScreenRef) {
+      this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
+    }
+
+    const targetMarker = this.mapMarkers[this.activeIndex];
+    await this.mapAnimationService.triggerClusterSpiderify(this.markersClusterGroup, targetMarker);
+
+    if (this.slideshowScreenRef) {
+      await this.mapAnimationService.animateSlideshowBoxShow(this.slideshowScreenRef.nativeElement);
+    }
   }
 
-  downloadCurrentVideo(): void {
-    const currentStop = this.filteredMemories[this.activeIndex];
-    if (!currentStop || !currentStop.imageUrl) return;
+  setActiveIndex(index: number): void {
+    if (this.activeIndex === index || this.filteredMemories.length === 0) return;
+    const oldCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
+    this.activeIndex = index;
+    const newCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
 
-    this.isDownloading = true;
-    setTimeout(() => {
-      window.open(currentStop.imageUrl, '_blank');
-      this.isDownloading = false;
-      Swal.fire({
-        icon: 'success',
-        title: 'Download Started',
-        text: 'Your image/video is opening in a new window.',
-        timer: 2000,
-        showConfirmButton: false
-      });
-    }, 1000);
+    this.executeSequentialAnimation(oldCoords, newCoords);
+  }
+
+  prevSlide(): void {
+    if (this.filteredMemories.length === 0) return;
+    const oldCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
+    this.activeIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
+    const newCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
+
+    this.executeSequentialAnimation(oldCoords, newCoords);
+  }
+
+  nextSlide(): void {
+    if (this.filteredMemories.length === 0) return;
+    const oldCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
+    this.activeIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
+    const newCoords = {
+      lat: this.filteredMemories[this.activeIndex].latitude,
+      lng: this.filteredMemories[this.activeIndex].longitude
+    };
+
+    this.executeSequentialAnimation(oldCoords, newCoords);
   }
 
   public async downloadAlbumAsPhotos(): Promise<void> {
@@ -484,27 +473,25 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       for (let i = 0; i < this.filteredMemories.length; i++) {
         const memory = this.filteredMemories[i];
-        
+
         if (memory.imageUrl) {
           const response = await fetch(memory.imageUrl);
           const blob = await response.blob();
-
           const downloadUrl = window.URL.createObjectURL(blob);
 
           const anchor = document.createElement('a');
           anchor.href = downloadUrl;
-          
+
           const fileExtension = blob.type.split('/')[1] || 'jpg';
           anchor.download = `${this.selectedTripName.replace(/\s+/g, '_')}_Photo_${i + 1}.${fileExtension}`;
 
           document.body.appendChild(anchor);
           anchor.click();
 
-          // memory Cleanup
           document.body.removeChild(anchor);
           window.URL.revokeObjectURL(downloadUrl);
 
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
 
@@ -514,7 +501,6 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         text: 'All available photos have been downloaded to your machine.',
         confirmButtonColor: '#8b5cf6'
       });
-
     } catch (err) {
       console.error('There is a problem while downloading images:', err);
       Swal.fire({
@@ -528,54 +514,12 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private animateVehicle(fromCoords: L.LatLngLiteral, toCoords: L.LatLngLiteral, onComplete?: () => void, duration: number = 1800): void {
-    const startTime = performance.now();
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
-
-    if (this.slideshowScreenRef && !this.isFullscreen) {
-      this.slideshowScreenRef.nativeElement.classList.add('hide-during-move');
-    }
-
-    const step = (now: number) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      
-      const currentLat = fromCoords.lat + (toCoords.lat - fromCoords.lat) * progress;
-      const currentLng = fromCoords.lng + (toCoords.lng - fromCoords.lng) * progress;
-      
-      const newPos = L.latLng(currentLat, currentLng);
-      if (this.vehicleMarker) {
-        this.vehicleMarker.setLatLng(newPos);
-      }
-
-      if (!this.isFullscreen && this.map) {
-        this.map.setView(newPos, this.map.getZoom(), { animate: false });
-      }
-
-      if (progress < 1) {
-        this.animationFrameId = requestAnimationFrame(step);
-      } else {
-        this.animationFrameId = null;
-        if (this.slideshowScreenRef) {
-          this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
-        }
-        // Call the completion callback when animation finishes
-        if (onComplete) {
-          onComplete();
-        }
-      }
-    };
-
-    this.animationFrameId = requestAnimationFrame(step);
-  }
-
   toggleTheme(): void {
     this.isLightMode = !this.isLightMode;
     if (this.map) {
       if (this.isLightMode) {
         this.map.removeLayer(this.darkTileLayer);
-        this.lightTileLayer.addTo(this.map); 
+        this.lightTileLayer.addTo(this.map);
       } else {
         this.map.removeLayer(this.lightTileLayer);
         this.darkTileLayer.addTo(this.map);
@@ -584,16 +528,18 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleFullscreen(): void {
-     // if Slideshow is closed, reopen it before go to Fullscreen 
     if (!this.showCloseButton) {
       this.onReopenSlideshow();
     }
 
     const element = this.containerRef.nativeElement;
     if (!document.fullscreenElement) {
-      element.requestFullscreen().then(() => {
-        this.isFullscreen = true;
-      }).catch((err: any) => console.error('Error entering fullscreen:', err));
+      element
+        .requestFullscreen()
+        .then(() => {
+          this.isFullscreen = true;
+        })
+        .catch((err: any) => console.error('Error entering fullscreen:', err));
     } else {
       document.exitFullscreen();
     }
@@ -633,64 +579,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  setActiveIndex(index: number): void {
-    if (this.activeIndex === index || this.filteredMemories.length === 0) return;
-    const oldCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    this.activeIndex = index;
-    const newCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    
-    // Animate vehicle and auto-open cluster when animation completes
-    this.animateVehicle(oldCoords, newCoords, () => {
-      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
-    });
-  }
-
-  prevSlide(): void {
-    if (this.filteredMemories.length === 0) return;
-    const oldCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    this.activeIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
-    const newCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    
-    // Animate vehicle and auto-open cluster when animation completes
-    this.animateVehicle(oldCoords, newCoords, () => {
-      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
-    });
-  }
-
-  nextSlide(): void {
-    if (this.filteredMemories.length === 0) return;
-    const oldCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    this.activeIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
-    const newCoords = { 
-      lat: this.filteredMemories[this.activeIndex].latitude, 
-      lng: this.filteredMemories[this.activeIndex].longitude 
-    };
-    
-    // Animate vehicle and auto-open cluster when animation completes
-    this.animateVehicle(oldCoords, newCoords, () => {
-      this.autoOpenClusterAtLocation(newCoords.lat, newCoords.lng);
-    });
-  }
-
   togglePlay(): void {
     this.isPlaying = !this.isPlaying;
     if (this.isPlaying) {
-      this.playbackInterval = setInterval(() => this.nextSlide(), 5000); 
+      this.playbackInterval = setInterval(() => this.nextSlide(), 5000);
     } else {
       clearInterval(this.playbackInterval);
     }
@@ -707,11 +599,11 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       this.activeIndex++;
     }
 
-    const orderIds = this.filteredMemories.map(m => m.id || m._id);
+    const orderIds = this.filteredMemories.map((m) => m.id || m._id);
     localStorage.setItem(`trip_order_${this.tripId || this.selectedTripName}`, JSON.stringify(orderIds));
 
     this.refreshMapPath();
-    this.renderImageMarkers(); 
+    this.renderImageMarkers();
   }
 
   private refreshMapPath(): void {
@@ -722,13 +614,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const latLngList = this.filteredMemories
-      .filter(m => m.latitude && m.longitude)
-      .map(m => L.latLng(m.latitude, m.longitude));
+      .filter((m) => m.latitude && m.longitude)
+      .map((m) => L.latLng(m.latitude, m.longitude));
 
-    this.pathLine = L.polyline(latLngList, { 
-      color: '#8b5cf6', 
-      weight: 4, 
-      dashArray: '8, 12' 
+    this.pathLine = L.polyline(latLngList, {
+      color: '#8b5cf6',
+      weight: 4,
+      dashArray: '8, 12'
     }).addTo(this.map);
   }
 }
