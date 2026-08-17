@@ -1,0 +1,137 @@
+<aside class="sidebar" [class.sidebar-open]="isSidebarOpen" [class.sidebar-collapsed]="isCollapsed">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <div class="sidebar-brand" *ngIf="!isCollapsed">
+      <div class="brand-logo">
+        <i class="bi bi-compass"></i>
+      </div>
+      <span class="brand-text">SmartJourney</span>
+    </div>
+    <div class="sidebar-toggle" *ngIf="!isCollapsed">
+      <button class="btn-toggle-sidebar" (click)="toggleSidebar()" title="Toggle Sidebar">
+        <i class="bi" [class.bi-list]="!isIconOpen" [class.bi-x-lg]="isIconOpen"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Collapse Toggle (visible when sidebar is open) -->
+  <div class="collapse-toggle" *ngIf="isSidebarOpen && !isCollapsed">
+    <button class="btn-collapse" (click)="toggleCollapse()" title="Collapse Sidebar">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+  </div>
+
+  <!-- Expand Toggle (visible when sidebar is collapsed) -->
+  <div class="expand-toggle" *ngIf="isCollapsed">
+    <button class="btn-expand" (click)="toggleCollapse()" title="Expand Sidebar">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="sidebar-search" *ngIf="isSidebarOpen && !isCollapsed">
+    <div class="search-wrapper">
+      <i class="bi bi-search search-icon"></i>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search menu..."
+        [value]="searchQuery"
+        (input)="onSearch($event)"
+      />
+      <button
+        class="btn-clear-search"
+        *ngIf="searchQuery"
+        (click)="clearSearch()"
+        title="Clear search"
+      >
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar-nav" *ngIf="isSidebarOpen">
+    <div class="nav-scroll">
+      <!-- Grouped by category -->
+      <div *ngFor="let category of getCategories()" class="nav-category">
+        <div class="category-header" *ngIf="!isCollapsed">
+          <span class="category-label">{{ category }}</span>
+        </div>
+
+        <ul class="nav-list">
+          <li
+            *ngFor="let item of getCategoryItems(category)"
+            class="nav-item"
+            [class.active]="isActive(item.route)"
+          >
+            <a
+              class="nav-link"
+              (click)="navigateTo(item.route)"
+              [attr.title]="isCollapsed ? item.label : ''"
+            >
+              <span class="nav-icon">
+                <i class="bi" [class]="item.icon"></i>
+              </span>
+              <span class="nav-text" *ngIf="!isCollapsed">{{ item.label }}</span>
+              <span class="nav-indicator" *ngIf="isActive(item.route) && !isCollapsed"></span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- No results message -->
+      <div class="no-results" *ngIf="filteredMenuItems.length === 0 && searchQuery">
+        <i class="bi bi-search"></i>
+        <p>No menu items found</p>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer" *ngIf="isSidebarOpen && !isCollapsed">
+    <div class="user-profile">
+      <div class="user-avatar">
+        <img [src]="profilePic" alt="Profile" class="avatar-img" />
+      </div>
+      <div class="user-info">
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-role">{{ userRole }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collapsed User Avatar -->
+  <div class="collapsed-user" *ngIf="isCollapsed">
+    <div class="collapsed-avatar">
+      <img [src]="profilePic" alt="Profile" class="avatar-img" />
+    </div>
+  </div>
+</aside>
+
+<!-- Desktop Toggle Button (visible when sidebar is closed on desktop) -->
+<button
+  class="desktop-sidebar-toggle"
+  *ngIf="!isSidebarOpen && !isMobile"
+  (click)="toggleSidebar()"
+  title="Open Sidebar"
+>
+  <i class="bi bi-list"></i>
+</button>
+
+<!-- Mobile Toggle Button (visible when sidebar is closed on mobile) -->
+<button
+  class="mobile-sidebar-toggle"
+  *ngIf="!isSidebarOpen && isMobile"
+  (click)="toggleSidebar()"
+  title="Open Sidebar"
+>
+  <i class="bi bi-list"></i>
+</button>
+
+<!-- Overlay for mobile -->
+<div
+  class="sidebar-overlay"
+  *ngIf="isSidebarOpen && isMobile"
+  (click)="toggleSidebar()"
+></div>

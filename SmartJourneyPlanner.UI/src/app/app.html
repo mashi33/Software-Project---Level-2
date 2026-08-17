@@ -1,7 +1,11 @@
 <app-navbar *ngIf="showNavbarFooter()"></app-navbar>
 
-<main>
-  <router-outlet></router-outlet>
-</main>
+<div class="layout-container">
+  <app-sidebar *ngIf="showNavbarFooter()"></app-sidebar>
+
+  <main class="content-area">
+    <router-outlet></router-outlet>
+  </main>
+</div>
 
 <app-footer *ngIf="showNavbarFooter()"></app-footer>
