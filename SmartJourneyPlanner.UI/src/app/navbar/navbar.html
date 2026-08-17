@@ -21,7 +21,13 @@
         <ng-container *ngIf="userRole === 'Admin'">
           <a class="nav-link" routerLink="/admin-dashboard" routerLinkActive="active">Admin Panel</a>
           <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-          <a class="nav-link" routerLink="/memories-welcome" routerLinkActive="active">Memory</a>
+          <div class="dropdown memory-dropdown" [class.show]="isMemoryDropdownOpen">
+             <a class="dropdown-toggle" (click)="toggleDropdown('memory')">{{ dropdownLabel }}</a>
+             <div class="dropdown-menu" [class.show]="isMemoryDropdownOpen">
+               <a routerLink="/memories" routerLinkActive="active" (click)="selectOption('My Memories')">My Memories</a>
+               <a routerLink="/community" routerLinkActive="active" (click)="selectOption('Community Map')">Community Map</a>
+             </div>
+          </div>
         </ng-container>
 
         <!-- Transport Provider Navigation -->
@@ -38,7 +44,13 @@
           <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
           <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
           <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-          <a class="nav-link" routerLink="/memories-welcome" routerLinkActive="active">Memory</a>
+          <div class="dropdown memory-dropdown" [class.show]="isMemoryDropdownOpen">
+             <a class="dropdown-toggle" (click)="toggleDropdown('memory')">{{ dropdownLabel }}</a>
+             <div class="dropdown-menu" [class.show]="isMemoryDropdownOpen">
+               <a routerLink="/memories" routerLinkActive="active" (click)="selectOption('My Memories')">My Memories</a>
+               <a routerLink="/community" routerLinkActive="active" (click)="selectOption('Community Map')">Community Map</a>
+             </div>
+          </div>
           <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
         </ng-container>
       </div>
@@ -46,21 +58,50 @@
       <div class="user-actions">
 
         <!-- Notification dropdown -->
-        <div class="dropdown notification-dropdown">
-          <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" data-bs-toggle="dropdown"
-            aria-expanded="false">
+        <div class="dropdown notification-dropdown" [class.show]="isNotificationDropdownOpen">
+          <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown" (click)="toggleDropdown('notification')" style="cursor: pointer;">
             <i class="bi bi-bell"></i>
-            <span class="notification-badge"></span>
+            <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown">
-            <li class="dropdown-header">Notifications</li>
-            <li><a class="dropdown-item" routerLink="#">New weather alert for Kandy</a></li>
-            <li><a class="dropdown-item" routerLink="#">Memory saved successfully</a></li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item text-center text-primary" routerLink="#">View All</a></li>
-          </ul>
+          
+          <div class="dropdown-menu notification-menu dropdown-menu-end shadow" [class.show]="isNotificationDropdownOpen">
+            <!-- Header -->
+            <div class="notification-header">
+              <h5>Notifications</h5>
+              <div class="notification-header-actions">
+                <div class="tooltip-container">
+                  <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()"></i>
+                  <span class="custom-tooltip">Mark all as read</span>
+                </div>
+                <div class="tooltip-container tooltip-align-right" routerLink="/settings" (click)="closeDropdown(); $event.stopPropagation()" style="cursor: pointer;">
+                  <i class="bi bi-gear"></i>
+                  <span class="custom-tooltip">Notification Settings</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- List -->
+            <ul class="notification-list">
+              <li *ngIf="notifications.length === 0" class="text-center py-4 text-muted">
+                No notifications yet.
+              </li>
+              <li *ngFor="let n of notifications.slice(0, 8)" class="notification-item" [class.unread]="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
+                <div class="notification-item-icon">
+                  <i class="bi" [ngClass]="n.icon + ' ' + n.iconColorClass"></i>
+                </div>
+                <div class="notification-item-content">
+                  <div class="notification-item-title">{{ n.title }}</div>
+                  <div class="notification-item-time">{{ n.time }}</div>
+                  <a class="notification-item-link" style="cursor: pointer;" (click)="navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
+                </div>
+              </li>
+            </ul>
+            
+            <!-- Footer -->
+            <div class="notification-footer">
+              <a class="notification-footer-link" routerLink="/notifications" (click)="closeDropdown()">See all</a>
+            </div>
+          </div>
         </div>
 
         <!-- Profile dropdown -->

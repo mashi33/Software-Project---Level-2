@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { TransportBookingService } from '../../services/transport-booking.service';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-my-bookings',
@@ -20,6 +21,7 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
 export class MyBookings implements OnInit {
   // role: 'user' means traveler view, 'provider' means vehicle owner view
   @Input() role: 'user' | 'provider' = 'user'; 
+  @Input() targetBookingId: string | null = null;
   
   userBookings: Booking[] = [];      // Trips booked by the traveler
   providerBookings: Booking[] = [];  // Requests received by the vehicle owner
@@ -38,7 +40,8 @@ export class MyBookings implements OnInit {
 
   constructor(
     private transportBookingService: TransportBookingService,
-    private transportVehicleService: TransportVehicleService
+    private transportVehicleService: TransportVehicleService,
+    private authService: AuthService
   ) {}
 
   // Load the bookings as soon as the page opens
@@ -52,29 +55,42 @@ export class MyBookings implements OnInit {
   loadBookings() {
     this.loading = true;
     if (this.role === 'user') {
-      // Load trips for the traveler (using mock user ID 'u1')
-      this.transportBookingService.getUserBookings('u1').subscribe({
+      const travelerId = this.authService.getUserId() || 'u1';
+      this.transportBookingService.getUserBookings(travelerId).subscribe({
         next: (res) => {
           this.userBookings = res;
           this.enrichBookings(this.userBookings);
           this.loading = false;
+          this.scrollToTargetBooking();
         },
         error: () => {
           this.loading = false;
         }
       });
     } else {
-      // Load trip requests for the vehicle owner (using mock provider ID 'p1')
-      this.transportBookingService.getProviderBookings('p1').subscribe({
+      const providerId = this.authService.getUserEmail() || 'p1';
+      this.transportBookingService.getProviderBookings(providerId).subscribe({
         next: (res) => {
           this.providerBookings = res;
           this.enrichBookings(this.providerBookings);
           this.loading = false;
+          this.scrollToTargetBooking();
         },
         error: () => {
           this.loading = false;
         }
       });
+    }
+  }
+
+  scrollToTargetBooking() {
+    if (this.targetBookingId) {
+      setTimeout(() => {
+        const element = document.querySelector(`.booking-highlighted`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 800);
     }
   }
 

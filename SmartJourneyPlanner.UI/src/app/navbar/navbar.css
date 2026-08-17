@@ -71,13 +71,20 @@
 
 .notification-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 4px;
+  right: 4px;
   background-color: #FF5252;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid white;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 10px;
+  border: 1.5px solid #0D47A1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 .profile-trigger {
@@ -153,7 +160,6 @@
   font-weight: 500;
 }
 
-
 .profile-img {
   width: 35px !important;
   height: 35px !important;
@@ -161,4 +167,273 @@
   object-fit: cover;
   border: 2px solid #ffffff;
   display: inline-block;
+}
+
+/* Notification Dropdown Custom Premium Styling */
+.dropdown-menu.notification-menu {
+  width: 380px;
+  max-height: 480px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  display: none;
+  position: absolute;
+  right: 0 !important;
+  left: auto !important;
+  top: 100%;
+  margin-top: 10px;
+  z-index: 1050;
+  background-color: #ffffff;
+}
+
+.dropdown-menu.notification-menu.show {
+  display: block;
+  animation: dropdownFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  background-color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.notification-header h5 {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+.notification-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.notification-header-actions i {
+  font-size: 1.2rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.notification-header-actions i:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 350px;
+  overflow-y: auto;
+  background-color: #ffffff;
+}
+
+/* Custom Scrollbar for Notifications */
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.notification-item {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+  display: flex;
+  gap: 0.85rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background-color: #f8fafc;
+}
+
+.notification-item.unread {
+  background-color: rgba(37, 99, 235, 0.03);
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: #2563eb;
+  border-radius: 50%;
+}
+
+.notification-item-icon {
+  font-size: 1.15rem;
+  color: #475569;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-item-icon .icon-blue {
+  color: #3b82f6;
+}
+
+.notification-item-icon .icon-green {
+  color: #10b981;
+}
+
+.notification-item-icon .icon-orange {
+  color: #f59e0b;
+}
+
+.notification-item-icon .icon-red {
+  color: #ef4444;
+}
+
+.notification-item-content {
+  flex-grow: 1;
+}
+
+.notification-item-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.4;
+  margin-bottom: 0.35rem;
+}
+
+.notification-item-time {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.notification-item-link {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  float: right;
+  padding: 0 !important;
+}
+
+.notification-item-link:hover {
+  color: #1d4ed8 !important;
+  background: transparent !important;
+}
+
+.notification-footer {
+  text-align: center;
+  padding: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+  background-color: #ffffff;
+  position: sticky;
+  bottom: 0;
+}
+
+.notification-footer-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2563eb !important;
+  text-decoration: none !important;
+  display: block;
+}
+
+.notification-footer-link:hover {
+  color: #1d4ed8 !important;
+  background: transparent !important;
+}
+
+/* Premium Custom CSS Tooltips */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-container .custom-tooltip {
+  visibility: hidden;
+  width: max-content;
+  background-color: #1e293b;
+  color: #ffffff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  position: absolute;
+  z-index: 1100;
+  top: 140%;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%) translateY(-5px);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+}
+
+.tooltip-container .custom-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  top: auto;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+}
+
+.tooltip-container:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Right Aligned Tooltip styling to prevent overflow */
+.tooltip-container.tooltip-align-right .custom-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(-5px);
+}
+
+.tooltip-container.tooltip-align-right .custom-tooltip::after {
+  left: auto;
+  right: 8px;
+  margin-left: 0;
+}
+
+.tooltip-container.tooltip-align-right:hover .custom-tooltip {
+  transform: translateY(0);
 }

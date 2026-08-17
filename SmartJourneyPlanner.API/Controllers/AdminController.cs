@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using MongoDB.Bson;
+using Microsoft.AspNetCore.SignalR;
+using SmartJourneyPlanner.Hubs;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -23,14 +25,22 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly IMongoCollection<TripMemory> _memoryCollection;
         private readonly IMongoDatabase _database;
         private readonly UserBlockService _userBlockService;
+        private readonly NotificationService _notificationService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public AdminController(IMongoClient mongoClient, UserBlockService userBlockService)
+        public AdminController(
+            IMongoClient mongoClient, 
+            UserBlockService userBlockService,
+            NotificationService notificationService,
+            IHubContext<ChatHub> hubContext)
         {
             _database = mongoClient.GetDatabase("SmartJourneyDb");
             _userCollection = _database.GetCollection<User>("Users");
             _vehicleCollection = _database.GetCollection<TransportVehicle>("TransportVehicles");
             _memoryCollection = _database.GetCollection<TripMemory>("TripMemories");
             _userBlockService = userBlockService;
+            _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
         private double ParseBudgetLimit(string? raw)
@@ -379,6 +389,8 @@ namespace SmartJourneyPlanner.API.Controllers
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
+            var vehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
+            if (vehicle == null) return NotFound();
 
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.AdminVerificationStatus, newStatus);
@@ -422,6 +434,37 @@ namespace SmartJourneyPlanner.API.Controllers
                         await alertCollection.InsertOneAsync(customerAlert);
                     }
                 }
+            }
+
+
+            // Generate notification for the Transport Provider!
+            try
+            {
+                var title = newStatus == "Approved"
+                    ? $"Your vehicle {vehicle.ModelName} listing has been approved by the administrator and is now active!"
+                    : $"Your vehicle {vehicle.ModelName} listing request was rejected by the administrator. Please update details and re-submit.";
+
+                var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
+                var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
+
+                var notification = new Notification
+                {
+                    UserId = vehicle.ProviderId,
+                    Icon = icon,
+                    IconColorClass = colorClass,
+                    Title = title,
+                    Time = "Just now",
+                    IsRead = false,
+                    LinkText = newStatus == "Approved" ? "Manage Fleet" : "Edit Listing",
+                    Route = "/provider-dashboard"
+                };
+                
+                await _notificationService.CreateNotificationAsync(notification);
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error creating admin status update notification: {ex.Message}");
             }
 
             return Ok(new { message = "Status updated" });

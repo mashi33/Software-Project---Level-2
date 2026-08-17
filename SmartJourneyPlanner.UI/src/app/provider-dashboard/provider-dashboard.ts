@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 import { TransportBookingService } from '../services/transport-booking.service';
 import { AuthService } from '../services/auth.service';
@@ -27,6 +27,7 @@ export class ProviderDashboardComponent implements OnInit {
   pendingCompleteBookings: any[] = [];
   providerId: string | null = null;
   userName: string = '';
+  targetBookingId: string | null = null;
 
   // Filter properties
   vehicleSearchTerm: string = '';
@@ -53,7 +54,8 @@ export class ProviderDashboardComponent implements OnInit {
     private transportVehicleService: TransportVehicleService,
     private bookingService: TransportBookingService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   switchPanel(panel: 'fleet' | 'bookings') {
@@ -76,6 +78,43 @@ export class ProviderDashboardComponent implements OnInit {
     }
     this.userName = this.authService.getUserName() || 'Provider';
     this.loadAll();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['panel'] === 'bookings') {
+        this.activePanel = 'bookings';
+      }
+      if (params['bookingId']) {
+        this.activePanel = 'bookings';
+        this.targetBookingId = params['bookingId'];
+        // Clear filter terms so the requested booking is visible
+        this.bookingSearchTerm = '';
+        this.bookingStatusFilter = '';
+        this.bookingProximityFilter = '';
+        this.showOldBookings = true;
+
+        this.filterBookings();
+
+        // Case B: If bookings are already loaded, scroll and clear query params immediately
+        if (this.bookings && this.bookings.length > 0) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 300);
+        }
+      }
+    });
   }
 
   loadAll() {
@@ -98,13 +137,7 @@ export class ProviderDashboardComponent implements OnInit {
           return adminStatus === 'Pending';
         }).length;
 
-        const approvedFleetOnly = data.filter((vehicle: any) => {
-          // checks the admin's verification status
-          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
-          return adminStatus !== 'Pending';
-        });
-
-        this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
+        this.vehicles = data.map((vehicle: any) => ({
           ...vehicle,
           id: vehicle.id || vehicle._id
         }));
@@ -218,6 +251,27 @@ export class ProviderDashboardComponent implements OnInit {
     });
         // Apply initial filter
         this.filterBookings();
+
+        // Case A: If targetBookingId was set during initialization but bookings were not loaded yet, scroll now!
+        if (this.targetBookingId) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            // Clear query parameter now that target card is rendered
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 400);
+        }
       });
     }
   }

@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './navbar/navbar';
 import { FooterComponent } from './footer/footer';
+import { SidebarComponent } from './sidebar/sidebar';
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent],
+    imports: [CommonModule, RouterOutlet, FormsModule, NavbarComponent, FooterComponent, SidebarComponent],
     templateUrl: './app.html',
     styleUrl: './app.css'
 })
@@ -17,7 +18,6 @@ export class AppComponent {
     // Function to determine whether to show the navbar and footer based on the current route
     showNavbarFooter(): boolean {
         const hiddenRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/admin-dashboard', '/admin-panel'];
-
 
         return !hiddenRoutes.some(route => this.router.url.includes(route));
     }

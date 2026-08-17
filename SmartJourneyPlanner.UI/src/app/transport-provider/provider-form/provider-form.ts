@@ -6,10 +6,11 @@
 import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { VehicleType, VehicleClass, Vehicle } from '../../models/transport.model';
 import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-provider-form',
@@ -72,10 +73,16 @@ export class ProviderForm implements OnInit {
   };
   submitted = false; // Becomes true once the user clicks "Submit"
 
+  isEditMode = false;
+  vehicleId: string | null = null;
+
   constructor(
     private fb: FormBuilder, 
     private eRef: ElementRef,
-    private transportVehicleService: TransportVehicleService
+    private transportVehicleService: TransportVehicleService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -87,6 +94,88 @@ export class ProviderForm implements OnInit {
     this.todayStr = `${y}-${m}-${d}`;
     
     this.initForm();
+
+    this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.vehicleId = params['id'];
+        this.isEditMode = true;
+        this.loadVehicleDetails(this.vehicleId!);
+      }
+    });
+  }
+
+  loadVehicleDetails(id: string) {
+    this.transportVehicleService.getVehicleById(id).subscribe({
+      next: (vehicle: Vehicle | any) => {
+        if (vehicle) {
+          // Populate form fields!
+          this.vehicleForm.patchValue({
+            providerProfile: {
+              name: vehicle.providerProfile?.name || vehicle.ProviderProfile?.Name || '',
+              phone: vehicle.providerProfile?.phone || vehicle.ProviderProfile?.Phone || '',
+              email: vehicle.providerProfile?.email || vehicle.ProviderProfile?.Email || '',
+              location: vehicle.providerProfile?.location || vehicle.ProviderProfile?.Location || ''
+            },
+            type: vehicle.type || vehicle.Type || VehicleType.Budget,
+            vehicleClass: vehicle.vehicleClass || vehicle.VehicleClass || 'Car',
+            modelName: vehicle.modelName || vehicle.ModelName || '',
+            yearOfManufacture: vehicle.yearOfManufacture || vehicle.YearOfManufacture || new Date().getFullYear(),
+            seatCount: vehicle.seatCount || vehicle.SeatCount || 4,
+            isAc: vehicle.isAc !== undefined ? vehicle.isAc : (vehicle.IsAc !== undefined ? vehicle.IsAc : true),
+            standardDailyRate: vehicle.standardDailyRate || vehicle.StandardDailyRate || 2000,
+            freeKMLimit: vehicle.freeKMLimit || vehicle.FreeKMLimit || 100,
+            extraKMRate: vehicle.extraKMRate || vehicle.ExtraKMRate || 50,
+            driverNightOutFee: vehicle.driverNightOutFee || vehicle.DriverNightOutFee || 1000,
+            features: {
+              luggage: vehicle.features?.luggage || vehicle.Features?.Luggage || 2,
+              safety: vehicle.features?.safety !== undefined ? vehicle.features?.safety : (vehicle.Features?.Safety !== undefined ? vehicle.Features?.Safety : false),
+              childSeats: vehicle.features?.childSeats !== undefined ? vehicle.features?.childSeats : (vehicle.Features?.ChildSeats !== undefined ? vehicle.Features?.ChildSeats : false),
+              entertainment: vehicle.features?.entertainment !== undefined ? vehicle.features?.entertainment : (vehicle.Features?.Entertainment !== undefined ? vehicle.Features?.Entertainment : false),
+              tv: vehicle.features?.tv !== undefined ? vehicle.features?.tv : (vehicle.Features?.Tv !== undefined ? vehicle.Features?.Tv : false),
+              wifi: vehicle.features?.wifi !== undefined ? vehicle.features?.wifi : (vehicle.Features?.Wifi !== undefined ? vehicle.Features?.Wifi : false),
+              bluetooth: vehicle.features?.bluetooth !== undefined ? vehicle.features?.bluetooth : (vehicle.Features?.Bluetooth !== undefined ? vehicle.Features?.Bluetooth : false),
+              airbags: vehicle.features?.airbags !== undefined ? vehicle.features?.airbags : (vehicle.Features?.Airbags !== undefined ? vehicle.Features?.Airbags : true),
+              usbCharging: vehicle.features?.usbCharging !== undefined ? vehicle.features?.usbCharging : (vehicle.Features?.UsbCharging !== undefined ? vehicle.Features?.UsbCharging : false)
+            },
+            languages: vehicle.languages || vehicle.Languages || [],
+            transmission: vehicle.transmission || vehicle.Transmission || 'Automatic',
+            fuelType: vehicle.fuelType || vehicle.FuelType || 'Petrol',
+            termsAccepted: true,
+            insuranceExpiry: vehicle.insuranceExpiry ? this.formatDateForInput(vehicle.insuranceExpiry) : (vehicle.InsuranceExpiry ? this.formatDateForInput(vehicle.InsuranceExpiry) : ''),
+            revenueLicenseExpiry: vehicle.revenueLicenseExpiry ? this.formatDateForInput(vehicle.revenueLicenseExpiry) : (vehicle.RevenueLicenseExpiry ? this.formatDateForInput(vehicle.RevenueLicenseExpiry) : '')
+          });
+
+          // Set previews for files
+          this.interiorPreview = vehicle.interiorPhoto || vehicle.InteriorPhoto || null;
+          this.exteriorPreview = vehicle.exteriorPhoto || vehicle.ExteriorPhoto || null;
+          this.nicPreview = vehicle.driverNicUrl || vehicle.DriverNicUrl || null;
+          this.licensePreview = vehicle.driverLicenseUrl || vehicle.DriverNicUrl || null; // fallback or logic
+          if (vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl) {
+            this.licensePreview = vehicle.driverLicenseUrl || vehicle.DriverLicenseUrl;
+          }
+          this.insurancePreview = vehicle.insuranceDocUrl || vehicle.InsuranceDocUrl || null;
+          this.revenuePreview = vehicle.revenueLicenseUrl || vehicle.RevenueLicenseUrl || null;
+          this.registrationCertificatePreview = vehicle.registrationCertificateUrl || vehicle.RegistrationCertificateUrl || null;
+        }
+      },
+      error: (err) => {
+        console.error('Error loading vehicle details:', err);
+        Swal.fire('Error', 'Failed to load vehicle details.', 'error');
+      }
+    });
+  }
+
+  formatDateForInput(dateStr: string): string {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    } catch {
+      return '';
+    }
   }
 
   /**
@@ -417,7 +506,7 @@ export class ProviderForm implements OnInit {
     const rawValue = this.vehicleForm.value;
     const formData: Vehicle = {
       ...rawValue,
-      providerId: 'p1', // Mock Provider ID
+      providerId: this.authService.getUserEmail() || 'p1', 
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,
       driverNicUrl: this.nicPreview as string,
@@ -431,22 +520,43 @@ export class ProviderForm implements OnInit {
     };
 
     this.isSubmitting = true;
-    this.transportVehicleService.createVehicle(formData).subscribe({
-      next: () => {
-        this.isSubmitting = false;
-        Swal.fire({
-          icon: 'success',
-          title: 'Listing Submitted!',
-          text: 'Your vehicle listing is under review. It will be published once verified.',
-          confirmButtonColor: '#38bdf8'
-        });
-        this.resetForm();
-      },
-      error: (err) => {
-        this.isSubmitting = false;
-        Swal.fire('Error', 'Failed to submit listing.', 'error');
-      }
-    });
+
+    if (this.isEditMode && this.vehicleId) {
+      this.transportVehicleService.updateVehicle(this.vehicleId, formData).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          Swal.fire({
+            icon: 'success',
+            title: 'Vehicle Updated!',
+            text: 'Your vehicle details have been updated and sent for Admin verification.',
+            confirmButtonColor: '#38bdf8'
+          }).then(() => {
+            this.router.navigate(['/provider-dashboard']);
+          });
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          Swal.fire('Error', 'Failed to update vehicle details.', 'error');
+        }
+      });
+    } else {
+      this.transportVehicleService.createVehicle(formData).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          Swal.fire({
+            icon: 'success',
+            title: 'Listing Submitted!',
+            text: 'Your vehicle listing is under review. It will be published once verified.',
+            confirmButtonColor: '#38bdf8'
+          });
+          this.resetForm();
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          Swal.fire('Error', 'Failed to submit listing.', 'error');
+        }
+      });
+    }
   }
 
   // Resets all fields and clear image previews
