@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 import { TransportBookingService } from '../../services/transport-booking.service';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 import { AuthService } from '../../services/auth.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
     selector: 'app-my-bookings',
@@ -41,7 +42,9 @@ export class MyBookings implements OnInit {
   constructor(
     private transportBookingService: TransportBookingService,
     private transportVehicleService: TransportVehicleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   // Load the bookings as soon as the page opens
@@ -89,7 +92,18 @@ export class MyBookings implements OnInit {
         const element = document.querySelector(`.booking-highlighted`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('pulse-highlight');
+          setTimeout(() => {
+            element.classList.remove('pulse-highlight');
+          }, 3000);
         }
+        // Clear query parameter to avoid auto-scrolling on refreshes or subsequent navigation
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { bookingId: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
       }, 800);
     }
   }
