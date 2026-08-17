@@ -7,7 +7,7 @@
         </div>
 
         <!-- Segmented Control Switcher -->
-        <div class="tp-switcher-container">
+        <div class="tp-switcher-container" *ngIf="!isProvider">
             <div class="tp-switcher">
                 <div class="tp-switcher-glider" [class.glider-bookings]="activeTab === 'bookings'"></div>
                 <button class="tp-switcher-btn" [class.active]="activeTab === 'search'" (click)="activeTab = 'search'">
@@ -22,6 +22,6 @@
 
     <div class="tp-content-area">
         <app-user-search *ngIf="activeTab === 'search'"></app-user-search>
-        <app-my-bookings *ngIf="activeTab === 'bookings'" [role]="'user'" [targetBookingId]="targetBookingId" (switchTab)="activeTab = $event"></app-my-bookings>
+        <app-my-bookings *ngIf="activeTab === 'bookings' && !isProvider" [role]="'user'" [targetBookingId]="targetBookingId" (switchTab)="activeTab = $event"></app-my-bookings>
     </div>
 </div>
