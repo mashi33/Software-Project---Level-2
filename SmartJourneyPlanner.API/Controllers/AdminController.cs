@@ -383,10 +383,89 @@ namespace SmartJourneyPlanner.API.Controllers
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.AdminVerificationStatus, newStatus);
 
-            await _vehicleCollection.UpdateOneAsync(filter, update);
+            var updateResult = await _vehicleCollection.UpdateOneAsync(filter, update);
+
+            if (updateResult.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Vehicle not found." });
+            }
+
+            // If the vehicle is rejected, check for active bookings and generate an alert
+            if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
+
+                if (vehicle != null)
+                {
+                    // Find any booking associated with this vehicle ID
+                    var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
+                    var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
+                    var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
+
+                    if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
+                    {
+                        // 1. Get the MongoDB collection for CustomerAlerts
+                        var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+                        
+                        // 2. Instantiate the alert object with the user and vehicle details
+                        var customerAlert = new CustomerAlert
+                        {
+                            UserId = activeBooking.UserId,
+                            Title = "Vehicle Service / Booking Notice",
+                            Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
+                            VehicleInfo = vehicle.VehicleClass ?? "Selected Transport",
+                            Timestamp = DateTime.UtcNow,
+                            Dismissed = false
+                        };
+
+                        // 3. Insert the object asynchronously into the database
+                        await alertCollection.InsertOneAsync(customerAlert);
+                    }
+                }
+            }
+
             return Ok(new { message = "Status updated" });
         }
 
+        // --- CUSTOMER ALERT ENDPOINTS ---
+
+        [HttpGet("customer-alerts/{userId}")]
+        public async Task<IActionResult> GetCustomerAlerts(string userId)
+        {
+            var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+            var filter = Builders<CustomerAlert>.Filter.And(
+                Builders<CustomerAlert>.Filter.Eq(a => a.UserId, userId),
+                Builders<CustomerAlert>.Filter.Eq(a => a.Dismissed, false)
+            );
+            var alerts = await alertCollection.Find(filter).ToListAsync();
+            return Ok(alerts);
+        }
+
+        [HttpPatch("customer-alerts/{alertId}/dismiss")]
+        public async Task<IActionResult> DismissCustomerAlert(string alertId)
+        {
+            var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+            var filter = Builders<CustomerAlert>.Filter.Eq(a => a.Id, alertId);
+            var update = Builders<CustomerAlert>.Update.Set(a => a.Dismissed, true);
+
+            var result = await alertCollection.UpdateOneAsync(filter, update);
+            return result.MatchedCount == 0 ? NotFound() : Ok(new { message = "Alert dismissed" });
+        }
+
+    }
+
+    public class CustomerAlert
+    {
+        [MongoDB.Bson.Serialization.Attributes.BsonId]
+        [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+        public string UserId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string VehicleInfo { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public bool Dismissed { get; set; } = false;
     }
 
     public class BlockRequest

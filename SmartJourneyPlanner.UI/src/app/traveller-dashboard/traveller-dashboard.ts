@@ -47,8 +47,13 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
   searchQuery = '';
   weather: any = null;
   daysLeft = 0;
+
+  // Alert notifications variables
+  customerAlerts: any[] = [];
+  showAlerts = false;
   
   private countdownInterval: any;
+  private alertsInterval: any;
 
   constructor(
     private router: Router,
@@ -72,6 +77,12 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
     this.loadDashboardData();
     this.loadMemoriesCount();
 
+    // Load booking/vehicle restriction alerts and poll every 30 seconds
+    this.loadCustomerAlerts();
+    this.alertsInterval = setInterval(() => {
+      this.loadCustomerAlerts();
+    }, 30000);
+
     this.countdownInterval = setInterval(() => {
       if (this.nextTrip) {
         this.calculateCountdown(this.nextTrip.startDate);
@@ -82,6 +93,127 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
+    }
+    if (this.alertsInterval) {
+      clearInterval(this.alertsInterval);
+    }
+  }
+
+  // --- CUSTOMER ALERT SYSTEM FOR VEHICLE REJECTIONS / SERVICE PERIODS ---
+
+  loadCustomerAlerts() {
+    if (!this.userId) return;
+    
+    // Try to load customer alerts from backend API
+    this.dashboardService.getCustomerAlerts(this.userId).subscribe({
+      next: (alerts) => {
+        this.customerAlerts = alerts || [];
+        
+        // Merge with any local storage fallback alerts
+        const localAlerts = this.getLocalAlerts();
+        this.customerAlerts = [...this.customerAlerts, ...localAlerts];
+        
+        // Filter out already dismissed alerts
+        this.customerAlerts = this.customerAlerts.filter(a => !a.dismissed);
+        this.showAlerts = this.customerAlerts.length > 0;
+        
+        if (this.customerAlerts.length > 0) {
+          this.showBookingAlertPopup();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading customer alerts from API, fallback to localStorage:', err);
+        const localAlerts = this.getLocalAlerts();
+        this.customerAlerts = localAlerts.filter(a => !a.dismissed);
+        this.showAlerts = this.customerAlerts.length > 0;
+        
+        if (this.customerAlerts.length > 0) {
+          this.showBookingAlertPopup();
+        }
+      }
+    });
+  }
+
+  getLocalAlerts(): any[] {
+    try {
+      const alertsKey = `customer_alerts_${this.userId}`;
+      return JSON.parse(localStorage.getItem(alertsKey) || '[]');
+    } catch (err) {
+      console.error('Error reading local alerts:', err);
+      return [];
+    }
+  }
+
+  showBookingAlertPopup() {
+    const latestAlert = this.customerAlerts[0];
+    
+    Swal.fire({
+      title: '🚨 Vehicle Service / Booking Notice',
+      width: '580px',
+      padding: '2em',
+      html: `
+        <div style="font-family: inherit; text-align: left; color: #1e293b;">
+          <div style="background: #fef2f2; border-left: 5px solid #ef4444; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+            <strong style="color: #b91c1c; font-size: 15px; display: block; margin-bottom: 4px;">Attention Required</strong>
+            <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">
+              ${latestAlert.message || 'The vehicle you booked is currently in a service period or has been restricted. Please try another vehicle.'}
+            </p>
+          </div>
+          <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 13px; color: #64748b;">
+            <div><strong>Vehicle:</strong> ${latestAlert.vehicleInfo || 'Selected Transport'}</div>
+            <div style="margin-top: 4px;"><strong>Recommendation:</strong> Please navigate to your bookings and select an alternative vehicle.</div>
+          </div>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Find New Vehicle',
+      confirmButtonColor: '#ef4444',
+      showCancelButton: true,
+      cancelButtonText: 'Dismiss',
+      cancelButtonColor: '#64748b'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.router.navigate(['/transport']);
+      }
+      this.dismissAlert(latestAlert._id || latestAlert.id);
+    });
+  }
+
+  dismissAlert(alertId: string) {
+    if (!alertId) return;
+
+    if (alertId.startsWith('local_')) {
+      this.dismissLocalAlert(alertId);
+    } else {
+      this.dashboardService.dismissAlert(alertId).subscribe({
+        next: () => {
+          this.customerAlerts = this.customerAlerts.filter(a => (a._id || a.id) !== alertId);
+          this.showAlerts = this.customerAlerts.length > 0;
+        },
+        error: (err) => {
+          console.error('Error dismissing alert via API:', err);
+          this.dismissLocalAlert(alertId);
+        }
+      });
+    }
+  }
+
+  dismissLocalAlert(alertId: string) {
+    try {
+      const alertsKey = `customer_alerts_${this.userId}`;
+      const alerts = JSON.parse(localStorage.getItem(alertsKey) || '[]');
+      const updatedAlerts = alerts.map((a: any) => {
+        if ((a._id || a.id) === alertId) {
+          return { ...a, dismissed: true };
+        }
+        return a;
+      });
+      localStorage.setItem(alertsKey, JSON.stringify(updatedAlerts));
+      
+      this.customerAlerts = this.customerAlerts.filter(a => (a._id || a.id) !== alertId);
+      this.showAlerts = this.customerAlerts.length > 0;
+    } catch (err) {
+      console.error('Error dismissing local alert:', err);
     }
   }
 
