@@ -38,14 +38,21 @@ type PopularSortMode = 'score' | 'date' | 'likes' | 'location';
 export class CommunityMapComponent implements OnInit, AfterViewInit {
   private map!: leaflet.Map;
   private markersLayer = (leaflet as any).markerClusterGroup({
-      iconCreateFunction: (cluster: any) => {
+    iconCreateFunction: (cluster: any) => {
       const count = cluster.getChildCount();
       return leaflet.divIcon({
         html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
         className: 'my-cluster-wrapper',
         iconSize: leaflet.point(40, 40)
       });
-    }
+    },
+    zoomToBoundsOnClick: false,
+    spiderfyOnMaxZoom: false,
+    showCoverageOnHover: false,
+    animate: true,
+    animateAddingMarkers: false,
+    maxClusterRadius: 70,
+    spiderfyDistanceMultiplier: 1.6
   });
 
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -878,6 +885,78 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers(this.filteredMemories);
+
+    this.markersLayer.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      if (!cluster) return;
+
+      // Unspiderfy if already expanded
+      if ((cluster as any)._spiderfied) {
+        cluster.unspiderfy();
+        return;
+      }
+
+      // Close any other open spiderfied clusters
+      try { 
+        this.markersLayer.unspiderfy(); 
+      } catch {}
+
+      const childMarkers = cluster.getAllChildMarkers();
+      if (!childMarkers.length) return;
+
+      const latLngs = childMarkers.map((m: any) => m.getLatLng());
+      const first = latLngs[0];
+
+      // Check if ALL child markers share the exact same coordinates
+      const allSameLocation = latLngs.every((ll: any) =>
+        Math.abs(ll.lat - first.lat) < 0.00001 &&
+        Math.abs(ll.lng - first.lng) < 0.00001
+      );
+
+      // Stop any active map movements
+      this.map.stop();
+
+      if (allSameLocation) {
+        // EXACT SAME LOCATION: NO flying/zooming at all.
+        // Directly spiderfy on the spot without map movement or visual shaking.
+        if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+          cluster.spiderfy();
+        }
+      } else {
+        // DIFFERENT / NEARBY LOCATIONS: Perform flight/zoom to bounds
+        const bounds = cluster.getBounds().pad(0.15);
+        const currentZoom = this.map.getZoom();
+        const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+        const needsZoom =
+          currentZoom < targetZoom - 0.5 ||
+          !this.map.getBounds().contains(bounds);
+
+        if (needsZoom) {
+          this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 17,
+            duration: 1.2,
+            easeLinearity: 0.25
+          });
+
+          this.map.once('moveend', () => {
+            // Wait for map movement and CSS transitions to settle before spiderfying
+            setTimeout(() => {
+              const activeCluster = this.markersLayer.getVisibleParent(childMarkers[0]) || cluster;
+              if (activeCluster && typeof activeCluster.spiderfy === 'function' && !(activeCluster as any)._spiderfied) {
+                activeCluster.spiderfy();
+              }
+            }, 180);
+          });
+        } else {
+          // Already zoomed in close enough -> spiderfy immediately
+          if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+            cluster.spiderfy();
+          }
+        }
+      }
+    });
   }
 
   private fixLeafletIcons(): void {
@@ -906,5 +985,3 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     }
   }
 }
-
-
