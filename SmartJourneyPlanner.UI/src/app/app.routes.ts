@@ -15,6 +15,7 @@ import { ProviderDashboardComponent } from './provider-dashboard/provider-dashbo
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
+import { TripHistoryComponent } from './trip-history/trip-history';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
@@ -59,13 +60,14 @@ export const routes: Routes = [
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
   { path: 'achievements', component: AchievementsComponent, canActivate: [authGuard, roleGuard], data: { expectedRoles: ['Traveller', 'Traveler'] } },
   { path: 'help', component: HelpComponent, canActivate: [authGuard] },
-  {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
-  {path: 'slideshow/:tripName',component: SlideshowComponent, canActivate: [authGuard]},
+  { path: 'memories-map-help', component: MemoriesMapHelpComponent, canActivate: [authGuard] },
+  { path: 'slideshow/:tripName', component: SlideshowComponent, canActivate: [authGuard] },
 
   { path: 'createTrip', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
   { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
+  { path: 'trip-history/:id', component: TripHistoryComponent, canActivate: [authGuard] },
 
 
   {
@@ -97,7 +99,7 @@ export const routes: Routes = [
   },
   { path: 'admin-panel', redirectTo: 'admin-dashboard', pathMatch: 'full' },
 
-  // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
+  //  ROLE-BASED PROTECTED DASHBOARDS 
   {
     path: 'provider-dashboard',
     component: ProviderDashboardComponent,
