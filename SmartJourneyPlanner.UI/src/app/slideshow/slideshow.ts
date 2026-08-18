@@ -414,14 +414,21 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async executeSequentialAnimation(
     oldCoords: L.LatLngLiteral,
-    newCoords: L.LatLngLiteral
+    newCoords: L.LatLngLiteral,
+    targetIndex: number
   ): Promise<void> {
-    this.renderImageMarkers();
-
+    //  Hide slideshow screen FIRST (only in normal mode)
     if (this.slideshowScreenRef && !this.isFullscreen) {
       this.slideshowScreenRef.nativeElement.classList.add('hide-during-move');
     }
 
+    // In FULLSCREEN mode, update activeIndex IMMEDIATELY so image changes without delay
+    if (this.isFullscreen) {
+      this.activeIndex = targetIndex;
+      this.cdr.detectChanges();
+    }
+
+    //  Animate vehicle and map pan to target location
     await this.mapAnimationService.animateVehicleMovement(
       this.vehicleMarker,
       this.map,
@@ -430,16 +437,23 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       this.isFullscreen
     );
 
-    if (this.slideshowScreenRef) {
-      this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
+    //  In NORMAL mode, update activeIndex NOW while the slideshow is hidden
+    if (!this.isFullscreen) {
+      this.activeIndex = targetIndex;
+      this.cdr.detectChanges();
     }
+
+    //  Update map pins and spiderfy target cluster if needed
+    this.renderImageMarkers();
 
     const targetMarker = this.mapMarkers[this.activeIndex];
     if (targetMarker) {
       await this.mapAnimationService.triggerClusterSpiderify(this.markersClusterGroup, targetMarker);
     }
 
-    if (this.slideshowScreenRef) {
+    //  Reveal slideshow screen (only in normal mode)
+    if (this.slideshowScreenRef && !this.isFullscreen) {
+      this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
       await this.mapAnimationService.animateSlideshowBoxShow(this.slideshowScreenRef.nativeElement);
     }
   }
@@ -450,13 +464,12 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = index;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[index].latitude,
+      lng: this.filteredMemories[index].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, index);
   }
 
   prevSlide(): void {
@@ -465,13 +478,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
+    const newIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[newIndex].latitude,
+      lng: this.filteredMemories[newIndex].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, newIndex);
   }
 
   nextSlide(): void {
@@ -480,13 +493,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
+    const newIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[newIndex].latitude,
+      lng: this.filteredMemories[newIndex].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, newIndex);
   }
 
   public async downloadAlbumAsPhotos(): Promise<void> {
