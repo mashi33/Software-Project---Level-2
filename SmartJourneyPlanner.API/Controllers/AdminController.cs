@@ -107,6 +107,24 @@ namespace SmartJourneyPlanner.API.Controllers
             var vehicles = await _vehicleCollection.Find(_ => true).ToListAsync();
             return Ok(vehicles);
         }
+
+        [HttpGet("all-bookings")]
+        public async Task<IActionResult> GetAllBookings()
+        {
+            var bookings = await _database.GetCollection<TransportBooking>("TransportBookings")
+                .Find(_ => true)
+                .ToListAsync();
+            return Ok(bookings);
+        }
+
+        [HttpGet("vehicle-bookings/{vehicleId}")]
+        public async Task<IActionResult> GetVehicleBookings(string vehicleId)
+        {
+            var bookings = await _database.GetCollection<TransportBooking>("TransportBookings")
+                .Find(b => b.VehicleId == vehicleId)
+                .ToListAsync();
+            return Ok(bookings);
+        }
         [HttpGet("all-memories")]
         public async Task<IActionResult> GetAllMemories()
         {
@@ -371,27 +389,63 @@ namespace SmartJourneyPlanner.API.Controllers
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
-            var vehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
-            if (vehicle == null) return NotFound();
+            
+            // Fetch the vehicle first so we have access to its details (like ModelName and ProviderId)
+            var targetVehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
+            if (targetVehicle == null) return NotFound(new { message = "Vehicle not found." });
 
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.AdminVerificationStatus, newStatus);
 
-            await _vehicleCollection.UpdateOneAsync(filter, update);
+            var updateResult = await _vehicleCollection.UpdateOneAsync(filter, update);
+
+            if (updateResult.MatchedCount == 0)
+            {
+                return NotFound(new { message = "Vehicle not found." });
+            }
+
+            // If the vehicle is rejected, check for active bookings and generate an alert
+            if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                // Find any booking associated with this vehicle ID
+                var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
+                var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
+                var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
+
+                if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
+                {
+                    // 1. Get the MongoDB collection for CustomerAlerts
+                    var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+                    
+                    // 2. Instantiate the alert object with the user and vehicle details
+                    var customerAlert = new CustomerAlert
+                    {
+                        UserId = activeBooking.UserId,
+                        Title = "Vehicle Service / Booking Notice",
+                        Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
+                        VehicleInfo = targetVehicle.VehicleClass ?? "Selected Transport",
+                        Timestamp = DateTime.UtcNow,
+                        Dismissed = false
+                    };
+
+                    // 3. Insert the object asynchronously into the database
+                    await alertCollection.InsertOneAsync(customerAlert);
+                }
+            }
 
             // Generate notification for the Transport Provider!
             try
             {
                 var title = newStatus == "Approved"
-                    ? $"Your vehicle {vehicle.ModelName} listing has been approved by the administrator and is now active!"
-                    : $"Your vehicle {vehicle.ModelName} listing request was rejected by the administrator. Please update details and re-submit.";
+                    ? $"Your vehicle {targetVehicle.ModelName} listing has been approved by the administrator and is now active!"
+                    : $"Your vehicle {targetVehicle.ModelName} listing request was rejected by the administrator. Please update details and re-submit.";
 
                 var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
                 var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
 
                 var notification = new Notification
                 {
-                    UserId = vehicle.ProviderId,
+                    UserId = targetVehicle.ProviderId,
                     Icon = icon,
                     IconColorClass = colorClass,
                     Title = title,
@@ -412,6 +466,45 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok(new { message = "Status updated" });
         }
 
+        // --- CUSTOMER ALERT ENDPOINTS ---
+
+        [HttpGet("customer-alerts/{userId}")]
+        public async Task<IActionResult> GetCustomerAlerts(string userId)
+        {
+            var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+            var filter = Builders<CustomerAlert>.Filter.And(
+                Builders<CustomerAlert>.Filter.Eq(a => a.UserId, userId),
+                Builders<CustomerAlert>.Filter.Eq(a => a.Dismissed, false)
+            );
+            var alerts = await alertCollection.Find(filter).ToListAsync();
+            return Ok(alerts);
+        }
+
+        [HttpPatch("customer-alerts/{alertId}/dismiss")]
+        public async Task<IActionResult> DismissCustomerAlert(string alertId)
+        {
+            var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+            var filter = Builders<CustomerAlert>.Filter.Eq(a => a.Id, alertId);
+            var update = Builders<CustomerAlert>.Update.Set(a => a.Dismissed, true);
+
+            var result = await alertCollection.UpdateOneAsync(filter, update);
+            return result.MatchedCount == 0 ? NotFound() : Ok(new { message = "Alert dismissed" });
+        }
+
+    }
+
+    public class CustomerAlert
+    {
+        [MongoDB.Bson.Serialization.Attributes.BsonId]
+        [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+        public string UserId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string VehicleInfo { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public bool Dismissed { get; set; } = false;
     }
 
     public class BlockRequest
