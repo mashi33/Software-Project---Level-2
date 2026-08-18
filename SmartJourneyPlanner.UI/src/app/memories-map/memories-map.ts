@@ -26,7 +26,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     },
     zoomToBoundsOnClick: false,
-    spiderfyOnMaxZoom: true,
+    spiderfyOnMaxZoom: false,
     showCoverageOnHover: false,
     animate: true,
     animateAddingMarkers: false,
@@ -864,7 +864,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers();
 
-    // Cluster click → smooth zoom → expand into vignette pins
+    // Cluster click logic
     this.markersLayer.on('clusterclick', (e: any) => {
       const cluster = e.layer;
       if (!cluster) return;
@@ -875,31 +875,64 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      const bounds = cluster.getBounds();
-      const currentZoom = this.map.getZoom();
-      const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+      // Close any other open spiderfied cluster
+      try { 
+        this.markersLayer.unspiderfy(); 
+      } catch {}
 
-      const needsZoom =
-        currentZoom < targetZoom - 0.4 ||
-        !bounds.contains(this.map.getCenter());
+      const childMarkers = cluster.getAllChildMarkers();
+      if (!childMarkers.length) return;
 
-      if (needsZoom) {
-        this.map.flyToBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 17,
-          duration: 1.5,
-          easeLinearity: 0.25
-        });
+      const latLngs = childMarkers.map((m: any) => m.getLatLng());
+      const first = latLngs[0];
 
-        this.map.once('moveend', () => {
-          setTimeout(() => {
-            if (cluster.getChildCount() > 1) {
-              cluster.spiderfy();
-            }
-          }, 120);
-        });
+      // Check if all markers in cluster share the exact same location
+      const allSameLocation = latLngs.every((ll: any) =>
+        Math.abs(ll.lat - first.lat) < 0.00001 &&
+        Math.abs(ll.lng - first.lng) < 0.00001
+      );
+
+      // Stop any lingering animations
+      this.map.stop();
+
+      if (allSameLocation) {
+        // EXACT SAME LOCATION: No flying/zooming. Spiderfy instantly on the spot.
+        if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+          cluster.spiderfy();
+        }
       } else {
-        cluster.spiderfy();
+        // DIFFERENT / NEARBY LOCATIONS: Zoom to bounds first
+        const bounds = cluster.getBounds().pad(0.15);
+        const currentZoom = this.map.getZoom();
+        const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+        const needsZoom =
+          currentZoom < targetZoom - 0.5 ||
+          !this.map.getBounds().contains(bounds);
+
+        if (needsZoom) {
+          this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 17,
+            duration: 1.2,
+            easeLinearity: 0.25
+          });
+
+          this.map.once('moveend', () => {
+            // Delay spiderfying until after tile positioning settles completely (removes shake)
+            setTimeout(() => {
+              const activeCluster = this.markersLayer.getVisibleParent(childMarkers[0]) || cluster;
+              if (activeCluster && typeof activeCluster.spiderfy === 'function' && !(activeCluster as any)._spiderfied) {
+                activeCluster.spiderfy();
+              }
+            }, 180);
+          });
+        } else {
+          // Already zoomed in close enough -> spiderfy immediately
+          if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+            cluster.spiderfy();
+          }
+        }
       }
     });
   }
