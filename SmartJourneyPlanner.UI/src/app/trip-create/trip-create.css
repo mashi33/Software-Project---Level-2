@@ -352,6 +352,15 @@
   background-color: #0056c6;
 }
 
+.pending-invite-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #1b6fd5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* BOTTOM FIXED FOOTER BAR */
 .form-action-footer-bar {
   display: flex;
@@ -482,6 +491,15 @@
 .role-tag.is-editor {
   background: #d1fae5;
   color: #065f46;
+}
+
+.new-member-tag {
+  font-size: 10.5px;
+  background: #dbeafe;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #1b6fd5;
+  font-weight: 600;
 }
 
 .delete-chip-trigger {

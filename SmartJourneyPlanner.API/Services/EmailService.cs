@@ -19,10 +19,9 @@ namespace SmartJourneyPlanner.API.Services
         //  1. Verification Email Sender
         public async Task SendVerificationEmailAsync(string receiverEmail, string verificationLink)
         {
-            // get sender email from configuration (TOML file or environment variable)
            var senderEmail = _configuration["EmailSettings:SenderEmail"]
            ?? throw new InvalidOperationException("Sender email is missing.");
-            
+           
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
             message.To.Add(new MailboxAddress("", receiverEmail));
@@ -79,7 +78,7 @@ namespace SmartJourneyPlanner.API.Services
             await SendEmailAsync(message);
         }
 
-        //  3.Password Reset Email Sender
+        //  3. Password Reset Email Sender
         public async Task SendPasswordResetEmailAsync(string receiverEmail, string resetLink)
         {
             var senderEmail = _configuration["EmailSettings:SenderEmail"]
@@ -103,33 +102,43 @@ namespace SmartJourneyPlanner.API.Services
                    <p style=""font-size: 14px; color: #666;"">If you did not request a password reset, please ignore this email safely.</p>
                    <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
                    <p>Best Regards,<br><b>Smart Journey Team</b></p>
-               </div>"
-          };
+                </div>"
+         };
 
             await SendEmailAsync(message);
-     }
+       }
 
-        // Core Email Sender Logic reading from TOML Configuration
+        // Core Email Sender Logic reading from Configuration
         private async Task SendEmailAsync(MimeMessage message)
         {
-            
-           var smtpServer = _configuration["EmailSettings:SmtpServer"]
-           ?? throw new InvalidOperationException("SMTP Server is missing.");
+            var smtpServer = _configuration["EmailSettings:SmtpServer"]
+            ?? throw new InvalidOperationException("SMTP Server is missing.");
 
-           var senderEmail = _configuration["EmailSettings:SenderEmail"]
-           ?? throw new InvalidOperationException("Sender Email is missing.");
+            var senderEmail = _configuration["EmailSettings:SenderEmail"]
+            ?? throw new InvalidOperationException("Sender Email is missing.");
 
-           var appPassword = _configuration["EmailSettings:AppPassword"]
-           ?? throw new InvalidOperationException("App Password is missing.");
+            var appPassword = _configuration["EmailSettings:AppPassword"]
+            ?? throw new InvalidOperationException("App Password is missing.");
 
-           var port = int.Parse(_configuration["EmailSettings:Port"] ?? "587");
+            var portString = _configuration["EmailSettings:Port"] ?? "587";
+            var port = int.Parse(portString);
 
-            using (var client = new SmtpClient())
+            try
             {
-                await client.ConnectAsync(smtpServer, port, MailKit.Security.SecureSocketOptions.StartTls);
-                await client.AuthenticateAsync(senderEmail, appPassword);
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
+                using (var client = new SmtpClient())
+                {
+                    // මෙතැනදී _emailSettings වෙනුවට උඩින් ඩික්ලේර් කරපු variables (smtpServer, port, senderEmail, appPassword) පාවිච්චි කළා
+                    await client.ConnectAsync(smtpServer, port, MailKit.Security.SecureSocketOptions.StartTls);
+                    await client.AuthenticateAsync(senderEmail, appPassword);
+                    await client.SendAsync(message);
+                    await client.DisconnectAsync(true);
+                }
+                Console.WriteLine("Email sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"MAIL ERROR: {ex.Message}");
+                Console.WriteLine($"INNER EXCEPTION: {ex.InnerException?.Message}");
             }
         }
     }

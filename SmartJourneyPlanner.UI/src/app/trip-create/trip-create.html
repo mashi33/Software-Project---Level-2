@@ -9,8 +9,9 @@
         <i class="bi bi-airplane-fill"></i>
       </div>
       <div class="header-text-block">
-        <h1>Create New Trip</h1>
-        <p>Plan your next Sri Lankan adventure and create unforgettable memories</p>
+        <h1>{{ isEditMode ? 'Edit Trip' : 'Create New Trip' }}</h1>
+        <p>{{ isEditMode ? 'Update your trip details and invite more travel buddies' : 'Plan your next Sri Lankan
+          adventure and create unforgettable memories' }}</p>
       </div>
     </div>
 
@@ -156,7 +157,7 @@
             </div>
             <div class="card-text-block">
               <h3>Invite Members</h3>
-              <p>Add your travel buddies</p>
+              <p>{{ isEditMode ? 'Invite more people to this trip' : 'Add your travel buddies' }}</p>
             </div>
           </div>
 
@@ -183,6 +184,13 @@
             <button type="button" class="action-btn-invite" (click)="onInvite()">
               <i class="bi bi-send-fill"></i> Invite Member
             </button>
+
+            @if (isEditMode && newMemberCount > 0) {
+            <p class="pending-invite-note">
+              <i class="bi bi-info-circle"></i>
+              {{ newMemberCount }} new member{{ newMemberCount > 1 ? 's' : '' }} will be invited by email when you save.
+            </p>
+            }
           </div>
         </div>
 
@@ -207,6 +215,9 @@
                 <i class="bi bi-person-circle chip-user-icon"></i>
                 <span class="user-email-text">{{ m.email }}</span>
                 <span class="role-tag" [class.is-editor]="m.role === 'Editor'">{{ m.role }}</span>
+                @if (isEditMode && m.isNew) {
+                <span class="new-member-tag">New</span>
+                }
               </div>
               <span class="delete-chip-trigger" (click)="removeMember(i)">
                 <i class="bi bi-x"></i>
@@ -225,7 +236,7 @@
         <i class="bi bi-x-circle"></i> Cancel
       </button>
       <button type="submit" class="footer-save-btn">
-        <i class="bi bi-check-circle-fill"></i> Create Trip
+        <i class="bi bi-check-circle-fill"></i> {{ isEditMode ? 'Update Trip' : 'Create Trip' }}
       </button>
     </div>
   </form>
