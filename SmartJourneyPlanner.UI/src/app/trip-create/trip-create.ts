@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -15,6 +15,7 @@ import Swal from 'sweetalert2';
 export class TripCreateComponent implements OnInit {
 
   tripForm: FormGroup;
+  submitted: boolean = false;
   invitedMembers: { email: string; role: string; isNew: boolean }[] = [];
   isEditMode: boolean = false;
   tripId: string | null = null;
@@ -37,17 +38,63 @@ export class TripCreateComponent implements OnInit {
   ) {
     // Initialize form controls and validation rules
     this.tripForm = new FormGroup({
-      tripName: new FormControl('', Validators.required),
-      departFrom: new FormControl('', Validators.required),
-      destination: new FormControl('', Validators.required),
+      tripName: new FormControl('', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(60)
+      ]),
+      departFrom: new FormControl('', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(60),
+        Validators.pattern(/^[A-Za-z\u0D80-\u0DFF\s.,'-]+$/)
+      ]),
+      destination: new FormControl('', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(60),
+        Validators.pattern(/^[A-Za-z\u0D80-\u0DFF\s.,'-]+$/)
+      ]),
       startDate: new FormControl('', Validators.required),
       endDate: new FormControl('', Validators.required),
-      budgetLimit: new FormControl(''),
-      transportMode: new FormControl(''),
-      description: new FormControl(''),
+      budgetLimit: new FormControl('', Validators.required),
+      transportMode: new FormControl('', Validators.required),
+      description: new FormControl('', Validators.maxLength(500)),
       memberEmail: new FormControl('', [Validators.email]),
       memberRole: new FormControl('Viewer')
-    });
+    }, { validators: [this.tripRulesValidator] });
+  }
+
+  // Cross-field rules: dates must be in order, not in the past, and origin must differ from destination
+  private tripRulesValidator = (group: AbstractControl): ValidationErrors | null => {
+    const start = group.get('startDate')?.value;
+    const end = group.get('endDate')?.value;
+    const from = (group.get('departFrom')?.value || '').trim().toLowerCase();
+    const to = (group.get('destination')?.value || '').trim().toLowerCase();
+    const errors: ValidationErrors = {};
+
+    if (start && end && new Date(end) < new Date(start)) {
+      errors['endBeforeStart'] = true;
+    }
+    if (!this.isEditMode && start && this.todayDate && start < this.todayDate) {
+      errors['startInPast'] = true;
+    }
+    if (from && to && from === to) {
+      errors['sameLocations'] = true;
+    }
+
+    return Object.keys(errors).length ? errors : null;
+  };
+
+  // True once the user has interacted with the field or tried to submit
+  showError(controlName: string): boolean {
+    const control = this.tripForm.get(controlName);
+    return !!control && control.invalid && (control.touched || control.dirty || this.submitted);
+  }
+
+  // True when a cross-field rule failed and the user has already tried to submit
+  showFormError(errorName: string): boolean {
+    return this.submitted && this.tripForm.hasError(errorName);
   }
 
   ngOnInit() {
@@ -55,6 +102,17 @@ export class TripCreateComponent implements OnInit {
     const idFromUrl = this.route.snapshot.paramMap.get('id');
     const today = new Date();
     this.todayDate = today.toISOString().split('T')[0];
+    this.tripForm.updateValueAndValidity();
+
+    this.tripForm.get('startDate')?.valueChanges.subscribe(startDate => {
+      const endDateControl = this.tripForm.get('endDate');
+      const endDate = endDateControl?.value;
+
+      if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+        // set end date to start date if it is earlier
+        endDateControl?.setValue(startDate);
+      }
+    });
 
     if (idFromUrl) {
       this.tripId = idFromUrl;
@@ -189,12 +247,23 @@ export class TripCreateComponent implements OnInit {
 
   // Processes form submission (Create or Update)
   onSubmit() {
-    if (!this.tripForm.value.transportMode) {
-      this.showErrorAlert('Please select a transport type.');
+    this.submitted = true;
+
+    if (this.tripForm.invalid) {
+      this.tripForm.markAllAsTouched();
+      this.showErrorAlert(
+        this.tripForm.hasError('endBeforeStart')
+          ? 'End date cannot be earlier than the start date.'
+          : this.tripForm.hasError('startInPast')
+            ? 'Start date cannot be in the past.'
+            : this.tripForm.hasError('sameLocations')
+              ? 'Departure and destination cannot be the same place.'
+              : 'Please fill all required fields correctly.'
+      );
       return;
     }
 
-    if (this.tripForm.valid) {
+    {
       const currentUser = this.getCurrentUser();
       // Editing must never transfer ownership to the editor
       const createdBy = (this.isEditMode && this.ownerId) ? this.ownerId : currentUser.id;
@@ -264,8 +333,6 @@ export class TripCreateComponent implements OnInit {
           error: () => this.showErrorAlert("Error saving trip.")
         });
       }
-    } else {
-      this.showErrorAlert("Form has errors. Please check again.");
     }
   }
 
