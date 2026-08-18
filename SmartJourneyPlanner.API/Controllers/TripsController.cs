@@ -154,6 +154,7 @@ public async Task<IActionResult> GetTrip(string id)
             trip.Description,
             trip.SavedPlaces,
             trip.CreatedBy,
+            trip.CreatorEmail,
             Members = allMembers,
             EditHistory = history
         });
@@ -200,49 +201,68 @@ public async Task<IActionResult> GetTrip(string id)
         }
 
         // Dashboard data for logged-in user only
-       [Authorize] // 🔥 CRITICAL: Force .NET to validate the JWT token header before running this code
-       [HttpGet("dashboard")] // Notice we removed "/{userId}" from the route path!
-        public async Task<IActionResult> GetDashboardData()
-       {
-       try
-       {
-
-        // 🔥 SAFEST WAY: Extract the User ID safely from the cryptographically verified token claims matrix
+       [Authorize]
+[HttpGet("dashboard")]
+public async Task<IActionResult> GetDashboardData()
+{
+    try
+    {
+        // 1. Get current user identity from JWT
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 
-        // 2. If that fails or fetches an email, try checking for your custom 'userId' claim key payload
         if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(userEmail))
             return Unauthorized(new { message = "Invalid user identity." });
 
+        // 2. Local helper function to determine the current user's role in a trip
+        string GetUserRole(Trip t)
+        {
+            // Owner check
+            if ((!string.IsNullOrEmpty(userId) && t.CreatedBy == userId) ||
+                (!string.IsNullOrEmpty(userEmail) &&
+                 (t.CreatorEmail == userEmail || t.CreatedBy == userEmail)))
+            {
+                return "Owner";
+            }
+
+            // Member check
+            var member = t.Members?.FirstOrDefault(m =>
+                m.Email != null &&
+                m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase));
+
+            if (member != null)
+                return member.Role ?? "Member";
+
+            return "Member"; // fallback
+        }
+
+        // 3. Build filter
         var builder = Builders<Trip>.Filter;
-       // 🔥 FIX: This filter now includes Creator (ID or Email) OR Member status
         var userFilter = builder.Or(
             builder.Eq(t => t.CreatedBy, userId),
             builder.Eq(t => t.CreatorEmail, userEmail),
             builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
         );
-                var userTrips = await _tripsCollection
-                    .Find(userFilter)
-                    .ToListAsync();
 
-                // 🔥 FIX 2: Compute UTC baseline cleanly to prevent localized time shift bugs
-                var today = DateTime.Today;
-        // Upcoming trips
+        var userTrips = await _tripsCollection
+            .Find(userFilter)
+            .ToListAsync();
+
+        var today = DateTime.Today;
+
         var upcomingTrips = userTrips
             .Where(t => t.StartDate.Date > today)
             .ToList();
 
-        // Completed trips
         var completedTrips = userTrips
             .Where(t => t.EndDate.Date < today)
             .ToList();
 
-        // Ongoing trips
         var ongoingTrips = userTrips
             .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
             .ToList();
 
+        // 4. Return data with role included
         return Ok(new
         {
             upcomingCount = upcomingTrips.Count,
@@ -250,33 +270,20 @@ public async Task<IActionResult> GetTrip(string id)
             ongoingCount = ongoingTrips.Count,
 
             upcomingTrips = upcomingTrips.Select(t => new
-    {
-        id = t.Id,
-        tripName = t.TripName,
-        destination = t.Destination,
-        startDate = t.StartDate,
-        endDate = t.EndDate,
-        budgetLimit = t.BudgetLimit,
-        description = t.Description,
-        lat = t.Lat,
-        lon = t.Lon
-    }),
-    
-           completedTrips = completedTrips.Select(t => new
             {
                 id = t.Id,
                 tripName = t.TripName,
-                departFrom = t.DepartFrom,
                 destination = t.Destination,
                 startDate = t.StartDate,
                 endDate = t.EndDate,
                 budgetLimit = t.BudgetLimit,
                 description = t.Description,
                 lat = t.Lat,
-                lon = t.Lon
+                lon = t.Lon,
+                role = GetUserRole(t)          // ← role is now included
             }),
 
-             ongoingTrips = ongoingTrips.Select(t => new
+            completedTrips = completedTrips.Select(t => new
             {
                 id = t.Id,
                 tripName = t.TripName,
@@ -287,7 +294,23 @@ public async Task<IActionResult> GetTrip(string id)
                 budgetLimit = t.BudgetLimit,
                 description = t.Description,
                 lat = t.Lat,
-                lon = t.Lon
+                lon = t.Lon,
+                role = GetUserRole(t)          // ← role is now included
+            }),
+
+            ongoingTrips = ongoingTrips.Select(t => new
+            {
+                id = t.Id,
+                tripName = t.TripName,
+                departFrom = t.DepartFrom,
+                destination = t.Destination,
+                startDate = t.StartDate,
+                endDate = t.EndDate,
+                budgetLimit = t.BudgetLimit,
+                description = t.Description,
+                lat = t.Lat,
+                lon = t.Lon,
+                role = GetUserRole(t)          // ← role is now included
             })
         });
     }
@@ -351,6 +374,7 @@ public async Task<IActionResult> GetTrip(string id)
         {
             try
             {
+                newTrip.Members = NormalizeMembers(newTrip.Members, newTrip.CreatorEmail ?? newTrip.CreatedBy ?? "");
                 await _tripsCollection.InsertOneAsync(newTrip);
                 if (newTrip.Members != null)
                 {
@@ -438,7 +462,37 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 var oldTrip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
                 if (oldTrip == null) return NotFound(new { message = "Trip not found!" });
 
+                // Ownership and data that the edit form never sends stay as they are
+                updatedTrip.CreatedBy = string.IsNullOrEmpty(oldTrip.CreatedBy) ? updatedTrip.CreatedBy : oldTrip.CreatedBy;
+                updatedTrip.CreatorEmail = string.IsNullOrEmpty(oldTrip.CreatorEmail) ? updatedTrip.CreatorEmail : oldTrip.CreatorEmail;
+                if (updatedTrip.SavedPlaces == null || updatedTrip.SavedPlaces.Count == 0)
+                    updatedTrip.SavedPlaces = oldTrip.SavedPlaces;
+                if (updatedTrip.Lat == 0 && updatedTrip.Lon == 0)
+                {
+                    updatedTrip.Lat = oldTrip.Lat;
+                    updatedTrip.Lon = oldTrip.Lon;
+                }
+
+                var ownerEmail = updatedTrip.CreatorEmail ?? updatedTrip.CreatedBy ?? "";
+                updatedTrip.Members = NormalizeMembers(updatedTrip.Members, ownerEmail);
+                var oldMembers = NormalizeMembers(oldTrip.Members, ownerEmail);
+
+                var oldEmails = oldMembers.Select(m => m.Email).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var newEmails = updatedTrip.Members.Select(m => m.Email).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                // Only members that were not on the trip before get an invitation email
+                var addedMembers = updatedTrip.Members
+                    .Where(m => !oldEmails.Contains(m.Email))
+                    .ToList();
+                var removedEmails = oldEmails.Where(e => !newEmails.Contains(e)).ToList();
+
                 string changes = "";
+                if (addedMembers.Count > 0)
+                    changes += $"Members added: {string.Join(", ", addedMembers.Select(m => m.Email))}. ";
+
+                if (removedEmails.Count > 0)
+                    changes += $"Members removed: {string.Join(", ", removedEmails)}. ";
+
                 if ((oldTrip.TripName?.Trim().ToLower() ?? "") != (updatedTrip.TripName?.Trim().ToLower() ?? ""))
                     changes += $"Name: {oldTrip.TripName} -> {updatedTrip.TripName}. ";
 
@@ -465,12 +519,55 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 var result = await _tripsCollection.ReplaceOneAsync(t => t.Id == id, updatedTrip);
                 if (result.MatchedCount == 0) return NotFound(new { message = "Trip not found in database!" });
 
-                return Ok(new { message = "Trip updated successfully!" });
+                foreach (var member in addedMembers)
+                {
+                    try
+                    {
+                        await _emailService.SendInviteEmailAsync(member.Email, updatedTrip.TripName ?? "", member.Role, id);
+                    }
+                    catch (Exception mailEx)
+                    {
+                        // A failed invite email must not fail the whole update
+                        Console.WriteLine($"[Invite Email Error] {member.Email}: {mailEx.Message}");
+                    }
+                }
+
+                return Ok(new
+                {
+                    message = "Trip updated successfully!",
+                    invitedMembers = addedMembers.Select(m => m.Email),
+                    removedMembers = removedEmails
+                });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = "Update error: " + ex.Message });
             }
+        }
+
+        // Cleans a member list: trims and lowercases emails, drops blanks, the owner and duplicates
+        private static List<TripMember> NormalizeMembers(List<TripMember>? members, string ownerEmail)
+        {
+            if (members == null) return new List<TripMember>();
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var cleaned = new List<TripMember>();
+
+            foreach (var member in members)
+            {
+                var email = member.Email?.Trim().ToLowerInvariant() ?? "";
+                if (email.Length == 0) continue;
+                if (string.Equals(email, ownerEmail?.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+                if (!seen.Add(email)) continue;
+
+                cleaned.Add(new TripMember
+                {
+                    Email = email,
+                    Role = string.IsNullOrWhiteSpace(member.Role) ? "Viewer" : member.Role
+                });
+            }
+
+            return cleaned;
         }
 
         // Separate endpoint to get only the history of a specific trip

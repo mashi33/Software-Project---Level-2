@@ -86,6 +86,7 @@ export class ProviderForm implements OnInit {
   ) {}
 
   ngOnInit() {
+    window.scrollTo(0, 0);
     // Generate today's date string for HTML date inputs
     const today = new Date();
     const y = today.getFullYear();
