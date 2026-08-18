@@ -10,6 +10,7 @@ using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.API.Models;
 using Microsoft.AspNetCore.SignalR;
 using SmartJourneyPlanner.Hubs;
+using MongoDB.Driver;
 
 namespace SmartJourneyPlanner.Controllers
 {

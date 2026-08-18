@@ -389,8 +389,10 @@ namespace SmartJourneyPlanner.API.Controllers
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
-            var vehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
-            if (vehicle == null) return NotFound();
+            
+            // Fetch the vehicle first so we have access to its details (like ModelName and ProviderId)
+            var targetVehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
+            if (targetVehicle == null) return NotFound(new { message = "Vehicle not found." });
 
             var update = Builders<TransportVehicle>.Update
                 .Set(v => v.AdminVerificationStatus, newStatus);
@@ -405,51 +407,45 @@ namespace SmartJourneyPlanner.API.Controllers
             // If the vehicle is rejected, check for active bookings and generate an alert
             if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
             {
-                var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
+                // Find any booking associated with this vehicle ID
+                var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
+                var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
+                var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
 
-                if (vehicle != null)
+                if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
                 {
-                    // Find any booking associated with this vehicle ID
-                    var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
-                    var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
-                    var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
-
-                    if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
+                    // 1. Get the MongoDB collection for CustomerAlerts
+                    var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+                    
+                    // 2. Instantiate the alert object with the user and vehicle details
+                    var customerAlert = new CustomerAlert
                     {
-                        // 1. Get the MongoDB collection for CustomerAlerts
-                        var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
-                        
-                        // 2. Instantiate the alert object with the user and vehicle details
-                        var customerAlert = new CustomerAlert
-                        {
-                            UserId = activeBooking.UserId,
-                            Title = "Vehicle Service / Booking Notice",
-                            Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
-                            VehicleInfo = vehicle.VehicleClass ?? "Selected Transport",
-                            Timestamp = DateTime.UtcNow,
-                            Dismissed = false
-                        };
+                        UserId = activeBooking.UserId,
+                        Title = "Vehicle Service / Booking Notice",
+                        Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
+                        VehicleInfo = targetVehicle.VehicleClass ?? "Selected Transport",
+                        Timestamp = DateTime.UtcNow,
+                        Dismissed = false
+                    };
 
-                        // 3. Insert the object asynchronously into the database
-                        await alertCollection.InsertOneAsync(customerAlert);
-                    }
+                    // 3. Insert the object asynchronously into the database
+                    await alertCollection.InsertOneAsync(customerAlert);
                 }
             }
-
 
             // Generate notification for the Transport Provider!
             try
             {
                 var title = newStatus == "Approved"
-                    ? $"Your vehicle {vehicle.ModelName} listing has been approved by the administrator and is now active!"
-                    : $"Your vehicle {vehicle.ModelName} listing request was rejected by the administrator. Please update details and re-submit.";
+                    ? $"Your vehicle {targetVehicle.ModelName} listing has been approved by the administrator and is now active!"
+                    : $"Your vehicle {targetVehicle.ModelName} listing request was rejected by the administrator. Please update details and re-submit.";
 
                 var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
                 var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
 
                 var notification = new Notification
                 {
-                    UserId = vehicle.ProviderId,
+                    UserId = targetVehicle.ProviderId,
                     Icon = icon,
                     IconColorClass = colorClass,
                     Title = title,

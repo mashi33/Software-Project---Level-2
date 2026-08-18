@@ -421,16 +421,48 @@ export class AdminDashboardComponent implements OnInit {
 
   updateStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
-    
+
     this.adminService.updateProviderStatus(id, status).subscribe(() => {
       this.selectedProvider = null;
-      
+
       if (status === 'Approved') {
         this.approvedSessionCount++;
         localStorage.setItem('approvedToday', this.approvedSessionCount.toString());
       } else if (status === 'Rejected') {
         this.rejectedSessionCount++;
         localStorage.setItem('rejectedToday', this.rejectedSessionCount.toString());
+
+        // Check for active bookings and send alerts
+        const vehicleBookings = this.getVehicleBookings(id);
+        const activeBookings = vehicleBookings.filter((booking: any) => {
+          const bookingDate = new Date(booking.bookingDate || booking.date);
+          const today = new Date();
+          return bookingDate > today && (booking.status === 'Confirmed' || booking.status === 'confirmed');
+        });
+
+        if (activeBookings.length > 0) {
+          const vehicleName = provider.vehicleName || provider.vehicle?.name || provider.model || 'Vehicle';
+          const message = `The vehicle "${vehicleName}" you booked is currently in a service period. Your booking has been automatically cancelled.`;
+
+          activeBookings.forEach((booking: any) => {
+            const customerId = booking.customerId || booking.userId || booking.user?._id;
+            const bookingId = booking._id || booking.id;
+            if (customerId) {
+              this.adminService.sendCustomerAlert(customerId, message, vehicleName, bookingId).subscribe({
+                next: () => console.log('Alert sent to customer:', customerId),
+                error: (err) => console.error('Failed to send alert:', err)
+              });
+            }
+
+            // Cancel the booking
+            if (bookingId) {
+              this.adminService.cancelBooking(bookingId).subscribe({
+                next: () => console.log('Booking cancelled:', bookingId),
+                error: (err) => console.error('Failed to cancel booking:', err)
+              });
+            }
+          });
+        }
       }
 
       this.refreshDashboard();

@@ -212,17 +212,117 @@
   transition: all 0.3s ease;
 }
 
-.card.warning-card{background: linear-gradient(135deg, #fef3c7 0%, #ebdfaf 100%); border-left: 4px solid #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);}
-.card.success-card{background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);}
-.card.income-card{background: linear-gradient(135deg, #fce7f3 0%, #eff6ff 100%); border-left: 4px solid #6b7280; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15);}
-.card.fleet-card{background: linear-gradient(135deg, #d1fae5 0%, #b4f0d4 100%); border-left: 4px solid #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);}
-.card.expense-card{background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-left: 4px solid #6366f1; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);}
 
-.btn-action1:hover { background: #d97706; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
-.btn-action2:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-.btn-action3:hover { background: #6b7280; transform: translateY(-2px); box-shadow: 0 4px 12px #374151; }
-.btn-action4:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-.btn-action5:hover { background: #4f46e5; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+
+.card.warning-card {
+  background: linear-gradient(135deg, #fffdf5 0%, #fef3c7 100%);
+  border-left: 5px solid #f59e0b;
+  border-top: 1px solid #fde68a;
+  border-right: 1px solid #fde68a;
+  border-bottom: 1px solid #fde68a;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.12);
+}
+
+/* Card 2: Vibrant Blue Theme */
+.card.success-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #dbeafe 100%);
+  border-left: 5px solid #3b82f6;
+  border-top: 1px solid #bfdbfe;
+  border-right: 1px solid #bfdbfe;
+  border-bottom: 1px solid #bfdbfe;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.12);
+}
+
+/* Card 3: Neutral Gray / Slate Theme */
+.card.income-card {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-left: 5px solid #4b5563;
+  border-top: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 4px 15px rgba(75, 85, 99, 0.12);
+}
+
+/* Card 4: Emerald / Green Theme */
+.card.fleet-card {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-left: 5px solid #10b981;
+  border-top: 1px solid #a7f3d0;
+  border-right: 1px solid #a7f3d0;
+  border-bottom: 1px solid #a7f3d0;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.12);
+}
+
+/* Card 5: Indigo / Purple Theme */
+.card.expense-card {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-left: 5px solid #6366f1;
+  border-top: 1px solid #c7d2fe;
+  border-right: 1px solid #c7d2fe;
+  border-bottom: 1px solid #c7d2fe;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.12);
+}
+
+/* --- Action Buttons Styling & Hover Effects --- */
+.btn-action1 {
+  background-color: #f59e0b;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-action1:hover { 
+  background: #d97706; 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); 
+}
+
+.btn-action2 {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-action2:hover { 
+  background: #2563eb; 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); 
+}
+
+.btn-action3 {
+  background-color: #4b5563;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-action3:hover { 
+  background: #374151; 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(75, 85, 99, 0.3); 
+}
+
+.btn-action4 {
+  background-color: #10b981;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-action4:hover { 
+  background: #059669; 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); 
+}
+
+.btn-action5 {
+  background-color: #6366f1;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-action5:hover { 
+  background: #4f46e5; 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); 
+}
 
 .panel-header-wrapper h2 {
   font-size: 1.4rem;

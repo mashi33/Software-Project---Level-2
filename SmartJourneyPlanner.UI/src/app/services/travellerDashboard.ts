@@ -24,4 +24,8 @@ export class TravellerDashboardService {
   dismissAlert(alertId: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/admin/customer-alerts/${alertId}/dismiss`, {});
   }
+
+  cancelBooking(bookingId: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/trips/cancel-booking/${bookingId}`, {});
+  }
 }

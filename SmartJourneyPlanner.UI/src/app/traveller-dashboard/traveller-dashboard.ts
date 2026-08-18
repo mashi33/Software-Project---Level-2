@@ -146,7 +146,8 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
   showBookingAlertPopup() {
     const latestAlert = this.customerAlerts[0];
-    
+    const bookingId = latestAlert.bookingId || latestAlert.bookingId;
+
     Swal.fire({
       title: '🚨 Vehicle Service / Booking Notice',
       width: '580px',
@@ -160,7 +161,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
             </p>
           </div>
           <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 13px; color: #64748b;">
-            <div><strong>Vehicle:</strong> ${latestAlert.vehicleInfo || 'Selected Transport'}</div>
+            <div><strong>Vehicle:</strong> ${latestAlert.vehicleInfo || latestAlert.vehicleName || 'Selected Transport'}</div>
             <div style="margin-top: 4px;"><strong>Recommendation:</strong> Please navigate to your bookings and select an alternative vehicle.</div>
           </div>
         </div>
@@ -172,9 +173,43 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
       cancelButtonText: 'Dismiss',
       cancelButtonColor: '#64748b'
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.router.navigate(['/transport']);
+      // Cancel the booking regardless of which button was clicked
+      if (bookingId) {
+        this.dashboardService.cancelBooking(bookingId).subscribe({
+          next: () => {
+            console.log('Booking cancelled successfully:', bookingId);
+            // Show cancellation confirmation
+            Swal.fire({
+              title: '✅ Booking Cancelled',
+              text: 'Your booking has been automatically cancelled due to the vehicle being in service period.',
+              icon: 'success',
+              confirmButtonColor: '#10b981',
+              confirmButtonText: 'OK'
+            }).then(() => {
+              if (result.isConfirmed) {
+                this.router.navigate(['/transport']);
+              }
+            });
+          },
+          error: (err) => {
+            console.error('Failed to cancel booking:', err);
+            Swal.fire({
+              title: 'Error',
+              text: 'Failed to cancel booking. Please contact support.',
+              icon: 'error',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        });
+      } else {
+        // No booking ID, just dismiss the alert
+        this.dismissAlert(latestAlert._id || latestAlert.id);
+        if (result.isConfirmed) {
+          this.router.navigate(['/transport']);
+        }
       }
+
+      // Dismiss the alert
       this.dismissAlert(latestAlert._id || latestAlert.id);
     });
   }
