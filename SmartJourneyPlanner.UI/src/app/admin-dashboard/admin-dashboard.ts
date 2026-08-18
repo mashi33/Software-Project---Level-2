@@ -331,7 +331,7 @@ export class AdminDashboardComponent implements OnInit {
   refreshDashboard() {
     this.adminService.getDashboardStats().subscribe({
       next: (data) => {
-        console.log("Stats Response:", data); 
+        console.log("Stats Response:", data);
         this.stats = data;
       },
       error: (err) => console.error("Error loading stats:", err)
@@ -340,7 +340,10 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchPendingProviders();
     this.fetchAllUsers();
     this.fetchPlatformMemories();
-    this.fetchAllVehicles();
+    // Only fetch vehicles when needed (not on initial load)
+    if (this.view === 'fleet-detailed') {
+      this.fetchAllVehicles();
+    }
   }
 
   fetchPendingProviders() { this.adminService.getPendingProviders().subscribe(data => this.pendingProviders = data); }
@@ -473,7 +476,10 @@ export class AdminDashboardComponent implements OnInit {
   fetchAllVehicles() {
     this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
       this.allVehicles = data;
-      this.fetchAllBookings();
+      // Only fetch bookings if we're on fleet-detailed view
+      if (this.view === 'fleet-detailed') {
+        this.fetchAllBookings();
+      }
     });
   }
 

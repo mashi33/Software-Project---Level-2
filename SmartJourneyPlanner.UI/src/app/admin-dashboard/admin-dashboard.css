@@ -5,15 +5,17 @@
   font-family: 'Inter', system-ui, sans-serif; 
 }
 
-.sidebar { 
-  width: 260px; 
-  background: #1e293b; 
-  color: white; 
-  padding: 25px; 
-  position: sticky; 
-  top: 0; 
-  height: 100vh; 
+.sidebar {
+  width: 260px;
+  background: #1e293b;
+  color: white;
+  padding: 25px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
   box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+  z-index: 1000;
 }
 
 .sidebar h2 {
@@ -92,9 +94,10 @@
   color: #38bdf8; 
 }
 
-.content { 
-  flex-grow: 1; 
-  padding: 40px; 
+.content {
+  flex-grow: 1;
+  padding: 40px;
+  margin-left: 260px;
   overflow-y: auto;
 }
 
