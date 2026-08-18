@@ -15,10 +15,13 @@ import Swal from 'sweetalert2';
 export class TripCreateComponent implements OnInit {
 
   tripForm: FormGroup;
-  invitedMembers: { email: string; role: string }[] = [];
+  invitedMembers: { email: string; role: string; isNew: boolean }[] = [];
   isEditMode: boolean = false;
   tripId: string | null = null;
   todayDate: string = '';
+  // Owner of the trip being edited; kept so an update never re-assigns ownership
+  ownerEmail: string = '';
+  ownerId: string = '';
 
   transportOptions = [
     { value: 'Cycle', label: 'Cycle', icon: 'bi-bicycle', eco: true },
@@ -108,13 +111,26 @@ export class TripCreateComponent implements OnInit {
       transportMode: data.transportMode || data.TransportMode || '',
       description: data.description || data.Description
     });
-    const members = data.members || data.Members;
-    if (members) {
-      this.invitedMembers = members.map((m: any) => ({
-        email: m.email || m.Email,
-        role: m.role || m.Role
-      }));
+    this.ownerId = data.createdBy || data.CreatedBy || '';
+    this.ownerEmail = (data.creatorEmail || data.CreatorEmail || '').toLowerCase();
+
+    const members = data.members || data.Members || [];
+    const owner = members.find((m: any) => (m.role || m.Role) === 'Owner');
+    if (owner && !this.ownerEmail) {
+      this.ownerEmail = (owner.email || owner.Email || '').toLowerCase();
     }
+
+    // The owner is returned inside the member list by the API, but is not an invited member
+    this.invitedMembers = members
+      .filter((m: any) => (m.role || m.Role) !== 'Owner')
+      .map((m: any) => ({
+        email: (m.email || m.Email || '').toLowerCase(),
+        role: m.role || m.Role || 'Viewer',
+        isNew: false
+      }))
+      .filter((m: { email: string }, i: number, list: { email: string }[]) =>
+        m.email !== '' && m.email !== this.ownerEmail && list.findIndex(x => x.email === m.email) === i
+      );
   }
 
   // Formats dates for the input field (YYYY-MM-DD)
@@ -125,14 +141,49 @@ export class TripCreateComponent implements OnInit {
     return [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
   }
 
+  // Number of members added during the current editing session
+  get newMemberCount(): number {
+    return this.invitedMembers.filter(m => m.isNew).length;
+  }
+
   // Invites a new member to the list
   onInvite() {
-    const email = this.tripForm.get('memberEmail')?.value;
+    const email = (this.tripForm.get('memberEmail')?.value || '').trim().toLowerCase();
     const role = this.tripForm.get('memberRole')?.value;
-    if (email && this.tripForm.get('memberEmail')?.valid) {
-      this.invitedMembers.push({ email, role });
-      this.tripForm.get('memberEmail')?.reset();
-      this.tripForm.patchValue({ memberRole: 'Viewer' });
+
+    if (!email || !this.tripForm.get('memberEmail')?.valid) {
+      this.showErrorAlert('Please enter a valid email address.');
+      return;
+    }
+
+    if (email === this.ownerEmail || email === this.getCurrentUser().email) {
+      this.showErrorAlert('You are already the owner of this trip.');
+      return;
+    }
+
+    if (this.invitedMembers.some(m => m.email === email)) {
+      this.showErrorAlert('This member is already on the list.');
+      return;
+    }
+
+    this.invitedMembers.push({ email, role, isNew: true });
+    this.tripForm.get('memberEmail')?.reset();
+    this.tripForm.patchValue({ memberRole: 'Viewer' });
+  }
+
+  // Reads the logged-in user identity out of the stored JWT token
+  private getCurrentUser(): { id: string; email: string } {
+    const token = localStorage.getItem('token');
+    if (!token) return { id: '', email: '' };
+    try {
+      const decoded: any = JSON.parse(atob(token.split('.')[1]));
+      return {
+        id: decoded['userId'] || '',
+        email: (decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '').toLowerCase()
+      };
+    } catch (e) {
+      console.error('Token decoding failed', e);
+      return { id: '', email: '' };
     }
   }
 
@@ -144,15 +195,10 @@ export class TripCreateComponent implements OnInit {
     }
 
     if (this.tripForm.valid) {
-      const token = localStorage.getItem('token');
-      let createdBy = '', creatorEmail = '';
-      if (token) {
-        try {
-          const decoded: any = JSON.parse(atob(token.split('.')[1]));
-          createdBy = decoded['userId'] || '';
-          creatorEmail = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
-        } catch (e) { console.error("Token decoding failed", e); }
-      }
+      const currentUser = this.getCurrentUser();
+      // Editing must never transfer ownership to the editor
+      const createdBy = (this.isEditMode && this.ownerId) ? this.ownerId : currentUser.id;
+      const creatorEmail = (this.isEditMode && this.ownerEmail) ? this.ownerEmail : currentUser.email;
 
       // Construct object for backend
       const tripData = {
@@ -172,11 +218,15 @@ export class TripCreateComponent implements OnInit {
       const useTransportProvider = this.tripForm.value.transportMode === 'Transport Provider';
 
       if (this.isEditMode && this.tripId) {
+        const newCount = this.newMemberCount;
         // Update existing trip
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: () => {
+            this.invitedMembers = this.invitedMembers.map(m => ({ ...m, isNew: false }));
             this.tripService.setTempTripData({ ...tripData, Id: this.tripId });
-            this.showSuccessAlert("Trip updated successfully!");
+            this.showSuccessAlert(newCount > 0
+              ? `Trip updated and ${newCount} new invitation${newCount > 1 ? 's' : ''} sent!`
+              : "Trip updated successfully!");
             this.router.navigate(['/trip-summary', this.tripId]);
           },
           error: () => this.showErrorAlert("Error updating trip.")
