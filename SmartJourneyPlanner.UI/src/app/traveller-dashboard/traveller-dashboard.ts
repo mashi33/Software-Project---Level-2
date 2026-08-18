@@ -144,21 +144,24 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.visibleOngoingTrips = this.ongoingTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
+    const matchesQuery = (trip: any) =>
+    trip.tripName?.toLowerCase().includes(query) ||
+    trip.destination?.toLowerCase().includes(query) ||
+    trip.role?.toLowerCase().includes(query) ||          // member role
+    trip.memberRole?.toLowerCase().includes(query);     // alternative property name (if used)
 
-    this.visibleUpcomingTrips = this.upcomingTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
+  this.visibleOngoingTrips = this.ongoingTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
 
-    this.visibleCompletedTrips = this.completedTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
-  }
+  this.visibleUpcomingTrips = this.upcomingTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
+
+  this.visibleCompletedTrips = this.completedTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
+}
 
   showTripsPopup(type: 'ongoing' | 'upcoming' | 'completed'): void {
     let title = '';

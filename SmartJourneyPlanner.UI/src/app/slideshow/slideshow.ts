@@ -190,7 +190,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
           this.tripMembers.push({
             name: displayName,
             email: m.email || '',
-            role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
+            role: role.toLowerCase() === 'owner' ? 'Owner' : role,
             hasMemory: hasUploaded
           });
         }
