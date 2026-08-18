@@ -39,4 +39,31 @@ getVehicles(): Observable<any[]> {
   deleteBooking(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/bookings/${id}`);
   }
+
+  // Blocked Date Ranges API calls
+  addBlockedDateRange(vehicleId: string, startDate: string, endDate: string, reason: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const body = { startDate, endDate, reason };
+    return this.http.post<any>(`${this.apiUrl}/vehicles/${vehicleId}/blocked-ranges`, body, { headers });
+  }
+
+  editBlockedDateRange(vehicleId: string, rangeId: string, startDate: string, endDate: string, reason: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const body = { startDate, endDate, reason };
+    return this.http.put<any>(`${this.apiUrl}/vehicles/${vehicleId}/blocked-ranges/${rangeId}`, body, { headers });
+  }
+
+  deleteBlockedDateRange(vehicleId: string, rangeId: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.delete<any>(`${this.apiUrl}/vehicles/${vehicleId}/blocked-ranges/${rangeId}`, { headers });
+  }
+
+  getBlockedDateRanges(vehicleId: string): Observable<any[]> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get<any[]>(`${this.apiUrl}/vehicles/${vehicleId}/blocked-ranges`, { headers });
+  }
 }

@@ -12,6 +12,7 @@ export class SignalrService {
   public voteUpdated = new Subject<any>();
   public discussionDeleted = new Subject<string>();
   public newDiscussion = new Subject<any>();
+  public notificationReceived = new Subject<any>();
 
   constructor() {
     this.startConnection();
@@ -55,6 +56,13 @@ export class SignalrService {
         this.hubConnection.on('NewDiscussion', (data: any) => {
           console.log("SignalR: New Discussion Created", data);
           this.newDiscussion.next(data);
+        });
+
+        // 5. New Real-time Notification
+        this.hubConnection.off('ReceiveNotification');
+        this.hubConnection.on('ReceiveNotification', (data: any) => {
+          console.log("SignalR: New Notification Received", data);
+          this.notificationReceived.next(data);
         });
       })
       .catch((err: any) => console.log('SignalR Connection Error: ' + err));

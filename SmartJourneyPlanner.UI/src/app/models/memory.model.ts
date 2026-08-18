@@ -8,7 +8,7 @@ export interface TripMemory {
     longitude: number; 
     startDate: Date;
     endDate: Date;
-    isPublic: boolean;
+    visibility: string; // Options: "private", "public", "tripMembers"
     tripId?: string; 
   tripName?: string;
     userId: string;

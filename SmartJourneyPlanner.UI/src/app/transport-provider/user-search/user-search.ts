@@ -276,9 +276,20 @@ export class UserSearch implements OnInit {
         
         while (current <= end) {
           const dateStr = current.toISOString().split('T')[0];
-          if (v.bookedDates.includes(dateStr)) {
+          // Check bookedDates
+          if (v.bookedDates && v.bookedDates.includes(dateStr)) {
             dateConflict = true;
             break;
+          }
+          // Check blockedDateRanges
+          if (v.blockedDateRanges && v.blockedDateRanges.length > 0) {
+            for (const range of v.blockedDateRanges) {
+              if (dateStr >= range.startDate && dateStr <= range.endDate) {
+                dateConflict = true;
+                break;
+              }
+            }
+            if (dateConflict) break;
           }
           current.setDate(current.getDate() + 1);
         }

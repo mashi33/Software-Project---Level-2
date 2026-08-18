@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, HostListener, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
@@ -14,7 +14,7 @@ import Swal from 'sweetalert2';
   templateUrl: './memories-map.html',
   styleUrls: ['./memories-map.css']
 })
-export class MemoriesMapComponent implements OnInit, AfterViewInit {
+export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private map!: leaflet.Map;
   private markersLayer = (leaflet as any).markerClusterGroup({
     iconCreateFunction: (cluster: any) => {
@@ -24,7 +24,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
         className: 'my-cluster-wrapper',
         iconSize: leaflet.point(40, 40)
       });
-    }
+    },
+    zoomToBoundsOnClick: false,
+    spiderfyOnMaxZoom: false,
+    showCoverageOnHover: false,
+    animate: true,
+    animateAddingMarkers: false,
+    maxClusterRadius: 70,
+    spiderfyDistanceMultiplier: 1.6
   });
 
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -34,7 +41,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   private apiUrl = 'http://localhost:5233/api/memories';
 
-  visibilityStatus: string = 'public';
+  visibilityStatus: string = 'private';
 
   newMemory = {
     title: '',
@@ -43,7 +50,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     description: '',
     latitude: 0,
     longitude: 0,
-    isPublic: true
+    visibility: 'private'
   };
 
   searchQuery: string = '';
@@ -51,6 +58,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   myRecentUploads: any[] = [];
   selectedMemory: any | null = null;
   allTrips: any[] = [];
+  selectedTripId: string = '';
   selectedTrip: any = null;
   groupedAlbums: any[] = [];
   selectedAlbum: any | null = null;
@@ -76,6 +84,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.initMap();
   }
+
+  ngOnDestroy(): void {}
 
   setActiveTab(tab: 'upload' | 'albums') {
     this.activeTab = tab;
@@ -149,7 +159,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
     if (file.size > 2 * 1024 * 1024) {
       this.showError(
-        'File too large',
+        'File too large', 
         'Please choose an image under 2MB.'
       );
       return;
@@ -171,7 +181,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     fileInput.value = '';
   }
 
-  // LIGHTBOX 
+   // LIGHTBOX 
 
   openAlbum(album: any) {
     this.selectedAlbum = album;
@@ -189,7 +199,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
       this.selectedAlbum = null;
-    this.currentMemoryIndex = 0;
+      this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;
@@ -221,25 +231,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.selectedMemory = null;
   }
 
-  toggleMemoryVisibility(memory: any) {
-    if (!memory) return;
-    memory.isPublic = !memory.isPublic;
-    this.http.patch(`${this.apiUrl}/${memory.id}`, { isPublic: memory.isPublic }).subscribe({
-      next: () => {
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: memory.isPublic ? 'Memory is now public' : 'Memory is now private',
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true
-        });
-      },
-      error: () => this.showError('Update failed', 'Could not update memory visibility.')
-    });
-  }
-
   // TRIPS
 
   loadAccessibleTrips() {
@@ -262,6 +253,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   onTripChange(event: any) {
     const tripId = event.target.value;
+    this.selectedTripId = tripId;
     this.selectedTrip = this.allTrips.find(t => t.id == tripId) || null;
   }
 
@@ -278,7 +270,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       locationName: memory.locationName || memory.LocationName || 'Unknown Location',
       startDate: memory.startDate,
       endDate: memory.endDate,
-      isPublic: memory.isPublic ?? memory.IsPublic ?? false,
+      visibility: memory.visibility ?? memory.Visibility ?? 'private',
       likeCount: memory.likeCount || 0,
       likedByUsers: memory.likedByUsers || memory.LikedByUsers || [],
       tripId: memory.tripId || memory.TripId || null,
@@ -332,9 +324,20 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
   loadMyMemories() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
+    if (!userId) {
+      this.showWarning('Login required', 'Please log in to view your memories.');
+      return;
+    }
 
-    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.showWarning('Login required', 'Authentication token missing. Please log in again.');
+      return;
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`, { headers }).subscribe({
       next: (data) => {
         this.allMemories = data.map(m => {
           const formatted = this.formatData(m);
@@ -349,7 +352,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       },
       error: (err) => {
         console.error('Error loading memories:', err);
-        this.showError('Could not load memories', 'Please check your backend server.');
+        this.showError(
+          'Could not load memories',
+          err?.error?.message || 'Please check your backend server and that you are logged in.'
+        );
       }
     });
   }
@@ -363,7 +369,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  // SEARCH & SAVE 
+ // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -424,21 +430,25 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
   saveMemory() {
     const userId = localStorage.getItem('userId');
     const fullName = localStorage.getItem('userName');
-    if (!userId) {
+    const token = localStorage.getItem('token');
+
+    if (!userId || !token) {
       this.showWarning('Login required', 'Please log in to save memories.');
       return;
     }
 
-    this.newMemory.isPublic = this.visibilityStatus === 'public';
+    this.newMemory.visibility = this.visibilityStatus;
 
     const body = {
       ...this.newMemory,
       userId,
       fullName,
-      isPublic: this.newMemory.isPublic,
+      visibility: this.newMemory.visibility,
       tripId: this.selectedTrip?.id || null,
       tripName: this.selectedTrip?.tripName || null
     };
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     Swal.fire({
       title: 'Saving memory...',
@@ -446,7 +456,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       didOpen: () => Swal.showLoading()
     });
 
-    this.http.post(this.apiUrl, body).subscribe({
+    this.http.post(this.apiUrl, body, { headers }).subscribe({
       next: (response: any) => {
         Swal.close();
 
@@ -467,20 +477,22 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
           description: '',
           latitude: 0,
           longitude: 0,
-          isPublic: true
+          visibility: 'private'
         };
-        this.visibilityStatus = 'public';
+        this.visibilityStatus = 'private';
         this.searchQuery = '';
         this.selectedTrip = null;
+        this.selectedTripId = '';
         this.cdr.detectChanges();
 
         this.showSuccess('Memory pinned!', 'Your memory has been saved and added to the map.');
       },
-      error: () => {
+      error: (err) => {
         Swal.close();
+        console.error('Save failed', err);
         this.showError(
           'Save failed',
-          'Could not save memory. Please check your backend server.'
+          err?.error?.message || 'Could not save memory. Please check your backend server.'
         );
       }
     });
@@ -498,13 +510,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     ).then(result => {
       if (!result.isConfirmed) return;
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.showWarning('Login required', 'Authentication token missing.');
+        return;
+      }
+
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
       Swal.fire({
         title: 'Deleting...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
-      this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+      this.http.delete(`${this.apiUrl}/${id}`, { headers }).subscribe({
         next: () => {
           Swal.close();
 
@@ -532,7 +552,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
         error: (err) => {
           Swal.close();
           console.error('Delete failed', err);
-          this.showError('Delete failed', 'Could not delete memory. Check backend connection.');
+          this.showError(
+            'Delete failed',
+            err?.error?.message || 'Could not delete memory. Check backend connection.'
+          );
         }
       });
     });
@@ -554,6 +577,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     ).then(result => {
       if (!result.isConfirmed) return;
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.showWarning('Login required', 'Authentication token missing.');
+        return;
+      }
+
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
       Swal.fire({
         title: 'Deleting album...',
         text: `Removing ${count} memor${count === 1 ? 'y' : 'ies'}...`,
@@ -561,7 +592,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
         didOpen: () => Swal.showLoading()
       });
 
-      const requests = album.memories.map((m: any) => this.http.delete(`${this.apiUrl}/${m.id}`));
+      const requests = album.memories.map((m: any) =>
+        this.http.delete(`${this.apiUrl}/${m.id}`, { headers })
+      );
 
       forkJoin(requests).subscribe({
         next: () => {
@@ -595,12 +628,40 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // MAP POPUP 
+   // MAP POPUP 
+
+  private isUserLiked(memory: any): boolean {
+    const userName = localStorage.getItem('userName');
+    if (!userName || !memory.likedByUsers) return false;
+    return memory.likedByUsers.includes(userName);
+  }
+
+  private getHeartAnimationHtml(memory: any): string {
+    if (!this.isUserLiked(memory)) return '';
+
+    return `
+      <div class="heart-animation-container" id="heart-anim-${memory.id}">
+        <svg class="floating-heart" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <svg class="floating-heart" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <svg class="floating-heart" viewBox="0 0 24 24">
+           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </div>
+    `;
+  }
 
   private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text ?? '';
-    return div.innerHTML;
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   private getPopupHtml(memory: any): string {
@@ -610,24 +671,28 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     const location = this.escapeHtml(memory.locationName || 'Unknown');
     const imageUrl = this.escapeHtml(memory.imageUrl || '');
     const id = this.escapeHtml(String(memory.id));
-    const visibility = memory.isPublic ? 'Public' : 'Private';
-    const visibilityClass = memory.isPublic ? 'public' : 'private';
+    const visibility =
+      memory.visibility === 'public'
+        ? 'Public'
+        : memory.visibility === 'tripMembers'
+        ? 'Only for trip members'
+        : 'Private';
+    const visibilityClass =
+      memory.visibility === 'public'
+        ? 'public'
+        : memory.visibility === 'tripMembers'
+        ? 'trip-members'
+        : 'private';
 
-    const likeHtml = memory.isPublic
-      ? `<div class="popup-likes">
-           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-             <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
-           </svg>
-           <span>${memory.likeCount || 0}</span>
-         </div>`
-      : '';
-
-    const likedUsersHtml = memory.isPublic && memory.likedByUsers && memory.likedByUsers.length > 0
-      ? `<div class="popup-liked-users">
-           <span class="popup-liked-label">Liked by:</span>
-           <span class="popup-liked-names">${memory.likedByUsers.map((u: string) => this.escapeHtml(u)).join(', ')}</span>
-         </div>`
-      : '';
+    const likeHtml =
+      memory.visibility === 'public'
+        ? `<div class="popup-likes">
+             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+               <path fill="#be123c" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+             </svg>
+             <span class="like-num">${memory.likeCount || 0}</span>
+           </div>`
+        : '';
 
     return `
       <div class="map-popup" data-memory-id="${id}">
@@ -652,8 +717,6 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
           </p>
 
           ${likeHtml}
-
-          ${likedUsersHtml}
 
           <div class="popup-actions">
             <button type="button" class="popup-btn popup-btn-view view-big-image" data-memory-id="${id}">
@@ -690,16 +753,36 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  refreshMapMarkers() {
+  refreshMapMarkers(): void {
     this.markersLayer.clearLayers();
+    this.map?.closePopup();
 
-    this.allMemories.forEach(memory => {
+    const likedMemories = this.allMemories.filter(memory => this.isUserLiked(memory));
+    const totalLikedPins = likedMemories.length;
+
+    const markers: leaflet.Marker[] = [];
+
+    this.allMemories.forEach((memory) => {
       if (!memory.latitude || !memory.longitude) return;
 
+      const likedIndex = likedMemories.findIndex(m => m.id === memory.id);
+      const isLikedMemory = likedIndex !== -1;
+
+      const heartAnimationHtml = isLikedMemory ? this.getHeartAnimationHtml(memory) : '';
+
+      const pinStyle = isLikedMemory ? `
+          --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
+          --pin-index: ${likedIndex};
+          --total-pins: ${totalLikedPins};
+          --pin-delay: calc(2s + (${likedIndex} * 10s));
+        ` : `
+          --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
+        `;
       const pinHtml = `
-        <div class="vignette-pin-container" style="--pin-color: ${memory.isPublic ? '#10b981' : '#6366f1'}">
+        <div class="vignette-pin-container" style="${pinStyle}">
+          ${heartAnimationHtml}
           <div class="vignette-image-holder">
-            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${memory.title}" />
+            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${this.escapeHtml(memory.title || '')}" />
           </div>
           <div class="vignette-pin-tail"></div>
           <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
@@ -708,13 +791,18 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
       const customIcon = leaflet.divIcon({
         html: pinHtml,
-        className: 'vignette-map-pin-wrapper', 
-        iconSize: leaflet.point(52, 64),       
-        iconAnchor: [26, 64],                  
-        popupAnchor: [0, -68]                  
+        className: 'vignette-map-pin-wrapper',
+        iconSize: leaflet.point(52, 64),
+        iconAnchor: [26, 64],
+        popupAnchor: [0, -68]
       });
 
-      const marker = leaflet.marker([memory.latitude, memory.longitude], { icon: customIcon });
+      const marker = leaflet.marker([memory.latitude, memory.longitude], {
+        icon: customIcon,
+        riseOnHover: true,
+        memoryData: memory
+      } as any);
+
       const popupHtml = this.getPopupHtml(memory);
 
       marker
@@ -728,11 +816,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
           if (popupEl) this.attachPopupListeners(popupEl, memory);
         });
 
-      this.markersLayer.addLayer(marker);
+      markers.push(marker);
     });
+
+    // Batch add – prevents the flash of individual pins on load
+    this.markersLayer.addLayers(markers);
   }
 
-  // SLIDESHOW 
+ // SLIDESHOW 
 
   startSlideshow(album: any) {
     if (album.memories.length <= 1) return;
@@ -755,7 +846,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-  // MAP INIT 
+   // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -772,6 +863,78 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
 
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers();
+
+    // Cluster click logic
+    this.markersLayer.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      if (!cluster) return;
+
+      // Toggle: already spiderfied → collapse
+      if ((cluster as any)._spiderfied) {
+        cluster.unspiderfy();
+        return;
+      }
+
+      // Close any other open spiderfied cluster
+      try { 
+        this.markersLayer.unspiderfy(); 
+      } catch {}
+
+      const childMarkers = cluster.getAllChildMarkers();
+      if (!childMarkers.length) return;
+
+      const latLngs = childMarkers.map((m: any) => m.getLatLng());
+      const first = latLngs[0];
+
+      // Check if all markers in cluster share the exact same location
+      const allSameLocation = latLngs.every((ll: any) =>
+        Math.abs(ll.lat - first.lat) < 0.00001 &&
+        Math.abs(ll.lng - first.lng) < 0.00001
+      );
+
+      // Stop any lingering animations
+      this.map.stop();
+
+      if (allSameLocation) {
+        // EXACT SAME LOCATION: No flying/zooming. Spiderfy instantly on the spot.
+        if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+          cluster.spiderfy();
+        }
+      } else {
+        // DIFFERENT / NEARBY LOCATIONS: Zoom to bounds first
+        const bounds = cluster.getBounds().pad(0.15);
+        const currentZoom = this.map.getZoom();
+        const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+        const needsZoom =
+          currentZoom < targetZoom - 0.5 ||
+          !this.map.getBounds().contains(bounds);
+
+        if (needsZoom) {
+          this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 17,
+            duration: 1.2,
+            easeLinearity: 0.25
+          });
+
+          this.map.once('moveend', () => {
+            // Delay spiderfying until after tile positioning settles completely (removes shake)
+            setTimeout(() => {
+              const activeCluster = this.markersLayer.getVisibleParent(childMarkers[0]) || cluster;
+              if (activeCluster && typeof activeCluster.spiderfy === 'function' && !(activeCluster as any)._spiderfied) {
+                activeCluster.spiderfy();
+              }
+            }, 180);
+          });
+        } else {
+          // Already zoomed in close enough -> spiderfy immediately
+          if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+            cluster.spiderfy();
+          }
+        }
+      }
+    });
   }
 
   trackByFn(index: number, item: any) {
@@ -791,7 +954,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
     leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
-  // ALBUM HELPERS 
+   // ALBUM HELPERS 
 
   getTotalLikes(album: any): number {
     return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
@@ -804,7 +967,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       .map((m: any) => new Date(m.createdAt))
       .filter((d: Date) => !isNaN(d.getTime()));
 
-    return dates.length ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
+    return dates.length > 0 ? new Date(Math.min(...dates.map((d: Date) => d.getTime()))) : null;
   }
 
   getNewestCreatedAt(album: any): Date | null {
@@ -814,7 +977,19 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit {
       .map((m: any) => new Date(m.createdAt))
       .filter((d: Date) => !isNaN(d.getTime()));
 
-    return dates.length ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+    return dates.length > 0 ? new Date(Math.max(...dates.map((d: Date) => d.getTime()))) : null;
+  }
+
+  getVisibilityLabel(visibility: string): string {
+    switch (visibility) {
+      case 'public':
+        return 'Public';
+      case 'tripMembers':
+        return 'Only for trip members';
+      case 'private':
+      default:
+        return 'Private';
+    }
   }
 
   // EVENTS 

@@ -6,6 +6,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
+using SmartJourneyPlanner.API.Services;
+using SmartJourneyPlanner.API.Models;
+using Microsoft.AspNetCore.SignalR;
+using SmartJourneyPlanner.Hubs;
 
 namespace SmartJourneyPlanner.Controllers
 {
@@ -21,11 +25,21 @@ namespace SmartJourneyPlanner.Controllers
     public class TransportBookingsController : ControllerBase
     {
         private readonly TransportBookingService _bookingService;
+        private readonly ProviderDashboardService _providerDashboardService;
+        private readonly NotificationService _notificationService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
         // Constructor injects the service that handles database work
-        public TransportBookingsController(TransportBookingService bookingService)
+        public TransportBookingsController(
+            TransportBookingService bookingService, 
+            ProviderDashboardService providerDashboardService,
+            NotificationService notificationService,
+            IHubContext<ChatHub> hubContext)
         {
             _bookingService = bookingService;
+            _providerDashboardService = providerDashboardService;
+            _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
         /**
@@ -75,6 +89,51 @@ namespace SmartJourneyPlanner.Controllers
             newBooking.CreatedAt = DateTime.UtcNow.ToString("o");
             // Save to database
             await _bookingService.CreateAsync(newBooking);
+
+            // Generate notification for the Transport Provider
+            try
+            {
+                var providerNotification = new Notification
+                {
+                    UserId = newBooking.ProviderId,
+                    Icon = "bi-card-list",
+                    IconColorClass = "icon-blue",
+                    Title = $"New booking request received from traveler {newBooking.userName} for {newBooking.vehicleName}",
+                    Time = "Just now",
+                    IsRead = false,
+                    LinkText = "View Request",
+                    Route = $"/provider-dashboard?panel=bookings&bookingId={newBooking.Id}"
+                };
+                await _notificationService.CreateNotificationAsync(providerNotification);
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error creating provider notification: {ex.Message}");
+            }
+
+            // Generate notification for the Traveler
+            try
+            {
+                var travelerNotification = new Notification
+                {
+                    UserId = newBooking.UserId,
+                    Icon = "bi-clock-history",
+                    IconColorClass = "icon-blue",
+                    Title = $"Your booking request for {newBooking.vehicleName} has been submitted successfully and is pending approval",
+                    Time = "Just now",
+                    IsRead = false,
+                    LinkText = "Check Status",
+                    Route = $"/transport?tab=bookings&bookingId={newBooking.Id}"
+                };
+                await _notificationService.CreateNotificationAsync(travelerNotification);
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error creating traveler notification: {ex.Message}");
+            }
+
             return CreatedAtAction(nameof(Get), new { id = newBooking.Id }, newBooking);
         }
 
@@ -85,14 +144,85 @@ namespace SmartJourneyPlanner.Controllers
         [HttpPatch("{id:length(24)}/status")]
         public async Task<IActionResult> PatchStatus(string id, [FromBody] StatusUpdateDto dto)
         {
+            System.Console.WriteLine($"=== TransportBookingsController.PatchStatus ===");
+            System.Console.WriteLine($"Booking ID: {id}");
+            System.Console.WriteLine($"New Status: {dto.Status}");
+
             var booking = await _bookingService.GetAsync(id);
             if (booking is null) return NotFound();
 
+            System.Console.WriteLine($"Old Status: {booking.Status}");
+            System.Console.WriteLine($"Vehicle ID: {booking.VehicleId}");
+            System.Console.WriteLine($"Start Date: {booking.StartDate}");
+            System.Console.WriteLine($"End Date: {booking.EndDate}");
+
+            // Update the booking status
             booking.Status = dto.Status;
-            
             booking.StatusChangedDate = DateTime.UtcNow.ToString("o");
 
             await _bookingService.UpdateAsync(id, booking);
+            System.Console.WriteLine("Booking status updated in database");
+
+            // Call ProviderDashboardService to update vehicle's bookedDates based on status
+            await _providerDashboardService.UpdateBookingStatus(id, dto.Status);
+
+            // Generate notifications based on the status change
+            try
+            {
+                if (dto.Status == "Confirmed" || dto.Status == "Approved")
+                {
+                    var travelerNotification = new Notification
+                    {
+                        UserId = booking.UserId,
+                        Icon = "bi-check-circle-fill",
+                        IconColorClass = "icon-green",
+                        Title = $"Your booking request for {booking.vehicleName} has been confirmed by the provider!",
+                        Time = "Just now",
+                        IsRead = false,
+                        LinkText = "View Details",
+                        Route = $"/transport?tab=bookings&bookingId={booking.Id}"
+                    };
+                    await _notificationService.CreateNotificationAsync(travelerNotification);
+                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+                }
+                else if (dto.Status == "Rejected")
+                {
+                    var travelerNotification = new Notification
+                    {
+                        UserId = booking.UserId,
+                        Icon = "bi-x-circle-fill",
+                        IconColorClass = "icon-red",
+                        Title = $"Your booking request for {booking.vehicleName} has been rejected by the provider.",
+                        Time = "Just now",
+                        IsRead = false,
+                        LinkText = "View Dashboard",
+                        Route = $"/transport?tab=bookings&bookingId={booking.Id}"
+                    };
+                    await _notificationService.CreateNotificationAsync(travelerNotification);
+                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+                }
+                else if (dto.Status == "Cancelled")
+                {
+                    var providerNotification = new Notification
+                    {
+                        UserId = booking.ProviderId,
+                        Icon = "bi-x-circle-fill",
+                        IconColorClass = "icon-red",
+                        Title = $"Booking request for {booking.vehicleName} has been cancelled by traveler {booking.userName}.",
+                        Time = "Just now",
+                        IsRead = false,
+                        LinkText = "Check Status",
+                        Route = $"/provider-dashboard?panel=bookings&bookingId={booking.Id}"
+                    };
+                    await _notificationService.CreateNotificationAsync(providerNotification);
+                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error creating status update notification: {ex.Message}");
+            }
+
             return NoContent();
         }
 

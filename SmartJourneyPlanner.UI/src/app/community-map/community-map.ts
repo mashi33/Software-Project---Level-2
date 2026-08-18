@@ -1,4 +1,4 @@
-import {Component,OnInit,HostListener,AfterViewInit,ChangeDetectorRef} from '@angular/core';
+import {Component,OnInit,HostListener,AfterViewInit,ChangeDetectorRef,ElementRef,ViewChild} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -12,10 +12,8 @@ import { MemoryService } from '../services/memory';
 import { TripMemory } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
-
-
-
-type CommunityMemory = TripMemory & { priorityScore?: number };
+import gsap from 'gsap';
+import { Flip } from 'gsap/Flip';
 
 interface CommunityAlbum {
   tripName: string;
@@ -26,6 +24,8 @@ interface CommunityAlbum {
   slideIndex: number;
   slideshowInterval?: ReturnType<typeof setInterval> | null;
 }
+
+type PopularSortMode = 'score' | 'date' | 'likes' | 'location';
 
 @Component({
   selector: 'app-community-map',
@@ -38,14 +38,21 @@ interface CommunityAlbum {
 export class CommunityMapComponent implements OnInit, AfterViewInit {
   private map!: leaflet.Map;
   private markersLayer = (leaflet as any).markerClusterGroup({
-      iconCreateFunction: (cluster: any) => {
+    iconCreateFunction: (cluster: any) => {
       const count = cluster.getChildCount();
       return leaflet.divIcon({
         html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
         className: 'my-cluster-wrapper',
         iconSize: leaflet.point(40, 40)
       });
-    }
+    },
+    zoomToBoundsOnClick: false,
+    spiderfyOnMaxZoom: false,
+    showCoverageOnHover: false,
+    animate: true,
+    animateAddingMarkers: false,
+    maxClusterRadius: 70,
+    spiderfyDistanceMultiplier: 1.6
   });
 
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -68,6 +75,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   albumLikeInProgress = false;
   private searchSubject = new Subject<string>();
   private markerCache = new Map<string, leaflet.Marker>();
+  shouldAnimateTopRated = false;
+  isPopularReordering = false;
+  popularEntranceComplete = false;
+  sortMode: PopularSortMode = 'score';
+
+  @ViewChild('popularGrid') popularGridRef?: ElementRef<HTMLElement>;
 
   constructor(
     private readonly memoryService: MemoryService,
@@ -103,7 +116,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.memoryService.getPublicMemories().subscribe({
       next: (data) => {
         this.allMemories = data
-          .filter(m => m.isPublic)
+          .filter(m => m.visibility === 'public')
           .map(m => this.formatData(m))
           .slice(0, 500);
         this.applyFilters();
@@ -124,7 +137,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       locationName: (memory['locationName'] || memory['LocationName'] || 'Unknown Location') as string,
       startDate: memory['startDate'] as Date,
       endDate: memory['endDate'] as Date,
-      isPublic: Boolean(memory['isPublic'] ?? memory['IsPublic'] ?? false),
+      visibility: (memory['visibility'] ?? memory['Visibility'] ?? 'private') as string,
       likeCount: Number(memory['likeCount'] || memory['LikeCount'] || 0),
       likedByUsers: (memory['likedByUsers'] || memory['LikedByUsers'] || []) as string[],
       tripId: (memory['tripId'] || memory['TripId']) as string | undefined,
@@ -141,8 +154,9 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.searchSubject.next(this.searchQuery);
   }
 
-  private applyFilters(): void {
-    let memories: CommunityMemory[] = [...this.allMemories];
+  private applyFilters(options?: { flipFrom?: Map<string, DOMRect>; likedMemoryId?: string }): void {
+    let memories = [...this.allMemories];
+
     if (this.searchQuery?.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       memories = memories.filter(m =>
@@ -150,18 +164,215 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       );
     }
 
-    const now = Date.now();
-
-    memories = memories.map(m => ({
-      ...m,
-      priorityScore: this.calculatePriorityScore(m, now)
-    }));
-    this.filteredMemories = memories.sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
-
+    this.filteredMemories = this.sortMemories(memories, this.sortMode);
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
     this.groupMemoriesByTrip(this.filteredMemories);
     this.refreshMapMarkers(this.filteredMemories);
-    //this.cdr.detectChanges();
+
+    if (options?.flipFrom?.size) {
+      this.cdr.detectChanges();
+      requestAnimationFrame(() => this.playGSAPFlipAnimation(options.flipFrom!, options.likedMemoryId));
+    } else if (!this.shouldAnimateTopRated) {
+      this.shouldAnimateTopRated = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.playGSAPStaggeredEntrance();
+      }, 100);
+    }
+  }
+
+  setSortMode(mode: PopularSortMode): void {
+    if (this.sortMode === mode || this.isPopularReordering) return;
+    const flipFrom = this.capturePopularCardRects();
+    this.sortMode = mode;
+    this.applyFilters({ flipFrom });
+  }
+
+  trackByMemoryId(_index: number, memory: TripMemory): string {
+    return memory.id || String(_index);
+  }
+
+  private sortMemories(memories: TripMemory[], mode: PopularSortMode): TripMemory[] {
+    const sorted = [...memories];
+
+    switch (mode) {
+      case 'likes':
+        return sorted.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      case 'date':
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
+          const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+      case 'location':
+        return sorted.sort((a, b) =>
+          (a.locationName || '').localeCompare(b.locationName || '', undefined, { sensitivity: 'base' })
+        );
+      case 'score':
+      default:
+        return this.sortMemoriesByLikesAndDate(sorted);
+    }
+  }
+
+  private capturePopularCardRects(): Map<string, DOMRect> {
+    const rects = new Map<string, DOMRect>();
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid) return rects;
+
+    grid.querySelectorAll<HTMLElement>('.thumb-card[data-memory-id]').forEach(card => {
+      const id = card.dataset['memoryId'];
+      if (id) rects.set(id, card.getBoundingClientRect());
+    });
+
+    return rects;
+  }
+
+  private playGSAPStaggeredEntrance(): void {
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.thumb-card'));
+    if (!cards.length) return;
+
+    // Set initial state for entrance animation
+    gsap.set(cards, {
+      opacity: 0,
+      y: 50,
+      scale: 0.9
+    });
+
+    // Staggered entrance animation
+    gsap.to(cards, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: 'back.out(1.7)',
+      onComplete: () => {
+        this.popularEntranceComplete = true;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private playGSAPFlipAnimation(beforeRects: Map<string, DOMRect>, likedMemoryId?: string): void {
+    const grid = this.popularGridRef?.nativeElement
+      ?? document.querySelector<HTMLElement>('.top-rated-section .popular-memory-grid');
+    if (!grid || !beforeRects.size) return;
+
+    const cards = Array.from(
+      grid.querySelectorAll<HTMLElement>('.thumb-card[data-memory-id]')
+    );
+    if (!cards.length) return;
+
+    this.isPopularReordering = true;
+    grid.classList.add('is-reordering');
+
+    // Calculate movements and organize by direction
+    const movements: Array<{ element: HTMLElement; deltaY: number; distance: number; direction: 'up' | 'down' }> = [];
+
+    cards.forEach(card => {
+      const id = card.dataset['memoryId'];
+      if (!id) return;
+
+      const before = beforeRects.get(id);
+      if (!before) return;
+
+      const after = card.getBoundingClientRect();
+      const deltaY = before.top - after.top;
+      if (Math.abs(deltaY) < 2) return;
+
+      movements.push({
+        element: card,
+        deltaY,
+        distance: Math.abs(deltaY),
+        direction: deltaY > 0 ? 'up' : 'down'
+      });
+    });
+
+    // Find the liked box and calculate cascading timing
+    const likedMovement = movements.find(m => m.element.dataset['memoryId'] === likedMemoryId);
+    const otherMovements = movements.filter(m => m.element.dataset['memoryId'] !== likedMemoryId);
+
+    // Sort other movements by their position relative to liked box
+    otherMovements.sort((a, b) => {
+      // Sort by distance from liked box's starting position
+      const likedStartY = likedMovement?.deltaY || 0;
+      const aDistanceFromLiked = Math.abs(a.deltaY - likedStartY);
+      const bDistanceFromLiked = Math.abs(b.deltaY - likedStartY);
+      return aDistanceFromLiked - bDistanceFromLiked;
+    });
+
+    // Create GSAP timeline for cascading animation
+    const timeline = gsap.timeline({
+      onComplete: () => {
+        grid.classList.remove('is-reordering');
+        this.isPopularReordering = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Start with liked box if it exists
+    if (likedMovement) {
+      const { element, deltaY, direction } = likedMovement;
+
+      gsap.set(element, {
+        y: deltaY,
+        scale: 1.05,
+        zIndex: 1000,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+        border: '3px solid rgba(99, 102, 241, 0.6)'
+      });
+
+      timeline.to(element, {
+        y: 0,
+        scale: 1,
+        duration: 0.8,
+        ease: 'power2.inOut',
+        boxShadow: '0 0 0 rgba(0,0,0,0)',
+        border: '0px solid rgba(99, 102, 241, 0)',
+        zIndex: 1,
+        onComplete: () => {
+          gsap.set(element, { clearProps: 'all' });
+        }
+      }, 0);
+    }
+
+    // Add other movements with cascading timing based on when liked box crosses their positions
+    otherMovements.forEach((movement, index) => {
+      const { element, deltaY, direction } = movement;
+
+      // Calculate when this box should start based on liked box's progress
+      const likedDistance = likedMovement?.distance || 1;
+      const thisDistance = movement.distance;
+      const progressRatio = thisDistance / (likedDistance + thisDistance);
+      const startTime = likedMovement ? (progressRatio * 0.6) : (index * 0.2);
+
+      const zIndex = direction === 'up' ? 100 + index : 50 + index;
+      gsap.set(element, {
+        y: deltaY,
+        scale: 1.02,
+        zIndex: zIndex,
+        boxShadow: direction === 'up' ? '0 12px 24px rgba(0,0,0,0.25)' : '0 6px 16px rgba(0,0,0,0.15)',
+        border: direction === 'up' ? '2px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(99, 102, 241, 0.2)'
+      });
+
+      timeline.to(element, {
+        y: 0,
+        scale: 1,
+        duration: 0.6,
+        ease: 'power2.inOut',
+        boxShadow: '0 0 0 rgba(0,0,0,0)',
+        border: '0px solid rgba(99, 102, 241, 0)',
+        zIndex: 1,
+        onComplete: () => {
+          gsap.set(element, { clearProps: 'all' });
+        }
+      }, startTime);
+    });
   }
 
 
@@ -232,7 +443,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     return score;
   }
 
-  private getTopRatedMemories(memories: CommunityMemory[], count: number = 10): CommunityMemory[] {
+  private getTopRatedMemories(memories: TripMemory[], count: number = 10): TripMemory[] {
     return memories.slice(0, count);
   }
 
@@ -315,22 +526,24 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     event?.stopPropagation();
     event?.preventDefault();
 
-    if (!memoryId) return;
+    if (!memoryId || this.isPopularReordering) return;
     const currentUserId = this.authService.getUserId();
     const currentUserName = this.authService.getUserName();
     if (!currentUserId) return;
     const memory = this.allMemories.find(m => m.id === memoryId);
     const isLiked = memory ? this.hasUserLiked(memory) : false;
-    this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
+    const flipFrom = this.capturePopularCardRects();
 
+    this.memoryService.toggleLike(memoryId, currentUserId, currentUserName || '').subscribe({
       next: (updatedMemory) => {
         this.updateLocalMemoryState(memoryId, updatedMemory);
-        this.applyFilters();
+        this.applyFilters({ flipFrom, likedMemoryId: memoryId });
         const newLikeCount = updatedMemory.likeCount || 0;
         const action = isLiked ? 'unlike' : 'like';
         const message = isLiked
           ? `Removed like! (${newLikeCount} likes)`
           : `Liked! (${newLikeCount} likes)`;
+
         this.showSweetAlert(message, action);
       },
 
@@ -338,13 +551,14 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
+
 toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
 
     const currentUserId = this.authService.getUserId();
     const currentUserName = this.authService.getUserName();
-    if (!currentUserId || this.albumLikeInProgress) return;
+    if (!currentUserId || this.albumLikeInProgress || this.isPopularReordering) return;
     const allLiked = this.isAlbumFullyLiked(album);
     const targets = album.memories.filter(m =>
       m.id && (allLiked ? this.hasUserLiked(m) : !this.hasUserLiked(m))
@@ -352,6 +566,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     if (!targets.length) return;
     this.albumLikeInProgress = true;
+    const flipFrom = this.capturePopularCardRects();
     const requests = targets.map(m => this.memoryService.toggleLike(m.id!, currentUserId, currentUserName || ''));
 
     forkJoin(requests).subscribe({
@@ -359,13 +574,14 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         updatedMemories.forEach(m => {
           if (m.id) this.updateLocalMemoryState(m.id, m);
         });
-        this.applyFilters();
+        this.applyFilters({ flipFrom });
         this.albumLikeInProgress = false;
         const totalLikes = this.getTotalLikes(album);
         const action = allLiked ? 'album_unlike' : 'album_like';
         const message = allLiked
           ? `Removed likes from ${targets.length} memories! (${totalLikes} total)`
           : `Liked ${targets.length} memories! (${totalLikes} total)`;
+
         this.showSweetAlert(message, action);
         this.cdr.detectChanges();
       },
@@ -581,6 +797,8 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const id = this.escapeHtml(String(memory.id));
     const tripName = this.escapeHtml(memory.tripName || 'Unknown Trip');
     const liked = this.hasUserLiked(memory);
+    const visibility = memory.visibility === 'public' ? 'Public' : memory.visibility === 'tripMembers' ? 'Only for trip members' : 'Private';
+    const visibilityClass = memory.visibility === 'public' ? 'public' : memory.visibility === 'tripMembers' ? 'trip-members' : 'private';
 
     return `
 
@@ -597,7 +815,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
         <div class="popup-body">
           <div class="popup-header">
             <h6 class="popup-title">${title}</h6>
-            <span class="popup-visibility public">Public</span>
+            <span class="popup-visibility ${visibilityClass}">${visibility}</span>
           </div>
 
           <span class="popup-trip-badge">${tripName}</span>
@@ -611,7 +829,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
           <div class="popup-likes">
             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-              <path fill="currentColor" d="M23,10C23,8.89 22.11,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10M1,9V21H5V9H1Z"/>
+                 <path fill="#be123c" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
             <span class="like-num">${memory.likeCount || 0}</span>
           </div>
@@ -642,11 +860,11 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       });
     });
 
-    popupEl.querySelector('.popup-like-btn')?.addEventListener('click', (e) => {
+    popupEl.querySelector('.popup-like-btn')?.addEventListener('click', (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
       if (memory.id) {
-        this.toggleLike(memory.id);
+        this.toggleLike(memory.id, e); 
         this.map.closePopup();
       }
     });
@@ -667,6 +885,78 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers(this.filteredMemories);
+
+    this.markersLayer.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      if (!cluster) return;
+
+      // Unspiderfy if already expanded
+      if ((cluster as any)._spiderfied) {
+        cluster.unspiderfy();
+        return;
+      }
+
+      // Close any other open spiderfied clusters
+      try { 
+        this.markersLayer.unspiderfy(); 
+      } catch {}
+
+      const childMarkers = cluster.getAllChildMarkers();
+      if (!childMarkers.length) return;
+
+      const latLngs = childMarkers.map((m: any) => m.getLatLng());
+      const first = latLngs[0];
+
+      // Check if ALL child markers share the exact same coordinates
+      const allSameLocation = latLngs.every((ll: any) =>
+        Math.abs(ll.lat - first.lat) < 0.00001 &&
+        Math.abs(ll.lng - first.lng) < 0.00001
+      );
+
+      // Stop any active map movements
+      this.map.stop();
+
+      if (allSameLocation) {
+        // EXACT SAME LOCATION: NO flying/zooming at all.
+        // Directly spiderfy on the spot without map movement or visual shaking.
+        if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+          cluster.spiderfy();
+        }
+      } else {
+        // DIFFERENT / NEARBY LOCATIONS: Perform flight/zoom to bounds
+        const bounds = cluster.getBounds().pad(0.15);
+        const currentZoom = this.map.getZoom();
+        const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+        const needsZoom =
+          currentZoom < targetZoom - 0.5 ||
+          !this.map.getBounds().contains(bounds);
+
+        if (needsZoom) {
+          this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 17,
+            duration: 1.2,
+            easeLinearity: 0.25
+          });
+
+          this.map.once('moveend', () => {
+            // Wait for map movement and CSS transitions to settle before spiderfying
+            setTimeout(() => {
+              const activeCluster = this.markersLayer.getVisibleParent(childMarkers[0]) || cluster;
+              if (activeCluster && typeof activeCluster.spiderfy === 'function' && !(activeCluster as any)._spiderfied) {
+                activeCluster.spiderfy();
+              }
+            }, 180);
+          });
+        } else {
+          // Already zoomed in close enough -> spiderfy immediately
+          if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+            cluster.spiderfy();
+          }
+        }
+      }
+    });
   }
 
   private fixLeafletIcons(): void {
@@ -695,5 +985,3 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     }
   }
 }
-
-

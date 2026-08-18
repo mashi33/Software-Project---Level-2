@@ -1,0 +1,199 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { TravellerDashboardService } from '../services/travellerDashboard';
+import { NotificationService } from '../services/notification.service';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-notifications',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './notifications.html',
+  styleUrls: ['./notifications.css']
+})
+export class NotificationsComponent implements OnInit {
+  notifications: any[] = [];
+  filteredNotifications: any[] = [];
+  filterTab: string = 'all';
+  unreadCount: number = 0;
+  readCount: number = 0;
+
+  constructor(
+    private authService: AuthService,
+    private dashboardService: TravellerDashboardService,
+    private notificationService: NotificationService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadAllNotifications();
+  }
+
+  loadAllNotifications() {
+    const userType = this.authService.getUserSystemType();
+    const userId = this.authService.getUserId();
+
+    if (!userId) return;
+
+    this.notificationService.getNotifications(userId, userType).subscribe({
+      next: (dbNotifications) => {
+        const mapped = dbNotifications.map((n: any) => ({
+          ...n,
+          time: this.getRelativeTime(n.createdAt)
+        }));
+        this.notifications = mapped;
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
+
+        // Dynamically fetch traveler upcoming trips to inject countdown notification
+        if (userType !== 'TransportProvider' && userType !== 'Provider') {
+          this.dashboardService.getDashboardData().subscribe({
+            next: (data) => {
+              const upcomingTrips = data.upcomingTrips || [];
+              if (upcomingTrips.length > 0) {
+                const nextTrip = upcomingTrips
+                  .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+                
+                if (nextTrip) {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tripDate = new Date(nextTrip.startDate);
+                  tripDate.setHours(0, 0, 0, 0);
+
+                  const diffTime = tripDate.getTime() - today.getTime();
+                  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  if (daysLeft >= 0) {
+                    let title = '';
+                    if (daysLeft === 0) {
+                      title = `Your trip to ${nextTrip.destination || 'your destination'} is starting today! Pack your bags.`;
+                    } else if (daysLeft === 1) {
+                      title = `Only 1 day left until your trip to ${nextTrip.destination || 'your destination'}! Double check your checklist.`;
+                    } else {
+                      title = `Only ${daysLeft} days left until your trip to ${nextTrip.destination || 'your destination'}!`;
+                    }
+
+                    const countdownNotification = {
+                      id: 'countdown-999',
+                      icon: 'bi-clock-fill',
+                      iconColorClass: 'icon-orange',
+                      title: title,
+                      time: 'Just now',
+                      isRead: false,
+                      linkText: 'View Trip',
+                      route: '/trip-summary/' + (nextTrip.id || nextTrip.Id)
+                    };
+
+                    this.notifications = [
+                      countdownNotification,
+                      ...this.notifications.filter(n => n.id !== 'countdown-999')
+                    ];
+                    this.updateCounts();
+                    this.applyFilter(this.filterTab);
+                  }
+                }
+              }
+            },
+            error: (err) => {
+              console.error('Failed to load dashboard data for notification countdown', err);
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load notifications from database', err);
+      }
+    });
+  }
+
+  updateCounts() {
+    this.unreadCount = this.notifications.filter(n => !n.isRead).length;
+    this.readCount = this.notifications.filter(n => n.isRead).length;
+  }
+
+  applyFilter(filter: string) {
+    this.filterTab = filter;
+    if (filter === 'unread') {
+      this.filteredNotifications = this.notifications.filter(n => !n.isRead);
+    } else if (filter === 'read') {
+      this.filteredNotifications = this.notifications.filter(n => n.isRead);
+    } else {
+      this.filteredNotifications = [...this.notifications];
+    }
+  }
+
+  markAllAsRead() {
+    const userId = this.authService.getUserId();
+    if (!userId) return;
+
+    this.notificationService.markAllAsRead(userId).subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.isRead = true);
+        this.notifications = [...this.notifications];
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
+      },
+      error: (err) => console.error('Failed to mark all as read', err)
+    });
+  }
+
+  markAsRead(notification: any) {
+    if (notification.id === 'countdown-999') {
+      notification.isRead = true;
+      this.updateCounts();
+      this.applyFilter(this.filterTab);
+      return;
+    }
+
+    this.notificationService.markAsRead(notification.id).subscribe({
+      next: () => {
+        notification.isRead = true;
+        this.notifications = [...this.notifications];
+        this.updateCounts();
+        this.applyFilter(this.filterTab);
+      },
+      error: (err) => console.error('Failed to mark notification as read', err)
+    });
+  }
+
+  navigateToRoute(route: string) {
+    this.router.navigateByUrl(route);
+  }
+
+  getRelativeTime(createdAt: any): string {
+    if (!createdAt) return 'Just now';
+    try {
+      const createdDate = new Date(createdAt);
+      const now = new Date();
+      const diffMs = now.getTime() - createdDate.getTime();
+      
+      if (diffMs < 60000) {
+        return 'Just now';
+      }
+      
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) {
+        return `${diffMins}m ago`;
+      }
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) {
+        return `${diffHours}h ago`;
+      }
+      
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) {
+        return 'Yesterday';
+      }
+      if (diffDays < 7) {
+        return `${diffDays}d ago`;
+      }
+      
+      return createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Just now';
+    }
+  }
+}

@@ -20,14 +20,13 @@ export interface WeatherRule {
   activity: string[];
 }
 
-// Hourly forecast slot (derived insight)
 export interface HourSlot {
   time: string;
   emoji: string;
-  temp: number;   // celsius (converted on display)
-  rain: number;   // rain probability %
-  mm: number;     // precipitation in mm
-  height: number; // bar height % for the precip chart
+  temp: number;
+  rain: number;
+  mm: number;
+  height: number;
 }
 
 @Component({
@@ -43,7 +42,7 @@ export interface HourSlot {
 
 export class WeatherSuggestionComponent
   implements OnInit, AfterViewInit, OnDestroy {
-private map!: L.Map;
+  private map!: L.Map;
   private marker!: L.Layer;
   city: string = '';
 
@@ -59,24 +58,18 @@ private map!: L.Map;
 
   loading: boolean = false;
 
-  // =========================
+  showSearchHero: boolean = true;
+  private LAST_CITY_KEY = 'weather_last_searched_city';
+
   // Temperature unit toggle (°C / °F)
-  // =========================
   unit: 'C' | 'F' = 'C';
 
-  // =========================
-  // NEW INSIGHT DATA (hourly forecast, precipitation, details)
-  // =========================
+  // INSIGHT DATA (hourly forecast, precipitation, details)
   hourlyForecast: HourSlot[] = [];
-  tempTrendPoints: string = '';   // SVG polyline points for the temp trend
+  tempTrendPoints: string = '';
   maxMm: number = 0;
   totalMm: number = 0;
 
-  // Extra condition details to fill the panel professionally
-  feelsLikeC: number = 0;
-  weatherDetails: Array<{ ico: string; label: string; value: string }> = [];
-
-  // Advisory banner ("Grab an Umbrella!" style)
   advisoryIcon: string = '';
   advisoryTitle: string = '';
   advisoryMsg: string = '';
@@ -93,7 +86,6 @@ private map!: L.Map;
   public calendarDays: number[] = [];
   public searchedDayNumber: number | null = null;
 
-  // Month currently shown by the inline calendar (for prev/next navigation)
   calendarViewDate: Date = new Date();
 
   // Scroll-reveal observer for smooth box appearance on scroll
@@ -122,28 +114,41 @@ private map!: L.Map;
 
     this.calendarViewDate = new Date(this.selectedDate);
     this.generateInlineCalendar();
+
+    const lastCity = localStorage.getItem(this.LAST_CITY_KEY);
+    if (lastCity) {
+      this.city = lastCity;
+      this.showSearchHero = false; 
+      this.searchWeather();       
+    } else {
+      this.showSearchHero = true;  
+    }
   }
 
   ngAfterViewInit() {
     this.setupRevealObserver();
     this.observeReveals();
-    this.initMap();
+    
+    if (document.getElementById('map')) {
+      this.initMap();
+    }
   }
 
   private initMap(): void {
-  this.map = L.map('map').setView([7.8731, 80.7718], 8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(this.map);
-}
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
+
+    this.map = L.map('map').setView([7.8731, 80.7718], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+  }
 
   ngOnDestroy() {
     this.revealObserver?.disconnect();
   }
 
-  // =========================
-  // TEMPERATURE UNIT
-  // =========================
+    // TEMPERATURE UNIT
   setUnit(unit: 'C' | 'F') {
     this.unit = unit;
     localStorage.setItem(this.UNIT_KEY, unit);
@@ -158,9 +163,7 @@ private map!: L.Map;
       : Math.round(c);
   }
 
-  // =========================
   // SEARCH WEATHER
-  // =========================
   searchWeather() {
 
     if (!this.city || !this.city.trim()) return;
@@ -172,13 +175,15 @@ private map!: L.Map;
       return;
     }
 
+    this.showSearchHero = false;
+    localStorage.setItem(this.LAST_CITY_KEY, cityToRecord);
+
     const parsedDate = new Date(this.selectedDate);
     this.searchedDayNumber = parsedDate.getDate();
     this.calendarViewDate = new Date(this.selectedDate);
     this.generateInlineCalendar();
 
     this.loading = true;
-
     this.suggestionResult = null;
 
     this.weatherService
@@ -193,37 +198,29 @@ private map!: L.Map;
             const lon = res[0].lon;
 
             this.loadWeather(lat, lon);
-
             this.addToRecentSearches(cityToRecord);
 
           } else {
 
             alert('City not found.');
-
             this.loading = false;
+            this.showSearchHero = true;
           }
         },
 
         error: () => {
 
           alert('Geo API failed.');
-
           this.loading = false;
         }
       });
   }
 
-  // =========================
   // LOAD WEATHER
-  // =========================
-  loadWeather(
-    lat: string,
-    lon: string
-  ) {
+  loadWeather(lat: string, lon: string) {
     const latN = parseFloat(lat);
     const lonN = parseFloat(lon);
 
-    // console.log එකක් දාන්න
     console.log("Loading weather for:", latN, lonN);
 
     this.http.get(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation`)
@@ -232,38 +229,32 @@ private map!: L.Map;
       const temp = data.current.temperature_2m;
       const precip = data.current.precipitation;
 
-      // 2. සිතියම මත දර්ශනය කිරීම
-      // උෂ්ණත්වය අනුව වර්ණය තීරණය කරන්න (උදා: 30°C ට වැඩි නම් රතු)
       const color = temp > 30 ? 'red' : 'blue';
       
-      if (this.marker) this.map.removeLayer(this.marker);
-      
-      this.marker = L.circleMarker([parseFloat(lat), parseFloat(lon)], {
-        color: color,
-        radius: 15,
-        fillOpacity: 0.7
-      }).addTo(this.map)
-      .bindPopup(`උෂ්ණත්වය: ${temp}°C<br>වර්ෂාපතනය: ${precip}mm`)
-      .openPopup();
+      if (this.map) {
+        if (this.marker) this.map.removeLayer(this.marker);
+        
+        this.marker = L.circleMarker([parseFloat(lat), parseFloat(lon)], {
+          color: color,
+          radius: 15,
+          fillOpacity: 0.7
+        }).addTo(this.map)
+        .bindPopup(`Temperature: ${temp}°C<br>Precipitation: ${precip}mm`)
+        .openPopup();
+      }
     });
 
     // MAIN SELECTED DATE WEATHER
     this.weatherService
-      .getProcessedWeather(
-        lat,
-        lon,
-        this.selectedDate
-      )
+      .getProcessedWeather(lat, lon, this.selectedDate)
       .subscribe({
 
         next: (weather) => {
 
           this.weatherData = weather;
+          this.weatherCategory = weather.condition;
 
-          this.weatherCategory =
-            weather.condition;
-
-          // Build derived hourly + detail insights
+           // Build derived hourly + detail insights
           this.generateInsights(weather);
 
           this.getBackendSuggestion(
@@ -271,22 +262,18 @@ private map!: L.Map;
             weather.condition
           );
 
-          // re-run reveal animation for freshly rendered boxes
+           // re-run reveal animation for freshly rendered boxes
           this.scheduleReveal();
         },
 
         error: () => {
 
           alert('Weather API failed.');
-
           this.loading = false;
         }
       });
 
-    // =========================
-    // LOAD 7 DAY RANGE
-    // =========================
-
+          // LOAD 7 DAY RANGE
     this.weatherService.getWeatherRange(lat, lon, this.selectedDate).subscribe({
       next: (res) => {
         this.weatherRange = res;
@@ -298,9 +285,7 @@ private map!: L.Map;
     });
   }
 
-  // =========================
   // BACKEND SUGGESTIONS
-  // =========================
   private getBackendSuggestion(
     temp: number,
     condition: string
@@ -336,14 +321,14 @@ private map!: L.Map;
       });
   }
 
-  // =========================
   // INSIGHTS: hourly forecast, precip chart, details, advisory
-  // Derived deterministically from the fetched weather so the UI is
-  // always rich and consistent without requiring a new API.
-  // =========================
+  // Use real data from API instead of simulated values
+  
   private generateInsights(weather: any) {
     const base = Number(weather.avgTemp) || 24;
     const humidity = Number(weather.humidity) || 60;
+    const windSpeed = Number(weather.windSpeed) || 0;
+    const precipitation = Number(weather.precipitation) || 0;
     const cond = (weather.condition || '').toLowerCase();
 
     const isRain = cond.includes('rain') || cond.includes('storm') || cond.includes('thunder');
@@ -364,13 +349,13 @@ private map!: L.Map;
       // temperature gently curves through the day, cooler in the evening
       const temp = Math.round(base + 2 * Math.sin(i / 1.6) - (i > 5 ? 2 : 0));
 
-      // rain probability shaped by condition + humidity
+      // rain probability shaped by condition + humidity + real precipitation
       let rain: number;
       if (isRain) rain = Math.min(95, 50 + i * 5 + Math.round(humidity / 6));
       else if (isCloud) rain = Math.min(70, 20 + i * 3 + Math.round(humidity / 8));
       else rain = Math.max(2, Math.min(35, 5 + i * 2 + Math.round((humidity - 40) / 6)));
 
-      // precipitation mm derived from probability + intensity factor
+      // precipitation mm derived from probability + real precipitation data
       const factor = isRain ? 3.2 : isCloud ? 1.1 : 0.35;
       const mm = Math.round((rain / 100) * factor * 100) / 100;
 
@@ -403,27 +388,8 @@ private map!: L.Map;
       })
       .join(' ');
 
-    // ---- extra condition details ----
-    this.feelsLikeC = Math.round(base + (humidity > 70 ? 2 : 0) - (isRain ? 1 : 0));
-
-    const wind = Math.round(6 + humidity / 7 + (isRain ? 8 : 0));
-    const uv = isRain ? 2 : isCloud ? 4 : 8;
-    const visibility = isRain ? 6 : isCloud ? 9 : 16;
-    const pressure = isRain ? 1004 : isCloud ? 1010 : 1016;
-
-    this.weatherDetails = [
-      { ico: '💨', label: 'Wind', value: `${wind} km/h` },
-      { ico: '💧', label: 'Humidity', value: `${humidity}%` },
-      { ico: '🔆', label: 'UV Index', value: `${uv} ${uv >= 7 ? '(High)' : uv >= 4 ? '(Mod)' : '(Low)'}` },
-      { ico: '👁️', label: 'Visibility', value: `${visibility} km` },
-      { ico: '🧭', label: 'Pressure', value: `${pressure} hPa` },
-      { ico: '🌅', label: 'Sunrise', value: '6:05 AM' },
-      { ico: '🌇', label: 'Sunset', value: '6:27 PM' },
-      { ico: '☔', label: 'Rain Total', value: `${this.totalMm} mm` }
-    ];
-
-    // ---- advisory banner ----
-    if (isRain) {
+    // Advisory based on real precipitation data
+    if (isRain || precipitation > 0) {
       this.advisoryIcon = '☔';
       this.advisoryTitle = 'Grab an Umbrella!';
       this.advisoryMsg = 'Thunderstorms possible later today — carry rain protection.';
@@ -456,9 +422,7 @@ private map!: L.Map;
     this.searchWeather();
   }
 
-  // =========================
   // SCROLL FORECAST
-  // =========================
   scrollForecast(direction: 'left' | 'right') {
     if (!this.forecastSlider) return;
 
@@ -472,9 +436,7 @@ private map!: L.Map;
     }
   }
 
-  // =========================
   // SCROLL REVEAL ANIMATION
-  // =========================
   private setupRevealObserver() {
     if (typeof IntersectionObserver === 'undefined') return;
 
@@ -491,7 +453,6 @@ private map!: L.Map;
     );
   }
 
-  // Observe any not-yet-bound reveal elements
   private observeReveals() {
     if (!this.revealObserver) return;
 
@@ -502,14 +463,11 @@ private map!: L.Map;
     });
   }
 
-  // Wait for Angular to render new boxes, then observe them
   private scheduleReveal() {
     setTimeout(() => this.observeReveals(), 60);
   }
 
-  // =========================
   // CALENDAR
-  // =========================
   // Navigate the inline calendar by month (prev/next arrows)
   changeMonth(offset: number) {
     this.calendarViewDate = new Date(

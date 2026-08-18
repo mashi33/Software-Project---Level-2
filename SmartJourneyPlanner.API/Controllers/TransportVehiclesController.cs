@@ -9,6 +9,7 @@ using SmartJourneyPlanner.API.Services;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
@@ -132,6 +133,7 @@ namespace SmartJourneyPlanner.Controllers
             return Ok(new { message = "Seeded successfully" });
         }
 
+
         /**
          * DELETE: /api/TransportVehicles/clear
          * Wipes all vehicle data from the collection.
@@ -167,6 +169,53 @@ namespace SmartJourneyPlanner.Controllers
 
             await _vehicleService.RemoveAsync(id);
             return NoContent();
+        }
+
+        /**
+         * PUT: /api/TransportVehicles/{id}
+         * Updates an existing vehicle's information.
+         */
+        [HttpPut("{id}")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> Update(string id, [FromBody] TransportVehicle updatedVehicle)
+        {
+            try
+            {
+                var vehicle = await _vehicleService.GetAsync(id);
+                if (vehicle is null) return NotFound(new { message = "Vehicle not found." });
+
+                // Check authorization: make sure the logged-in provider owns this vehicle
+                var loggedInUserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                                        ?? User.FindFirst("email")?.Value 
+                                        ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(loggedInUserEmail)) return Unauthorized();
+
+                if (!string.Equals(vehicle.ProviderId?.Trim(), loggedInUserEmail.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return Forbid();
+                }
+
+                // Preserve non-editable fields (id, providerId, reviews, availableDates, bookedDates, maintenanceDates, blockedDateRanges)
+                updatedVehicle.Id = vehicle.Id;
+                updatedVehicle.ProviderId = vehicle.ProviderId;
+                updatedVehicle.Reviews = vehicle.Reviews;
+                updatedVehicle.AvailableDates = vehicle.AvailableDates;
+                updatedVehicle.BookedDates = vehicle.BookedDates;
+                updatedVehicle.MaintenanceDates = vehicle.MaintenanceDates;
+                updatedVehicle.BlockedDateRanges = vehicle.BlockedDateRanges;
+                
+                // Revert status to Pending verification
+                updatedVehicle.AdminVerificationStatus = "Pending";
+                updatedVehicle.IsAvailableForBooking = false;
+
+                await _vehicleService.UpdateAsync(id, updatedVehicle);
+                return Ok(new { message = "Vehicle updated successfully! Sent for Admin verification." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Failed to update vehicle.", error = ex.Message });
+            }
         }
 
         // --- ⭐ REVIEWS ---

@@ -12,9 +12,7 @@ export class WeatherService {
 
   constructor(private http: HttpClient) {}
 
-  // =========================
   // GET CITY COORDINATES
-  // =========================
   getCoordinates(city: string) {
 
     const geoUrl =
@@ -23,23 +21,19 @@ export class WeatherService {
     return this.http.get<any[]>(geoUrl);
   }
 
-  // =========================
   // CURRENT WEATHER
-  // =========================
   getCurrentWeather(
     lat: string,
     lon: string
   ) {
 
     const url =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m`;
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation`;
 
     return this.http.get<any>(url);
   }
 
-  // =========================
   // HISTORICAL WEATHER
-  // =========================
   getHistoricalWeather(
     lat: string,
     lon: string,
@@ -47,14 +41,12 @@ export class WeatherService {
   ) {
 
     const url =
-      `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean`;
+      `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max`;
 
     return this.http.get<any>(url);
   }
 
-  // =========================
   // FORECAST WEATHER
-  // =========================
   getForecastWeather(
     lat: string,
     lon: string,
@@ -62,15 +54,13 @@ export class WeatherService {
   ) {
 
     const url =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean&start_date=${date}&end_date=${date}`;
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum,wind_speed_10m_max&start_date=${date}&end_date=${date}`;
 
     return this.http.get<any>(url);
   }
 
-  // =========================
   // COMMON WEATHER PROCESSOR
   // NO DUPLICATION
-  // =========================
   getProcessedWeather(
     lat: string,
     lon: string,
@@ -97,6 +87,8 @@ export class WeatherService {
 
           let avgTemp = 0;
           let humidity = 0;
+          let windSpeed = 0;
+          let precipitation = 0;
 
           // CURRENT WEATHER
           if (cleanDate === today) {
@@ -106,6 +98,12 @@ export class WeatherService {
 
             humidity =
               data.current.relative_humidity_2m;
+
+            windSpeed =
+              data.current.wind_speed_10m;
+
+            precipitation =
+              data.current.precipitation;
           }
 
           // FORECAST / HISTORY
@@ -120,6 +118,12 @@ export class WeatherService {
             humidity =
               data.daily.relative_humidity_2m_mean[0];
 
+            windSpeed =
+              data.daily.wind_speed_10m_max[0];
+
+            precipitation =
+              data.daily.precipitation_sum[0];
+
             avgTemp =
               (tempMax + tempMin) / 2;
           }
@@ -128,7 +132,7 @@ export class WeatherService {
           let condition = 'Cloudy';
           let emoji = '☁️';
 
-          if (humidity >= 80) {
+          if (humidity >= 80 || precipitation > 0) {
 
             condition = 'Rainy';
             emoji = '🌧️';
@@ -145,6 +149,10 @@ export class WeatherService {
 
             humidity: humidity,
 
+            windSpeed: windSpeed.toFixed(1),
+
+            precipitation: precipitation.toFixed(1),
+
             condition: condition,
 
             emoji: emoji
@@ -160,10 +168,7 @@ export class WeatherService {
     });
   }
 
-
-  // =========================
 // GET 3 DAYS BEFORE + AFTER
-// =========================
 getWeatherRange(lat: string, lon: string, selectedDate: string): Observable<any[]> {
     return new Observable((observer: any) => {
       const selected = new Date(selectedDate);
@@ -253,9 +258,8 @@ getWeatherRange(lat: string, lon: string, selectedDate: string): Observable<any[
       });
     });
   }
-  // =========================
+
   // WEATHER SUGGESTIONS
-  // =========================
   getSuggestions(
     temp: number,
     condition: string,
