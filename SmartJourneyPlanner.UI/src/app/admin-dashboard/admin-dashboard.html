@@ -226,50 +226,66 @@
         </div>
       </div>
 
-      <div class="user-cards-stack memories-grid">
-        <div *ngFor="let m of filteredMemories" class="bp-card memory-card" [class.memory-flagged]="getMemoryStatus(m) === 'flagged'" [class.memory-pending]="getMemoryStatus(m) === 'pending'">
-          <div class="memory-image" [style.background-image]="'url(' + (m.imageUrl || 'assets/placeholder-travel.jpg') + ')'">
-            <div class="memory-status-badge" [ngClass]="getMemoryStatusClass(getMemoryStatus(m))">
-              {{ getMemoryStatus(m) }}
+      <div class="memories-masonry-grid">
+        <div *ngFor="let m of filteredMemories" class="memory-card-modern" [class.memory-flagged-modern]="getMemoryStatus(m) === 'flagged'" [class.memory-pending-modern]="getMemoryStatus(m) === 'pending'">
+          <div class="memory-image-wrapper">
+            <div class="memory-image-modern" [style.background-image]="'url(' + (m.imageUrl || 'assets/placeholder-travel.jpg') + ')'">
+              <div class="memory-overlay">
+                <div class="memory-status-badge-modern" [ngClass]="getMemoryStatusClass(getMemoryStatus(m))">
+                  <i class="bi" [ngClass]="getMemoryStatusIcon(getMemoryStatus(m))"></i>
+                  {{ getMemoryStatus(m) }}
+                </div>
+                <div class="memory-date-badge-modern">
+                  <i class="bi bi-calendar3"></i>
+                  {{ getMemoryUploadDate(m) }}
+                </div>
+              </div>
             </div>
-            <div class="memory-date-badge">
-              {{ getMemoryUploadDate(m) }}
+            <div class="memory-hover-actions">
+              <button class="memory-action-btn btn-view" (click)="viewMemoryDetails(m)" title="View Details">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button *ngIf="getMemoryStatus(m) !== 'approved'" class="memory-action-btn btn-approve" (click)="confirmMemoryApproval(m)" title="Approve">
+                <i class="bi bi-check-lg"></i>
+              </button>
+              <button *ngIf="getMemoryStatus(m) !== 'flagged'" class="memory-action-btn btn-flag" (click)="confirmMemoryFlag(m)" title="Flag">
+                <i class="bi bi-flag"></i>
+              </button>
+              <button class="memory-action-btn btn-delete" (click)="deleteMemory(m.id || m._id)" title="Delete">
+                <i class="bi bi-trash3"></i>
+              </button>
             </div>
           </div>
 
-          <div class="memory-content">
-            <h4 class="memory-title">
-              {{ m.title || 'No Caption' }}
-            </h4>
-            
-            <div class="memory-metadata">
-              <div class="metadata-row">
-                <span><i class="bi bi-person"></i> {{ m.fullName || 'Unknown' }}</span>
-                <span class="metadata-separator">•</span>
-                <span><i class="bi bi-geo-alt"></i> {{ m.locationName || 'N/A' }}</span>
-              </div>
-              <div *ngIf="m.tripName || m.tripId" class="metadata-row">
-                <span><i class="bi bi-map"></i> {{ m.tripName || 'Associated Trip' }}</span>
+          <div class="memory-content-modern">
+            <div class="memory-header-modern">
+              <h4 class="memory-title-modern">
+                {{ m.title || 'No Caption' }}
+              </h4>
+              <div class="memory-user-avatar">
+                {{ (m.fullName || 'Unknown').charAt(0).toUpperCase() }}
               </div>
             </div>
+            
+            <div class="memory-location-modern">
+              <i class="bi bi-geo-alt-fill"></i>
+              <span>{{ m.locationName || 'N/A' }}</span>
+            </div>
 
-            <div *ngIf="m.description" class="memory-description">
+            <div *ngIf="m.tripName || m.tripId" class="memory-trip-modern">
+              <i class="bi bi-map-fill"></i>
+              <span>{{ m.tripName || 'Associated Trip' }}</span>
+            </div>
+
+            <div *ngIf="m.description" class="memory-description-modern">
               {{ m.description }}
             </div>
 
-            <div class="memory-actions">
-              <button class="btn-ctrl-vibrant memory-review-btn" (click)="viewMemoryDetails(m)">
-                <i class="bi bi-eye"></i> Review
-              </button>
-              <button *ngIf="getMemoryStatus(m) !== 'approved'" class="btn-ctrl-vibrant btn-memory-approve" (click)="confirmMemoryApproval(m)">
-                <i class="bi bi-check-lg"></i> Approve
-              </button>
-              <button *ngIf="getMemoryStatus(m) !== 'flagged'" class="btn-ctrl-vibrant btn-memory-flag" (click)="confirmMemoryFlag(m)">
-                <i class="bi bi-flag"></i> Flag
-              </button>
-              <button class="btn-ctrl-vibrant btn-delete-ink memory-delete-btn" (click)="deleteMemory(m.id || m._id)">
-                <i class="bi bi-trash3"></i>
-              </button>
+            <div class="memory-footer-modern">
+              <span class="memory-uploader">
+                <i class="bi bi-person-circle"></i>
+                {{ m.fullName || 'Unknown' }}
+              </span>
             </div>
           </div>
         </div>
@@ -491,62 +507,83 @@
         <span>Loading trip budget records...</span>
       </div>
 
-      <div class="costs-table-wrap" *ngIf="!costsLoading && filteredBudgetTrips.length > 0">
-        <table class="admin-table costs-table">
-          <thead>
-            <tr>
-              <th>Trip</th>
-              <th>Route</th>
-              <th>Travel Dates</th>
-              <th>Created By</th>
-              <th>Budget Limit <span class="th-note">(at creation)</span></th>
-              <th>Total Spent</th>
-              <th>Remaining</th>
-              <th>Usage</th>
-              <th>Status</th>
-              <th class="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let trip of filteredBudgetTrips" class="table-row" [class.row-over-budget]="getTripStatus(trip) === 'Over Budget'">
-              <td>
-                <div class="trip-name-cell">{{ trip.tripName || trip.TripName }}</div>
-                <div class="trip-meta-cell">{{ (trip.expenseCount ?? trip.ExpenseCount ?? 0) }} expense(s) logged</div>
-              </td>
-              <td class="route-cell">{{ getTripRoute(trip) }}</td>
-              <td class="date-cell">{{ getTripDates(trip) }}</td>
-              <td>{{ trip.createdBy || trip.CreatedBy }}</td>
-              <td class="budget-limit-cell">
-                <span *ngIf="getTripBudget(trip) > 0">Rs. {{ getTripBudget(trip) | number:'1.2-2' }}</span>
-                <span *ngIf="getTripBudget(trip) <= 0" class="text-muted">Not set</span>
-              </td>
-              <td class="font-bold">Rs. {{ getTripSpent(trip) | number:'1.2-2' }}</td>
-              <td [ngClass]="getTripRemaining(trip) < 0 ? 'text-danger' : ''">
-                <span *ngIf="getTripBudget(trip) > 0">Rs. {{ getTripRemaining(trip) | number:'1.2-2' }}</span>
-                <span *ngIf="getTripBudget(trip) <= 0" class="text-muted">—</span>
-              </td>
-              <td>
-                <div class="usage-cell" *ngIf="getTripBudget(trip) > 0; else noLimitUsage">
-                  <div class="usage-bar-track">
-                    <div class="usage-bar-fill" [class.usage-over]="getTripUsage(trip) > 100" [class.usage-near]="getTripUsage(trip) >= 85 && getTripUsage(trip) <= 100" [style.width.%]="getTripUsage(trip) > 100 ? 100 : getTripUsage(trip)"></div>
-                  </div>
-                  <span class="usage-label">{{ getTripUsage(trip) | number:'1.0-1' }}%</span>
-                </div>
-                <ng-template #noLimitUsage><span class="text-muted">—</span></ng-template>
-              </td>
-              <td>
-                <span class="cost-status-pill" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">
-                  {{ getTripStatus(trip) }}
-                </span>
-              </td>
-              <td>
-                <div class="action-btn-group">
-                  <button class="btn-ctrl-action btn-view" (click)="viewBudgetTripDetails(trip)">Audit</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="budget-trips-grid" *ngIf="!costsLoading && filteredBudgetTrips.length > 0">
+        <div *ngFor="let trip of filteredBudgetTrips" class="budget-trip-card" [class.budget-over-budget]="getTripStatus(trip) === 'Over Budget'" [class.budget-near-limit]="getTripStatus(trip) === 'Near Limit'">
+          <div class="budget-card-header">
+            <div class="budget-trip-info">
+              <h4 class="budget-trip-name">{{ trip.TripName || trip.tripname || trip.tripName || 'Untitled Trip' }}</h4>
+              <span class="budget-creator">
+                <i class="bi bi-person-circle"></i>
+                {{ trip.CreatedBy || trip.createdBy || 'Unknown' }}
+              </span>
+            </div>
+            <div class="budget-status-badge" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">
+              <i class="bi" [ngClass]="getBudgetStatusIcon(getTripStatus(trip))"></i>
+              {{ getTripStatus(trip) }}
+            </div>
+          </div>
+
+          <div class="budget-route-section">
+            <div class="budget-route-item">
+              <i class="bi bi-geo-alt-fill"></i>
+              <span>{{ getTripRoute(trip) }}</span>
+            </div>
+            <div class="budget-dates-item">
+              <i class="bi bi-calendar3"></i>
+              <span>{{ getTripDates(trip) }}</span>
+            </div>
+          </div>
+
+          <div class="budget-progress-section">
+            <div class="budget-progress-header">
+              <span class="budget-progress-label">Budget Usage</span>
+              <span class="budget-progress-value">{{ getTripUsage(trip) }}%</span>
+            </div>
+            <div class="budget-progress-bar-wrapper">
+              <div class="budget-progress-bar" [style.width.%]="getTripUsage(trip)" [ngClass]="getBudgetStatusClass(getTripStatus(trip))"></div>
+            </div>
+          </div>
+
+          <div class="budget-metrics-grid">
+            <div class="budget-metric-item">
+              <div class="metric-icon metric-budget">
+                <i class="bi bi-wallet2"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Budget Limit</span>
+                <span class="metric-value">{{ getTripBudget(trip) | number:'1.0-0' }}</span>
+                <span class="metric-currency">LKR</span>
+              </div>
+            </div>
+            <div class="budget-metric-item">
+              <div class="metric-icon metric-spent">
+                <i class="bi bi-cash-coin"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Total Spent</span>
+                <span class="metric-value">{{ getTripSpent(trip) | number:'1.0-0' }}</span>
+                <span class="metric-currency">LKR</span>
+              </div>
+            </div>
+            <div class="budget-metric-item">
+              <div class="metric-icon metric-remaining" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">
+                <i class="bi bi-piggy-bank"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Remaining</span>
+                <span class="metric-value" [ngClass]="getBudgetStatusClass(getTripStatus(trip))">{{ getTripRemaining(trip) | number:'1.0-0' }}</span>
+                <span class="metric-currency">LKR</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="budget-card-footer">
+            <div class="budget-expense-count">
+              <i class="bi bi-receipt"></i>
+              <span>{{ trip.expenseCount || trip.ExpenseCount || 0 }} expenses logged</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="!costsLoading && budgetTrips.length === 0" class="empty-ledger-box costs-empty">

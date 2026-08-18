@@ -310,6 +310,15 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
+  getBudgetStatusIcon(status: string): string {
+    switch (status) {
+      case 'Over Budget': return 'bi-exclamation-triangle-fill';
+      case 'Near Limit': return 'bi-exclamation-circle-fill';
+      case 'No Limit Set': return 'bi-dash-circle-fill';
+      default: return 'bi-check-circle-fill';
+    }
+  }
+
   getCategoryClass(category: string): string {
     const key = (category || 'general').toLowerCase();
     if (key.includes('meal') || key.includes('food')) return 'cat-meals';
@@ -852,10 +861,19 @@ export class AdminDashboardComponent implements OnInit {
 
   getMemoryStatusClass(status: string): string {
     switch (status.toLowerCase()) {
-      case 'approved': return 'memory-status-approved';
-      case 'flagged': return 'memory-status-flagged';
-      case 'pending': return 'memory-status-pending';
-      default: return 'memory-status-default';
+      case 'approved': return 'badge-approved';
+      case 'flagged': return 'badge-flagged';
+      case 'pending': return 'badge-pending';
+      default: return 'badge-pending';
+    }
+  }
+
+  getMemoryStatusIcon(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved': return 'bi-check-circle-fill';
+      case 'flagged': return 'bi-exclamation-triangle-fill';
+      case 'pending': return 'bi-clock-fill';
+      default: return 'bi-clock-fill';
     }
   }
 

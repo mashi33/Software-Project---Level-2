@@ -1091,6 +1091,624 @@
   background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
 }
 
+/* Modern Memories Grid - Masonry Style */
+.memories-masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 0 30px 30px;
+}
+
+.memory-card-modern {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.memory-card-modern:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: #cbd5e1;
+}
+
+.memory-card-modern.memory-flagged-modern {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.memory-card-modern.memory-pending-modern {
+  border: 2px solid #64748b;
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);
+}
+
+.memory-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+}
+
+.memory-image-modern {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.5s ease;
+}
+
+.memory-card-modern:hover .memory-image-modern {
+  transform: scale(1.1);
+}
+
+.memory-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.memory-card-modern:hover .memory-overlay {
+  opacity: 1;
+}
+
+.memory-status-badge-modern {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.memory-status-badge-modern.badge-approved {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.memory-status-badge-modern.badge-flagged {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.memory-status-badge-modern.badge-pending {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.15);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.memory-date-badge-modern {
+  align-self: flex-end;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.memory-hover-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.memory-card-modern:hover .memory-hover-actions {
+  opacity: 1;
+}
+
+.memory-action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.memory-action-btn:hover {
+  transform: scale(1.15);
+}
+
+.memory-action-btn.btn-view {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+}
+
+.memory-action-btn.btn-view:hover {
+  background: rgba(59, 130, 246, 1);
+}
+
+.memory-action-btn.btn-approve {
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+}
+
+.memory-action-btn.btn-approve:hover {
+  background: rgba(16, 185, 129, 1);
+}
+
+.memory-action-btn.btn-flag {
+  background: rgba(245, 158, 11, 0.9);
+  color: white;
+}
+
+.memory-action-btn.btn-flag:hover {
+  background: rgba(245, 158, 11, 1);
+}
+
+.memory-action-btn.btn-delete {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+}
+
+.memory-action-btn.btn-delete:hover {
+  background: rgba(239, 68, 68, 1);
+}
+
+.memory-content-modern {
+  padding: 20px;
+}
+
+.memory-header-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.memory-title-modern {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.memory-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.memory-location-modern,
+.memory-trip-modern {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.memory-location-modern i,
+.memory-trip-modern i {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.memory-location-modern span,
+.memory-trip-modern span {
+  font-weight: 500;
+}
+
+.memory-description-modern {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 12px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.memory-footer-modern {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.memory-uploader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.memory-uploader i {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.memories-empty-box {
+  padding: 60px 30px;
+  text-align: center;
+}
+
+.memories-empty-icon {
+  font-size: 4rem;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.memories-empty-box h5 {
+  color: #1e293b;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.memories-empty-box p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Modern Budget Trips Grid */
+.budget-trips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+  padding: 0 30px 30px;
+}
+
+.budget-trip-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.budget-trip-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.budget-trip-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+  border-color: #cbd5e1;
+}
+
+.budget-trip-card.budget-over-budget::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.budget-trip-card.budget-over-budget {
+  border: 2px solid #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.budget-trip-card.budget-near-limit::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.budget-trip-card.budget-near-limit {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.budget-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.budget-trip-info {
+  flex: 1;
+}
+
+.budget-trip-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.budget-creator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.budget-creator i {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.budget-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.budget-status-badge.cost-status-over {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.budget-status-badge.cost-status-near {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.budget-status-badge.cost-status-ok {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #059669;
+  border: 1px solid #86efac;
+}
+
+.budget-status-badge.cost-status-none {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.budget-route-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.budget-route-item,
+.budget-dates-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+  flex: 1;
+}
+
+.budget-route-item i,
+.budget-dates-item i {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.budget-route-item span,
+.budget-dates-item span {
+  font-weight: 500;
+  color: #475569;
+}
+
+.budget-progress-section {
+  margin-bottom: 20px;
+}
+
+.budget-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.budget-progress-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+.budget-progress-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.budget-progress-bar-wrapper {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.budget-progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.budget-progress-bar.cost-status-over {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.budget-progress-bar.cost-status-near {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.budget-progress-bar.cost-status-ok {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.budget-progress-bar.cost-status-none {
+  background: linear-gradient(90deg, #64748b, #94a3b8);
+}
+
+.budget-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.budget-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.budget-metric-item:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.metric-icon.metric-budget {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.metric-icon.metric-spent {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.metric-icon.metric-remaining {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.metric-icon.metric-remaining.cost-status-over {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.metric-icon.metric-remaining.cost-status-near {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.metric-content {
+  text-align: center;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.metric-value.cost-status-over {
+  color: #dc2626;
+}
+
+.metric-value.cost-status-near {
+  color: #d97706;
+}
+
+.metric-currency {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+.budget-card-footer {
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.budget-expense-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.budget-expense-count i {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
 .cost-kpi-danger .cost-kpi-icon { background: #fee2e2; }
 .cost-kpi-danger .cost-kpi-value { color: #dc2626; }
 
