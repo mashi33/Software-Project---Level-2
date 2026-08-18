@@ -24,7 +24,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
         className: 'my-cluster-wrapper',
         iconSize: leaflet.point(40, 40)
       });
-    }
+    },
+    zoomToBoundsOnClick: false,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    animate: true,
+    animateAddingMarkers: false,
+    maxClusterRadius: 70,
+    spiderfyDistanceMultiplier: 1.6
   });
 
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -152,7 +159,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (file.size > 2 * 1024 * 1024) {
       this.showError(
-        'File too large',
+        'File too large', 
         'Please choose an image under 2MB.'
       );
       return;
@@ -174,7 +181,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     fileInput.value = '';
   }
 
-  // LIGHTBOX 
+   // LIGHTBOX 
 
   openAlbum(album: any) {
     this.selectedAlbum = album;
@@ -192,7 +199,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
       this.selectedAlbum = null;
-    this.currentMemoryIndex = 0;
+      this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;
@@ -317,9 +324,20 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadMyMemories() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
+    if (!userId) {
+      this.showWarning('Login required', 'Please log in to view your memories.');
+      return;
+    }
 
-    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`).subscribe({
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.showWarning('Login required', 'Authentication token missing. Please log in again.');
+      return;
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any[]>(`${this.apiUrl}/user/${userId}`, { headers }).subscribe({
       next: (data) => {
         this.allMemories = data.map(m => {
           const formatted = this.formatData(m);
@@ -334,7 +352,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error loading memories:', err);
-        this.showError('Could not load memories', 'Please check your backend server.');
+        this.showError(
+          'Could not load memories',
+          err?.error?.message || 'Please check your backend server and that you are logged in.'
+        );
       }
     });
   }
@@ -348,7 +369,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // SEARCH & SAVE 
+ // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -409,7 +430,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   saveMemory() {
     const userId = localStorage.getItem('userId');
     const fullName = localStorage.getItem('userName');
-    if (!userId) {
+    const token = localStorage.getItem('token');
+
+    if (!userId || !token) {
       this.showWarning('Login required', 'Please log in to save memories.');
       return;
     }
@@ -425,13 +448,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       tripName: this.selectedTrip?.tripName || null
     };
 
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
     Swal.fire({
       title: 'Saving memory...',
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading()
     });
 
-    this.http.post(this.apiUrl, body).subscribe({
+    this.http.post(this.apiUrl, body, { headers }).subscribe({
       next: (response: any) => {
         Swal.close();
 
@@ -462,11 +487,12 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.showSuccess('Memory pinned!', 'Your memory has been saved and added to the map.');
       },
-      error: () => {
+      error: (err) => {
         Swal.close();
+        console.error('Save failed', err);
         this.showError(
           'Save failed',
-          'Could not save memory. Please check your backend server.'
+          err?.error?.message || 'Could not save memory. Please check your backend server.'
         );
       }
     });
@@ -484,13 +510,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     ).then(result => {
       if (!result.isConfirmed) return;
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.showWarning('Login required', 'Authentication token missing.');
+        return;
+      }
+
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
       Swal.fire({
         title: 'Deleting...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
-      this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+      this.http.delete(`${this.apiUrl}/${id}`, { headers }).subscribe({
         next: () => {
           Swal.close();
 
@@ -518,7 +552,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (err) => {
           Swal.close();
           console.error('Delete failed', err);
-          this.showError('Delete failed', 'Could not delete memory. Check backend connection.');
+          this.showError(
+            'Delete failed',
+            err?.error?.message || 'Could not delete memory. Check backend connection.'
+          );
         }
       });
     });
@@ -540,6 +577,14 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     ).then(result => {
       if (!result.isConfirmed) return;
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.showWarning('Login required', 'Authentication token missing.');
+        return;
+      }
+
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
       Swal.fire({
         title: 'Deleting album...',
         text: `Removing ${count} memor${count === 1 ? 'y' : 'ies'}...`,
@@ -547,7 +592,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
         didOpen: () => Swal.showLoading()
       });
 
-      const requests = album.memories.map((m: any) => this.http.delete(`${this.apiUrl}/${m.id}`));
+      const requests = album.memories.map((m: any) =>
+        this.http.delete(`${this.apiUrl}/${m.id}`, { headers })
+      );
 
       forkJoin(requests).subscribe({
         next: () => {
@@ -581,7 +628,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // MAP POPUP 
+   // MAP POPUP 
 
   private isUserLiked(memory: any): boolean {
     const userName = localStorage.getItem('userName');
@@ -591,7 +638,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private getHeartAnimationHtml(memory: any): string {
     if (!this.isUserLiked(memory)) return '';
-    
+
     return `
       <div class="heart-animation-container" id="heart-anim-${memory.id}">
         <svg class="floating-heart" viewBox="0 0 24 24">
@@ -601,21 +648,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
         <svg class="floating-heart" viewBox="0 0 24 24">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
       </div>
     `;
   }
 
   private escapeHtml(text: string): string {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   private getPopupHtml(memory: any): string {
     if (!memory) return '<div class="map-popup">No data available</div>';
@@ -624,17 +671,28 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const location = this.escapeHtml(memory.locationName || 'Unknown');
     const imageUrl = this.escapeHtml(memory.imageUrl || '');
     const id = this.escapeHtml(String(memory.id));
-    const visibility = memory.visibility === 'public' ? 'Public' : memory.visibility === 'tripMembers' ? 'Only for trip members' : 'Private';
-    const visibilityClass = memory.visibility === 'public' ? 'public' : memory.visibility === 'tripMembers' ? 'trip-members' : 'private';
+    const visibility =
+      memory.visibility === 'public'
+        ? 'Public'
+        : memory.visibility === 'tripMembers'
+        ? 'Only for trip members'
+        : 'Private';
+    const visibilityClass =
+      memory.visibility === 'public'
+        ? 'public'
+        : memory.visibility === 'tripMembers'
+        ? 'trip-members'
+        : 'private';
 
-    const likeHtml = memory.visibility === 'public'
-      ? `<div class="popup-likes">
-           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                 <path fill="#be123c" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-           <span class="like-num">${memory.likeCount || 0}</span>
-         </div>`
-      : '';
+    const likeHtml =
+      memory.visibility === 'public'
+        ? `<div class="popup-likes">
+             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+               <path fill="#be123c" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+             </svg>
+             <span class="like-num">${memory.likeCount || 0}</span>
+           </div>`
+        : '';
 
     return `
       <div class="map-popup" data-memory-id="${id}">
@@ -696,68 +754,76 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   refreshMapMarkers(): void {
-  this.markersLayer.clearLayers();
+    this.markersLayer.clearLayers();
+    this.map?.closePopup();
 
-  const likedMemories = this.allMemories.filter(memory => this.isUserLiked(memory));
-  const totalLikedPins = likedMemories.length;
+    const likedMemories = this.allMemories.filter(memory => this.isUserLiked(memory));
+    const totalLikedPins = likedMemories.length;
 
-  this.allMemories.forEach((memory) => {
-    if (!memory.latitude || !memory.longitude) return;
+    const markers: leaflet.Marker[] = [];
 
-    const likedIndex = likedMemories.findIndex(m => m.id === memory.id);
-    const isLikedMemory = likedIndex !== -1;
+    this.allMemories.forEach((memory) => {
+      if (!memory.latitude || !memory.longitude) return;
 
-    const heartAnimationHtml = isLikedMemory ? this.getHeartAnimationHtml(memory) : '';
+      const likedIndex = likedMemories.findIndex(m => m.id === memory.id);
+      const isLikedMemory = likedIndex !== -1;
 
-    const pinStyle = isLikedMemory ? `
-      --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
-      --pin-index: ${likedIndex};
-      --total-pins: ${totalLikedPins};
-      --pin-delay: calc(2s + (${likedIndex} * 10s));
-    ` : `
-      --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
-    `;
-    const pinHtml = `
-      <div class="vignette-pin-container" style="${pinStyle}">
-        ${heartAnimationHtml}
-        <div class="vignette-image-holder">
-          <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${this.escapeHtml(memory.title || '')}" />
+      const heartAnimationHtml = isLikedMemory ? this.getHeartAnimationHtml(memory) : '';
+
+      const pinStyle = isLikedMemory ? `
+          --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
+          --pin-index: ${likedIndex};
+          --total-pins: ${totalLikedPins};
+          --pin-delay: calc(2s + (${likedIndex} * 10s));
+        ` : `
+          --pin-color: ${memory.visibility === 'public' ? '#6366f1' : memory.visibility === 'tripMembers' ? '#10b981' : '#f59e0b'};
+        `;
+      const pinHtml = `
+        <div class="vignette-pin-container" style="${pinStyle}">
+          ${heartAnimationHtml}
+          <div class="vignette-image-holder">
+            <img src="${memory.imageUrl || 'assets/placeholder-image.jpg'}" alt="${this.escapeHtml(memory.title || '')}" />
+          </div>
+          <div class="vignette-pin-tail"></div>
+          <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
         </div>
-        <div class="vignette-pin-tail"></div>
-        <div class="vignette-location-badge">${this.escapeHtml(memory.title || 'Untitled')}</div>
-      </div>
-    `;
+      `;
 
-    const customIcon = leaflet.divIcon({
-      html: pinHtml,
-      className: 'vignette-map-pin-wrapper', 
-      iconSize: leaflet.point(52, 64),       
-      iconAnchor: [26, 64],                  
-      popupAnchor: [0, -68]                  
-    });
-
-    const marker = leaflet.marker([memory.latitude, memory.longitude], { 
-      icon: customIcon,
-      riseOnHover: true 
-    });
-    const popupHtml = this.getPopupHtml(memory);
-
-    marker
-      .bindPopup(popupHtml, {
-        maxWidth: 320,
-        minWidth: 280,
-        className: 'memory-popup-wrapper'
-      })
-      .on('popupopen', (e: any) => {
-        const popupEl = e.popup.getElement();
-        if (popupEl) this.attachPopupListeners(popupEl, memory);
+      const customIcon = leaflet.divIcon({
+        html: pinHtml,
+        className: 'vignette-map-pin-wrapper',
+        iconSize: leaflet.point(52, 64),
+        iconAnchor: [26, 64],
+        popupAnchor: [0, -68]
       });
 
-    this.markersLayer.addLayer(marker);
-  });
-}
+      const marker = leaflet.marker([memory.latitude, memory.longitude], {
+        icon: customIcon,
+        riseOnHover: true,
+        memoryData: memory
+      } as any);
 
-  // SLIDESHOW 
+      const popupHtml = this.getPopupHtml(memory);
+
+      marker
+        .bindPopup(popupHtml, {
+          maxWidth: 320,
+          minWidth: 280,
+          className: 'memory-popup-wrapper'
+        })
+        .on('popupopen', (e: any) => {
+          const popupEl = e.popup.getElement();
+          if (popupEl) this.attachPopupListeners(popupEl, memory);
+        });
+
+      markers.push(marker);
+    });
+
+    // Batch add – prevents the flash of individual pins on load
+    this.markersLayer.addLayers(markers);
+  }
+
+ // SLIDESHOW 
 
   startSlideshow(album: any) {
     if (album.memories.length <= 1) return;
@@ -780,7 +846,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-  // MAP INIT 
+   // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -797,6 +863,45 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers();
+
+    // Cluster click → smooth zoom → expand into vignette pins
+    this.markersLayer.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      if (!cluster) return;
+
+      // Toggle: already spiderfied → collapse
+      if ((cluster as any)._spiderfied) {
+        cluster.unspiderfy();
+        return;
+      }
+
+      const bounds = cluster.getBounds();
+      const currentZoom = this.map.getZoom();
+      const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+      const needsZoom =
+        currentZoom < targetZoom - 0.4 ||
+        !bounds.contains(this.map.getCenter());
+
+      if (needsZoom) {
+        this.map.flyToBounds(bounds, {
+          padding: [50, 50],
+          maxZoom: 17,
+          duration: 1.5,
+          easeLinearity: 0.25
+        });
+
+        this.map.once('moveend', () => {
+          setTimeout(() => {
+            if (cluster.getChildCount() > 1) {
+              cluster.spiderfy();
+            }
+          }, 120);
+        });
+      } else {
+        cluster.spiderfy();
+      }
+    });
   }
 
   trackByFn(index: number, item: any) {
@@ -816,7 +921,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
-  // ALBUM HELPERS 
+   // ALBUM HELPERS 
 
   getTotalLikes(album: any): number {
     return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
