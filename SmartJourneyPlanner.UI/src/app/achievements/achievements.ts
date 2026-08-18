@@ -23,7 +23,7 @@ export class AchievementsComponent implements OnInit {
     private achievementService: AchievementService,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -89,6 +89,27 @@ export class AchievementsComponent implements OnInit {
 
   setTab(tab: 'my' | 'all'): void {
     this.activeTab = tab;
+  }
+
+  // Helper methods for badge icons and rank classes
+  getBadgeIcon(badge: BadgeProgress): string {
+    const icons: Record<string, string> = {
+      'first-step': '/first_step.png',
+      'budget-visionary': '/budget_visionary.png',
+      'squad-leader': '/squad_leader.png',
+      'eco-traveler': '/eco_traveler.png',
+      'voyage-master': '/Voyage_master.png',
+      'island-conqueror': '/Island_conqueror.png'
+    };
+
+    const rankFallback: Record<string, string> = {
+      Bronze: 'bi-award-fill',
+      Silver: 'bi-star-fill',
+      Gold: 'bi-trophy-fill',
+      Legend: 'bi-gem'
+    };
+
+    return icons[badge.id] || rankFallback[badge.rank] || 'bi-award-fill';
   }
 
   getRankClass(rank: string): string {

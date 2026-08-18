@@ -45,21 +45,38 @@
           <div class="card-form-body">
             <!-- Trip Name -->
             <div class="form-field-group">
-              <label>Trip Name</label>
-              <div class="input-with-icon">
+              <label>Trip Name <span class="required-mark">*</span></label>
+              <div class="input-with-icon" [class.field-invalid]="showError('tripName')">
                 <i class="bi bi-pencil-square field-icon"></i>
                 <input type="text" formControlName="tripName" placeholder="Enter a memorable trip name" />
               </div>
+              @if (showError('tripName')) {
+              <small class="field-error">
+                <i class="bi bi-exclamation-circle"></i>
+                @if (tripForm.get('tripName')?.hasError('required')) { Trip name is required. }
+                @else if (tripForm.get('tripName')?.hasError('minlength')) { Trip name must be at least 3 characters. }
+                @else { Trip name cannot exceed 60 characters. }
+              </small>
+              }
             </div>
 
             <!-- Depart From & Destination Row -->
             <div class="form-flex-row">
               <div class="form-field-group flex-fill-1">
-                <label>Depart From</label>
-                <div class="input-with-icon">
+                <label>Depart From <span class="required-mark">*</span></label>
+                <div class="input-with-icon" [class.field-invalid]="showError('departFrom')">
                   <i class="bi bi-geo-alt field-icon"></i>
                   <input type="text" formControlName="departFrom" placeholder="Where are you leaving from?" />
                 </div>
+                @if (showError('departFrom')) {
+                <small class="field-error">
+                  <i class="bi bi-exclamation-circle"></i>
+                  @if (tripForm.get('departFrom')?.hasError('required')) { Departure location is required. }
+                  @else if (tripForm.get('departFrom')?.hasError('pattern')) { Use letters only, no numbers or symbols.
+                  }
+                  @else { Enter between 2 and 60 characters. }
+                </small>
+                }
               </div>
 
               <div class="swap-icon-container">
@@ -67,37 +84,73 @@
               </div>
 
               <div class="form-field-group flex-fill-1">
-                <label>Destination</label>
-                <div class="input-with-icon">
+                <label>Destination <span class="required-mark">*</span></label>
+                <div class="input-with-icon" [class.field-invalid]="showError('destination')">
                   <i class="bi bi-map field-icon"></i>
                   <input type="text" formControlName="destination" placeholder="Where are you going?" />
                 </div>
+                @if (showError('destination')) {
+                <small class="field-error">
+                  <i class="bi bi-exclamation-circle"></i>
+                  @if (tripForm.get('destination')?.hasError('required')) { Destination is required. }
+                  @else if (tripForm.get('destination')?.hasError('pattern')) { Use letters only, no numbers or symbols.
+                  }
+                  @else { Enter between 2 and 60 characters. }
+                </small>
+                }
               </div>
             </div>
+
+            @if (showFormError('sameLocations')) {
+            <small class="field-error row-level-error">
+              <i class="bi bi-exclamation-circle"></i> Departure and destination cannot be the same place.
+            </small>
+            }
 
             <!-- Start Date & End Date Row -->
             <div class="form-flex-row">
               <div class="form-field-group flex-fill-1">
-                <label>Start Date</label>
-                <div class="input-with-icon">
+                <label>Start Date <span class="required-mark">*</span></label>
+                <div class="input-with-icon" [class.field-invalid]="showError('startDate')">
                   <i class="bi bi-calendar-event field-icon"></i>
                   <input type="date" formControlName="startDate" [min]="todayDate" #sDate />
                 </div>
+                @if (showError('startDate')) {
+                <small class="field-error">
+                  <i class="bi bi-exclamation-circle"></i> Start date is required.
+                </small>
+                }
               </div>
 
               <div class="form-field-group flex-fill-1">
-                <label>End Date</label>
-                <div class="input-with-icon">
+                <label>End Date <span class="required-mark">*</span></label>
+                <div class="input-with-icon" [class.field-invalid]="showError('endDate')">
                   <i class="bi bi-calendar-check field-icon"></i>
                   <input type="date" formControlName="endDate" [min]="sDate.value || todayDate" />
                 </div>
+                @if (showError('endDate')) {
+                <small class="field-error">
+                  <i class="bi bi-exclamation-circle"></i> End date is required.
+                </small>
+                }
               </div>
             </div>
 
+            @if (showFormError('startInPast')) {
+            <small class="field-error row-level-error">
+              <i class="bi bi-exclamation-circle"></i> Start date cannot be in the past.
+            </small>
+            }
+            @if (showFormError('endBeforeStart')) {
+            <small class="field-error row-level-error">
+              <i class="bi bi-exclamation-circle"></i> End date cannot be earlier than the start date.
+            </small>
+            }
+
             <!-- Budget Limit -->
             <div class="form-field-group">
-              <label>Budget Limit</label>
-              <div class="input-with-icon select-box-wrapper">
+              <label>Budget Limit <span class="required-mark">*</span></label>
+              <div class="input-with-icon select-box-wrapper" [class.field-invalid]="showError('budgetLimit')">
                 <i class="bi bi-cash-coin field-icon"></i>
                 <select formControlName="budgetLimit">
                   <option value="" disabled selected>Set your budget limit</option>
@@ -109,12 +162,17 @@
                   <option value="Above 50000">Above 50000</option>
                 </select>
               </div>
+              @if (showError('budgetLimit')) {
+              <small class="field-error">
+                <i class="bi bi-exclamation-circle"></i> Please choose a budget limit.
+              </small>
+              }
             </div>
 
             <!-- Transport Mode -->
             <div class="form-field-group">
-              <label>Transport Type </label>
-              <div class="input-with-icon select-box-wrapper">
+              <label>Transport Type <span class="required-mark">*</span></label>
+              <div class="input-with-icon select-box-wrapper" [class.field-invalid]="showError('transportMode')">
                 <i class="bi bi-signpost-split field-icon"></i>
                 <select formControlName="transportMode">
                   <option value="" disabled selected>Select how you'll travel</option>
@@ -123,6 +181,11 @@
                   </option>
                 </select>
               </div>
+              @if (showError('transportMode')) {
+              <small class="field-error">
+                <i class="bi bi-exclamation-circle"></i> Please select a transport type.
+              </small>
+              }
               <small class="field-hint" *ngIf="tripForm.get('transportMode')?.value === 'Transport Provider'">
                 After saving, you can browse and book vehicles from our transport providers.
               </small>
@@ -139,6 +202,14 @@
                 <i class="bi bi-text-paragraph field-icon textarea-icon-top"></i>
                 <textarea formControlName="description"
                   placeholder="Describe your trip, places, activities..."></textarea>
+              </div>
+              <div class="field-meta-row">
+                @if (showError('description')) {
+                <small class="field-error">
+                  <i class="bi bi-exclamation-circle"></i> Description cannot exceed 500 characters.
+                </small>
+                }
+                <small class="char-counter">{{ (tripForm.get('description')?.value || '').length }}/500</small>
               </div>
             </div>
           </div>
@@ -168,6 +239,11 @@
                 <i class="bi bi-envelope field-icon"></i>
                 <input type="email" formControlName="memberEmail" placeholder="Enter email address" />
               </div>
+              @if (showError('memberEmail')) {
+              <small class="field-error">
+                <i class="bi bi-exclamation-circle"></i> Enter a valid email address.
+              </small>
+              }
             </div>
 
             <div class="form-field-group">
