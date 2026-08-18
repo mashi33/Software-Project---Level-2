@@ -310,15 +310,6 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  getBudgetStatusIcon(status: string): string {
-    switch (status) {
-      case 'Over Budget': return 'bi-exclamation-triangle-fill';
-      case 'Near Limit': return 'bi-exclamation-circle-fill';
-      case 'No Limit Set': return 'bi-dash-circle-fill';
-      default: return 'bi-check-circle-fill';
-    }
-  }
-
   getCategoryClass(category: string): string {
     const key = (category || 'general').toLowerCase();
     if (key.includes('meal') || key.includes('food')) return 'cat-meals';
