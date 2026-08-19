@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using MongoDB.Bson;
 using SmartJourneyPlanner.API.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -86,6 +87,114 @@ namespace SmartJourneyPlanner.API.Services
             }
         }
 
+        /// <summary>
+        /// Deletes all notifications that have hardcoded/fake data:
+        /// 1. UserId is a known fake/mock ID (e.g. "u1", "p1")
+        /// 2. UserId is empty or null
+        /// 3. UserId does not match any real user in the Users collection
+        /// Returns a summary of what was deleted.
+        /// </summary>
+        public async Task<CleanupResult> CleanupHardcodedNotificationsAsync()
+        {
+            var result = new CleanupResult();
 
+            // Step 1: Delete notifications with known hardcoded/fake userIds
+            var fakeUserIds = new List<string> { "u1", "p1", "p2", "p3", "p4", "test", "mock", "fake", "admin" };
+            var fakeIdFilter = Builders<Notification>.Filter.In(n => n.UserId, fakeUserIds);
+            var fakeDeleted = await _notificationsCollection.DeleteManyAsync(fakeIdFilter);
+            result.FakeIdDeleted = (int)fakeDeleted.DeletedCount;
+
+            // Step 2: Delete notifications where UserId is null or empty
+            var emptyUserIdFilter = Builders<Notification>.Filter.Or(
+                Builders<Notification>.Filter.Eq(n => n.UserId, ""),
+                Builders<Notification>.Filter.Eq(n => n.UserId, null)
+            );
+            var emptyDeleted = await _notificationsCollection.DeleteManyAsync(emptyUserIdFilter);
+            result.EmptyUserIdDeleted = (int)emptyDeleted.DeletedCount;
+
+            // Step 3: Find all notifications with userIds that don't exist in the Users collection
+            var allNotifications = await _notificationsCollection.Find(_ => true).ToListAsync();
+            var distinctUserIds = allNotifications.Select(n => n.UserId).Distinct().ToList();
+
+            var orphanNotificationIds = new List<string>();
+            foreach (var uid in distinctUserIds)
+            {
+                if (string.IsNullOrEmpty(uid)) continue;
+
+                // Try to find this userId as a MongoDB ObjectId in Users
+                bool userExists = false;
+
+                // Check if it's a valid ObjectId format (24 hex chars)
+                if (uid.Length == 24 && uid.All(c => "0123456789abcdefABCDEF".Contains(c)))
+                {
+                    var userById = await _usersCollection.Find(u => u.Id == uid).FirstOrDefaultAsync();
+                    userExists = userById != null;
+                }
+                else if (uid.Contains("@"))
+                {
+                    // It's an email — check if a user with this email exists
+                    var userByEmail = await _usersCollection.Find(u => u.Email == uid).FirstOrDefaultAsync();
+                    userExists = userByEmail != null;
+                }
+                // else: it's some other unrecognized format — treat as orphan
+
+                if (!userExists)
+                {
+                    var orphans = allNotifications
+                        .Where(n => n.UserId == uid && !string.IsNullOrEmpty(n.Id))
+                        .Select(n => n.Id!)
+                        .ToList();
+                    orphanNotificationIds.AddRange(orphans);
+                }
+            }
+
+            if (orphanNotificationIds.Any())
+            {
+                var orphanFilter = Builders<Notification>.Filter.In(n => n.Id, orphanNotificationIds);
+                var orphanDeleted = await _notificationsCollection.DeleteManyAsync(orphanFilter);
+                result.OrphanDeleted = (int)orphanDeleted.DeletedCount;
+            }
+
+            result.TotalDeleted = result.FakeIdDeleted + result.EmptyUserIdDeleted + result.OrphanDeleted;
+            return result;
+        }
+
+        /// <summary>
+        /// Returns a count of all notifications grouped by userId — useful for debugging.
+        /// </summary>
+        public async Task<List<NotificationUserSummary>> GetAllNotificationsSummaryAsync()
+        {
+            var all = await _notificationsCollection.Find(_ => true).ToListAsync();
+            var summary = all
+                .GroupBy(n => n.UserId)
+                .Select(g => new NotificationUserSummary
+                {
+                    UserId = g.Key,
+                    Count = g.Count(),
+                    UnreadCount = g.Count(n => !n.IsRead),
+                    OldestCreatedAt = g.Min(n => n.CreatedAt),
+                    NewestCreatedAt = g.Max(n => n.CreatedAt)
+                })
+                .OrderBy(s => s.UserId)
+                .ToList();
+            return summary;
+        }
+    }
+
+    public class CleanupResult
+    {
+        public int FakeIdDeleted { get; set; }
+        public int EmptyUserIdDeleted { get; set; }
+        public int OrphanDeleted { get; set; }
+        public int TotalDeleted { get; set; }
+    }
+
+    public class NotificationUserSummary
+    {
+        public string UserId { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public int UnreadCount { get; set; }
+        public DateTime OldestCreatedAt { get; set; }
+        public DateTime NewestCreatedAt { get; set; }
     }
 }

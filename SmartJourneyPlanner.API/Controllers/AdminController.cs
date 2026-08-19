@@ -443,20 +443,20 @@ namespace SmartJourneyPlanner.API.Controllers
                 var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
                 var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
 
+                // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
                 var notification = new Notification
                 {
                     UserId = targetVehicle.ProviderId,
                     Icon = icon,
                     IconColorClass = colorClass,
                     Title = title,
-                    Time = "Just now",
                     IsRead = false,
                     LinkText = newStatus == "Approved" ? "Manage Fleet" : "Edit Listing",
-                    Route = "/provider-dashboard"
+                    Route = "/provider-dashboard?panel=fleet"
                 };
                 
                 await _notificationService.CreateNotificationAsync(notification);
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+                await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
             }
             catch (Exception ex)
             {

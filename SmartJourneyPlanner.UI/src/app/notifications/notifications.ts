@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
+import { SignalrService } from '../services/signalr.service';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notifications',
@@ -13,32 +15,58 @@ import { Router } from '@angular/router';
   templateUrl: './notifications.html',
   styleUrls: ['./notifications.css']
 })
-export class NotificationsComponent implements OnInit {
+export class NotificationsComponent implements OnInit, OnDestroy {
   notifications: any[] = [];
   filteredNotifications: any[] = [];
   filterTab: string = 'all';
   unreadCount: number = 0;
   readCount: number = 0;
+  private notificationSub!: Subscription;
 
   constructor(
     private authService: AuthService,
     private dashboardService: TravellerDashboardService,
     private notificationService: NotificationService,
+    private signalrService: SignalrService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loadAllNotifications();
+    this.notificationSub = this.signalrService.notificationReceived.subscribe({
+      next: (notif: any) => {
+        if (notif) {
+          const mappedNotif = {
+            ...notif,
+            time: this.getRelativeTime(notif.createdAt)
+          };
+          this.notifications.unshift(mappedNotif);
+          this.updateCounts();
+          this.applyFilter(this.filterTab);
+        }
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.notificationSub) {
+      this.notificationSub.unsubscribe();
+    }
   }
 
   loadAllNotifications() {
     const userType = this.authService.getUserSystemType();
     const userId = this.authService.getUserId();
 
-    if (!userId) return;
+    console.log('[Notifications] Loading for userId:', userId, '| userType:', userType);
+    if (!userId) {
+      console.warn('[Notifications] No userId found — user may not be logged in.');
+      return;
+    }
 
     this.notificationService.getNotifications(userId, userType).subscribe({
       next: (dbNotifications) => {
+        console.log('[Notifications] Received from API:', dbNotifications.length, 'records');
         const mapped = dbNotifications.map((n: any) => ({
           ...n,
           time: this.getRelativeTime(n.createdAt)
@@ -75,15 +103,19 @@ export class NotificationsComponent implements OnInit {
                       title = `Only ${daysLeft} days left until your trip to ${nextTrip.destination || 'your destination'}!`;
                     }
 
+                    const tripId = nextTrip.id || nextTrip.Id;
+                    const isRead = localStorage.getItem(`countdown_read_${tripId}`) === 'true';
+
                     const countdownNotification = {
                       id: 'countdown-999',
                       icon: 'bi-clock-fill',
                       iconColorClass: 'icon-orange',
                       title: title,
                       time: 'Just now',
-                      isRead: false,
+                      isRead: isRead,
                       linkText: 'View Trip',
-                      route: '/trip-summary/' + (nextTrip.id || nextTrip.Id)
+                      route: '/trip-summary/' + tripId,
+                      tripId: tripId
                     };
 
                     this.notifications = [
@@ -130,7 +162,13 @@ export class NotificationsComponent implements OnInit {
 
     this.notificationService.markAllAsRead(userId).subscribe({
       next: () => {
-        this.notifications.forEach(n => n.isRead = true);
+        // Mark all notifications as read locally (including in-memory countdown-999)
+        this.notifications.forEach(n => {
+          n.isRead = true;
+          if (n.id === 'countdown-999' && n.tripId) {
+            localStorage.setItem(`countdown_read_${n.tripId}`, 'true');
+          }
+        });
         this.notifications = [...this.notifications];
         this.updateCounts();
         this.applyFilter(this.filterTab);
@@ -142,6 +180,9 @@ export class NotificationsComponent implements OnInit {
   markAsRead(notification: any) {
     if (notification.id === 'countdown-999') {
       notification.isRead = true;
+      if (notification.tripId) {
+        localStorage.setItem(`countdown_read_${notification.tripId}`, 'true');
+      }
       this.updateCounts();
       this.applyFilter(this.filterTab);
       return;

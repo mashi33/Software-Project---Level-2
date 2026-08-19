@@ -507,7 +507,7 @@ export class ProviderForm implements OnInit {
     const rawValue = this.vehicleForm.value;
     const formData: Vehicle = {
       ...rawValue,
-      providerId: this.authService.getUserEmail() || 'p1', 
+      providerId: this.authService.getUserEmail() || '', // Real provider email from auth session
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,
       driverNicUrl: this.nicPreview as string,
