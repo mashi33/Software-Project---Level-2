@@ -17,7 +17,7 @@ import { Flip } from 'gsap/Flip';
 
 interface CommunityAlbum {
   tripName: string;
-  memories: CommunityMemory[]; 
+  memories: TripMemory[];
   latestImage: string;
   latestDate: string | Date;
   currentDisplayImage: string;
@@ -61,11 +61,11 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   );
 
   searchQuery = '';
-  allMemories: CommunityMemory[] = [];
-  filteredMemories: CommunityMemory[] = [];
-  topRatedMemories: CommunityMemory[] = [];
-  selectedMemory: CommunityMemory | null = null;
+  allMemories: TripMemory[] = [];
+  filteredMemories: TripMemory[] = [];
   groupedAlbums: CommunityAlbum[] = [];
+  topRatedMemories: TripMemory[] = [];
+  selectedMemory: TripMemory | null = null;
   selectedAlbum: CommunityAlbum | null = null;
   currentMemoryIndex = 0;
   isLightboxOpen = false;
@@ -623,7 +623,7 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
- getPriorityScore(memory: TripMemory): number {
+  getPriorityScore(memory: TripMemory): number {
     return this.calculatePriorityScore(memory);
   }
 
