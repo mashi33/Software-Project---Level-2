@@ -87,10 +87,11 @@ namespace SmartJourneyPlanner.Controllers
         {
             // Set the creation timestamp automatically
             newBooking.CreatedAt = DateTime.UtcNow.ToString("o");
-            // Save to database
+            // Save to database first so MongoDB assigns the Id before we use it in notifications
             await _bookingService.CreateAsync(newBooking);
 
             // Generate notification for the Transport Provider
+            // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
             try
             {
                 var providerNotification = new Notification
@@ -99,13 +100,12 @@ namespace SmartJourneyPlanner.Controllers
                     Icon = "bi-card-list",
                     IconColorClass = "icon-blue",
                     Title = $"New booking request received from traveler {newBooking.userName} for {newBooking.vehicleName}",
-                    Time = "Just now",
                     IsRead = false,
                     LinkText = "View Request",
                     Route = $"/provider-dashboard?panel=bookings&bookingId={newBooking.Id}"
                 };
                 await _notificationService.CreateNotificationAsync(providerNotification);
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);
+                await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
             }
             catch (Exception ex)
             {
@@ -121,13 +121,12 @@ namespace SmartJourneyPlanner.Controllers
                     Icon = "bi-clock-history",
                     IconColorClass = "icon-blue",
                     Title = $"Your booking request for {newBooking.vehicleName} has been submitted successfully and is pending approval",
-                    Time = "Just now",
                     IsRead = false,
                     LinkText = "Check Status",
                     Route = $"/transport?tab=bookings&bookingId={newBooking.Id}"
                 };
                 await _notificationService.CreateNotificationAsync(travelerNotification);
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+                await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
             }
             catch (Exception ex)
             {
@@ -167,6 +166,7 @@ namespace SmartJourneyPlanner.Controllers
             await _providerDashboardService.UpdateBookingStatus(id, dto.Status);
 
             // Generate notifications based on the status change
+            // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
             try
             {
                 if (dto.Status == "Confirmed" || dto.Status == "Approved")
@@ -177,13 +177,12 @@ namespace SmartJourneyPlanner.Controllers
                         Icon = "bi-check-circle-fill",
                         IconColorClass = "icon-green",
                         Title = $"Your booking request for {booking.vehicleName} has been confirmed by the provider!",
-                        Time = "Just now",
                         IsRead = false,
                         LinkText = "View Details",
                         Route = $"/transport?tab=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(travelerNotification);
-                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+                    await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
                 }
                 else if (dto.Status == "Rejected")
                 {
@@ -193,13 +192,12 @@ namespace SmartJourneyPlanner.Controllers
                         Icon = "bi-x-circle-fill",
                         IconColorClass = "icon-red",
                         Title = $"Your booking request for {booking.vehicleName} has been rejected by the provider.",
-                        Time = "Just now",
                         IsRead = false,
                         LinkText = "View Dashboard",
                         Route = $"/transport?tab=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(travelerNotification);
-                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", travelerNotification);
+                    await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
                 }
                 else if (dto.Status == "Cancelled")
                 {
@@ -209,13 +207,12 @@ namespace SmartJourneyPlanner.Controllers
                         Icon = "bi-x-circle-fill",
                         IconColorClass = "icon-red",
                         Title = $"Booking request for {booking.vehicleName} has been cancelled by traveler {booking.userName}.",
-                        Time = "Just now",
                         IsRead = false,
                         LinkText = "Check Status",
                         Route = $"/provider-dashboard?panel=bookings&bookingId={booking.Id}"
                     };
                     await _notificationService.CreateNotificationAsync(providerNotification);
-                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", providerNotification);
+                    await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
                 }
             }
             catch (Exception ex)

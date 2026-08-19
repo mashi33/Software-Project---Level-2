@@ -96,15 +96,27 @@ namespace SmartJourneyPlanner.API.Services
             try
             {
                 var tripFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(tripId));
-                var trip = await _tripsCollection.Find(tripFilter).FirstOrDefaultAsync();
-                if (trip == null) return;
+                var tripDocument = await _tripsCollection.Find(tripFilter).FirstOrDefaultAsync();
+                if (tripDocument == null) return;
 
-                var rawLimit = trip.Contains("BudgetLimit") ? trip["BudgetLimit"].ToString() : "";
+                var trip = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Trip>(tripDocument);
+
+                var rawLimit = trip.BudgetLimit;
                 double limit = ParseBudgetLimit(rawLimit);
                 if (limit <= 0) return;
 
-                var userId = trip.Contains("CreatedBy") ? trip["CreatedBy"].ToString() : "";
-                if (string.IsNullOrEmpty(userId)) return;
+                var targetUsers = new HashSet<string>();
+                if (!string.IsNullOrEmpty(trip.CreatedBy)) targetUsers.Add(trip.CreatedBy);
+                if (!string.IsNullOrEmpty(trip.CreatorEmail)) targetUsers.Add(trip.CreatorEmail);
+                if (trip.Members != null)
+                {
+                    foreach (var member in trip.Members)
+                    {
+                        if (!string.IsNullOrEmpty(member.Email)) targetUsers.Add(member.Email);
+                    }
+                }
+
+                if (targetUsers.Count == 0) return;
 
                 var percentBefore = limit > 0 ? (amountBeforeAdd / limit) : 0;
                 var percentAfter = limit > 0 ? (amountAfterAdd / limit) : 0;
@@ -112,36 +124,40 @@ namespace SmartJourneyPlanner.API.Services
                 // Threshold 1: 80% (exceeded 80% but was below 80% before)
                 if (percentAfter >= 0.8 && percentBefore < 0.8 && percentAfter < 0.95)
                 {
-                    var notification = new Notification
+                    foreach (var userIdentifier in targetUsers)
                     {
-                        UserId = userId,
-                        Icon = "bi-exclamation-triangle-fill",
-                        IconColorClass = "icon-red",
-                        Title = "Budget alert: You have reached 80% of your estimated trip budget",
-                        Time = "Just now",
-                        IsRead = false,
-                        LinkText = "View Budget",
-                        Route = "/budget"
-                    };
-                    await _notificationService.CreateNotificationAsync(notification);
-                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+                        var notification = new Notification
+                        {
+                            UserId = userIdentifier,
+                            Icon = "bi-exclamation-triangle-fill",
+                            IconColorClass = "icon-red",
+                            Title = "Budget alert: You have reached 80% of your estimated trip budget",
+                            IsRead = false,
+                            LinkText = "View Budget",
+                            Route = $"/budget?tripId={trip.Id}"
+                        };
+                        await _notificationService.CreateNotificationAsync(notification);
+                        await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+                    }
                 }
                 // Threshold 2: 95% (exceeded 95% but was below 95% before)
                 else if (percentAfter >= 0.95 && percentBefore < 0.95)
                 {
-                    var notification = new Notification
+                    foreach (var userIdentifier in targetUsers)
                     {
-                        UserId = userId,
-                        Icon = "bi-exclamation-triangle-fill",
-                        IconColorClass = "icon-red",
-                        Title = "Budget alert: You have reached 95% of your estimated trip budget",
-                        Time = "Just now",
-                        IsRead = false,
-                        LinkText = "Manage Expenses",
-                        Route = "/budget"
-                    };
-                    await _notificationService.CreateNotificationAsync(notification);
-                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+                        var notification = new Notification
+                        {
+                            UserId = userIdentifier,
+                            Icon = "bi-exclamation-triangle-fill",
+                            IconColorClass = "icon-red",
+                            Title = "Budget alert: You have reached 95% of your estimated trip budget",
+                            IsRead = false,
+                            LinkText = "Manage Expenses",
+                            Route = $"/budget?tripId={trip.Id}"
+                        };
+                        await _notificationService.CreateNotificationAsync(notification);
+                        await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+                    }
                 }
             }
             catch (Exception ex)

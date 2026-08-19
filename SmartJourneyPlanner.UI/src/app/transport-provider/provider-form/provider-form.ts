@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { VehicleType, VehicleClass, Vehicle } from '../../models/transport.model';
 import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-provider-form',
@@ -73,9 +74,9 @@ export class ProviderForm implements OnInit {
   submitted = false; // Becomes true once the user clicks "Submit"
 
   constructor(
-    private fb: FormBuilder, 
-    private eRef: ElementRef,
-    private transportVehicleService: TransportVehicleService
+    private fb: FormBuilder,
+    private transportVehicleService: TransportVehicleService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -417,7 +418,7 @@ export class ProviderForm implements OnInit {
     const rawValue = this.vehicleForm.value;
     const formData: Vehicle = {
       ...rawValue,
-      providerId: 'p1', // Mock Provider ID
+      providerId: this.authService.getUserEmail() || '', // Real provider email from auth session
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,
       driverNicUrl: this.nicPreview as string,
