@@ -340,7 +340,7 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchPendingProviders();
     this.fetchAllUsers();
     this.fetchPlatformMemories();
-    // Only fetch vehicles when needed (not on initial load)
+    // Only fetch vehicles when needed
     if (this.view === 'fleet-detailed') {
       this.fetchAllVehicles();
     }
@@ -1024,7 +1024,6 @@ export class AdminDashboardComponent implements OnInit {
     console.log('allVehicles:', this.allVehicles);
 
     if (this.allBookings && this.allBookings.length > 0 && this.allVehicles && this.allVehicles.length > 0) {
-      // Get all vehicle IDs from the fleet
       const vehicleIds = new Set(this.allVehicles.map(v => this.getVehicleId(v)).filter(Boolean));
       console.log('Vehicle IDs in fleet:', vehicleIds);
       

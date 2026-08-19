@@ -24,12 +24,6 @@ namespace SmartJourneyPlanner.API.Services
             _vehiclesCollection = database.GetCollection<TransportVehicle>("TransportVehicles");
         }
 
-        /**
-         * GET APPROVED VEHICLES
-         * 🔑 FIXED FOR TRAVELERS VIEW:
-         * This method feeds the traveler screen. It has been updated to query ONLY vehicles 
-         * that have been verified by the Admin AND are actively marked "Available" by the provider.
-         */
         public async Task<List<TransportVehicle>> GetApprovedProvidersAsync()
         {
             return await _vehiclesCollection
@@ -37,11 +31,6 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        /**
-         * GET PENDING VEHICLES/PROVIDERS
-         * Fetches documents matching EITHER "Pending" OR "Pending Approval".
-         * This prevents new submissions from disappearing from the Admin Panel.
-         */
         public async Task<List<TransportVehicle>> GetPendingProvidersAsync()
         {
             var pendingFilter = Builders<TransportVehicle>.Filter.Eq(v => v.AdminVerificationStatus, "Pending");
@@ -51,10 +40,7 @@ namespace SmartJourneyPlanner.API.Services
                 .ToListAsync();
         }
 
-        /**
-         * PROMOTE USER TO ADMIN
-         * Elevates standard platform accounts to administrative privileges.
-         */
+        /** PROMOTE USER TO ADMIN **/
         public async Task<bool> PromoteToAdmin(string userId)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
@@ -63,10 +49,6 @@ namespace SmartJourneyPlanner.API.Services
             return result.ModifiedCount > 0;
         }
 
-        /**
-         * UPDATE APPROVAL STATUS
-         * Sets IsVerified to true, but initializes Status as "Unavailable".
-         */
         public async Task UpdateStatusAsync(string id, string newStatus)
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
@@ -77,10 +59,6 @@ namespace SmartJourneyPlanner.API.Services
             await _vehiclesCollection.UpdateOneAsync(filter, update);
         }
 
-        /**
-         * GET VEHICLES BY PROVIDER ID
-         * Useful for viewing all vehicles owned by a specific person, ignoring status boundaries.
-         */
         public async Task<List<TransportVehicle>> GetByProviderIdAsync(string providerId)
         {
             return await _vehiclesCollection

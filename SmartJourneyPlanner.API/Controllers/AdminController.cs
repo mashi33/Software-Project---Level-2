@@ -135,7 +135,7 @@ namespace SmartJourneyPlanner.API.Controllers
                 .Distinct()
                 .ToList();
 
-            if (missingNameUserIds.Count > 0)
+            if (missingNameUserIds != null && missingNameUserIds.Count > 0)
             {
                 var users = await _userCollection
                     .Find(u => missingNameUserIds.Contains(u.Id))
@@ -177,7 +177,6 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 // Convert the string ID to a MongoDB ObjectId
                 var objectId = new ObjectId(id);
-                // Filter using the ObjectId
                 var filter = Builders<TripMemory>.Filter.Eq(m => m.Id, id);
                 var result = await _memoryCollection.DeleteOneAsync(filter);
 
@@ -390,7 +389,7 @@ namespace SmartJourneyPlanner.API.Controllers
         {
             var filter = Builders<TransportVehicle>.Filter.Eq(v => v.Id, id);
             
-            // Fetch the vehicle first so we have access to its details (like ModelName and ProviderId)
+            // Fetch the vehicle first so we have access to its details
             var targetVehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
             if (targetVehicle == null) return NotFound(new { message = "Vehicle not found." });
 
@@ -414,10 +413,10 @@ namespace SmartJourneyPlanner.API.Controllers
 
                 if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
                 {
-                    // 1. Get the MongoDB collection for CustomerAlerts
+                    // Get the MongoDB collection for CustomerAlerts
                     var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
                     
-                    // 2. Instantiate the alert object with the user and vehicle details
+                    // Instantiate the alert object with the user and vehicle details
                     var customerAlert = new CustomerAlert
                     {
                         UserId = activeBooking.UserId,
@@ -428,12 +427,12 @@ namespace SmartJourneyPlanner.API.Controllers
                         Dismissed = false
                     };
 
-                    // 3. Insert the object asynchronously into the database
+                    // Insert the object asynchronously into the database
                     await alertCollection.InsertOneAsync(customerAlert);
                 }
             }
 
-            // Generate notification for the Transport Provider!
+            // Generate notification for the Transport Provider
             try
             {
                 var title = newStatus == "Approved"
@@ -466,7 +465,7 @@ namespace SmartJourneyPlanner.API.Controllers
             return Ok(new { message = "Status updated" });
         }
 
-        // --- CUSTOMER ALERT ENDPOINTS ---
+        // CUSTOMER ALERT ENDPOINTS 
 
         [HttpGet("customer-alerts/{userId}")]
         public async Task<IActionResult> GetCustomerAlerts(string userId)

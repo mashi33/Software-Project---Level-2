@@ -254,7 +254,6 @@ export class BudgetDashboard implements OnInit {
     });
   }
 
-  // 🔑 MONGO REFERENCE LOOKUP: Case-insensitive dynamic user record mapping
   resolveMemberName(email: string): string {
     if (!email) return 'Teammate';
     
@@ -264,7 +263,6 @@ export class BudgetDashboard implements OnInit {
       return 'You';
     }
     
-    // Cross-reference safely against MongoDB collection structures
     if (this.tripDetails && this.tripDetails.members) {
       const foundMember = this.tripDetails.members.find((m: any) => {
         const memberEmail = (m.email || m.Email || '').trim().toLowerCase();
@@ -277,7 +275,6 @@ export class BudgetDashboard implements OnInit {
       }
     }
     
-    // Safe procedural string slice formatting fallback rule
     const fallbackPrefix = email.split('@')[0].split(/[\._0-9]/)[0];
     return fallbackPrefix.charAt(0).toUpperCase() + fallbackPrefix.slice(1) || 'Teammate';
   }
@@ -292,13 +289,13 @@ export class BudgetDashboard implements OnInit {
   const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
   const tripName = selectedTrip?.tripName || 'Trip Workspace';
   
-  // 1. Modern Top Accent Bar
-  doc.setFillColor(37, 99, 235); // Primary Blue
+  // Modern Top Accent Bar
+  doc.setFillColor(37, 99, 235); 
   doc.rect(0, 0, 105, 3.5, 'F');
-  doc.setFillColor(14, 165, 233); // Cyan Accent
+  doc.setFillColor(14, 165, 233); 
   doc.rect(105, 0, 105, 3.5, 'F');
 
-  // 2. Document Title & Subtitle
+  // Document Title & Subtitle
   doc.setFont('Helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(15, 23, 42); 
@@ -313,7 +310,7 @@ export class BudgetDashboard implements OnInit {
   doc.setLineWidth(0.4);
   doc.line(14, 29, 196, 29);
 
-  // 3. Extended Metadata Info Box (Height expanded to fit 4 items neatly)
+  // Extended Metadata Info Box
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
@@ -321,8 +318,8 @@ export class BudgetDashboard implements OnInit {
   doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139); 
 
-  // Row 1: Destination & Date Generated
-  doc.text('Target Destination:', 20, 40);
+  // Trip & Date Generated
+  doc.text('Target Trip Name :', 20, 40);
   doc.setFont('Helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
@@ -337,7 +334,7 @@ export class BudgetDashboard implements OnInit {
   doc.setTextColor(15, 23, 42);
   doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 146, 40);
 
-  // Row 2: Members Count & Cost Per Person
+  // Members Count & Cost Per Person
   doc.setFont('Helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139);
@@ -357,10 +354,10 @@ export class BudgetDashboard implements OnInit {
   doc.text('Cost Per Person:', 115, 50);
   doc.setFont('Helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(2, 132, 199); // Blue highlight for per person cost
+  doc.setTextColor(2, 132, 199); 
   doc.text(formattedCpp, 146, 50);
 
-  // 4. Expenses Table Data Mapping
+  // Expenses Table Data Mapping
   const tableBodyRows = this.expenses.map(e => [
     e.category, 
     'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
@@ -368,7 +365,7 @@ export class BudgetDashboard implements OnInit {
     e.description || '-'
   ]);
 
-  // 5. Professional AutoTable Configuration (startY shifted down to 62 to match box height)
+  // Professional AutoTable Configuration
   autoTable(doc, {
     startY: 62,
     head: [['Category', 'Amount', 'Date Logged', 'Description']],
@@ -411,7 +408,7 @@ export class BudgetDashboard implements OnInit {
     }
   });
 
-  // 6. Aggregate Sum Total Card Box
+  // Aggregate Sum Total Card Box
   if (this.budget) {
     const finalY = (doc as any).lastAutoTable.finalY || 60;
     const boxWidth = 182;

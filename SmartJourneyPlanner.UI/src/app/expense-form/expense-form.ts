@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BudgetService } from '../services/budget';
-// 🔑 Import SweetAlert2
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'; //Import SweetAlert2
 
 @Component({
     selector: 'app-expense-form',
@@ -14,8 +13,6 @@ import Swal from 'sweetalert2';
     styleUrls: ['./expense-form.css']
 })
 export class ExpenseForm implements OnInit {
-
-  // Using 'description' instead of 'name' to match C# Backend
   expense = {
     description: '', 
     amount: null,
@@ -24,7 +21,7 @@ export class ExpenseForm implements OnInit {
   };
 
   tripId: string = '';
-  expenseId: string = ''; // Used for editing a specific record
+  expenseId: string = ''; 
   isEditMode = false;
 
   categories = [
@@ -48,7 +45,6 @@ export class ExpenseForm implements OnInit {
         this.tripId = params['tripId'];
       } else {
         console.warn('⚠️ No Trip ID found in URL.');
-        // 🎨 Replaced standard alert with a premium modal error
         Swal.fire({
           icon: 'error',
           title: 'Trip Missing',
@@ -62,9 +58,7 @@ export class ExpenseForm implements OnInit {
       // Check if we are editing an existing expense
       if (params['mode'] === 'edit') {
         this.isEditMode = true;
-        this.expenseId = params['expenseId']; // Capture unique ID for editing
-
-        // Fill form with data passed from dashboard
+        this.expenseId = params['expenseId']; 
         this.expense.description = params['description'];
         this.expense.amount = params['amount'];
         this.expense.category = params['category'];
@@ -83,7 +77,6 @@ export class ExpenseForm implements OnInit {
   }
 
   onSubmit() {
-    // 🎨 Replaced frontend validation alerts with clean SweetAlert2 warnings
     if (!this.expense.amount || !this.expense.description) {
       Swal.fire({
         icon: 'warning',
@@ -104,17 +97,14 @@ export class ExpenseForm implements OnInit {
       return;
     }
 
-    // Prepare data (Ensure amount is a number)
     const payload = {
       ...this.expense,
       amount: Number(this.expense.amount)
     };
 
     if (this.isEditMode) {
-      // UPDATE using unique expenseId
       this.budgetService.updateExpense(this.tripId, this.expenseId, payload).subscribe({
         next: () => {
-          // 🎨 REPLACED POPUP: Frictionless self-closing top corner toast notification
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -143,10 +133,9 @@ export class ExpenseForm implements OnInit {
       });
 
     } else {
-      // ADD NEW
       this.budgetService.addExpense(this.tripId, payload).subscribe({
         next: () => {
-          // 🎨 REPLACED POPUP: Frictionless self-closing top corner toast notification
+          // POPUP: Frictionless self-closing top corner toast notification
           Swal.fire({
             toast: true,
             position: 'top-end',
