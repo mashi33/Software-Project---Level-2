@@ -1,19 +1,21 @@
 <h2 class="sr-only">Budget Planner Dashboard for {{ tripDetails?.tripName || 'Trip' }}</h2>
 
 <div class="bp-root fade-in">
-  
+
   <div class="summary-spacing" *ngIf="expenses && expenses.length > 0">
     <div *ngIf="budgetPercentage >= 100" class="alert-box creative-danger-alert fade-in">
       <div class="alert-left">
         <div class="alert-icon-circle bg-danger-solid"><i class="bi bi-exclamation-triangle-fill"></i></div>
-        <span><strong>Over Budget:</strong> You have gone over budget by <strong>Rs. {{ budget.totalSpent - totalAllowedBudget | number : '1.2-2' }}</strong></span>
+        <span><strong>Over Budget:</strong> You have gone over budget by <strong>Rs. {{ budget.totalSpent -
+            totalAllowedBudget | number : '1.2-2' }}</strong></span>
       </div>
       <span class="alert-badge solid-danger-badge">Critical Action Required</span>
     </div>
     <div *ngIf="budgetPercentage >= 80 && budgetPercentage < 100" class="alert-box creative-warning-alert fade-in">
       <div class="alert-left">
         <div class="alert-icon-circle bg-warning-solid"><i class="bi bi-bell-fill"></i></div>
-        <span><strong>Approaching Limit:</strong> You have used {{ budgetPercentage | number : '1.0-0' }}% of your total trip budget.</span>
+        <span><strong>Approaching Limit:</strong> You have used {{ budgetPercentage | number : '1.0-0' }}% of your total
+          trip budget.</span>
       </div>
       <span class="alert-badge solid-warning-badge">Cap Warning</span>
     </div>
@@ -33,26 +35,49 @@
         <i class="bi bi-geo-alt-fill"></i> {{ tripDetails?.tripName }}
       </div>
     </div>
-    
+
     <div class="bp-belt-right" *ngIf="expenses && expenses.length > 0">
-      <button class="bp-belt-export-btn" (click)="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Export Report</button>
+      <button class="bp-belt-export-btn" (click)="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Export
+        Report</button>
     </div>
   </div>
 
+  <!-- Redesigned Professional Metrics Sheet -->
   <div class="bp-metrics-sheet">
-    <div class="metric-block hero-metric">
-      <div class="m-label">Total Spent</div>
-      <div class="m-value core-text">Rs. {{ budget?.totalSpent | number:'1.2-2' }}</div>
-      <div class="m-sub">{{ expenses.length }} expenses added</div>
+    <!-- Card 1: Total Spent -->
+    <div class="metric-block border-start border-primary border-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="m-label">Total Spent</div>
+          <div class="m-value core-text">Rs. {{ budget?.totalSpent | number:'1.2-2' }}</div>
+          <div class="m-sub">{{ expenses.length }} expenses added</div>
+        </div>
+        <div
+          class="stat-icon-box bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+          style="width: 44px; height: 44px;">
+          <i class="bi bi-wallet2 fs-5"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="metric-block">
-      <div class="m-label">Cost Per Person</div>
-      <div class="m-value split-text">Rs. {{ costPerPerson | number:'1.2-2' }}</div>
-      <div class="m-sub">Split equally among {{ membersCount }} people</div>
+    <!-- Card 2: Cost Per Person -->
+    <div class="metric-block border-start border-info border-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="m-label">Cost Per Person</div>
+          <div class="m-value split-text">Rs. {{ costPerPerson | number:'1.2-2' }}</div>
+          <div class="m-sub">Split equally among {{ membersCount }} people</div>
+        </div>
+        <div
+          class="stat-icon-box bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+          style="width: 44px; height: 44px;">
+          <i class="bi bi-people-fill fs-5"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="metric-block progress-block full-width-progress">
+    <!-- Card 3: Budget Usage -->
+    <div class="metric-block progress-block full-width-progress border-start border-warning border-4">
       <div class="progress-header-split">
         <div class="m-label">Budget Usage</div>
         <div class="m-limit-badge">Limit: Rs. {{ totalAllowedBudget | number:'1.0-0' }}</div>
@@ -60,12 +85,13 @@
       <div class="progress-container-mini">
         <div class="bp-bar-bg">
           <div class="bp-bar-fill" [style.width.%]="budgetPercentage > 100 ? 100 : budgetPercentage"
-               [ngClass]="{'warning': budgetPercentage >= 80 && budgetPercentage < 100, 'danger': budgetPercentage >= 100}">
+            [ngClass]="{'warning': budgetPercentage >= 80 && budgetPercentage < 100, 'danger': budgetPercentage >= 100}">
           </div>
         </div>
         <div class="progress-footer-split">
           <span class="m-sub">
-            Money Left: <strong [ngClass]="(totalAllowedBudget - budget?.totalSpent) < 0 ? 'neg' : 'pos'">Rs. {{ (totalAllowedBudget - budget?.totalSpent) | number:'1.0-0' }}</strong>
+            Money Left: <strong [ngClass]="(totalAllowedBudget - budget?.totalSpent) < 0 ? 'neg' : 'pos'">Rs. {{
+              (totalAllowedBudget - budget?.totalSpent) | number:'1.0-0' }}</strong>
           </span>
           <span class="progress-txt">{{ budgetPercentage | number:'1.0-0' }}% Used</span>
         </div>
@@ -74,16 +100,24 @@
   </div>
 
   <div class="bp-grid">
-    
     <div class="bp-card structure-table-card">
       <div class="bp-card-head-modern">
         <div>
           <h3 class="bp-card-title">Expense History</h3>
           <p class="bp-card-subtitle-sub">Manage and audit your individual travel transaction logs.</p>
         </div>
-        <button class="bp-add-btn-premium-blue" [routerLink]="['/add-expense']" [queryParams]="{ tripId: tripId }">
-          <i class="bi bi-plus-lg"></i> Add Expense
-        </button>
+        <div class="tooltip-container">
+          <button class="bp-add-btn-premium-blue" [disabled]="isViewer"
+            [style.background-color]="isViewer ? '#cbd5e1' : ''" [style.cursor]="isViewer ? 'not-allowed' : 'pointer'"
+            [style.opacity]="isViewer ? '0.7' : '1'" [routerLink]="isViewer ? null : ['/add-expense']"
+            [queryParams]="{ tripId: tripId }">
+            <i class="bi bi-plus-lg"></i> Add Expense
+          </button>
+
+          <span class="tooltip-box align-right-edge" *ngIf="isViewer">
+            You have view-only access. Cannot add expenses.
+          </span>
+        </div>
       </div>
 
       <div class="bp-table-wrap">
@@ -93,28 +127,30 @@
               <th class="sortable-header" (click)="sortTable('category')">
                 <div class="header-sort-content">
                   Category
-                  <i class="bi" [ngClass]="sortColumn === 'category' ? (sortAscending ? 'bi-sort-alpha-down active-sort' : 'bi-sort-alpha-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
+                  <i class="bi"
+                    [ngClass]="sortColumn === 'category' ? (sortAscending ? 'bi-sort-alpha-down active-sort' : 'bi-sort-alpha-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
                 </div>
               </th>
               <th class="sortable-header" (click)="sortTable('amount')">
                 <div class="header-sort-content">
                   Amount
-                  <i class="bi" [ngClass]="sortColumn === 'amount' ? (sortAscending ? 'bi-sort-numeric-down active-sort' : 'bi-sort-numeric-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
+                  <i class="bi"
+                    [ngClass]="sortColumn === 'amount' ? (sortAscending ? 'bi-sort-numeric-down active-sort' : 'bi-sort-numeric-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
                 </div>
               </th>
               <th class="sortable-header" (click)="sortTable('date')">
                 <div class="header-sort-content">
                   Date
-                  <i class="bi" [ngClass]="sortColumn === 'date' ? (sortAscending ? 'bi-sort-down active-sort' : 'bi-sort-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
+                  <i class="bi"
+                    [ngClass]="sortColumn === 'date' ? (sortAscending ? 'bi-sort-down active-sort' : 'bi-sort-down-alt active-sort') : 'bi-arrow-down-up placeholder-sort'"></i>
                 </div>
               </th>
               <th class="center-align-heading">Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of expenses" 
-                class="ledger-row-hover"
-                [ngClass]="{'teammate-row-tint': item.addedBy !== currentUserEmail}">
+            <tr *ngFor="let item of expenses" class="ledger-row-hover"
+              [ngClass]="{'teammate-row-tint': item.addedBy !== currentUserEmail}">
               <td>
                 <div class="pill-badge-combo" [ngClass]="{
                   'badge-meals': item.category?.toLowerCase() === 'meals',
@@ -138,7 +174,8 @@
                     <button class="btn-ctrl-vibrant btn-edit-ink" (click)="editExpense(item)" title="Edit your expense">
                       <i class="bi bi-pencil-square"></i> Edit
                     </button>
-                    <button class="btn-ctrl-vibrant btn-delete-ink" (click)="deleteExpense(item.id)" title="Delete your expense">
+                    <button class="btn-ctrl-vibrant btn-delete-ink" (click)="deleteExpense(item.id)"
+                      title="Delete your expense">
                       <i class="bi bi-trash3-fill"></i> Delete
                     </button>
                   </ng-container>
@@ -148,13 +185,15 @@
                       <button class="btn-ctrl-vibrant btn-teammate-disabled" disabled>
                         <i class="bi bi-pencil-fill"></i> Edit
                       </button>
-                      <span class="tooltip-box align-right-edge">Cannot edit this, it was added by: {{ resolveMemberName(item.addedBy) }}</span>
+                      <span class="tooltip-box align-right-edge">Cannot edit this, it was added by: {{
+                        resolveMemberName(item.addedBy) }}</span>
                     </div>
                     <div class="tooltip-container">
                       <button class="btn-ctrl-vibrant btn-teammate-disabled" disabled>
                         <i class="bi bi-trash-fill"></i> Delete
                       </button>
-                      <span class="tooltip-box align-right-edge">Cannot delete this, it was added by: {{ resolveMemberName(item.addedBy) }}</span>
+                      <span class="tooltip-box align-right-edge">Cannot delete this, it was added by: {{
+                        resolveMemberName(item.addedBy) }}</span>
                     </div>
                   </ng-container>
                 </div>
@@ -175,17 +214,17 @@
         </div>
       </div>
     </div>
-    
+
     <div class="side-card">
       <div class="side-section-split">
-        
         <div class="split-card-deck-sidebar" *ngIf="expenses && expenses.length > 0">
           <h4 class="side-title"><i class="bi bi-people-fill"></i> Split Bill Between Members</h4>
           <div class="split-box-modern-sidebar">
             <div class="split-input-row-sidebar">
               <span>Divide overall bill among</span>
               <div class="input-badge-wrapper">
-                <input class="member-inp pure-numeric-inp" type="number" min="1" [(ngModel)]="membersCount" (change)="calculateTotal()">
+                <input class="member-inp pure-numeric-inp" type="number" min="1" [(ngModel)]="membersCount"
+                  (change)="calculateTotal()">
               </div>
               <span>people sharing costs</span>
             </div>
@@ -194,17 +233,17 @@
 
         <div class="analytics-card-deck">
           <h4 class="side-title">Category Breakdown</h4>
-          
+
           <div *ngIf="expenses && expenses.length > 0" class="chart-canvas-box">
             <canvas baseChart [data]="doughnutChartData" [type]="doughnutChartType" [options]="chartOptions"></canvas>
           </div>
-          
+
           <div class="legend-wrap-modern" *ngIf="expenses && expenses.length > 0">
-            <div *ngFor="let label of doughnutChartLabels; let i = index" 
-                 class="legend-row-modern" 
-                 [style.border-left-color]="chartColors[i % chartColors.length]">
+            <div *ngFor="let label of doughnutChartLabels; let i = index" class="legend-row-modern"
+              [style.border-left-color]="chartColors[i % chartColors.length]">
               <div class="legend-left-block">
-                <span class="legend-indicator-dot" [style.background-color]="chartColors[i % chartColors.length]"></span>
+                <span class="legend-indicator-dot"
+                  [style.background-color]="chartColors[i % chartColors.length]"></span>
                 <span class="legend-label-txt">{{ label }}</span>
               </div>
               <span class="legend-numeric-val">Rs. {{ doughnutChartData.datasets[0].data[i] | number : '1.2-2' }}</span>
@@ -216,9 +255,7 @@
             <p>Select a trip above to look at your categorical charts view.</p>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </div>

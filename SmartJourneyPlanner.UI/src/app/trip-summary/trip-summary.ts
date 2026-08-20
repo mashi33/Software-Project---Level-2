@@ -259,7 +259,7 @@ export class TripSummaryComponent implements OnInit {
 
   navigateToBudget() {
     if (this.tripId) {
-      this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
+      this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId, role: this.userRole } });
     }
   }
 

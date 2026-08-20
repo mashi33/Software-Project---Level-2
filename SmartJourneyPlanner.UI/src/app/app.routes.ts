@@ -33,6 +33,7 @@ import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { SlideshowComponent } from './slideshow/slideshow';
+import { TripHistoryComponent } from './trip-history/trip-history';
 
 
 export const routes: Routes = [
@@ -68,6 +69,7 @@ export const routes: Routes = [
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
   { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
+  { path: 'trip-history/:id', component: TripHistoryComponent, canActivate: [authGuard] },
 
 
   {
