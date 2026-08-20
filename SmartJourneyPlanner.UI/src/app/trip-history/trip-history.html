@@ -1,0 +1,113 @@
+<div class="dashboard-wrapper">
+
+    <!-- ==========================================================================
+       1. FULL WIDTH HEADER CARD
+       ========================================================================== -->
+    <div class="header-card-fullwidth">
+        <div class="header-left-content">
+            <div class="header-icon-square">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="header-text-block">
+                <h1>Edited History</h1>
+                <p>{{ tripName }} · every change made to this trip</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="header-action-btn" type="button" (click)="backToSummary()">
+                <i class="bi bi-arrow-left"></i> Back to Summary
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <p class="loading-text">Loading edit history...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+
+        <!-- ==========================================================================
+         2. QUICK STATS ROW
+         ========================================================================== -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-badge blue-badge"><i class="bi bi-pencil-square"></i></div>
+                <div class="stat-text">
+                    <strong>{{ editHistory.length }}</strong>
+                    <span>Total Changes</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-badge green-badge"><i class="bi bi-people-fill"></i></div>
+                <div class="stat-text">
+                    <strong>{{ editorCount }}</strong>
+                    <span>Contributors</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-badge amber-badge"><i class="bi bi-calendar-event"></i></div>
+                <div class="stat-text">
+                    <strong>{{ lastEditedAt ? (lastEditedAt | date:'MMM d, y') : '—' }}</strong>
+                    <span>Last Modified</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+         3. TIMELINE CARD
+         ========================================================================== -->
+        <div class="trip-card blue-indicator-card">
+            <div class="card-title-section">
+                <div class="card-icon-badge blue-badge">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div class="card-text-block">
+                    <h3>Modification Log</h3>
+                    <p>Newest changes first</p>
+                </div>
+
+                <div class="search-box" *ngIf="editHistory.length">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search by editor or change..." [value]="searchTerm"
+                        (input)="onSearch($event)" />
+                </div>
+            </div>
+
+            <div class="history-empty" *ngIf="editHistory.length === 0">
+                <i class="bi bi-clock-history"></i>
+                <p class="title-text">No changes recorded yet</p>
+                <p class="desc-text">Edits made to this trip will appear here with the author and time.</p>
+            </div>
+
+            <div class="history-empty" *ngIf="editHistory.length > 0 && filteredHistory.length === 0">
+                <i class="bi bi-search"></i>
+                <p class="title-text">No matching changes</p>
+                <p class="desc-text">Try a different editor name or keyword.</p>
+            </div>
+
+            <div class="history-timeline" *ngIf="filteredHistory.length > 0">
+                <div class="timeline-entry" *ngFor="let history of filteredHistory">
+                    <div class="timeline-marker">
+                        <span class="author-avatar">{{ initialOf(history.editedBy) }}</span>
+                    </div>
+
+                    <div class="timeline-body">
+                        <div class="timeline-head">
+                            <span class="author-name">{{ history.editedBy || 'Unknown user' }}</span>
+                            <span class="history-date">
+                                <i class="bi bi-calendar3"></i>
+                                {{ history.editedAt | date:'MMM d, y · h:mm a' }}
+                            </span>
+                        </div>
+                        <p class="history-changes">
+                            <i class="bi bi-pencil-square"></i>{{ history.changes || 'Trip details updated' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </ng-container>
+</div>
