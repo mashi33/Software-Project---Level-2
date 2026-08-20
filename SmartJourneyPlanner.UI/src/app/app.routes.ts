@@ -198,7 +198,7 @@ export const routes: Routes = [
   {
     path: 'timeline',
     component: TripTimelineComponent,
-    canActivate: [authGuard, roleGuard],
+    canActivate: [roleGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']
     }

@@ -1,14 +1,14 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
 
 // Importing our own services and models
 import { TimelineService } from '../services/timeline.service';
+import { TripService } from '../services/trip.service'; // 👈 TripService injected for database role checks
 import { TimelineDay, TimelineEvent } from '../models/trip-timeline.model';
 import { CalendarSyncUtil } from '../utils/calendar-sync.util';
 import Swal from 'sweetalert2'; // For nice popup alerts
@@ -20,14 +20,23 @@ import Swal from 'sweetalert2'; // For nice popup alerts
   templateUrl: './trip-timeline.html',
   styleUrl: './trip-timeline.css'
 })
-export class TripTimelineComponent {
-  // Accessing the shared TimelineService to manage data
+export class TripTimelineComponent implements OnInit {
+  // Accessing the shared TimelineService and other core dependencies
   private timelineService = inject(TimelineService);
+  private tripService = inject(TripService);
+  private cd = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   // Determines if the current user is a viewer (read-only) or an editor
+  // Default = false so authorised travellers always see action buttons
+  // unless the DB explicitly marks them as viewer/viewonly.
   isViewer: boolean = false;
+
+  // User identity and trip security properties
+  currentUserEmail: string = '';
+  tripDetails: any = null;
+  tripId: string = '';
 
   // The current timeline data (linked to the service)
   timeline = this.timelineService.timeline;
@@ -80,27 +89,177 @@ export class TripTimelineComponent {
 
   // Runs when the page loads
   ngOnInit() {
-    // Check if the user is a viewer based on the URL query parameters
-    this.route.queryParams.subscribe(params => {
-      const role = params['role'];
-      if (role && role.toLowerCase() === 'viewer') {
-        this.isViewer = true;
-      }
-    });
+    console.log('🚀 TripTimelineComponent Initialized!');
+
+    // 1. Extract logged-in user email securely from JWT token
+    this.extractLoggedInUser();
+
+    // 2. Get tripId from URL query parameters (one-shot, safe for both snapshot & observable)
+    //    Prefer snapshot first so we have the value synchronously.
+    const snapshotTripId = this.route.snapshot.queryParamMap.get('tripId');
+    if (snapshotTripId) {
+      this.tripId = snapshotTripId;
+      console.log('📌 tripId from snapshot:', this.tripId);
+      this.loadTripAndCheckRole();
+    } else {
+      // Fallback: still subscribe in case the params arrive later (rare with queryParams)
+      this.route.queryParams.subscribe(params => {
+        console.log('🔍 URL Query Params (subscribe):', params);
+        if (params['tripId'] && params['tripId'] !== this.tripId) {
+          this.tripId = params['tripId'];
+          this.loadTripAndCheckRole();
+        }
+      });
+    }
+
+    // Explicit fallback: no tripId → treat as editor (authorized traveller)
+    if (!this.tripId) {
+      console.warn('⚠️ No tripId found – defaulting isViewer = false');
+      this.isViewer = false;
+      this.cd.detectChanges();
+    }
+
     // If there is already data, skip the welcome screen
     if (this.timeline().days.length > 0) {
       this.showHero = false;
     }
   }
 
+  // Extracts user email from JWT token stored in localStorage
+  private extractLoggedInUser(): void {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        this.currentUserEmail =
+          tokenPayload.email ||
+          tokenPayload.unique_name ||
+          tokenPayload.sub ||
+          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
+          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
+          '';
+      }
+    } catch (e) {
+      console.error("Error parsing token identities:", e);
+    }
+  }
+
+  // Fetches trip info from database and validates real permissions (Secure against URL tampering)
+  private loadTripAndCheckRole() {
+    if (!this.tripId) {
+      console.warn('⚠️ loadTripAndCheckRole called without tripId – defaulting isViewer = false');
+      this.isViewer = false;
+      this.cd.detectChanges();
+      return;
+    }
+
+    // Prefer a direct get-by-id if your TripService has it (mirrors TripSummaryComponent).
+    // Fallback to getAllTrips() if getTripById is not available.
+    const request$ = (this.tripService as any).getTripById
+      ? (this.tripService as any).getTripById(this.tripId)
+      : this.tripService.getAllTrips();
+
+    request$.subscribe({
+      next: (res: any) => {
+        let selectedTrip: any = null;
+
+        if (Array.isArray(res)) {
+          // getAllTrips path
+          selectedTrip = res.find((t: any) => (t._id || t.id) === this.tripId);
+        } else {
+          // getTripById path
+          selectedTrip = res;
+        }
+
+        if (selectedTrip) {
+          this.tripDetails = selectedTrip;
+          this.checkUserTripRole();
+        } else {
+          console.warn('⚠️ Trip not found in response – defaulting isViewer = false');
+          this.isViewer = false;
+          this.cd.detectChanges();
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to load trip roles securely', err);
+        // Robust fallback: on any loading failure, allow the authorised traveller to edit
+        this.isViewer = false;
+        this.cd.detectChanges();
+      }
+    });
+  }
+
+  // Validates if the user is a viewer or editor based strictly on database records
+  private checkUserTripRole() {
+    // Always start from the safe default for this component’s requirement
+    this.isViewer = false;
+
+    if (!this.tripDetails) {
+      console.log('⚠️ Missing tripDetails – keeping isViewer = false');
+      this.cd.detectChanges();
+      return;
+    }
+
+    if (!this.currentUserEmail) {
+      console.log('⚠️ Missing currentUserEmail – keeping isViewer = false (fallback)');
+      this.cd.detectChanges();
+      return;
+    }
+
+    const userEmail = this.currentUserEmail.trim().toLowerCase();
+    console.log('🔍 Current Logged In Email:', userEmail);
+    console.log('🔍 Trip Details Object:', this.tripDetails);
+
+    // 1. Creator → full editor
+    const creatorEmail = (this.tripDetails.createdBy || this.tripDetails.CreatedBy || '')
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    if (creatorEmail && creatorEmail === userEmail) {
+      this.isViewer = false;
+      console.log('✅ User is the Creator. isViewer = false');
+      this.cd.detectChanges();
+      return;
+    }
+
+    // 2. Members array
+    const members = this.tripDetails.members || this.tripDetails.Members || [];
+    if (Array.isArray(members) && members.length > 0) {
+      const memberRecord = members.find((m: any) => {
+        const memberEmail = (m.email || m.Email || '').toString().trim().toLowerCase();
+        return memberEmail === userEmail;
+      });
+
+      console.log('🔍 Found Member Record in DB:', memberRecord);
+
+      if (memberRecord) {
+        const memberRole = (memberRecord.role || memberRecord.Role || '')
+          .toString()
+          .trim()
+          .toLowerCase();
+        console.log('🔍 Member Role from DB:', memberRole);
+
+        // Only these two values make the user a pure viewer
+        this.isViewer = memberRole === 'viewer' || memberRole === 'viewonly';
+      } else {
+        console.log('⚠️ User not found in members list. Defaulting isViewer = false');
+        this.isViewer = false;
+      }
+    } else {
+      console.log('⚠️ No members array found – defaulting isViewer = false');
+      this.isViewer = false;
+    }
+
+    console.log('🏁 Final Is Viewer Status:', this.isViewer);
+    this.cd.detectChanges();
+  }
+
   // --- Validation Logic ---
-  // Checks if the form is filled out correctly before saving
   validateForm(): boolean {
     let isValid = true;
-
     const hasLetter = /[a-zA-Z]/.test(this.formData.title);
 
-    // Title validation: Required, must have letters, and length between 3-50
     if (!this.formData.title || this.formData.title.trim() === '') {
       this.formErrors.title = 'Title is required';
       isValid = false;
@@ -117,14 +276,12 @@ export class TripTimelineComponent {
       this.formErrors.title = '';
     }
 
-    // Time validation: Required, cannot be duplicate, and must be in future for today
     if (!this.formData.time) {
       this.formErrors.time = 'Time is required';
       isValid = false;
     } else {
       const day = this.timeline().days.find(d => d.id === this.selectedDayId);
       if (day) {
-        // Check if another event already has this exact time
         const isTimeTaken = day.events.some(e => {
           if (this.editingEventId && e.id === this.editingEventId) return false;
           return e.time === this.formData.time;
@@ -134,7 +291,6 @@ export class TripTimelineComponent {
           this.formErrors.time = 'An event already exists at this time';
           isValid = false;
         } else {
-          // If the day is "Today", check if the chosen time has already passed
           const dDate = new Date(day.date);
           const now = new Date();
 
@@ -161,7 +317,6 @@ export class TripTimelineComponent {
       }
     }
 
-    // Location validation: Required, must have letters, length 3-100
     const hasLetterLoc = /[a-zA-Z]/.test(this.formData.location);
     if (!this.formData.location || this.formData.location.trim() === '') {
       this.formErrors.location = 'Location is required';
@@ -179,7 +334,6 @@ export class TripTimelineComponent {
       this.formErrors.location = '';
     }
 
-    // Description validation: Optional, but if typed, must have letters and be < 200 chars
     if (this.formData.description && this.formData.description.trim().length > 0) {
       const hasLetterDesc = /[a-zA-Z]/.test(this.formData.description);
       if (!hasLetterDesc) {
@@ -198,13 +352,11 @@ export class TripTimelineComponent {
     return isValid;
   }
 
-  // Marks a field as "visited" so we can show error messages
   handleBlur(field: 'title' | 'time' | 'location' | 'description') {
     this.formTouched[field] = true;
     this.validateForm();
   }
 
-  // Helper to disable the "Save" button if there are errors
   get isFormInvalid(): boolean {
     const title = this.formData.title ? this.formData.title.trim() : '';
     const hasLetterTitle = /[a-zA-Z]/.test(title);
@@ -243,8 +395,6 @@ export class TripTimelineComponent {
     return false;
   }
 
-  // --- Date Picker Logic ---
-  // Runs when a user picks a new date for a day
   onDateChange(event: any, dayId: string) {
     const newDateStr = event.target.value;
     if (!newDateStr) return;
@@ -255,7 +405,6 @@ export class TripTimelineComponent {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Validation: Don't allow past dates
     if (newDate < today) {
       Swal.fire({
         title: 'Invalid Date',
@@ -267,13 +416,11 @@ export class TripTimelineComponent {
       return;
     }
 
-    // Validation: Don't allow same date for multiple days
     const [year, month, day] = newDateStr.split('-').map(Number);
     const existingDays = this.timeline().days;
 
     const isDateTaken = existingDays.some(d => {
       if (d.id === dayId) return false;
-
       const dDate = new Date(d.date);
       if (isNaN(dDate.getTime())) return false;
 
@@ -293,11 +440,9 @@ export class TripTimelineComponent {
       return;
     }
 
-    // Update the date in our database/service
     this.timelineService.updateDayDate(dayId, newDateStr);
   }
 
-  // Opens the browser's native date picker when clicking our custom date UI
   triggerDatePicker(dayId: string) {
     const picker = document.getElementById('date-picker-' + dayId) as HTMLInputElement;
     if (picker) {
@@ -305,12 +450,10 @@ export class TripTimelineComponent {
     }
   }
 
-  // Helper for drag and drop to know which containers are linked
   get connectedTo(): string[] {
     return this.timeline().days.map(d => d.id);
   }
 
-  // --- Day logic methods ---
   startItinerary() {
     this.showHero = false;
   }
@@ -344,24 +487,20 @@ export class TripTimelineComponent {
     });
   }
 
-  // Helper to show "Day 1", "Day 2", etc.
   getDayIndex(day: TimelineDay): number {
     const days = this.timeline().days;
     return days.findIndex(d => d.id === day.id) + 1;
   }
 
-  // Counts how many tasks are marked "Completed" in a day
   completedCount(day: TimelineDay): number {
     return day.events.filter(e => e.status === 'Completed').length;
   }
 
-  // Calculates the progress bar percentage for a day
   completionPercentage(day: TimelineDay): number {
     if (day.events.length === 0) return 0;
     return Math.round((this.completedCount(day) / day.events.length) * 100);
   }
 
-  // Handles moving events up/down or between different days
   drop(event: CdkDragDrop<any>) {
     const currentDayId = event.container.id;
 
@@ -372,7 +511,6 @@ export class TripTimelineComponent {
     }
   }
 
-  // Returns the correct icon name based on event type (Hotel, Food, etc)
   getCategoryIcon(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'domain';
@@ -383,7 +521,6 @@ export class TripTimelineComponent {
     }
   }
 
-  // Returns CSS class for coloring based on event type
   getCategoryClass(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
       case 'Hotel': return 'cat-hotel';
@@ -394,7 +531,6 @@ export class TripTimelineComponent {
     }
   }
 
-  // Switches an event between "Pending" and "Completed"
   toggleStatus(dayId: string, eventItem: TimelineEvent) {
     this.timelineService.toggleEventStatus(dayId, eventItem.id);
   }
@@ -419,8 +555,6 @@ export class TripTimelineComponent {
     });
   }
 
-  // --- Modal (Popup) logic methods ---
-  // Prepares the form to add a new activity
   openAddEventModal(dayId: string) {
     if (this.isViewer) {
       Swal.fire('Access Denied', 'Viewers cannot add events.', 'error');
@@ -434,7 +568,6 @@ export class TripTimelineComponent {
     this.isModalOpen = true;
   }
 
-  // Loads existing data into the form to edit an activity
   openEditEventModal(dayId: string, eventItem: TimelineEvent) {
     if (this.isViewer) {
       Swal.fire('Access Denied', 'Viewers cannot edit events.', 'error');
@@ -452,11 +585,8 @@ export class TripTimelineComponent {
     this.isModalOpen = false;
   }
 
-  // Runs when user clicks "Save" in the popup
   onSubmit(e: Event) {
     e.preventDefault();
-
-    // Mark everything as touched to show errors if any
     this.formTouched = { title: true, time: true, location: true, description: true };
 
     if (this.validateForm() && this.selectedDayId) {
@@ -466,14 +596,12 @@ export class TripTimelineComponent {
         this.timelineService.addEvent(this.selectedDayId, { ...this.formData, dayId: this.selectedDayId });
       }
 
-      // Reset form and close
       this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
       this.editingEventId = null;
       this.closeModal();
     }
   }
 
-  // Opens Google Calendar to save the trip events
   exportToCalendar() {
     if (this.totalActivities === 0) {
       Swal.fire({
@@ -488,7 +616,6 @@ export class TripTimelineComponent {
     CalendarSyncUtil.openInGoogleCalendar(this.timeline());
   }
 
-  // --- Statistics Getters ---
   get totalActivities(): number {
     return this.timeline().days.reduce((acc, day) => acc + day.events.length, 0);
   }

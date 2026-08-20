@@ -95,17 +95,17 @@
           <div class="day-header">
             <div class="day-title-area">
               <h2>Day {{ getDayIndex(day) }}</h2>
-              <!-- Clicking the date allows the user to change it using a browser date picker -->
-              <div class="day-date clickable" (click)="triggerDatePicker(day.id)">
+              <!-- Clicking the date allows the user to change it using a browser date picker (Disabled for Viewers) -->
+              <div class="day-date" [class.clickable]="!isViewer" (click)="!isViewer && triggerDatePicker(day.id)">
                 <span class="material-symbols-outlined">calendar_today</span>
                 <span>{{ day.date }}</span>
-                <input type="date" [id]="'date-picker-' + day.id" [min]="minDate" class="hidden-date-picker"
-                  (change)="onDateChange($event, day.id)">
+                <input *ngIf="!isViewer" type="date" [id]="'date-picker-' + day.id" [min]="minDate"
+                  class="hidden-date-picker" (change)="onDateChange($event, day.id)">
               </div>
             </div>
 
-            <!-- Buttons to add new events or delete the entire day -->
-            <div class="day-actions">
+            <!-- Buttons to add new events or delete the entire day (Visible only to Editors) -->
+            <div class="day-actions" *ngIf="!isViewer">
               <span class="completion-text">{{ completedCount(day) }}/{{ day.events.length }} completed ({{
                 completionPercentage(day) }}%)</span>
               <button class="btn-add" (click)="openAddEventModal(day.id)">
@@ -115,6 +115,8 @@
                 <span class="material-symbols-outlined">delete_outline</span> Delete Day
               </button>
             </div>
+
+            <!-- View Only badge for Viewers -->
             <div class="day-actions" *ngIf="isViewer">
               <span class="completion-text">{{ completedCount(day) }}/{{ day.events.length }} completed ({{
                 completionPercentage(day) }}%)</span>
@@ -124,7 +126,7 @@
             </div>
           </div>
 
-          <!-- The list of activities for this day. Supports dragging items to reorder. -->
+          <!-- The list of activities for this day. Supports dragging items to reorder (Disabled for Viewers). -->
           <div class="event-list" cdkDropList [id]="day.id" [cdkDropListData]="day.events"
             [cdkDropListConnectedTo]="connectedTo" (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="isViewer">
 
@@ -173,8 +175,6 @@
                   <span class="material-symbols-outlined">delete_outline</span>
                 </button>
                 }
-
-
               </div>
             </div>
             }
@@ -184,7 +184,7 @@
       }
     </div>
 
-    <!-- Big button at the bottom to add more days to the trip -->
+    <!-- Big button at the bottom to add more days to the trip (Visible only to editors) -->
     <div class="add-day-container" *ngIf="!isViewer">
       <button class="btn-add-day" (click)="addNewDay()">
         <span class="material-symbols-outlined">add</span> Add Another Day
@@ -192,8 +192,8 @@
     </div>
 
     } @else {
-    <!-- If the trip is empty, show a centered button to add the very first day -->
-    <div class="add-day-container centered">
+    <!-- If the trip is empty, show a centered button to add the very first day (Visible only to editors) -->
+    <div class="add-day-container centered" *ngIf="!isViewer">
       <button class="btn-add-day" (click)="addNewDay()">
         <span class="material-symbols-outlined">add</span> Add First Day
       </button>
