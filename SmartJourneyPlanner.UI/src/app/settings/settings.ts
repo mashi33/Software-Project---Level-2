@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
+import Swal from 'sweetalert2';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -38,8 +41,9 @@ export class SettingsComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private notificationService: NotificationService
-  ) {}
+    private notificationService: NotificationService,
+    private http: HttpClient
+  ) { }
 
   ngOnInit(): void {
     const userType = this.authService.getUserSystemType();
@@ -117,4 +121,43 @@ export class SettingsComponent implements OnInit {
       alert('Preferences saved successfully!');
     }
   }
+
+  confirmDeleteAccount() {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'This action is irreversible and will permanently delete your account.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.executeDeleteAccount();
+      }
+    });
+  }
+  executeDeleteAccount() {
+    const userId = this.authService.getUserId();
+
+    if (!userId) {
+      Swal.fire('Error!', 'User ID not found.', 'error');
+      return;
+    }
+
+
+    this.http.delete(`${environment.apiUrl}/auth/delete-account/${userId}`).subscribe({
+      next: () => {
+        Swal.fire('Deleted!', 'Your account has been successfully deleted.', 'success').then(() => {
+          localStorage.clear();
+          this.router.navigate(['/login']);
+        });
+      },
+      error: (err) => {
+        console.error('Failed to delete account', err);
+        Swal.fire('Error!', 'Failed to delete account. Please try again.', 'error');
+      }
+    });
+  }
 }
+
