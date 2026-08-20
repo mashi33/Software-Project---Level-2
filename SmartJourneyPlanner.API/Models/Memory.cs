@@ -26,7 +26,7 @@ public class TripMemory
 
     [BsonElement("description")]
     [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; } = string.Empty;
 
     [BsonElement("locationName")]
     [JsonPropertyName("locationName")]

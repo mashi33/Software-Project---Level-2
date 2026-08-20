@@ -13,7 +13,7 @@ export interface LikeRequest {
 @Injectable({ providedIn: 'root' })
 export class MemoryService {
   private readonly apiUrl = `${environment.apiUrl}/memories`;
-  private readonly requestTimeout = 5000;
+  private readonly requestTimeout = 15000; // 15 seconds
 
   constructor(private readonly http: HttpClient) {}
 
@@ -26,9 +26,7 @@ export class MemoryService {
   }
 
   getPublicMemories(): Observable<TripMemory[]> {
-    return this.http.get<TripMemory[]>(this.apiUrl).pipe(
-      timeout(this.requestTimeout)
-    );
+    return this.http.get<TripMemory[]>(this.apiUrl);
   }
 
   getTripMemories(tripId: string, userId?: string): Observable<TripMemory[]> {
@@ -47,7 +45,7 @@ export class MemoryService {
 
   addMemory(memory: TripMemory): Observable<TripMemory> {
     return this.http.post<TripMemory>(this.apiUrl, memory).pipe(
-      timeout(5000)
+      timeout(this.requestTimeout)
     );
   }
 
