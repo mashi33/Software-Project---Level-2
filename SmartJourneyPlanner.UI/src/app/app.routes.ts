@@ -50,13 +50,23 @@ import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-
 import { SlideshowComponent } from './slideshow/slideshow';
 import { TripHistoryComponent } from './trip-history/trip-history';
 
+import { PrivacyPolicy } from './privacy-policy/privacy-policy';
+import { TermsOfService } from './terms-of-service/terms-of-service';
+
 
 export const routes: Routes = [
 
   // =====================================================
   // PUBLIC ROUTES
   // =====================================================
-
+  {
+    path: 'privacy-policy',
+    component: PrivacyPolicy
+  },
+  {
+    path: 'terms-of-service',
+    component: TermsOfService
+  },
   {
     path: '',
     redirectTo: '/login',
