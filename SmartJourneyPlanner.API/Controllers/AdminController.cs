@@ -27,12 +27,14 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly UserBlockService _userBlockService;
         private readonly NotificationService _notificationService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
         public AdminController(
             IMongoClient mongoClient, 
             UserBlockService userBlockService,
             NotificationService notificationService,
-            IHubContext<ChatHub> hubContext)
+            IHubContext<ChatHub> hubContext,
+            Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _database = mongoClient.GetDatabase("SmartJourneyDb");
             _userCollection = _database.GetCollection<User>("Users");
@@ -41,6 +43,7 @@ namespace SmartJourneyPlanner.API.Controllers
             _userBlockService = userBlockService;
             _notificationService = notificationService;
             _hubContext = hubContext;
+            _cache = cache;
         }
 
         private double ParseBudgetLimit(string? raw)
@@ -394,15 +397,27 @@ namespace SmartJourneyPlanner.API.Controllers
             var targetVehicle = await _vehicleCollection.Find(filter).FirstOrDefaultAsync();
             if (targetVehicle == null) return NotFound(new { message = "Vehicle not found." });
 
-            var update = Builders<TransportVehicle>.Update
+            var updateBuilder = Builders<TransportVehicle>.Update
                 .Set(v => v.AdminVerificationStatus, newStatus);
 
-            var updateResult = await _vehicleCollection.UpdateOneAsync(filter, update);
+            if (newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                updateBuilder = updateBuilder.Set(v => v.IsAvailableForBooking, true);
+            }
+            else if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                updateBuilder = updateBuilder.Set(v => v.IsAvailableForBooking, false);
+            }
+
+            var updateResult = await _vehicleCollection.UpdateOneAsync(filter, updateBuilder);
 
             if (updateResult.MatchedCount == 0)
             {
                 return NotFound(new { message = "Vehicle not found." });
             }
+
+            // Invalidate cache immediately so new status is reflected in public view
+            _cache.Remove("ApprovedVehicles_List_Cache");
 
             // If the vehicle is rejected, check for active bookings and generate an alert
             if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))

@@ -5,6 +5,7 @@ import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
 import { SignalrService } from '../services/signalr.service';
+import { TransportVehicleService } from '../services/transport-vehicle.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -41,10 +42,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private router: Router,
     private dashboardService: TravellerDashboardService,
     private notificationService: NotificationService,
-    private signalrService: SignalrService
+    private signalrService: SignalrService,
+    private transportVehicleService: TransportVehicleService
   ) {}
 
   ngOnInit(): void {
+    // 🚀 Background Pre-fetch: Cache vehicles in memory early so Transport page opens instantly
+    this.transportVehicleService.getVehicles().subscribe({
+      next: () => {},
+      error: () => {}
+    });
+
     // Subscriptions
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {

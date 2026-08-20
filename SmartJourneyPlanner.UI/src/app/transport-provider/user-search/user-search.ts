@@ -84,28 +84,26 @@ export class UserSearch implements OnInit {
   // Stores all vehicles from API and the filtered list shown on UI
   allVehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
+  paginatedVehicles: Vehicle[] = [];
+  totalPages: number = 1;
+  pageNumbers: number[] = [1];
   vehicleCategories = ['All Categories', ...Object.values(VehicleType)];
 
-  // Get only the vehicles for the current page
-  get paginatedVehicles(): Vehicle[] {
+  updatePagination() {
+    this.totalPages = Math.ceil(this.filteredVehicles.length / this.pageSize) || 1;
+    this.pageNumbers = Array.from({ length: this.totalPages }, (_, i) => i + 1);
     const startIndex = (this.currentPage - 1) * this.pageSize;
-    return this.filteredVehicles.slice(startIndex, startIndex + this.pageSize);
+    this.paginatedVehicles = this.filteredVehicles.slice(startIndex, startIndex + this.pageSize);
   }
 
-  // Calculate total number of pages
-  get totalPages(): number {
-    return Math.ceil(this.filteredVehicles.length / this.pageSize);
-  }
-
-  // Generate an array of page numbers for the UI
-  get pageNumbers(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  trackByVehicleId(index: number, vehicle: Vehicle): string {
+    return vehicle.id || vehicle.modelName || index.toString();
   }
 
   setPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      // Scroll to top of results smoothly
+      this.updatePagination();
       window.scrollTo({ top: 400, behavior: 'smooth' });
     }
   }
@@ -247,34 +245,37 @@ export class UserSearch implements OnInit {
    */
   applyFilters() {
     this.currentPage = 1; // Reset to first page whenever filters change
-    const cleanQuery = this.searchQuery.trim().toLowerCase();
+    const cleanQuery = this.searchQuery ? this.searchQuery.trim().toLowerCase() : '';
 
     this.filteredVehicles = this.allVehicles.filter(v => {
+      if (!v) return false;
       // Basic match checks
       const matchCategory = this.selectedCategory === 'All Categories' || v.type === this.selectedCategory;
-      const matchCapacity = v.seatCount >= this.passengerCount;
-      const matchSearch = v.description.toLowerCase().includes(cleanQuery) || 
-                          v.vehicleClass.toLowerCase().includes(cleanQuery);
-      const matchPickup = !this.pickupArea || v.providerProfile.location.toLowerCase().includes(this.pickupArea.trim().toLowerCase());
+      const matchCapacity = (v.seatCount || 0) >= this.passengerCount;
+      const desc = (v.description || v.modelName || '').toLowerCase();
+      const vClass = (v.vehicleClass || '').toLowerCase();
+      const matchSearch = !cleanQuery || desc.includes(cleanQuery) || vClass.includes(cleanQuery);
+      const loc = (v.providerProfile?.location || '').toLowerCase();
+      const matchPickup = !this.pickupArea || loc.includes(this.pickupArea.trim().toLowerCase());
 
       // Feature match check (e.g. must have safety features if filter is ON)
       let matchFeatures = true;
-      if (this.featureFilters.luggage && v.features.luggage < 1) matchFeatures = false;
-      if (this.featureFilters.safety && !v.features.safety) matchFeatures = false;
-      if (this.featureFilters.entertainment && !v.features.entertainment) matchFeatures = false;
-      if (this.featureFilters.wifi && !v.features.wifi) matchFeatures = false;
-      if (this.featureFilters.airbags && !v.features.airbags) matchFeatures = false;
+      if (this.featureFilters.luggage && (!v.features || v.features.luggage < 1)) matchFeatures = false;
+      if (this.featureFilters.safety && (!v.features || !v.features.safety)) matchFeatures = false;
+      if (this.featureFilters.entertainment && (!v.features || !v.features.entertainment)) matchFeatures = false;
+      if (this.featureFilters.wifi && (!v.features || !v.features.wifi)) matchFeatures = false;
+      if (this.featureFilters.airbags && (!v.features || !v.features.airbags)) matchFeatures = false;
 
       // Language match check
       const selectedLangs = this.getSelectedLangs();
       let matchLangs = true;
       if (selectedLangs.length > 0) {
-        matchLangs = selectedLangs.some((lang: string) => v.languages.includes(lang));
+        matchLangs = selectedLangs.some((lang: string) => v.languages && v.languages.includes(lang));
       }
 
       // Check if any date in the user's range is already BOOKED for this vehicle
       let dateConflict = false;
-      if (this.startDate && this.endDate && v.bookedDates) {
+      if (this.startDate && this.endDate && v.bookedDates && v.bookedDates.length > 0) {
         const start = new Date(this.startDate);
         const end = new Date(this.endDate);
         let current = new Date(start);
@@ -305,12 +306,14 @@ export class UserSearch implements OnInit {
 
     // Final sorting based on Price or Rating
     if (this.sortBy === 'Price: Low to High') {
-      this.filteredVehicles.sort((a, b) => a.standardDailyRate - b.standardDailyRate);
+      this.filteredVehicles.sort((a, b) => (a.standardDailyRate || 0) - (b.standardDailyRate || 0));
     } else if (this.sortBy === 'Price: High to Low') {
-      this.filteredVehicles.sort((a, b) => b.standardDailyRate - a.standardDailyRate);
+      this.filteredVehicles.sort((a, b) => (b.standardDailyRate || 0) - (a.standardDailyRate || 0));
     } else if (this.sortBy === 'Best Rated') {
       this.filteredVehicles.sort((a, b) => this.getAverageRating(b) - this.getAverageRating(a));
     }
+
+    this.updatePagination();
   }
 
   /**

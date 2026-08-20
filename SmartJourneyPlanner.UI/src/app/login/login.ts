@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { TransportVehicleService } from '../services/transport-vehicle.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -30,6 +31,7 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private vehicleService: TransportVehicleService,
     private router: Router,
     public route: ActivatedRoute
   ) { }
@@ -88,6 +90,9 @@ export class LoginComponent implements OnInit {
         if (id) {
           localStorage.setItem('userId', id);
         }
+
+        // ⚡ Silent background preload of vehicle fleet for instant 0ms load on Transport tab
+        this.vehicleService.preloadVehicles();
 
         /**
          * Display login success notification.

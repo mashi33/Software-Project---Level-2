@@ -11,10 +11,12 @@ namespace SmartJourneyPlanner.API.Controllers
     public class ProviderDashboardController : ControllerBase
     {
         private readonly ProviderDashboardService _dashboardService;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-        public ProviderDashboardController(ProviderDashboardService dashboardService)
+        public ProviderDashboardController(ProviderDashboardService dashboardService, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _dashboardService = dashboardService;
+            _cache = cache;
         }
 
        // Returns aggregated metrics used for dashboard summary cards (KPIs)
@@ -57,7 +59,8 @@ public async Task<IActionResult> GetStats()
         [HttpPut("vehicles/{id}/availability")]
         public async Task<IActionResult> UpdateAvailability(string id, [FromBody] bool available)
         {
-            await _dashboardService.UpdateVehicleAvailability(id,available ? "Available" : "Unavailable");
+            await _dashboardService.UpdateVehicleAvailability(id, available ? "Available" : "Unavailable");
+            _cache.Remove("ApprovedVehicles_List_Cache");
             return Ok();
         }
 

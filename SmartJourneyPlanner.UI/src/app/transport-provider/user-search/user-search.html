@@ -161,7 +161,7 @@
       </div>
 
       <!-- Vehicle Card -->
-      <div class="vh-card shadow-sm" *ngFor="let v of paginatedVehicles">
+      <div class="vh-card shadow-sm" *ngFor="let v of paginatedVehicles; trackBy: trackByVehicleId">
         <div class="vh-img-container">
           <img [src]="v.exteriorPhoto" class="vh-img">
 

@@ -30,6 +30,13 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
+// --- Performance Optimizations (In-Memory Cache & Response Compression) ---
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
 // --- 3. DATABASE REGISTRATION ---
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
@@ -96,6 +103,7 @@ builder.Services.AddSingleton<AchievementService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();
 builder.Services.AddSingleton<SmartJourneyPlanner.API.Services.EmailService>();
+builder.Services.AddHostedService<VehicleCacheWarmer>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
@@ -103,6 +111,8 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // --- 8. HTTP REQUEST PIPELINE ---
+app.UseResponseCompression();
+
 if (app.Environment.IsDevelopment()) {
   app.UseSwagger();
   app.UseSwaggerUI(); 

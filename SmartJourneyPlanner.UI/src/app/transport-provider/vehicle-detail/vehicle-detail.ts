@@ -86,6 +86,9 @@ export class VehicleDetailComponent implements OnInit {
 
   // Runs when the page loads: Extracts the vehicle ID from the URL and loads its data
   ngOnInit() {
+    // 🔝 Scroll to the very top of the page when opening Vehicle Details
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
     this.customerName = this.authService.getUserName() || '';
     this.customerEmail = this.authService.getUserEmail() || '';
 

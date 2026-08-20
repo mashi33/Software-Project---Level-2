@@ -112,65 +112,84 @@ namespace SmartJourneyPlanner.Models
     /**
      * Information about the person or company that owns the vehicle.
      */
+    [BsonIgnoreExtraElements]
     public class TransportProviderProfile
     {
-        [BsonElement("Name")]
+        [BsonElement("name")]
         public string Name { get; set; } = string.Empty;
-        [BsonElement("Phone")]
+        [BsonElement("phone")]
         public string Phone { get; set; } = string.Empty;
-        [BsonElement("Email")]
+        [BsonElement("email")]
         public string Email { get; set; } = string.Empty;
-        [BsonElement("Location")]
+        [BsonElement("location")]
         public string Location { get; set; } = string.Empty;
     }
 
     /**
      * Special features/facilities inside the vehicle.
      */
+    [BsonIgnoreExtraElements]
     public class TransportVehicleFeatures
     {
+        [BsonElement("wifi")]
         public bool? Wifi { get; set; }
+        [BsonElement("bluetooth")]
         public bool? Bluetooth { get; set; }
+        [BsonElement("airbags")]
         public bool? Airbags { get; set; }
+        [BsonElement("usbCharging")]
         public bool? UsbCharging { get; set; }
+        [BsonElement("luggage")]
         public int Luggage { get; set; }        // Max luggage bags allowed
+        [BsonElement("safety")]
         public bool Safety { get; set; }        // General safety equipment present
+        [BsonElement("childSeats")]
         public bool? ChildSeats { get; set; }
+        [BsonElement("entertainment")]
         public bool Entertainment { get; set; } // Music/Video system
+        [BsonElement("tv")]
         public bool? Tv { get; set; }
     }
 
     /**
      * Customer review details.
      */
+    [BsonIgnoreExtraElements]
     public class TransportReview
     {
+        [BsonElement("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        [BsonElement("userName")]
         public string UserName { get; set; } = string.Empty;
+        [BsonElement("userAvatar")]
         public string? UserAvatar { get; set; }
+        [BsonElement("rating")]
         public int Rating { get; set; }         // 1 to 5 stars
+        [BsonElement("comment")]
         public string Comment { get; set; } = string.Empty;
+        [BsonElement("date")]
         public string Date { get; set; } = string.Empty;
     }
 
     /**
      * Blocked date range with optional reason for maintenance/personal use
      */
+    [BsonIgnoreExtraElements]
     public class BlockedDateRange
     {
-        [BsonElement("Id")]
+        [BsonElement("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
         
-        [BsonElement("StartDate")]
+        [BsonElement("startDate")]
         public string StartDate { get; set; } = string.Empty; // Format: yyyy-MM-dd
         
-        [BsonElement("EndDate")]
+        [BsonElement("endDate")]
         public string EndDate { get; set; } = string.Empty;   // Format: yyyy-MM-dd
         
-        [BsonElement("Reason")]
+        [BsonElement("reason")]
         public string Reason { get; set; } = string.Empty;    // Optional reason for blocking
         
-        [BsonElement("CreatedAt")]
+        [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
