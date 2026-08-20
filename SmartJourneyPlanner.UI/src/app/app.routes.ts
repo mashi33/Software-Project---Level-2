@@ -33,15 +33,19 @@ import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { SlideshowComponent } from './slideshow/slideshow';
+import { PrivacyPolicy } from './privacy-policy/privacy-policy';
+import { TermsOfService } from './terms-of-service/terms-of-service';
 
 export const routes: Routes = [
-  //  PUBLIC ROUTES 
+  //  PUBLIC ROUTES
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
   { path: 'verify-email', component: VerifyEmailComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'privacy-policy', component: PrivacyPolicy },
+  { path: 'terms-of-service', component: TermsOfService },
 
   //  PROTECTED ROUTES 
   //{path: 'home',component: HomeComponent, canActivate: [authGuard]},

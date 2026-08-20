@@ -565,3 +565,53 @@
   color: #15803d;
   font-weight: 500;
 }
+
+/* ==========================================================================
+   FORM VALIDATION FEEDBACK
+   ========================================================================== */
+.required-mark {
+  color: #dc2626;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.input-with-icon.field-invalid input,
+.input-with-icon.field-invalid select,
+.input-with-icon.field-invalid textarea {
+  border-color: #f87171 !important;
+  background-color: #fef2f2 !important;
+}
+
+.input-with-icon.field-invalid .field-icon {
+  color: #dc2626 !important;
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #dc2626;
+  line-height: 1.4;
+}
+
+.field-error i {
+  font-size: 0.85rem;
+}
+
+.row-level-error {
+  margin-top: -4px;
+}
+
+.field-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.char-counter {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}

@@ -365,9 +365,14 @@ export class VehicleDetailComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         // Build the final booking object to be saved in the database
+        const currentUserId = this.authService.getUserId();
+        if (!currentUserId) {
+          Swal.fire('Error', 'You must be logged in to make a booking.', 'error');
+          return;
+        }
         const newBooking: any = {
           vehicleId: this.vehicle?.id,
-          userId: this.authService.getUserId() || 'u1', 
+          userId: currentUserId,
           providerId: this.vehicle?.providerId,
           startDate: this.startDate, endDate: this.endDate,
           nights: this.bookingNights, days: this.bookingDays,

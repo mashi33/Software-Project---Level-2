@@ -58,7 +58,8 @@ export class MyBookings implements OnInit {
   loadBookings() {
     this.loading = true;
     if (this.role === 'user') {
-      const travelerId = this.authService.getUserId() || 'u1';
+      const travelerId = this.authService.getUserId();
+      if (!travelerId) { this.loading = false; return; }
       this.transportBookingService.getUserBookings(travelerId).subscribe({
         next: (res) => {
           this.userBookings = res;
@@ -71,7 +72,8 @@ export class MyBookings implements OnInit {
         }
       });
     } else {
-      const providerId = this.authService.getUserEmail() || 'p1';
+      const providerId = this.authService.getUserEmail();
+      if (!providerId) { this.loading = false; return; }
       this.transportBookingService.getProviderBookings(providerId).subscribe({
         next: (res) => {
           this.providerBookings = res;

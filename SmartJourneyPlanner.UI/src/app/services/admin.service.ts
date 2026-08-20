@@ -85,4 +85,22 @@ export class AdminService {
   deleteUser(userId: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/Admin/delete-user/${userId}`);
   }
+
+  getVehicleBookings(vehicleId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/vehicle-bookings/${vehicleId}`);
+  }
+
+  getAllBookings(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Admin/all-bookings`);
+  }
+
+  sendCustomerAlert(customerId: string, message: string, vehicleName: string, bookingId?: string): Observable<any> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    const body = JSON.stringify({ customerId, message, vehicleName, bookingId });
+    return this.http.post(`${this.baseUrl}/Admin/send-customer-alert`, body, { headers });
+  }
+
+  cancelBooking(bookingId: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/Admin/cancel-booking/${bookingId}`, {});
+  }
 }

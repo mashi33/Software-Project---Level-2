@@ -41,7 +41,7 @@ namespace SmartJourneyPlanner.API.Services
                 Name = "Budget Visionary",
                 Rank = "Bronze",
                 Category = "Trip Creation",
-                Description = "Create a trip with a defined budget limit.",
+                Description = "Create 2 trips with a defined budget limit.",
                 XpReward = 100,
                 Icon = "👛",
                 IconClass = "badge-bronze"
@@ -52,7 +52,7 @@ namespace SmartJourneyPlanner.API.Services
                 Name = "Squad Leader",
                 Rank = "Silver",
                 Category = "Member Invitation",
-                Description = "Successfully invite 3+ friends to a trip.",
+                Description = "Successfully invite 5+ friends to a trip.",
                 XpReward = 200,
                 Icon = "👥",
                 IconClass = "badge-silver"
@@ -74,7 +74,7 @@ namespace SmartJourneyPlanner.API.Services
                 Name = "Voyage Master",
                 Rank = "Gold",
                 Category = "Trip Summary",
-                Description = "Complete 3 or more trips successfully.",
+                Description = "Complete 5 or more trips successfully.",
                 XpReward = 300,
                 Icon = "🚀",
                 IconClass = "badge-gold"
@@ -85,7 +85,7 @@ namespace SmartJourneyPlanner.API.Services
                 Name = "Island Conqueror",
                 Rank = "Legend",
                 Category = "Destinations",
-                Description = "Visit 3+ destinations across Sri Lanka.",
+                Description = "Visit 8+ destinations across Sri Lanka.",
                 XpReward = 500,
                 Icon = "🇱🇰",
                 IconClass = "badge-legend"
@@ -181,7 +181,7 @@ namespace SmartJourneyPlanner.API.Services
                 ? trips.Max(t => t.Members?.Count ?? 0)
                 : 0;
 
-            var hasBudgetTrip = trips.Any(t => !string.IsNullOrWhiteSpace(t.BudgetLimit));
+            var budgetTrips = trips.Count(t => !string.IsNullOrWhiteSpace(t.BudgetLimit));
 
             var slMatched = trips
                 .Select(t => t.Destination?.Trim())
@@ -203,8 +203,8 @@ namespace SmartJourneyPlanner.API.Services
                 CompletedTrips = completedTrips.Count,
                 EcoTransportTrips = ecoTrips,
                 MaxMembersInvited = maxMembersOnTrip,
-                HasBudgetTrip = hasBudgetTrip,
-                SriLankaDestinationsVisited = Math.Max(slMatched, Math.Min(anyUniqueDest, 3))
+                BudgetTrips = budgetTrips,
+                SriLankaDestinationsVisited = Math.Max(slMatched, Math.Min(anyUniqueDest, 8))
             };
         }
 
@@ -217,33 +217,33 @@ namespace SmartJourneyPlanner.API.Services
         private static bool IsBadgeEarned(string badgeId, TripMetrics metrics) => badgeId switch
         {
             "first-step" => metrics.TotalTrips >= 1,
-            "budget-visionary" => metrics.HasBudgetTrip,
-            "squad-leader" => metrics.MaxMembersInvited >= 3,
+            "budget-visionary" => metrics.BudgetTrips >= 2,
+            "squad-leader" => metrics.MaxMembersInvited >= 5,
             "eco-traveler" => metrics.EcoTransportTrips >= 3,
-            "voyage-master" => metrics.CompletedTrips >= 3,
-            "island-conqueror" => metrics.SriLankaDestinationsVisited >= 3,
+            "voyage-master" => metrics.CompletedTrips >= 5,
+            "island-conqueror" => metrics.SriLankaDestinationsVisited >= 8,
             _ => false
         };
 
         private static int GetCurrentProgress(string badgeId, TripMetrics metrics) => badgeId switch
         {
             "first-step" => Math.Min(metrics.TotalTrips, 1),
-            "budget-visionary" => metrics.HasBudgetTrip ? 1 : 0,
-            "squad-leader" => Math.Min(metrics.MaxMembersInvited, 3),
+            "budget-visionary" => Math.Min(metrics.BudgetTrips, 2),
+            "squad-leader" => Math.Min(metrics.MaxMembersInvited, 5),
             "eco-traveler" => Math.Min(metrics.EcoTransportTrips, 3),
-            "voyage-master" => Math.Min(metrics.CompletedTrips, 3),
-            "island-conqueror" => Math.Min(metrics.SriLankaDestinationsVisited, 3),
+            "voyage-master" => Math.Min(metrics.CompletedTrips, 5),
+            "island-conqueror" => Math.Min(metrics.SriLankaDestinationsVisited, 8),
             _ => 0
         };
 
         private static int GetTargetProgress(string badgeId) => badgeId switch
         {
             "first-step" => 1,
-            "budget-visionary" => 1,
-            "squad-leader" => 3,
+            "budget-visionary" => 2,
+            "squad-leader" => 5,
             "eco-traveler" => 3,
-            "voyage-master" => 3,
-            "island-conqueror" => 3,
+            "voyage-master" => 5,
+            "island-conqueror" => 8,
             _ => 1
         };
 
@@ -293,7 +293,7 @@ namespace SmartJourneyPlanner.API.Services
             public int CompletedTrips { get; set; }
             public int EcoTransportTrips { get; set; }
             public int MaxMembersInvited { get; set; }
-            public bool HasBudgetTrip { get; set; }
+            public int BudgetTrips { get; set; }
             public int SriLankaDestinationsVisited { get; set; }
         }
     }
