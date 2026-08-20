@@ -53,6 +53,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     visibility: 'private'
   };
 
+  selectedFile: File | null = null;  
+
   searchQuery: string = '';
   allMemories: any[] = [];
   myRecentUploads: any[] = [];
@@ -151,7 +153,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // FILE UPLOAD
+  // FILE UPLOAD 
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
@@ -159,12 +161,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (file.size > 2 * 1024 * 1024) {
       this.showError(
-        'File too large', 
+        'File too large',
         'Please choose an image under 2MB.'
       );
       return;
     }
 
+    this.selectedFile = file;
+
+    // Local preview only (do not goto base64 database )
     const reader = new FileReader();
     reader.onload = (e: any) => {
       this.newMemory.imageUrl = e.target.result;
@@ -178,10 +183,11 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   removeImage(fileInput: HTMLInputElement): void {
     this.newMemory.imageUrl = '';
+    this.selectedFile = null;
     fileInput.value = '';
   }
 
-   // LIGHTBOX 
+  // LIGHTBOX 
 
   openAlbum(album: any) {
     this.selectedAlbum = album;
@@ -369,7 +375,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
- // SEARCH & SAVE 
+  // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -427,6 +433,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // SAVE MEMORY for Cloudinary
   saveMemory() {
     const userId = localStorage.getItem('userId');
     const fullName = localStorage.getItem('userName');
@@ -437,16 +444,25 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (!this.selectedFile) {
+      this.showError('No image', 'Please select an image first.');
+      return;
+    }
+
     this.newMemory.visibility = this.visibilityStatus;
 
-    const body = {
-      ...this.newMemory,
-      userId,
-      fullName,
-      visibility: this.newMemory.visibility,
-      tripId: this.selectedTrip?.id || null,
-      tripName: this.selectedTrip?.tripName || null
-    };
+    const formData = new FormData();
+    formData.append('title', this.newMemory.title);
+    formData.append('description', this.newMemory.description || '');
+    formData.append('locationName', this.newMemory.locationName);
+    formData.append('latitude', this.newMemory.latitude.toString());
+    formData.append('longitude', this.newMemory.longitude.toString());
+    formData.append('visibility', this.newMemory.visibility);
+    formData.append('userId', userId);
+    formData.append('fullName', fullName || '');
+    formData.append('tripId', this.selectedTrip?.id || '');
+    formData.append('tripName', this.selectedTrip?.tripName || '');
+    formData.append('image', this.selectedFile);
 
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
@@ -456,7 +472,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       didOpen: () => Swal.showLoading()
     });
 
-    this.http.post(this.apiUrl, body, { headers }).subscribe({
+    this.http.post(this.apiUrl, formData, { headers }).subscribe({
       next: (response: any) => {
         Swal.close();
 
@@ -479,6 +495,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           longitude: 0,
           visibility: 'private'
         };
+        this.selectedFile = null;
         this.visibilityStatus = 'private';
         this.searchQuery = '';
         this.selectedTrip = null;
@@ -628,7 +645,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-   // MAP POPUP 
+  // MAP POPUP 
 
   private isUserLiked(memory: any): boolean {
     const userName = localStorage.getItem('userName');
@@ -823,7 +840,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markersLayer.addLayers(markers);
   }
 
- // SLIDESHOW 
+  // SLIDESHOW 
 
   startSlideshow(album: any) {
     if (album.memories.length <= 1) return;
@@ -846,7 +863,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-   // MAP INIT 
+  // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -876,8 +893,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Close any other open spiderfied cluster
-      try { 
-        this.markersLayer.unspiderfy(); 
+      try {
+        this.markersLayer.unspiderfy();
       } catch {}
 
       const childMarkers = cluster.getAllChildMarkers();
@@ -954,7 +971,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
-   // ALBUM HELPERS 
+  // ALBUM HELPERS 
 
   getTotalLikes(album: any): number {
     return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);

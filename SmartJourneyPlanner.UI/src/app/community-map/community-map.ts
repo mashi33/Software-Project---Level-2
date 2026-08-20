@@ -80,6 +80,11 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   popularEntranceComplete = false;
   sortMode: PopularSortMode = 'score';
 
+  // Fixed reference time for priority score calculation.
+  // Set once on page load / data refresh. Prevents score drift when sorting.
+  // Score is only recalculated for a memory when its likeCount changes.
+  private priorityScoreBaseTime = Date.now();
+
   @ViewChild('popularGrid') popularGridRef?: ElementRef<HTMLElement>;
 
   constructor(
@@ -115,10 +120,19 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   loadCommunityMemories(): void {
     this.memoryService.getPublicMemories().subscribe({
       next: (data) => {
+        // Reset base time only on full data load / page refresh
+        this.priorityScoreBaseTime = Date.now();
+
         this.allMemories = data
           .filter(m => m.visibility === 'public')
           .map(m => this.formatData(m))
           .slice(0, 500);
+
+        // Compute initial priority scores once using the fixed base time
+        this.allMemories.forEach(m => {
+          (m as any).priorityScore = this.calculatePriorityScore(m, this.priorityScoreBaseTime);
+        });
+
         this.applyFilters();
       },
       error: (err) => console.error('Failed to load community memories:', err)
@@ -163,6 +177,9 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         m.locationName?.toLowerCase().includes(query)
       );
     }
+
+    // Do NOT recompute priority scores here.
+    // Scores are computed on load and only updated when likeCount changes.
 
     this.filteredMemories = this.sortMemories(memories, this.sortMode);
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
@@ -420,11 +437,10 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   private sortMemoriesByLikesAndDate(memories: TripMemory[]): TripMemory[] {
-    const now = Date.now();
-
+    // Use the pre-computed / locked priorityScore (only changes on like or page load)
     return [...memories].sort((a, b) => {
-      const scoreA = this.calculatePriorityScore(a, now);
-      const scoreB = this.calculatePriorityScore(b, now);
+      const scoreA = (a as any).priorityScore ?? 0;
+      const scoreB = (b as any).priorityScore ?? 0;
       return scoreB - scoreA;
     });
   }
@@ -597,7 +613,15 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const updateInList = (list: TripMemory[]) => {
       const idx = list.findIndex(m => m.id === memoryId);
       if (idx !== -1) {
+        // Merge updated fields (including new likeCount)
         list[idx] = { ...list[idx], ...updatedMemory };
+
+        // Recalculate priority score ONLY because likeCount changed.
+        // Uses the same fixed base time so only likes affect the score value.
+        (list[idx] as any).priorityScore = this.calculatePriorityScore(
+          list[idx],
+          this.priorityScoreBaseTime
+        );
       }
     };
 
@@ -613,6 +637,11 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       }
     } else if (this.selectedMemory && this.selectedMemory.id === memoryId) {
       this.selectedMemory = { ...this.selectedMemory, ...updatedMemory };
+      // Keep selectedMemory score in sync as well
+      (this.selectedMemory as any).priorityScore = this.calculatePriorityScore(
+        this.selectedMemory,
+        this.priorityScoreBaseTime
+      );
     }
 
     this.refreshMapMarkers(this.filteredMemories);
@@ -623,8 +652,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
+  // Returns the locked / pre-computed priorityScore
   getPriorityScore(memory: TripMemory): number {
-    return this.calculatePriorityScore(memory);
+    return (memory as any).priorityScore ?? this.calculatePriorityScore(memory, this.priorityScoreBaseTime);
   }
 
   openTopRatedMemory(memory: TripMemory): void {
