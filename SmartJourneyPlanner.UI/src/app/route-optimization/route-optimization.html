@@ -42,17 +42,42 @@
       </button>
     </div>
 
-    <div class="results" *ngIf="isLoading">
+        <div class="results" *ngIf="isLoading && transportMode === 'private'">
       <p class="loading-label">Finding the best routes...</p>
+
       <div class="card skeleton-card" *ngFor="let i of [1,2,3]">
-        <div class="card-header">
-          <div class="skel skel-circle"></div>
-          <div class="skel skel-title"></div>
+
+        <!-- Card header — radio + icon + title -->
+        <div class="skel-card-header">
+          <div class="skel skel-radio"></div>
+          <div class="skel skel-card-icon"></div>
+          <div class="skel skel-card-title"></div>
         </div>
-        <div class="details-section">
-          <div class="skel skel-line"></div>
-          <div class="skel skel-line short"></div>
+
+        <div class="skel-divider"></div>
+
+        <!-- Distance + Time rows -->
+        <div class="skel-detail-row">
+          <div class="skel skel-label"></div>
+          <div class="skel skel-value"></div>
         </div>
+        <div class="skel-detail-row">
+          <div class="skel skel-label"></div>
+          <div class="skel skel-value short"></div>
+        </div>
+
+        <div class="skel-divider"></div>
+
+        <!-- Petrol + Diesel rows -->
+        <div class="skel-detail-row">
+          <div class="skel skel-label"></div>
+          <div class="skel skel-value fuel"></div>
+        </div>
+        <div class="skel-detail-row">
+          <div class="skel skel-label"></div>
+          <div class="skel skel-value fuel"></div>
+        </div>
+
       </div>
     </div>
 
@@ -66,34 +91,37 @@
               name="route" 
               (change)="onRouteSelect('fastest', results.fastest)" 
               [checked]="selectedRouteType === 'fastest'">
-            <h4>🚀 Fastest Route</h4>
+            <h4><span class="material-icons card-type-icon fastest-icon">bolt</span> Fastest Route</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
-              <span class="detail-label">📍 Distance</span>
+              <span class="detail-label"><span class="material-icons row-icon">place</span> Distance</span>
               <span class="detail-value">{{ formatDistance(results.fastest.distance) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-label"><span class="material-icons row-icon">schedule</span> Est. Time</span>
               <span class="detail-value">{{ formatDuration(results.fastest.duration) }}</span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
-              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-label"><span class="material-icons row-icon">local_gas_station</span> Petrol</span>
               <span class="detail-value fuel-value" *ngIf="results.fastest.estimatedPetrolCost !== null">
                 Rs. {{ results.fastest.estimatedPetrolCost }}
               </span>
               <span class="cost-unavailable" *ngIf="results.fastest.estimatedPetrolCost === null">N/A</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-label"><span class="material-icons row-icon">opacity</span> Diesel</span>
               <span class="detail-value fuel-value" *ngIf="results.fastest.estimatedDieselCost !== null">
                 Rs. {{ results.fastest.estimatedDieselCost }}
               </span>
               <span class="cost-unavailable" *ngIf="results.fastest.estimatedDieselCost === null">N/A</span>
             </div>
             <!-- Toll notice — fastest route uses highways -->
-            <div class="toll-notice">🏷️ Toll charges may apply on this route</div>
+            <div class="toll-notice">
+              <span class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:4px">sell</span>
+              Toll charges may apply on this route
+            </div>
           </div>
         </label>
       </div>
@@ -107,27 +135,27 @@
               name="route" 
               (change)="onRouteSelect('scenic', results.scenic)" 
               [checked]="selectedRouteType === 'scenic'">
-            <h4>🌿 Scenic Route</h4>
+            <h4><span class="material-icons card-type-icon scenic-icon">park</span> Scenic Route</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
-              <span class="detail-label">📍 Distance</span>
+              <span class="detail-label"><span class="material-icons row-icon">place</span> Distance</span>
               <span class="detail-value">{{ formatDistance(results.scenic.distance) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-label"><span class="material-icons row-icon">schedule</span> Est. Time</span>
               <span class="detail-value">{{ formatDuration(results.scenic.duration) }}</span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
-              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-label"><span class="material-icons row-icon">local_gas_station</span> Petrol</span>
               <span class="detail-value fuel-value" *ngIf="results.scenic.estimatedPetrolCost !== null">
                 Rs. {{ results.scenic.estimatedPetrolCost }}
               </span>
               <span class="cost-unavailable" *ngIf="results.scenic.estimatedPetrolCost === null">N/A</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-label"><span class="material-icons row-icon">opacity</span> Diesel</span>
               <span class="detail-value fuel-value" *ngIf="results.scenic.estimatedDieselCost !== null">
                 Rs. {{ results.scenic.estimatedDieselCost }}
               </span>
@@ -146,27 +174,27 @@
               name="route" 
               (change)="onRouteSelect('cheapest', results.cheapest)" 
               [checked]="selectedRouteType === 'cheapest'">
-            <h4>💰 Cheapest Route</h4>
+            <h4><span class="material-icons card-type-icon cheapest-icon">savings</span> Cheapest Route</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
-              <span class="detail-label">📍 Distance</span>
+              <span class="detail-label"><span class="material-icons row-icon">place</span> Distance</span>
               <span class="detail-value">{{ formatDistance(results.cheapest.distance) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">⏱️ Est. Time</span>
+              <span class="detail-label"><span class="material-icons row-icon">schedule</span> Est. Time</span>
               <span class="detail-value">{{ formatDuration(results.cheapest.duration) }}</span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
-              <span class="detail-label">⛽ Petrol</span>
+              <span class="detail-label"><span class="material-icons row-icon">local_gas_station</span> Petrol</span>
               <span class="detail-value fuel-value" *ngIf="results.cheapest.estimatedPetrolCost !== null">
                 Rs. {{ results.cheapest.estimatedPetrolCost }}
               </span>
               <span class="cost-unavailable" *ngIf="results.cheapest.estimatedPetrolCost === null">N/A</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">🛢️ Diesel</span>
+              <span class="detail-label"><span class="material-icons row-icon">opacity</span> Diesel</span>
               <span class="detail-value fuel-value" *ngIf="results.cheapest.estimatedDieselCost !== null">
                 Rs. {{ results.cheapest.estimatedDieselCost }}
               </span>
@@ -178,7 +206,7 @@
 
       <!-- ── DISCLAIMER ── -->
       <div class="route-disclaimer">
-        <span class="disclaimer-icon">ℹ️</span>
+        <span class="material-icons disclaimer-icon">info</span>
         <p>Fuel costs are estimated based on average vehicle consumption
         and live CPC fuel prices. Actual costs may vary depending on
         driving speed, vehicle condition, load, and traffic conditions.</p>
@@ -210,41 +238,79 @@
         </div>
       </div>
 
-      <!-- Direct bus route -->
-      <div class="card bus-card"
-           *ngIf="busResult?.found && !busResult?.isMultiLeg && !isBusLoading">
-        <div class="card-header">
-          <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
-          <h4>Bus Route {{ busResult.routeNo }}</h4>
-        </div>
-        <div class="details-section">
-          <div class="detail-row">
-            <span class="detail-label">
-              <span class="material-icons row-icon">place</span> From
-            </span>
-            <span class="detail-value">{{ start }}</span>
+      <!-- ✅ Multiple direct bus options -->
+      <ng-container *ngIf="busResult?.found && !busResult?.isMultiLeg && !isBusLoading">
+
+        <!-- Single option -->
+        <div class="card bus-card"
+            *ngIf="busResult.directOptions?.length <= 1">
+          <div class="card-header">
+            <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
+            <h4>Bus Route {{ busResult.routeNo }}</h4>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">
-              <span class="material-icons row-icon">place</span> To
-            </span>
-            <span class="detail-value">{{ end }}</span>
-          </div>
-          <div class="detail-divider"></div>
-          <div class="detail-row">
-            <span class="detail-label">
-              <span class="material-icons row-icon">confirmation_number</span> Fare
-            </span>
-            <span class="detail-value fuel-value">Rs. {{ busResult.fare }}</span>
-          </div>
-          <div class="detail-row" *ngIf="busResult.via">
-            <span class="detail-label">
-              <span class="material-icons row-icon">route</span> Via
-            </span>
-            <span class="detail-value">{{ busResult.via }}</span>
+          <div class="details-section">
+            <div class="detail-row">
+              <span class="detail-label">
+                <span class="material-icons row-icon">place</span> From
+              </span>
+              <span class="detail-value">{{ start.split(',')[0] }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">
+                <span class="material-icons row-icon">place</span> To
+              </span>
+              <span class="detail-value">{{ end.split(',')[0] }}</span>
+            </div>
+            <div class="detail-divider"></div>
+            <div class="detail-row">
+              <span class="detail-label">
+                <span class="material-icons row-icon">confirmation_number</span> Fare
+              </span>
+              <span class="detail-value fuel-value">Rs. {{ busResult.fare }}</span>
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Multiple options -->
+        <ng-container *ngIf="busResult.directOptions?.length > 1">
+          <p class="bus-options-label">
+            <span class="material-icons" style="font-size:14px;vertical-align:middle">directions_bus</span>
+            {{ busResult.directOptions.length }} bus options available — sorted by fare
+          </p>
+
+          <div class="card bus-card"
+              *ngFor="let option of busResult.directOptions; let i = index">
+            <div class="card-header">
+              <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
+              <h4>Bus {{ option.routeNo }}</h4>
+              <!-- Cheapest badge -->
+              <span class="cheapest-badge" *ngIf="i === 0">Cheapest</span>
+            </div>
+            <div class="details-section">
+              <div class="detail-row">
+                <span class="detail-label">
+                  <span class="material-icons row-icon">place</span> From
+                </span>
+                <span class="detail-value">{{ start.split(',')[0] }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">
+                  <span class="material-icons row-icon">place</span> To
+                </span>
+                <span class="detail-value">{{ end.split(',')[0] }}</span>
+              </div>
+              <div class="detail-divider"></div>
+              <div class="detail-row">
+                <span class="detail-label">
+                  <span class="material-icons row-icon">confirmation_number</span> Fare
+                </span>
+                <span class="detail-value fuel-value">Rs. {{ option.fare }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+      </ng-container>
 
       <!-- Multi-leg bus route -->
       <ng-container *ngIf="busResult?.found && busResult?.isMultiLeg && !isBusLoading">
@@ -260,7 +326,7 @@
               <span class="detail-label">
                 <span class="material-icons row-icon">place</span> From
               </span>
-              <span class="detail-value">{{ start }}</span>
+              <span class="detail-value">{{ start.split(',')[0] }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">
@@ -301,7 +367,7 @@
               <span class="detail-label">
                 <span class="material-icons row-icon">place</span> To
               </span>
-              <span class="detail-value">{{ end }}</span>
+              <span class="detail-value">{{ end.split(',')[0] }}</span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">

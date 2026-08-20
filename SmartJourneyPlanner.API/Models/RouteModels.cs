@@ -81,6 +81,11 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("via")]       public string        Via       { get; set; } = string.Empty;
         [BsonElement("totalFare")] public double        TotalFare { get; set; }
         [BsonElement("stops")]     public List<BusStop> Stops     { get; set; } = new();
+
+        // ✅ FIX 1: This mapping connects directly to MongoDB Compass ("isPrincipal")
+        // This is what allows our LINQ query to sort and fetch the best official route!
+        [BsonElement("isPrincipal")] 
+        public bool IsPrincipal { get; set; } = false;
     }
 
     /// <summary>
@@ -117,12 +122,13 @@ namespace SmartJourneyPlanner.Models
     {
         public bool   Found      { get; set; } = false;
         public bool   IsMultiLeg { get; set; } = false;
+        // ✅ FIX 2: Keep it here too so the Frontend API Response knows if it's the official route
+        public bool IsPrincipal { get; set; } = false;
+        public bool IsApproximateFare { get; set; } = false;
 
         // Single leg
         public string? RouteNo { get; set; }
         public string? Via     { get; set; }
-        public string? ViaLeg1 { get; set; }
-        public string? ViaLeg2 { get; set; }
         public double? Fare    { get; set; }
 
         // Multi leg
@@ -132,5 +138,20 @@ namespace SmartJourneyPlanner.Models
         public double? FareLeg1    { get; set; }
         public double? FareLeg2    { get; set; }
         public double? TotalFare   { get; set; }
+        public string? ViaLeg1     { get; set; }
+        public string? ViaLeg2     { get; set; }
+
+        // ✅ Multiple direct options — sorted by fare ascending
+        public List<BusOption> DirectOptions { get; set; } = new();
     }
+
+    /// <summary>
+/// Represents a single bus route option in multi-result response.
+/// </summary>
+        public class BusOption
+        {
+            public string RouteNo { get; set; } = string.Empty;
+            public double Fare    { get; set; }
+            public string? Via    { get; set; }
+        }
 }

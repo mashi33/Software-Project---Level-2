@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 export class GenerationComponent implements OnInit, OnChanges {
   @Input() routeData: any;
   @Input() busData: any  = null;  // ✅ add
-  @Input() transportMode: 'private' | 'public' = 'private'; // ✅ add
+  @Input() transportMode: string = 'private'; // ✅ add
   mapBase64:    string  = '';
   isLoadingMap: boolean = false;
   today:        number  = Date.now();
@@ -23,17 +23,20 @@ export class GenerationComponent implements OnInit, OnChanges {
   constructor(private mapService: GenerationService) {}
 
   ngOnInit(): void {
-    console.log('🚀 GenerationComponent initialized, routeData:', this.routeData);
-    if (this.routeData) this.loadMapFromBackend();
+  if (this.transportMode === 'private' && this.routeData) {
+    this.loadMapFromBackend();
   }
+  // ✅ map loading is now conditional on transportMode being 'private'
+}
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('🔄 ngOnChanges triggered:', changes);
-    if (changes['routeData'] && !changes['routeData'].firstChange && this.routeData) {
-      console.log('✅ routeData changed, reloading map...');
-      this.loadMapFromBackend();
-    }
+  if (this.transportMode === 'private' &&
+      changes['routeData'] &&
+      !changes['routeData'].firstChange &&
+      this.routeData) {
+    this.loadMapFromBackend();
   }
+}
 
   loadMapFromBackend() {
     console.log('🔍 Full routeData received:', this.routeData);

@@ -162,11 +162,24 @@ namespace SmartJourneyPlanner.Services
                                     int addedAtThisPoint = 0;
                                     foreach (var place in results.EnumerateArray())
                                     {
-                                        if (addedAtThisPoint >= 3) break; // Cap at 3 viewpoints per waypoint
-                                        string name = place.TryGetProperty("name", out JsonElement n) ? n.GetString() : "Scenic Spot";
-                                        if (scenicViewpoints.Any(v => v.Name == name)) continue; // Skip duplicates
+                                        if (addedAtThisPoint >= 3) break;
+
+                                        string name = place.TryGetProperty("name", out JsonElement n) 
+                                                    ? n.GetString() : "Scenic Spot";
+
+                                        // ✅ loc declared here to avoid duplicate scenic viewpoints
                                         var loc = place.GetProperty("geometry").GetProperty("location");
-                                        scenicViewpoints.Add(new ViewpointDetail { Name = name, Lat = loc.GetProperty("lat").GetDouble(), Lng = loc.GetProperty("lng").GetDouble() });
+
+                                        // ✅ THEN use loc to check for duplicates before adding
+                                        if (scenicViewpoints.Any(v =>
+                                            Math.Abs(v.Lat - loc.GetProperty("lat").GetDouble()) < 0.001 &&
+                                            Math.Abs(v.Lng - loc.GetProperty("lng").GetDouble()) < 0.001)) continue;
+
+                                        scenicViewpoints.Add(new ViewpointDetail { 
+                                            Name = name, 
+                                            Lat  = loc.GetProperty("lat").GetDouble(), 
+                                            Lng  = loc.GetProperty("lng").GetDouble() 
+                                        });
                                         addedAtThisPoint++;
                                     }
                                 }

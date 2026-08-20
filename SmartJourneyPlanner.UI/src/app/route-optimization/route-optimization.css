@@ -313,6 +313,16 @@ button:hover, .btn-primary:hover {
   margin-top: 1px;
 }
 
+.card-type-icon {
+  font-size: 18px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.fastest-icon  { color: #1a56db; }
+.scenic-icon   { color: #16a34a; }
+.cheapest-icon { color: #d97706; }
+
 /* ── MAP CONTAINER ── */
 .map-container { 
   flex: 1; 
@@ -404,19 +414,21 @@ google-map {
 
 /* ── SKELETON LOADER ── */
 .skeleton-card {
-  background: #f0f0f0;
+  background: #ffffff;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border: 1.5px solid #e5e7eb;
   pointer-events: none;
 }
 
+/* Shimmer animation */
 .skel {
   background: linear-gradient(
     90deg,
-    #e0e0e0 25%,
-    #f5f5f5 50%,
-    #e0e0e0 75%
+    #e5e7eb 25%,
+    #f3f4f6 50%,
+    #e5e7eb 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
@@ -428,40 +440,78 @@ google-map {
   100% { background-position: -200% 0; }
 }
 
-.skel-circle {
-  width: 18px;
-  height: 18px;
+/* ── CARD HEADER ── */
+.skel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.skel-radio {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.skel-title {
-  height: 16px;
-  width: 55%;
-  margin-left: 10px;
+.skel-card-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.skel-line {
+.skel-card-title {
+  height: 15px;
+  width: 45%;
+  border-radius: 6px;
+}
+
+/* ── DIVIDER ── */
+.skel-divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 8px 0;
+}
+
+/* ── DETAIL ROWS ── */
+.skel-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.skel-label {
+  height: 12px;
+  width: 30%;
+  border-radius: 4px;
+}
+
+.skel-value {
+  height: 12px;
+  width: 25%;
+  border-radius: 4px;
+}
+
+.skel-value.short {
+  width: 20%;
+}
+
+.skel-value.fuel {
+  width: 28%;
   height: 13px;
-  width: 80%;
-  margin-top: 10px;
 }
 
-.skel-line.short {
-  width: 55%;
-  margin-top: 8px;
-}
-
+/* ── LOADING LABEL ── */
 .loading-label {
   font-size: 13px;
-  color: #888;
-  margin-bottom: 12px;
+  color: #9ca3af;
+  margin-bottom: 8px;
   font-style: italic;
-}
-
-.skeleton-card .card-header {
-  display: flex;
-  align-items: center;
 }
 
 /* ── TRANSPORT TOGGLE ── */
@@ -583,4 +633,24 @@ google-map {
   vertical-align: middle;
   margin-right: 3px;
   color: #9ca3af;
+}
+
+.bus-options-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 8px 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cheapest-badge {
+  margin-left: auto;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #bbf7d0;
 }

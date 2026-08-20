@@ -207,7 +207,7 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
       },
       error: () => {
         this.isUploading = false;
-        Swal.fire('Upload failed', 'Could not upload the PDF.', 'error');
+        Swal.fire('Upload failed', 'Only PDF files under 20MB can be shared.', 'error');
       }
     });
   }
