@@ -202,6 +202,7 @@ namespace SmartJourneyPlanner.Controllers
             if (vehicle is null) return NotFound();
 
             await _vehicleService.RemoveAsync(id);
+            _cache.Remove(ApprovedVehiclesCacheKey);
             return NoContent();
         }
 
