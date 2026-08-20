@@ -5,6 +5,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 // Importing our own services and models
 import { TimelineService } from '../services/timeline.service';
@@ -22,18 +23,23 @@ import Swal from 'sweetalert2'; // For nice popup alerts
 export class TripTimelineComponent {
   // Accessing the shared TimelineService to manage data
   private timelineService = inject(TimelineService);
-  
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  // Determines if the current user is a viewer (read-only) or an editor
+  isViewer: boolean = false;
+
   // The current timeline data (linked to the service)
   timeline = this.timelineService.timeline;
-  
+
   // Controls if we show the "Welcome" screen or the actual timeline
   showHero = true;
 
   // Controls if the "Add/Edit Event" popup is visible
   isModalOpen = false;
-  
+
   // Stores the ID of the event we are currently editing (null if adding new)
-  editingEventId: string | null = null; 
+  editingEventId: string | null = null;
 
   // Object to store data from the Add/Edit form
   formData = {
@@ -44,17 +50,17 @@ export class TripTimelineComponent {
     description: '',
     status: 'Pending' as 'Pending' | 'Completed'
   };
-  
+
   // Stores which day we are currently adding an event to
-  selectedDayId: string = ''; 
-  
+  selectedDayId: string = '';
+
   // Calculates today's date so users can't pick past dates in the calendar
   get minDate(): string {
     const today = new Date();
     return today.toISOString().split('T')[0];
   }
 
-  constructor() {}
+  constructor() { }
 
   // Tracking which form fields have been clicked/touched
   formTouched = {
@@ -74,6 +80,13 @@ export class TripTimelineComponent {
 
   // Runs when the page loads
   ngOnInit() {
+    // Check if the user is a viewer based on the URL query parameters
+    this.route.queryParams.subscribe(params => {
+      const role = params['role'];
+      if (role && role.toLowerCase() === 'viewer') {
+        this.isViewer = true;
+      }
+    });
     // If there is already data, skip the welcome screen
     if (this.timeline().days.length > 0) {
       this.showHero = false;
@@ -84,7 +97,7 @@ export class TripTimelineComponent {
   // Checks if the form is filled out correctly before saving
   validateForm(): boolean {
     let isValid = true;
-    
+
     const hasLetter = /[a-zA-Z]/.test(this.formData.title);
 
     // Title validation: Required, must have letters, and length between 3-50
@@ -124,11 +137,11 @@ export class TripTimelineComponent {
           // If the day is "Today", check if the chosen time has already passed
           const dDate = new Date(day.date);
           const now = new Date();
-          
-          if (dDate.getFullYear() === now.getFullYear() && 
-              dDate.getMonth() === now.getMonth() && 
-              dDate.getDate() === now.getDate()) {
-            
+
+          if (dDate.getFullYear() === now.getFullYear() &&
+            dDate.getMonth() === now.getMonth() &&
+            dDate.getDate() === now.getDate()) {
+
             const [h, m] = this.formData.time.split(':').map(Number);
             const eventTime = new Date();
             eventTime.setHours(h, m, 0, 0);
@@ -195,7 +208,7 @@ export class TripTimelineComponent {
   get isFormInvalid(): boolean {
     const title = this.formData.title ? this.formData.title.trim() : '';
     const hasLetterTitle = /[a-zA-Z]/.test(title);
-    
+
     const location = this.formData.location ? this.formData.location.trim() : '';
     const hasLetterLoc = /[a-zA-Z]/.test(location);
 
@@ -217,9 +230,9 @@ export class TripTimelineComponent {
 
       const dDate = new Date(day.date);
       const now = new Date();
-      if (dDate.getFullYear() === now.getFullYear() && 
-          dDate.getMonth() === now.getMonth() && 
-          dDate.getDate() === now.getDate()) {
+      if (dDate.getFullYear() === now.getFullYear() &&
+        dDate.getMonth() === now.getMonth() &&
+        dDate.getDate() === now.getDate()) {
         const [h, m] = this.formData.time.split(':').map(Number);
         const eventTime = new Date();
         eventTime.setHours(h, m, 0, 0);
@@ -233,12 +246,12 @@ export class TripTimelineComponent {
   // --- Date Picker Logic ---
   // Runs when a user picks a new date for a day
   onDateChange(event: any, dayId: string) {
-    const newDateStr = event.target.value; 
+    const newDateStr = event.target.value;
     if (!newDateStr) return;
 
     const [y, m, d] = newDateStr.split('-').map(Number);
-    const newDate = new Date(y, m - 1, d); 
-    
+    const newDate = new Date(y, m - 1, d);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -250,23 +263,23 @@ export class TripTimelineComponent {
         icon: 'error',
         confirmButtonColor: '#007BFF'
       });
-      event.target.value = ''; 
+      event.target.value = '';
       return;
     }
 
     // Validation: Don't allow same date for multiple days
     const [year, month, day] = newDateStr.split('-').map(Number);
     const existingDays = this.timeline().days;
-    
+
     const isDateTaken = existingDays.some(d => {
-      if (d.id === dayId) return false; 
-      
+      if (d.id === dayId) return false;
+
       const dDate = new Date(d.date);
       if (isNaN(dDate.getTime())) return false;
-      
-      return dDate.getFullYear() === year && 
-             dDate.getMonth() === (month - 1) && 
-             dDate.getDate() === day;
+
+      return dDate.getFullYear() === year &&
+        dDate.getMonth() === (month - 1) &&
+        dDate.getDate() === day;
     });
 
     if (isDateTaken) {
@@ -276,7 +289,7 @@ export class TripTimelineComponent {
         icon: 'warning',
         confirmButtonColor: '#007BFF'
       });
-      event.target.value = ''; 
+      event.target.value = '';
       return;
     }
 
@@ -288,7 +301,7 @@ export class TripTimelineComponent {
   triggerDatePicker(dayId: string) {
     const picker = document.getElementById('date-picker-' + dayId) as HTMLInputElement;
     if (picker) {
-      picker.showPicker(); 
+      picker.showPicker();
     }
   }
 
@@ -303,10 +316,18 @@ export class TripTimelineComponent {
   }
 
   addNewDay() {
+    if (this.isViewer) {
+      Swal.fire('Access Denied', 'Viewers cannot add new days.', 'error');
+      return;
+    }
     this.timelineService.addDay();
   }
 
   deleteDay(dayId: string) {
+    if (this.isViewer) {
+      Swal.fire('Access Denied', 'Viewers cannot delete days.', 'error');
+      return;
+    }
     Swal.fire({
       title: 'Delete this day?',
       text: "You will lose all events planned for this day. This action cannot be undone.",
@@ -328,7 +349,7 @@ export class TripTimelineComponent {
     const days = this.timeline().days;
     return days.findIndex(d => d.id === day.id) + 1;
   }
-  
+
   // Counts how many tasks are marked "Completed" in a day
   completedCount(day: TimelineDay): number {
     return day.events.filter(e => e.status === 'Completed').length;
@@ -342,8 +363,8 @@ export class TripTimelineComponent {
 
   // Handles moving events up/down or between different days
   drop(event: CdkDragDrop<any>) {
-    const currentDayId = event.container.id; 
-    
+    const currentDayId = event.container.id;
+
     if (event.previousContainer === event.container) {
       this.timelineService.reorderEvents(currentDayId, currentDayId, event.previousIndex, event.currentIndex);
     } else {
@@ -354,10 +375,10 @@ export class TripTimelineComponent {
   // Returns the correct icon name based on event type (Hotel, Food, etc)
   getCategoryIcon(eventItem: TimelineEvent): string {
     switch (eventItem.category) {
-      case 'Hotel': return 'domain'; 
+      case 'Hotel': return 'domain';
       case 'Dining': return 'restaurant';
       case 'Sightseeing': return 'camera_alt';
-      case 'Transport': return 'local_taxi'; 
+      case 'Transport': return 'local_taxi';
       default: return 'event';
     }
   }
@@ -379,6 +400,10 @@ export class TripTimelineComponent {
   }
 
   deleteEvent(dayId: string, eventItem: TimelineEvent) {
+    if (this.isViewer) {
+      Swal.fire('Access Denied', 'Viewers cannot delete events.', 'error');
+      return;
+    }
     Swal.fire({
       title: 'Delete this event?',
       text: `Are you sure you want to delete "${eventItem.title}"?`,
@@ -397,6 +422,10 @@ export class TripTimelineComponent {
   // --- Modal (Popup) logic methods ---
   // Prepares the form to add a new activity
   openAddEventModal(dayId: string) {
+    if (this.isViewer) {
+      Swal.fire('Access Denied', 'Viewers cannot add events.', 'error');
+      return;
+    }
     this.selectedDayId = dayId;
     this.editingEventId = null;
     this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
@@ -407,6 +436,10 @@ export class TripTimelineComponent {
 
   // Loads existing data into the form to edit an activity
   openEditEventModal(dayId: string, eventItem: TimelineEvent) {
+    if (this.isViewer) {
+      Swal.fire('Access Denied', 'Viewers cannot edit events.', 'error');
+      return;
+    }
     this.selectedDayId = dayId;
     this.editingEventId = eventItem.id;
     this.formData = { ...eventItem };
@@ -422,17 +455,17 @@ export class TripTimelineComponent {
   // Runs when user clicks "Save" in the popup
   onSubmit(e: Event) {
     e.preventDefault();
-    
+
     // Mark everything as touched to show errors if any
     this.formTouched = { title: true, time: true, location: true, description: true };
-    
+
     if (this.validateForm() && this.selectedDayId) {
       if (this.editingEventId) {
         this.timelineService.updateEvent(this.selectedDayId, { ...this.formData, id: this.editingEventId, dayId: this.selectedDayId } as TimelineEvent);
       } else {
         this.timelineService.addEvent(this.selectedDayId, { ...this.formData, dayId: this.selectedDayId });
       }
-      
+
       // Reset form and close
       this.formData = { title: '', time: '', location: '', category: 'Sightseeing', description: '', status: 'Pending' };
       this.editingEventId = null;

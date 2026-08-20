@@ -333,7 +333,10 @@ export class TripSummaryComponent implements OnInit {
 
   navigateToTimeline() {
     this.router.navigate(['/timeline'], {
-      queryParams: { tripId: this.tripId }
+      queryParams: {
+        tripId: this.tripId,
+        role: this.userRole
+      }
     });
   }
 
