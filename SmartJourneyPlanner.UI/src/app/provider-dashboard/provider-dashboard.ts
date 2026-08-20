@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { VehicleService } from '../services/providerDashboard';
 import { TransportBookingService } from '../services/transport-booking.service';
 import { AuthService } from '../services/auth.service';
@@ -18,14 +18,16 @@ import Swal from 'sweetalert2';
 })
 export class ProviderDashboardComponent implements OnInit {
   
-  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0 };
+  stats: any = { totalVehicles: 0, totalBookings: 0, rating: 0, totalRevenue: 0, acceptedVehicles: 0, pendingVehicles: 0, pendingBookings: 0, acceptedBookings: 0, completedBookings: 0, rejectedBookings: 0, canceledBookings: 0, pendingComplete: 0 };
   vehicles: any[] = [];
   bookings: Booking[] = [];
   filteredVehicles: any[] = [];
   filteredBookings: Booking[] = [];
   currentBookingsInProgress: any[] = [];
+  pendingCompleteBookings: any[] = [];
   providerId: string | null = null;
   userName: string = '';
+  targetBookingId: string | null = null;
 
   // Filter properties
   vehicleSearchTerm: string = '';
@@ -35,13 +37,30 @@ export class ProviderDashboardComponent implements OnInit {
   bookingProximityFilter: string = '';
   showOldBookings: boolean = false;
 
+  // Panel navigation
+  activePanel: 'fleet' | 'bookings' = 'fleet';
+
+  // Blocked Date Ranges properties
+  showBlockedRangesModal: boolean = false;
+  blockedRangesVehicle: any = null;
+  blockedRangesStartDate: string = '';
+  blockedRangesEndDate: string = '';
+  blockedRangesReason: string = '';
+  blockedRangesList: any[] = [];
+  editingBlockedRange: any = null;
+
   constructor(
     private vehicleService: VehicleService,
     private transportVehicleService: TransportVehicleService,
     private bookingService: TransportBookingService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
+
+  switchPanel(panel: 'fleet' | 'bookings') {
+    this.activePanel = panel;
+  }
 
   ngOnInit() {
     this.providerId = this.authService.getUserEmail() || this.authService.getUserName();
@@ -59,6 +78,43 @@ export class ProviderDashboardComponent implements OnInit {
     }
     this.userName = this.authService.getUserName() || 'Provider';
     this.loadAll();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['panel'] === 'bookings') {
+        this.activePanel = 'bookings';
+      }
+      if (params['bookingId']) {
+        this.activePanel = 'bookings';
+        this.targetBookingId = params['bookingId'];
+        // Clear filter terms so the requested booking is visible
+        this.bookingSearchTerm = '';
+        this.bookingStatusFilter = '';
+        this.bookingProximityFilter = '';
+        this.showOldBookings = true;
+
+        this.filterBookings();
+
+        // Case B: If bookings are already loaded, scroll and clear query params immediately
+        if (this.bookings && this.bookings.length > 0) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 300);
+        }
+      }
+    });
   }
 
   loadAll() {
@@ -70,13 +126,18 @@ export class ProviderDashboardComponent implements OnInit {
     // Load vehicles
     this.vehicleService.getVehicles().subscribe((data: any) => {
       if (Array.isArray(data)) {
-        const approvedFleetOnly = data.filter((vehicle: any) => {
-          // checks the admin's verification status
+        // Calculate accepted and pending counts
+        this.stats.acceptedVehicles = data.filter((vehicle: any) => {
           const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
-          return adminStatus !== 'Pending';
-        });
+          return adminStatus === 'Approved' || adminStatus === 'Verified' || adminStatus !== 'Pending';
+        }).length;
 
-        this.vehicles = approvedFleetOnly.map((vehicle: any) => ({
+        this.stats.pendingVehicles = data.filter((vehicle: any) => {
+          const adminStatus = vehicle.adminVerificationStatus || vehicle.AdminVerificationStatus || '';
+          return adminStatus === 'Pending';
+        }).length;
+
+        this.vehicles = data.map((vehicle: any) => ({
           ...vehicle,
           id: vehicle.id || vehicle._id
         }));
@@ -88,6 +149,8 @@ export class ProviderDashboardComponent implements OnInit {
       } else {
         this.vehicles = [];
         this.filteredVehicles = [];
+        this.stats.acceptedVehicles = 0;
+        this.stats.pendingVehicles = 0;
       }
     });
 
@@ -99,7 +162,7 @@ export class ProviderDashboardComponent implements OnInit {
     
     //Process each booking to dynamically pull vehicle data using vehicleId
     this.bookings = data.map((booking: any) => {
-      // 1. Force fallbacks on fields that are empty or undefined in your C# model
+      //  Force fallbacks on fields that are empty or undefined in your C# model
       booking.vehicleName = booking.vehicleName || 'Loading vehicle details...';
       
       booking.statusChangedDate = booking.statusChangedDate || booking.StatusChangedDate || null;
@@ -117,7 +180,7 @@ export class ProviderDashboardComponent implements OnInit {
         booking.durationText = 'N/A';
       }
 
-      // 2. Safely call your vehicle service to fetch the real name from MongoDB dynamically!
+      //  Safely call your vehicle service to fetch the real name from MongoDB dynamically!
       if (booking.vehicleId) {
         this.transportVehicleService.getVehicleById(booking.vehicleId).subscribe({
           next: (vehicle: any) => {
@@ -136,9 +199,27 @@ export class ProviderDashboardComponent implements OnInit {
 
       return booking;
     });
+
+    // Calculate booking status counts
+    this.stats.totalBookings = this.bookings.length;
+    this.stats.pendingBookings = this.bookings.filter((b: any) => b.status === 'Pending').length;
+    this.stats.acceptedBookings = this.bookings.filter((b: any) => b.status === 'Confirmed').length;
+    this.stats.completedBookings = this.bookings.filter((b: any) => b.status === 'Completed').length;
+    this.stats.rejectedBookings = this.bookings.filter((b: any) => b.status === 'Rejected').length;
+    this.stats.canceledBookings = this.bookings.filter((b: any) => b.status === 'Cancelled' || b.status === 'Canceled').length;
+
+    // Calculate pending complete bookings (bookings past end date but not marked as completed)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.pendingCompleteBookings = this.bookings.filter((booking: any) => {
+      if (booking.status !== 'Confirmed' && booking.status !== 'On-going') return false;
+      const endDate = new Date(booking.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      return today > endDate; // Past the end date
+    });
+    this.stats.pendingComplete = this.pendingCompleteBookings.length;
+
         // Find current booking in progress (Confirmed and within date range)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         this.currentBookingsInProgress = this.bookings.filter((booking: any) => {
           if (booking.status !== 'Confirmed' && booking.status !== 'On-going') return false;
           const startDate = new Date(booking.startDate);
@@ -152,12 +233,12 @@ export class ProviderDashboardComponent implements OnInit {
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(0, 0, 0, 0);
 
-      // 1. Calculate Day Count duration cleanly
+      //  Calculate Day Count duration cleanly
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 captures partial checkout blocks
       booking.durationText = `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
 
-      // 2. Assign conditional labels based on calendar deadlines
+      // Assign conditional labels based on calendar deadlines
       if (today.getTime() === endDate.getTime()) {
         booking.displayStatus = 'Pending Return';
         booking.statusClass = 'badge-pending-return'; // Style handle for label component
@@ -170,6 +251,27 @@ export class ProviderDashboardComponent implements OnInit {
     });
         // Apply initial filter
         this.filterBookings();
+
+        // Case A: If targetBookingId was set during initialization but bookings were not loaded yet, scroll now!
+        if (this.targetBookingId) {
+          setTimeout(() => {
+            const element = document.querySelector(`.booking-highlighted`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('pulse-highlight');
+              setTimeout(() => {
+                element.classList.remove('pulse-highlight');
+              }, 3000);
+            }
+            // Clear query parameter now that target card is rendered
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { bookingId: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+            });
+          }, 400);
+        }
       });
     }
   }
@@ -231,7 +333,7 @@ export class ProviderDashboardComponent implements OnInit {
     const prox = this.bookingProximityFilter;
     const isSorting = prox.startsWith('sort-');
 
-    // 1. Filter bookings arrays
+    // Filter bookings arrays
     let result = this.bookings.filter((b: any) => {
       const matchesSearch = !this.bookingSearchTerm || 
         (b.userName || '').toLowerCase().includes(this.bookingSearchTerm.toLowerCase()) ||
@@ -287,7 +389,7 @@ export class ProviderDashboardComponent implements OnInit {
       return matchesSearch && matchesStatus && matchesProx && matchesAge;
     });
 
-    // 2. Sort results if necessary
+    // Sort results if necessary
     if (isSorting) {
       result.sort((a: any, b: any) => {
         const diff = new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime();
@@ -342,7 +444,7 @@ export class ProviderDashboardComponent implements OnInit {
   deleteVehicle(id: string) {
     if (!id) return;
 
-    // 🟩 SWEETALERT: Beautiful Interactive Confirmation Dialog
+    // Beautiful Interactive Confirmation Dialog
     Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this asset deletion!",
@@ -476,5 +578,211 @@ export class ProviderDashboardComponent implements OnInit {
       </div>
     `
   });
-}
+  }
+
+  // Blocked Date Ranges Methods
+  openBlockedRangesModal(vehicle: any) {
+    this.blockedRangesVehicle = vehicle;
+    this.blockedRangesStartDate = '';
+    this.blockedRangesEndDate = '';
+    this.blockedRangesReason = '';
+    this.blockedRangesList = [];
+    this.editingBlockedRange = null;
+    this.showBlockedRangesModal = true;
+    this.loadBlockedRanges(vehicle.id || vehicle._id);
+  }
+
+  closeBlockedRangesModal() {
+    this.showBlockedRangesModal = false;
+    this.blockedRangesVehicle = null;
+    this.editingBlockedRange = null;
+  }
+
+  loadBlockedRanges(vehicleId: string) {
+    this.vehicleService.getBlockedDateRanges(vehicleId).subscribe({
+      next: (ranges) => {
+        this.blockedRangesList = ranges || [];
+      },
+      error: (err) => {
+        console.error('Error loading blocked ranges:', err);
+        this.blockedRangesList = [];
+      }
+    });
+  }
+
+  addBlockedRange() {
+    if (!this.blockedRangesVehicle || !this.blockedRangesStartDate || !this.blockedRangesEndDate) {
+      Swal.fire('Error', 'Please select both start and end dates', 'error');
+      return;
+    }
+
+    const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+    
+    if (this.editingBlockedRange) {
+      // Update existing range
+      this.vehicleService.editBlockedDateRange(vehicleId, this.editingBlockedRange.id, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
+        next: () => {
+          Swal.fire('Success', 'Blocked date range updated successfully', 'success');
+          this.blockedRangesStartDate = '';
+          this.blockedRangesEndDate = '';
+          this.blockedRangesReason = '';
+          this.editingBlockedRange = null;
+          this.loadBlockedRanges(vehicleId);
+        },
+        error: (err) => {
+          console.error('Error editing blocked range:', err);
+          const errorMessage = err.error?.message || 'Failed to update blocked date range';
+          Swal.fire('Error!', errorMessage, 'error');
+        }
+      });
+    } else {
+      // Add new range
+      console.log('Adding blocked range for vehicle:', vehicleId);
+      console.log('Start date:', this.blockedRangesStartDate);
+      console.log('End date:', this.blockedRangesEndDate);
+      console.log('Reason:', this.blockedRangesReason);
+      
+      this.vehicleService.addBlockedDateRange(vehicleId, this.blockedRangesStartDate, this.blockedRangesEndDate, this.blockedRangesReason).subscribe({
+        next: () => {
+          Swal.fire('Success', 'Blocked date range added successfully', 'success');
+          this.blockedRangesStartDate = '';
+          this.blockedRangesEndDate = '';
+          this.blockedRangesReason = '';
+          this.loadBlockedRanges(vehicleId);
+        },
+        error: (err) => {
+          console.error('Error adding blocked range:', err);
+          const errorMessage = err.error?.message || 'Failed to add blocked date range';
+          Swal.fire('Error!', errorMessage, 'error');
+        }
+      });
+    }
+  }
+
+  editBlockedRange(range: any) {
+    this.editingBlockedRange = range;
+    this.blockedRangesStartDate = range.startDate;
+    this.blockedRangesEndDate = range.endDate;
+    this.blockedRangesReason = range.reason || '';
+  }
+
+  cancelEditBlockedRange() {
+    this.editingBlockedRange = null;
+    this.blockedRangesStartDate = '';
+    this.blockedRangesEndDate = '';
+    this.blockedRangesReason = '';
+  }
+
+  showVehicleDetails(vehicle: any) {
+    // Use pre-calculated rating from backend if available, otherwise calculate from reviews
+    let ratingDisplay = 'No ratings yet';
+    
+    // Check for pre-calculated rating fields from backend
+    const backendRating = vehicle.averageRating || vehicle.AverageRating || vehicle.rating || vehicle.Rating;
+    
+    if (typeof backendRating === 'number' && backendRating > 0) {
+      // Backend provides pre-calculated rating
+      const reviewCount = vehicle.reviewCount || vehicle.ReviewCount || vehicle.reviews?.length || vehicle.Reviews?.length || 0;
+      ratingDisplay = `${backendRating.toFixed(1)} / 5.0 ⭐${reviewCount > 0 ? ` (${reviewCount} review${reviewCount > 1 ? 's' : ''})` : ''}`;
+    } else {
+      // Fallback: calculate from reviews array
+      const reviews = vehicle.reviews || vehicle.Reviews || [];
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
+        const averageRating = totalRating / reviews.length;
+        ratingDisplay = `${averageRating.toFixed(1)} / 5.0 ⭐ (${reviews.length} review${reviews.length > 1 ? 's' : ''})`;
+      }
+    }
+    
+    Swal.fire({
+      title: vehicle.ModelName || vehicle.modelName || 'Vehicle Details',
+      width: '620px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#0c92f4',
+      html: `
+        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+          <h6 class="text-primary fw-bold mb-1">Basic Information</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Model:</strong> ${vehicle.ModelName || vehicle.modelName || 'N/A'}</p>
+            <p class="m-0"><strong>Class:</strong> ${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</p>
+            <p class="m-0"><strong>Year:</strong> ${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</p>
+            <p class="m-0"><strong>Registration:</strong> ${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Specifications</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Capacity:</strong> ${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</p>
+            <p class="m-0"><strong>Fuel Type:</strong> ${vehicle.FuelType || vehicle.fuelType || 'N/A'}</p>
+            <p class="m-0"><strong>Transmission:</strong> ${vehicle.Transmission || vehicle.transmission || 'N/A'}</p>
+            <p class="m-0"><strong>Air Conditioning:</strong> ${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</p>
+          </div>
+
+          <h6 class="text-primary fw-bold mb-1">Pricing & Rating</h6>
+          <div class="bg-light p-2 rounded border mb-3">
+            <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
+            <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
+          </div>
+        </div>
+      `
+    });
+  }
+
+  showBookingStatusDetails() {
+    const rejectedCount = this.stats.rejectedBookings || 0;
+    const canceledCount = this.stats.canceledBookings || 0;
+    
+    Swal.fire({
+      title: 'Booking Status Breakdown',
+      width: '450px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#0c92f4',
+      html: `
+        <div class="text-start" style="font-family: sans-serif;">
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-size: 14px; color: #495057; font-weight: 500;">❌Rejected</span>
+              <span style="font-size: 16px; color: #212529; font-weight: 700;">${rejectedCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+              <span style="font-size: 14px; color: #495057; font-weight: 500;">🚫Canceled</span>
+              <span style="font-size: 16px; color: #212529; font-weight: 700;">${canceledCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0 0;">
+              <span style="font-size: 14px; color: #212529; font-weight: 600;">Total</span>
+              <span style="font-size: 18px; color: #212529; font-weight: 700;">${rejectedCount + canceledCount}</span>
+            </div>
+          </div>
+          <p style="font-size: 12px; color: #6c757d; margin: 0; line-height: 1.5;">
+            These bookings were either rejected by you or canceled by customers.
+          </p>
+        </div>
+      `
+    });
+  }
+
+  deleteBlockedRange(range: any) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "Do you want to delete this blocked date range?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+        this.vehicleService.deleteBlockedDateRange(vehicleId, range.id).subscribe({
+          next: () => {
+            Swal.fire('Deleted!', 'Blocked date range has been deleted.', 'success');
+            this.loadBlockedRanges(vehicleId);
+          },
+          error: (err) => {
+            console.error('Error deleting blocked range:', err);
+            Swal.fire('Error!', 'Failed to delete blocked date range', 'error');
+          }
+        });
+      }
+    });
+  }
 }

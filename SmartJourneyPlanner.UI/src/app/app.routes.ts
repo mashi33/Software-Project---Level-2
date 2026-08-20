@@ -23,6 +23,8 @@ import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
 import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
 import { VerifyEmailComponent } from './verify-email/verify-email';
+import { SettingsComponent } from './settings/settings';
+import { NotificationsComponent } from './notifications/notifications';
 import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
@@ -31,19 +33,25 @@ import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { SlideshowComponent } from './slideshow/slideshow';
+import { PrivacyPolicy } from './privacy-policy/privacy-policy';
+import { TermsOfService } from './terms-of-service/terms-of-service';
 
 export const routes: Routes = [
-  //  PUBLIC ROUTES 
+  //  PUBLIC ROUTES
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
   { path: 'verify-email', component: VerifyEmailComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'privacy-policy', component: PrivacyPolicy },
+  { path: 'terms-of-service', component: TermsOfService },
 
   //  PROTECTED ROUTES 
   //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
   { path: 'budget', component: BudgetDashboard, canActivate: [authGuard] },
   { path: 'add-expense', component: ExpenseForm, canActivate: [authGuard] },
   { path: 'memories-welcome', component: MemoriesWelcomeComponent, canActivate: [authGuard] },
@@ -76,6 +84,7 @@ export const routes: Routes = [
 
   { path: 'transport', component: TransportProvider, canActivate: [authGuard] },
   { path: 'register-vehicle', component: RegisterVehicleComponent, canActivate: [authGuard] },
+  { path: 'edit-vehicle/:id', component: RegisterVehicleComponent, canActivate: [authGuard] },
   {
     path: 'vehicle/:id',
     canActivate: [authGuard],

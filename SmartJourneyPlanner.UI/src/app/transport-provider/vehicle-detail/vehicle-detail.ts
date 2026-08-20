@@ -15,6 +15,7 @@ import { TransportVehicleService } from '../../services/transport-vehicle.servic
 import { TransportBookingService } from '../../services/transport-booking.service';
 import { Vehicle } from '../../models/transport.model';
 import { TransportCalculationService } from '../../services/transport-calculation.service';
+import { AuthService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -72,7 +73,8 @@ export class VehicleDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private transportVehicleService: TransportVehicleService,
     private transportBookingService: TransportBookingService,
-    public calcService: TransportCalculationService
+    public calcService: TransportCalculationService,
+    private authService: AuthService
   ) {
     // Set the minimum selectable date to "Today"
     const today = new Date();
@@ -84,6 +86,9 @@ export class VehicleDetailComponent implements OnInit {
 
   // Runs when the page loads: Extracts the vehicle ID from the URL and loads its data
   ngOnInit() {
+    this.customerName = this.authService.getUserName() || '';
+    this.customerEmail = this.authService.getUserEmail() || '';
+
     this.route.params.subscribe(params => {
       const id = params['id'];
       if (id) {
@@ -360,9 +365,14 @@ export class VehicleDetailComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         // Build the final booking object to be saved in the database
+        const currentUserId = this.authService.getUserId();
+        if (!currentUserId) {
+          Swal.fire('Error', 'You must be logged in to make a booking.', 'error');
+          return;
+        }
         const newBooking: any = {
           vehicleId: this.vehicle?.id,
-          userId: 'u1', 
+          userId: currentUserId,
           providerId: this.vehicle?.providerId,
           startDate: this.startDate, endDate: this.endDate,
           nights: this.bookingNights, days: this.bookingDays,

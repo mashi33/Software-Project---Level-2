@@ -12,6 +12,7 @@ export class SignalrService {
   public voteUpdated = new Subject<any>();
   public discussionDeleted = new Subject<string>();
   public newDiscussion = new Subject<any>();
+  public notificationReceived = new Subject<any>();
 
   constructor() {
     this.startConnection();
@@ -22,6 +23,16 @@ export class SignalrService {
       .withUrl('http://localhost:5233/chatHub') 
       .withAutomaticReconnect()
       .build();
+
+    // Re-join user group automatically on reconnection
+    this.hubConnection.onreconnected(() => {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        this.hubConnection.invoke('JoinUserGroup', userId)
+          .then(() => console.log('[SignalR] Re-joined user group after reconnect:', userId))
+          .catch((err: any) => console.warn('[SignalR] Failed to re-join user group on reconnect:', err));
+      }
+    });
 
     this.hubConnection
       .start()
@@ -56,8 +67,60 @@ export class SignalrService {
           console.log("SignalR: New Discussion Created", data);
           this.newDiscussion.next(data);
         });
+
+        // 5. New Real-time Notification (user-targeted via Group)
+        this.hubConnection.off('ReceiveNotification');
+        this.hubConnection.on('ReceiveNotification', (data: any) => {
+          console.log("SignalR: New Notification Received", data);
+          this.notificationReceived.next(data);
+        });
+
+        // Auto-join the user group if already logged in when SignalR connects
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          this.hubConnection.invoke('JoinUserGroup', userId)
+            .then(() => console.log('[SignalR] Joined user group on connect:', userId))
+            .catch((err: any) => console.warn('[SignalR] Failed to join user group:', err));
+        }
       })
       .catch((err: any) => console.log('SignalR Connection Error: ' + err));
+  }
+
+  /**
+   * Call this after login to join the user's personal notification group.
+   * Backend uses Clients.Group(userId) to send targeted notifications.
+   */
+  async joinUserGroup(userId: string) {
+    if (!userId) return;
+    try {
+      if (this.hubConnection.state === signalR.HubConnectionState.Connected) {
+        await this.hubConnection.invoke('JoinUserGroup', userId);
+        console.log('[SignalR] Joined user group:', userId);
+      } else {
+        // Queue group join once connection is established
+        this.hubConnection.onreconnected(async () => {
+          await this.hubConnection.invoke('JoinUserGroup', userId);
+          console.log('[SignalR] Joined user group after reconnect:', userId);
+        });
+      }
+    } catch (err) {
+      console.error('[SignalR] Error joining user group:', err);
+    }
+  }
+
+  /**
+   * Call this on logout to leave the user's notification group.
+   */
+  async leaveUserGroup(userId: string) {
+    if (!userId) return;
+    try {
+      if (this.hubConnection.state === signalR.HubConnectionState.Connected) {
+        await this.hubConnection.invoke('LeaveUserGroup', userId);
+        console.log('[SignalR] Left user group:', userId);
+      }
+    } catch (err) {
+      console.error('[SignalR] Error leaving user group:', err);
+    }
   }
 
   //  Send message from frontend to hub directly
@@ -76,4 +139,4 @@ export class SignalrService {
       console.error('Error while invoking SendMessage: ', err);
     }
   }
-}
+}

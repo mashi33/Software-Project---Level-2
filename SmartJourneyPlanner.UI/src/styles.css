@@ -1,7 +1,28 @@
 /*  add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @import "../node_modules/leaflet/dist/leaflet.css";
+
+:root {
+  --brand:        #2563eb;
+  --brand-dark:   #1d4ed8;
+  --brand-soft:   #eff4ff;
+  --ink:          #0f172a;
+  --ink-soft:     #475569;
+  --muted:        #94a3b8;
+  --line:         #e2e8f0;
+  --line-soft:    #eef2f6;
+  --surface:      #ffffff;
+  --canvas:       #f4f6fb;
+  --danger:       #ef4444;
+  --danger-soft:  #fef2f2;
+  --success:      #16a34a;
+  --radius:       14px;
+  --radius-sm:    10px;
+  --shadow-sm:    0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+  --shadow-md:    0 4px 12px rgba(15,23,42,.08);
+  --shadow-lg:    0 18px 40px rgba(15,23,42,.18);
+  --font:         "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
 #map {
   width: 100%;
@@ -47,10 +68,6 @@ app-root {
   color: #666;
 }
 
-
-
-
-
 /* MAP POPUP LIKE BUTTON STYLES */
 
 .popup-like-section {
@@ -79,6 +96,7 @@ popup-like-btn {
 .like-num {
   font-weight: 700;
   margin-left: 2px;
+  color: #be123c;
 }
 
 .popup-like-btn:hover {
@@ -92,32 +110,9 @@ popup-like-btn {
   transform: scale(0.95); 
 }
 
-.custom-cluster-icon {
-  background: #2779b5;
-  color: #ffffff;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 16px;
-  border: 3px solid rgba(255, 255, 255, 0.9); 
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
-  transition: transform 0.2s ease-in-out;
-}
-
 .custom-cluster-icon:hover {
   transform: scale(1.1);
-  background: #1e6396;
-}
-
-.my-cluster-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--brand);
 }
 
 .custom-cluster-icon span {
@@ -134,77 +129,14 @@ popup-like-btn {
   box-shadow: none !important;
 }
 
-.vignette-pin-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  --border-color: var(--pin-color, #6366f1); 
-  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.vignette-image-holder {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 3px solid #ffffff; 
-  outline: 3px solid var(--border-color); 
-  overflow: hidden;
-  background: #1e293b;
-  position: relative;
-  z-index: 3;
-  
-  /* 3D Glass & Glow Shadow Effect */
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    0 0 20px var(--border-color); 
-    
-  transition: all 0.25s ease-in-out;
-}
-
-.vignette-image-holder img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.vignette-pin-tail {
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 12px solid #ffffff; 
-  margin-top: -2px; 
-  position: relative;
-  z-index: 2;
-  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.2));
-}
-
-.vignette-location-badge {
-  position: absolute;
-  left: 58px; 
-  top: 10px;
-  background: rgba(15, 23, 42, 0.85); 
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #f8fafc;
-  padding: 0.3rem 0.75rem;
-  border-radius: 8px;
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  pointer-events: none; 
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  animation: badgeSlideIn 0.3s ease-out forwards;
-}
-
 /* INTERACTION & ANIMATIONS (Hover States) */
+
+.vignette-map-pin-wrapper:hover .vignette-location-badge,
+.vignette-pin-container:hover .vignette-location-badge {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
 
 .vignette-map-pin-wrapper:hover .vignette-pin-container {
   transform: scale(1.18) translateY(-5px);
@@ -230,25 +162,268 @@ popup-like-btn {
   }
 }
 
+/* Memory map flying hearts */
+.heart-animation-container {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 10;
+}
 
-:root {
-  --brand:        #2563eb;
-  --brand-dark:   #1d4ed8;
-  --brand-soft:   #eff4ff;
-  --ink:          #0f172a;
-  --ink-soft:     #475569;
-  --muted:        #94a3b8;
-  --line:         #e2e8f0;
-  --line-soft:    #eef2f6;
-  --surface:      #ffffff;
-  --canvas:       #f4f6fb;
-  --danger:       #ef4444;
-  --danger-soft:  #fef2f2;
-  --success:      #16a34a;
-  --radius:       14px;
-  --radius-sm:    10px;
-  --shadow-sm:    0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
-  --shadow-md:    0 4px 12px rgba(15,23,42,.08);
-  --shadow-lg:    0 18px 40px rgba(15,23,42,.18);
-  --font:         "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+.floating-heart {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  fill: #ef4444;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: floatHeart calc(var(--total-pins, 1) * 10s) infinite linear;
+}
+
+/* Define positions, delays & unique movement paths */
+.floating-heart:nth-child(1) {
+  left: 4px;
+  animation-delay: calc(var(--pin-delay, 0s) + 0s);
+  --tx-mid: -10px; --tx-end: -15px;
+  --rot-start: -12deg; --rot-mid: 4deg; --rot-end: -10deg;
+  --scale-mid: 1.05;
+}
+
+.floating-heart:nth-child(2) {
+  left: 16px;
+  animation-delay: calc(var(--pin-delay, 0s) + 1.3s);
+  --tx-mid: 12px; --tx-end: 18px;
+  --rot-start: 10deg; --rot-mid: -6deg; --rot-end: 12deg;
+  --scale-mid: 1.18;
+}
+
+.floating-heart:nth-child(3) {
+  left: 8px;
+  animation-delay: calc(var(--pin-delay, 0s) + 2.6s);
+  --tx-mid: -6px; --tx-end: 8px;
+  --rot-start: -6deg; --rot-mid: 10deg; --rot-end: -8deg;
+  --scale-mid: 0.95;
+}
+
+@keyframes floatHeart {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5) rotate(var(--rot-start));
+  }
+  2% { 
+    opacity: 1; 
+  }
+  10% {
+    opacity: 0.9;
+    transform: translate(var(--tx-mid), -42px) scale(var(--scale-mid)) rotate(var(--rot-mid));
+  }
+  15%, 100% {
+    opacity: 0;
+    transform: translate(var(--tx-end), -62px) scale(0.8) rotate(var(--rot-end));
+  }
+}
+
+
+
+
+/* Leaflet Custom Map Pin & Highlighting Styles */
+
+/* Leaflet Container Wrapper Overrides */
+.vignette-pin-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.vignette-pin-wrapper.active-pin {
+  z-index: 99999 !important;
+}
+
+/* Pulsing Sonar Wave Effect (Active Marker) */
+.pin-pulse-wave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin-top: -50px;
+  margin-left: -50px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.45) 0%, rgba(225, 29, 72, 0.15) 70%, rgba(255, 255, 255, 0) 100%);
+  border: 2px solid rgba(139, 92, 246, 0.7);
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.8);
+  pointer-events: none;
+  animation: pulseExpand 2.2s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+  z-index: 1;
+}
+
+.pin-pulse-wave.delay {
+  animation-delay: 0.85s;
+}
+
+@keyframes pulseExpand {
+  0% {
+    transform: scale(0.25);
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+/* Pin Main Container & Transition Rules */
+.vignette-pin-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  z-index: 2;
+  --border-color: var(--pin-color, #6366f1); 
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+}
+
+.vignette-pin-container:hover {
+  transform: scale(1.1) translateY(-4px);
+}
+
+.vignette-pin-container.active {
+  transform: scale(1.28) translateY(-8px);
+}
+
+/* Thumbnail Image Holder (Regular & Active) */
+.vignette-image-holder {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+   outline: 3px solid var(--border-color); 
+  overflow: hidden;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  background-color: #2a0f10;
+  position: relative;
+  z-index: 3;
+  transition: all 0.3s ease;
+}
+
+.vignette-image-holder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vignette-image-holder.active-border {
+  width: 64px;
+  height: 64px;
+  border: 3.5px solid #ffffff;
+  outline: 3px solid var(--pin-color, #8b5cf6);
+  outline-offset: 2.5px;
+  box-shadow: 0 0 20px var(--pin-color, #8b5cf6), 0 10px 25px rgba(0, 0, 0, 0.55);
+  animation: ringRotatePulse 3s infinite linear;
+}
+
+@keyframes ringRotatePulse {
+  0% {
+    box-shadow: 0 0 15px var(--pin-color, #8b5cf6), 0 8px 20px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 28px var(--pin-color, #8b5cf6), 0 12px 28px rgba(0, 0, 0, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 15px var(--pin-color, #8b5cf6), 0 8px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Pin Tail & Location Badge */
+.vignette-pin-tail {
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid var(--pin-color, #8b5cf6);
+  margin-top: -1px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.vignette-location-badge {
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(6px);
+  color: #f8fafc;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  bottom: 100%;     
+  letter-spacing: 0.3px;      
+  pointer-events: none;            
+  left: 50% !important;        
+  transform: translate(-50%, 6px); 
+  margin-bottom: 8px;
+  border-radius: 8px;
+  margin-top: 4px;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+
+
+.vignette-pin-container:hover .vignette-location-badge,
+.vignette-pin-container.active .vignette-location-badge {
+  opacity: 1;
+  visibility: visible;
+}
+
+.vignette-pin-container.active .vignette-location-badge {
+  background: linear-gradient(135deg, var(--pin-color, #8b5cf6) 0%, #4c1d95 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px var(--pin-color, #8b5cf6);
+}
+
+/* Custom Marker Cluster Styling Override */
+.my-cluster-wrapper {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-cluster-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #5c7df6 0%, #1d3395 100%);
+  border: 2.5px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  flex-direction: column;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease-in-out;
 }

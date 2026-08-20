@@ -55,10 +55,11 @@ export interface Vehicle {
   insuranceExpiry?: string;
   revenueLicenseUrl?: string;
   revenueLicenseExpiry?: string;
+  registrationCertificateUrl?: string;
   
   isVerified: boolean; // True if admin approved the vehicle
   status: 'Approved' | 'Pending'; // Current listing status
-  
+  blockedDateRanges?: any[];
   // Extra features the vehicle has
   features: {
     wifi?: boolean;

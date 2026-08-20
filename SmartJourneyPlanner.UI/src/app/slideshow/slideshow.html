@@ -1,4 +1,4 @@
-<div #container class="trip-recap-container" [class.is-view-fullscreen]="isFullscreen">
+<div #container class="trip-recap-container" [class.is-view-fullscreen]="isFullscreen" [class.map-view-mode]="!showCloseButton">
   
   <!-- LEAFLET MAP BACKGROUND -->
 <div class="map-layer" id="leaflet-map-background" [hidden]="isFullscreen"></div>
@@ -10,18 +10,14 @@
     </button>
     
     <div class="header-title-group">
-      <h1 class="header-main-title">✨ Trip Memories Recap ✨</h1>
+      <h1 class="header-main-title"> Trip Memories Recap </h1>
       <p class="header-subtitle">Relive the best moments of our amazing journey</p>
     </div>
 
     <!-- HEADER ACTION SET -->
     <div class="header-actions">
       <button class="btn btn-action btn-album" [disabled]="isAlbumDownloading" (click)="downloadAlbumAsPhotos()">
-        <span>{{ isAlbumDownloading ? '⏳ Downloading...' : '📸 Download Photo Album' }}</span>
-      </button>
-
-      <button class="btn btn-action btn-video" [disabled]="isDownloading" (click)="downloadCurrentVideo()">
-        <span>{{ isDownloading ? '⏳ Compiling...' : '📥 Save Video Recap' }}</span>
+        <span>{{ isAlbumDownloading ? '⏳ Downloading...' : 'Download Photo Album' }}</span>
       </button>
 
       <button class="btn btn-action btn-fullscreen" (click)="toggleFullscreen()">
@@ -50,8 +46,8 @@
       <div class="stat-item" *ngIf="tripDurationDays > 0">
         <div class="stat-icon calendar-blue">📅</div>
         <div class="stat-details">
-          <div class="stat-value">{{ tripDurationDays }} Days</div>
-          <div class="stat-label">Duration</div>
+          <div class="stat-value">{{ tripDurationDays || 0 }} Days</div>
+          <div class="stat-label">Travel Days</div>
         </div>
       </div>
 
@@ -73,13 +69,6 @@
         </div>
       </div>
 
-      <div class="stat-item">
-        <div class="stat-icon map-green">📍</div>
-        <div class="stat-details">
-          <div class="stat-value">{{ filteredMemories.length * 15 }} km</div>
-          <div class="stat-label">Traveled</div>
-        </div>
-      </div>
     </section>
 
     <!-- MIDDLE WORKSPACE -->
@@ -105,18 +94,18 @@
           
           <div class="screen-text-overlay">
             <h2 class="memory-title">
-              {{ filteredMemories[activeIndex].title }} <span class="decor-emoji">🌋</span>
+              {{ filteredMemories[activeIndex].title }} 
             </h2>
-            <p class="memory-quote">
-              “{{ filteredMemories[activeIndex].description || 'An unforgettable moment along our track!' }}”
+            <p class="memory-quote" *ngIf="filteredMemories[activeIndex].description">
+              "{{ filteredMemories[activeIndex].description }}"
             </p>
             
             <div class="meta-footer-row">
               <span class="meta-timestamp">
                 📅 {{ (filteredMemories[activeIndex].startDate || filteredMemories[activeIndex].createdAt) | date:'mediumDate' }}
               </span>
-              <span class="meta-creator">
-                👤 {{ filteredMemories[activeIndex].fullName || 'Traveller' }}
+              <span class="badge-visibility" [class.visibility-public]="filteredMemories[activeIndex].visibility === 'public'" [class.visibility-trip-members]="filteredMemories[activeIndex].visibility === 'tripMembers'" [class.visibility-private]="filteredMemories[activeIndex].visibility === 'private' || !filteredMemories[activeIndex].visibility">
+                {{ filteredMemories[activeIndex].visibility === 'public' ? 'Public' : filteredMemories[activeIndex].visibility === 'tripMembers' ? 'Only for trip members' : 'Private' }}
               </span>
               <span class="badge-creator">
                 by {{ filteredMemories[activeIndex].fullName?.split(' ')[0] || 'Member' }}
@@ -184,13 +173,10 @@
             </div>
             <div class="member-info">
               <span class="member-name">{{ member.name }}</span>
-              <span
-            class="member-status-tag"
-            [class.admin]="member.role === 'Organizer'">
-
-            {{ member.role }}
-
-        </span>
+              <span class="member-status-tag" 
+              [ngClass]="{'organizer-badge': member.role === 'Organizer'}">
+        {{ member.role }}
+      </span>
             </div>
             <span
         class="status-indicator-dot"

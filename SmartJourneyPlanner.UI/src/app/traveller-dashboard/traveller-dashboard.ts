@@ -47,8 +47,13 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
   searchQuery = '';
   weather: any = null;
   daysLeft = 0;
+
+  // Alert notifications variables
+  customerAlerts: any[] = [];
+  showAlerts = false;
   
   private countdownInterval: any;
+  private alertsInterval: any;
 
   constructor(
     private router: Router,
@@ -70,7 +75,12 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     this.showOngoingList = true;
     this.loadDashboardData();
-    this.loadMemoriesCount();
+
+    // Load booking/vehicle restriction alerts and poll every 30 seconds
+    this.loadCustomerAlerts();
+    this.alertsInterval = setInterval(() => {
+      this.loadCustomerAlerts();
+    }, 30000);
 
     this.countdownInterval = setInterval(() => {
       if (this.nextTrip) {
@@ -82,6 +92,162 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
+    }
+    if (this.alertsInterval) {
+      clearInterval(this.alertsInterval);
+    }
+  }
+
+  // --- CUSTOMER ALERT SYSTEM FOR VEHICLE REJECTIONS / SERVICE PERIODS ---
+
+  loadCustomerAlerts() {
+    if (!this.userId) return;
+    
+    // Try to load customer alerts from backend API
+    this.dashboardService.getCustomerAlerts(this.userId).subscribe({
+      next: (alerts) => {
+        this.customerAlerts = alerts || [];
+        
+        // Merge with any local storage fallback alerts
+        const localAlerts = this.getLocalAlerts();
+        this.customerAlerts = [...this.customerAlerts, ...localAlerts];
+        
+        // Filter out already dismissed alerts
+        this.customerAlerts = this.customerAlerts.filter(a => !a.dismissed);
+        this.showAlerts = this.customerAlerts.length > 0;
+        
+        if (this.customerAlerts.length > 0) {
+          this.showBookingAlertPopup();
+        }
+      },
+      error: (err) => {
+        console.error('Error loading customer alerts from API, fallback to localStorage:', err);
+        const localAlerts = this.getLocalAlerts();
+        this.customerAlerts = localAlerts.filter(a => !a.dismissed);
+        this.showAlerts = this.customerAlerts.length > 0;
+        
+        if (this.customerAlerts.length > 0) {
+          this.showBookingAlertPopup();
+        }
+      }
+    });
+  }
+
+  getLocalAlerts(): any[] {
+    try {
+      const alertsKey = `customer_alerts_${this.userId}`;
+      return JSON.parse(localStorage.getItem(alertsKey) || '[]');
+    } catch (err) {
+      console.error('Error reading local alerts:', err);
+      return [];
+    }
+  }
+
+  showBookingAlertPopup() {
+    const latestAlert = this.customerAlerts[0];
+    const bookingId = latestAlert.bookingId || latestAlert.bookingId;
+
+    Swal.fire({
+      title: '🚨 Vehicle Service / Booking Notice',
+      width: '580px',
+      padding: '2em',
+      html: `
+        <div style="font-family: inherit; text-align: left; color: #1e293b;">
+          <div style="background: #fef2f2; border-left: 5px solid #ef4444; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+            <strong style="color: #b91c1c; font-size: 15px; display: block; margin-bottom: 4px;">Attention Required</strong>
+            <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">
+              ${latestAlert.message || 'The vehicle you booked is currently in a service period or has been restricted. Please try another vehicle.'}
+            </p>
+          </div>
+          <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 13px; color: #64748b;">
+            <div><strong>Vehicle:</strong> ${latestAlert.vehicleInfo || latestAlert.vehicleName || 'Selected Transport'}</div>
+            <div style="margin-top: 4px;"><strong>Recommendation:</strong> Please navigate to your bookings and select an alternative vehicle.</div>
+          </div>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Find New Vehicle',
+      confirmButtonColor: '#ef4444',
+      showCancelButton: true,
+      cancelButtonText: 'Dismiss',
+      cancelButtonColor: '#64748b'
+    }).then((result) => {
+      // Cancel the booking regardless of which button was clicked
+      if (bookingId) {
+        this.dashboardService.cancelBooking(bookingId).subscribe({
+          next: () => {
+            console.log('Booking cancelled successfully:', bookingId);
+            // Show cancellation confirmation
+            Swal.fire({
+              title: '✅ Booking Cancelled',
+              text: 'Your booking has been automatically cancelled due to the vehicle being in service period.',
+              icon: 'success',
+              confirmButtonColor: '#10b981',
+              confirmButtonText: 'OK'
+            }).then(() => {
+              if (result.isConfirmed) {
+                this.router.navigate(['/transport']);
+              }
+            });
+          },
+          error: (err) => {
+            console.error('Failed to cancel booking:', err);
+            Swal.fire({
+              title: 'Error',
+              text: 'Failed to cancel booking. Please contact support.',
+              icon: 'error',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        });
+      } else {
+        // No booking ID, just dismiss the alert
+        this.dismissAlert(latestAlert._id || latestAlert.id);
+        if (result.isConfirmed) {
+          this.router.navigate(['/transport']);
+        }
+      }
+
+      // Dismiss the alert
+      this.dismissAlert(latestAlert._id || latestAlert.id);
+    });
+  }
+
+  dismissAlert(alertId: string) {
+    if (!alertId) return;
+
+    if (alertId.startsWith('local_')) {
+      this.dismissLocalAlert(alertId);
+    } else {
+      this.dashboardService.dismissAlert(alertId).subscribe({
+        next: () => {
+          this.customerAlerts = this.customerAlerts.filter(a => (a._id || a.id) !== alertId);
+          this.showAlerts = this.customerAlerts.length > 0;
+        },
+        error: (err) => {
+          console.error('Error dismissing alert via API:', err);
+          this.dismissLocalAlert(alertId);
+        }
+      });
+    }
+  }
+
+  dismissLocalAlert(alertId: string) {
+    try {
+      const alertsKey = `customer_alerts_${this.userId}`;
+      const alerts = JSON.parse(localStorage.getItem(alertsKey) || '[]');
+      const updatedAlerts = alerts.map((a: any) => {
+        if ((a._id || a.id) === alertId) {
+          return { ...a, dismissed: true };
+        }
+        return a;
+      });
+      localStorage.setItem(alertsKey, JSON.stringify(updatedAlerts));
+      
+      this.customerAlerts = this.customerAlerts.filter(a => (a._id || a.id) !== alertId);
+      this.showAlerts = this.customerAlerts.length > 0;
+    } catch (err) {
+      console.error('Error dismissing local alert:', err);
     }
   }
 
@@ -103,6 +269,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
           
           this.setNextTrip(this.upcomingTrips);
+          this.loadMemoriesCount();
         },
         error: () => {
           Swal.fire({
@@ -144,21 +311,24 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.visibleOngoingTrips = this.ongoingTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
+    const matchesQuery = (trip: any) =>
+    trip.tripName?.toLowerCase().includes(query) ||
+    trip.destination?.toLowerCase().includes(query) ||
+    trip.role?.toLowerCase().includes(query) ||          // member role
+    trip.memberRole?.toLowerCase().includes(query);     // alternative property name (if used)
 
-    this.visibleUpcomingTrips = this.upcomingTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
+  this.visibleOngoingTrips = this.ongoingTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
 
-    this.visibleCompletedTrips = this.completedTrips.filter(trip =>
-      trip.tripName?.toLowerCase().includes(query) ||
-      trip.destination?.toLowerCase().includes(query)
-    ).slice(0, 2);
-  }
+  this.visibleUpcomingTrips = this.upcomingTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
+
+  this.visibleCompletedTrips = this.completedTrips
+    .filter(matchesQuery)
+    .slice(0, 2);
+}
 
   showTripsPopup(type: 'ongoing' | 'upcoming' | 'completed'): void {
     let title = '';
@@ -293,6 +463,23 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     this.calculateCountdown(this.nextTrip.startDate);
 
+    let startDateStr = this.nextTrip.startDate.split('T')[0];
+    
+    const today = new Date();
+    const maxForecastDate = new Date();
+    maxForecastDate.setDate(today.getDate() + 14); // 14 date limit
+
+    const targetTripDate = new Date(startDateStr);
+
+    // set last year weather if date is after more than 14 days
+    if (targetTripDate > maxForecastDate) {
+      const lastYear = targetTripDate.getFullYear() - 1;
+      const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetTripDate.getDate()).padStart(2, '0');
+      startDateStr = `${lastYear}-${month}-${day}`;
+      
+    }
+
     this.weatherService
       .getCoordinates(this.nextTrip.destination)
       .subscribe({
@@ -300,8 +487,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           if (!res || !res.length) return;
           const lat = res[0].lat;
           const lon = res[0].lon;
-          const date = this.nextTrip.startDate.split('T')[0];
-          this.loadWeather(lat, lon, date);
+          this.loadWeather(lat, lon, startDateStr);
         },
         error: () => {
           Swal.fire({
@@ -328,8 +514,9 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
         next: (weather: any) => {
           this.weather = weather;
         },
-        error: () => {
-          Swal.fire({
+        error: (err) => {
+        console.error('Weather API Error Details:', err); 
+        Swal.fire({
             icon: 'error',
             title: 'Weather Error',
             text: 'Failed to load weather information.',

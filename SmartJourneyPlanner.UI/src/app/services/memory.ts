@@ -31,6 +31,16 @@ export class MemoryService {
     );
   }
 
+  getTripMemories(tripId: string, userId?: string): Observable<TripMemory[]> {
+    let url = `${this.apiUrl}/trip/${tripId}`;
+    if (userId) {
+      url += `?userId=${userId}`;
+    }
+    return this.http.get<TripMemory[]>(url).pipe(
+      timeout(this.requestTimeout)
+    );
+  }
+
   getAccessibleTrips(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/trips`);
   }

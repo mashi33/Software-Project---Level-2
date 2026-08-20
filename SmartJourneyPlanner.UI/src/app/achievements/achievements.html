@@ -1,36 +1,4 @@
 <div class="achievements-layout">
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <i class="bi bi-airplane-fill"></i>
-      <span>Smart Journey Planner</span>
-    </div>
-    <nav>
-      <ul>
-        <li><a routerLink="/traveller-dashboard"><i class="bi bi-grid"></i> Dashboard</a></li>
-        <li><a routerLink="/createTrip"><i class="bi bi-suitcase"></i> Trips</a></li>
-        <li><a routerLink="/explore"><i class="bi bi-map"></i> Map Explorer</a></li>
-        <li><a routerLink="/memories"><i class="bi bi-camera"></i> Memories</a></li>
-        <li><a routerLink="/timeline"><i class="bi bi-calendar3"></i> Timeline</a></li>
-        <li><a routerLink="/budget"><i class="bi bi-wallet2"></i> Expenses</a></li>
-        <li><a routerLink="/groupChat"><i class="bi bi-chat-dots"></i> Group Chat</a></li>
-        <li><a routerLink="/achievements" class="active"><i class="bi bi-trophy"></i> Achievements</a></li>
-        <li><a routerLink="/profile"><i class="bi bi-person"></i> Profile</a></li>
-      </ul>
-    </nav>
-
-    <div class="sidebar-user" *ngIf="summary">
-      <img [src]="profilePic" alt="Profile" class="user-avatar" />
-      <div>
-        <strong>{{ userName }}</strong>
-        <span class="user-rank">Explorer</span>
-        <div class="level-bar">
-          <div class="level-fill" [style.width.%]="levelProgressPercent"></div>
-        </div>
-        <small>Level {{ summary.level }} · {{ summary.totalXp }} XP</small>
-      </div>
-    </div>
-  </aside>
-
   <main class="main-content">
     <div *ngIf="loading" class="loading-state">
       <div class="spinner-border text-primary"></div>
@@ -41,18 +9,28 @@
       <header class="page-header">
         <div>
           <h1>Achievements</h1>
-          <p class="subtitle">Track your journey. Unlock achievements. Become a legend! ✨</p>
+          <p class="subtitle">Track your journey. Unlock achievements. Become a legend! </p>
         </div>
         <div class="header-stats">
+          <div class="stat-pill level-pill">
+            <img [src]="profilePic" alt="Profile" class="user-avatar" />
+            <div class="level-block">
+              <small>{{ userName }}</small>
+              <strong>Level {{ summary.level }}</strong>
+              <div class="level-bar">
+                <div class="level-fill" [style.width.%]="levelProgressPercent"></div>
+              </div>
+            </div>
+          </div>
           <div class="stat-pill xp-pill">
-            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-lightning-charge-fill"></i>
             <div>
               <small>Total XP</small>
               <strong>{{ summary.totalXp | number }} XP</strong>
             </div>
           </div>
           <div class="stat-pill badge-pill">
-            <i class="bi bi-bullseye"></i>
+            <i class="bi bi-patch-check-fill"></i>
             <div>
               <small>Badges Unlocked</small>
               <strong>{{ summary.unlockedCount }} / {{ summary.totalBadges }}</strong>
@@ -62,27 +40,35 @@
       </header>
 
       <div class="tab-bar">
-        <button [class.active]="activeTab === 'my'" (click)="setTab('my')">My Badges</button>
-        <button [class.active]="activeTab === 'all'" (click)="setTab('all')">All Badges</button>
+        <button [class.active]="activeTab === 'my'" (click)="setTab('my')">
+          <i class="bi bi-award-fill"></i> My Badges
+        </button>
+        <button [class.active]="activeTab === 'all'" (click)="setTab('all')">
+          <i class="bi bi-grid-3x3-gap-fill"></i> All Badges
+        </button>
       </div>
 
       <div class="badges-grid" *ngIf="displayedBadges.length; else emptyState">
-        <div *ngFor="let badge of displayedBadges"
-             class="badge-card"
-             [class.unlocked]="badge.isUnlocked"
-             [class.locked]="!badge.isUnlocked">
+        <div *ngFor="let badge of displayedBadges" class="badge-card" [class.unlocked]="badge.isUnlocked"
+          [class.locked]="!badge.isUnlocked">
           <span class="rank-label" [ngClass]="getRankClass(badge.rank)">{{ badge.rank }}</span>
           <div class="badge-icon-wrap" [ngClass]="getRankClass(badge.rank)">
-            <span class="badge-emoji">{{ badge.icon }}</span>
+
+            <img
+              *ngIf="badge.id === 'island-conqueror' || badge.id === 'voyage-master' || badge.id === 'first-step' || badge.id === 'budget-visionary' || badge.id === 'squad-leader' || badge.id === 'eco-traveler'"
+              [src]="getBadgeIcon(badge)" alt="Badge Icon"
+              style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+
+            <i *ngIf="badge.id !== 'island-conqueror' && badge.id !== 'voyage-master' && badge.id !== 'first-step' && badge.id !== 'budget-visionary' && badge.id !== 'squad-leader' && badge.id !== 'eco-traveler'"
+              class="bi" [ngClass]="getBadgeIcon(badge)"></i>
           </div>
           <h3>{{ badge.name }}</h3>
-          <span class="badge-category">{{ badge.category }}</span>
+
           <p class="badge-desc">{{ badge.description }}</p>
 
           <div class="badge-progress" *ngIf="!badge.isUnlocked">
             <div class="progress-bar-mini">
-              <div class="progress-fill"
-                   [style.width.%]="(badge.currentProgress / badge.targetProgress) * 100">
+              <div class="progress-fill" [style.width.%]="(badge.currentProgress / badge.targetProgress) * 100">
               </div>
             </div>
             <small>{{ badge.currentProgress }} / {{ badge.targetProgress }}</small>
@@ -90,19 +76,19 @@
 
           <div class="badge-footer">
             <span class="unlock-status" *ngIf="badge.isUnlocked">
-              <i class="bi bi-check-circle-fill"></i> Unlocked
+              <i class="bi bi-patch-check-fill"></i> Unlocked
             </span>
             <span class="lock-status" *ngIf="!badge.isUnlocked">
               <i class="bi bi-lock-fill"></i> Locked
             </span>
-            <span class="xp-reward">+{{ badge.xpReward }} XP</span>
+            <span class="xp-reward"><i class="bi bi-lightning-charge-fill"></i> +{{ badge.xpReward }} XP</span>
           </div>
         </div>
       </div>
 
       <ng-template #emptyState>
         <div class="empty-badges">
-          <i class="bi bi-trophy"></i>
+          <i class="bi bi-trophy-fill"></i>
           <h3>No badges unlocked yet</h3>
           <p>Create trips, invite friends, and explore Sri Lanka to earn your first badge!</p>
           <a routerLink="/createTrip" class="btn-create-trip">Create a Trip</a>
@@ -111,7 +97,7 @@
 
       <section class="progress-section">
         <div class="progress-header">
-          <h4><i class="bi bi-bar-chart-fill"></i> Your Progress</h4>
+          <h4><i class="bi bi-graph-up-arrow"></i> Your Progress</h4>
           <p>Keep exploring to unlock more legendary badges!</p>
         </div>
         <div class="progress-bar-large">

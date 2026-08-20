@@ -5,7 +5,10 @@ import { RouterLink } from '@angular/router';
 import { VehicleType, Vehicle, VehicleClass } from '../../models/transport.model';
 import { TransportCalculationService } from '../../services/transport-calculation.service';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { TransportBookingService } from '../../services/transport-booking.service';
+import { AuthService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
+
 
 interface CalendarDay {
   date: Date;
@@ -118,7 +121,9 @@ export class UserSearch implements OnInit {
 
   constructor(
     public calcService: TransportCalculationService,
-    private transportVehicleService: TransportVehicleService
+    private transportVehicleService: TransportVehicleService,
+    private transportBookingService: TransportBookingService,
+    private authService: AuthService
   ) {
     // Initialize languages as unchecked
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
@@ -276,9 +281,20 @@ export class UserSearch implements OnInit {
         
         while (current <= end) {
           const dateStr = current.toISOString().split('T')[0];
-          if (v.bookedDates.includes(dateStr)) {
+          // Check bookedDates
+          if (v.bookedDates && v.bookedDates.includes(dateStr)) {
             dateConflict = true;
             break;
+          }
+          // Check blockedDateRanges
+          if (v.blockedDateRanges && v.blockedDateRanges.length > 0) {
+            for (const range of v.blockedDateRanges) {
+              if (dateStr >= range.startDate && dateStr <= range.endDate) {
+                dateConflict = true;
+                break;
+              }
+            }
+            if (dateConflict) break;
           }
           current.setDate(current.getDate() + 1);
         }
@@ -554,8 +570,39 @@ export class UserSearch implements OnInit {
       confirmButtonColor: '#0c92f4'
     }).then((result) => {
       if (result.isConfirmed) {
-        // In a real app, this would call the booking API
-        Swal.fire('Request Sent!', 'The provider will review your request.', 'success');
+        // 1. Gamini ගේ සැබෑ log වී සිටින ID එක ලබා ගැනීම
+        const currentUserId = this.authService.getUserId() || localStorage.getItem('userId') || '';
+
+        if (!currentUserId) {
+          Swal.fire('Error', 'User session not found. Please log in again.', 'error');
+          return;
+        }
+
+        // 2. නිවැරදි User ID එක සහිත Booking payload එක සකස් කිරීම
+        const newBooking = {
+          userId: currentUserId, 
+          vehicleId: vehicle.id || '',
+          providerId: vehicle.providerId || '',
+          startDate: this.startDate,
+          endDate: this.endDate,
+          nights: this.bookingNights,
+          days: this.bookingDays,
+          totalAmount: subtotal,
+          status: 'Pending' as const, // 👈 'as const' hari 'as "Pending"' dammama error eka fix wenawa
+          vehicleName: vehicle.modelName,
+          totalPrice: subtotal,
+          createdAt: new Date().toISOString()
+        };
+
+        // 3. Backend එකට Booking එක යැවීම සඳහා Booking Service එක Call කිරීම
+        this.transportBookingService.createBooking(newBooking).subscribe({
+          next: () => {
+            Swal.fire('Request Sent!', 'The provider will review your request.', 'success');
+          },
+          error: (err) => {
+            Swal.fire('Error', err.error?.message || 'Failed to submit booking request.', 'error');
+          }
+        });
       }
     });
   }

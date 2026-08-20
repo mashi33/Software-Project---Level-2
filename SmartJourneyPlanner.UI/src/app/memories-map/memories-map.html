@@ -36,7 +36,7 @@
             <span>Trip Details</span>
           </div>
           <label class="field-label" for="tripSelect">Trip Name</label>
-          <select id="tripSelect" class="form-input" (change)="onTripChange($event)">
+          <select id="tripSelect" class="form-input" [(ngModel)]="selectedTripId" (change)="onTripChange($event)">
             <option value="">— Select a Trip —</option>
             <option *ngFor="let trip of allTrips" [value]="trip.id">{{ trip.tripName }}</option>
           </select>
@@ -96,22 +96,55 @@
           </div>
         </section>
 
-        <!-- ORIGINAL VISIBILITY OPTION -->
-        <section class="form-section">
-          <label class="field-label">Visibility</label>
-          <div class="visibility-options">
-            <label class="visibility-radio public-option" [class.active]="visibilityStatus === 'public'">
-              <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-globe2"></i>
-              <span>Public</span>
-            </label>
-            <label class="visibility-radio private-option" [class.active]="visibilityStatus === 'private'">
-              <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
-              <i class="bi bi-lock-fill"></i>
-              <span>Private</span>
-            </label>
-          </div>
-        </section>
+        <!-- VISIBILITY OPTION -->
+        <!-- VISIBILITY OPTION -->
+<section class="form-section">
+  <label class="field-label">Visibility</label>
+  <div class="visibility-options vertical-cards">
+    
+    <!-- PRIVATE OPTION -->
+    <label class="visibility-card private-card" [class.active]="visibilityStatus === 'private'">
+      <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-lock-fill"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Private</span>
+        <span class="card-desc">Only visible to you.</span>
+      </div>
+    </label>
+
+    <!-- TRIP MEMBERS OPTION -->
+    <label class="visibility-card trip-card" [class.active]="visibilityStatus === 'tripMembers'">
+      <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Trip Members</span>
+        <span class="card-desc">Only visible to people added to this trip.</span>
+      </div>
+    </label>
+
+    <!-- PUBLIC OPTION -->
+    <label class="visibility-card public-card" [class.active]="visibilityStatus === 'public'">
+      <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
+      <div class="card-icon">
+        <i class="bi bi-globe2"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Public</span>
+        <span class="card-desc">Anyone can see this memories.</span>
+      </div>
+    </label>
+
+  </div>
+
+  <div class="visibility-message" *ngIf="visibilityStatus === 'tripMembers'">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>This memory will be visible to all members of "{{ selectedTrip?.tripName || 'this trip' }}" in the slideshow.</span>
+  </div>
+</section>
 
         <button (click)="saveMemory()" class="btn-save"
                 [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
@@ -157,7 +190,7 @@
                 <i class="bi bi-arrow-right"></i>
                 <span>{{ getNewestCreatedAt(album) | date:'mediumDate' }}</span>
               </div>
-              <div class="like-badge-sidebar" *ngIf="album.memories[0]?.isPublic">
+              <div class="like-badge-sidebar" *ngIf="album.memories[0]?.visibility === 'public'">
                 <i class="bi bi-heart-fill"></i> {{ getTotalLikes(album) }}
               </div>
             </div>
@@ -238,9 +271,10 @@
           {{ selectedAlbum?.tripName || selectedMemory?.tripName || 'Memory' }}
         </span>
         <span class="visibility-chip"
-              [class.public]="selectedMemory?.isPublic"
-              [class.private]="!selectedMemory?.isPublic">
-          {{ selectedMemory?.isPublic ? 'Public' : 'Private' }}
+              [class.public]="selectedMemory?.visibility === 'public'"
+              [class.trip-members]="selectedMemory?.visibility === 'tripMembers'"
+              [class.private]="selectedMemory?.visibility === 'private' || !selectedMemory?.visibility">
+          {{ getVisibilityLabel(selectedMemory?.visibility) }}
         </span>
       </div>
 
@@ -250,14 +284,14 @@
         <div class="meta-item" *ngIf="selectedMemory?.locationName">
           <div class="meta-icon"><i class="bi bi-geo-alt-fill"></i></div>
           <div class="meta-text">
-            <span class="meta-label">Location</span>
+            <span class="meta-label">Location : </span>
             <span class="meta-value">{{ selectedMemory?.locationName }}</span>
           </div>
         </div>
         <div class="meta-item" *ngIf="selectedMemory?.startDate || selectedMemory?.endDate">
           <div class="meta-icon"><i class="bi bi-calendar-range"></i></div>
           <div class="meta-text">
-            <span class="meta-label">Trip Timeline</span>
+            <span class="meta-label">Trip Timeline : </span>
             <span class="meta-value">
               {{ selectedMemory?.startDate | date:'mediumDate' }}
               <i class="bi bi-arrow-right-short"></i>
@@ -268,7 +302,7 @@
         <div class="meta-item" *ngIf="selectedMemory?.createdAt">
           <div class="meta-icon"><i class="bi bi-clock-history"></i></div>
           <div class="meta-text">
-            <span class="meta-label">Uploaded On</span>
+            <span class="meta-label">Uploaded On : </span>
             <span class="meta-value">{{ selectedMemory?.createdAt | date:'medium' }}</span>
           </div>
         </div>
@@ -278,27 +312,14 @@
         {{ selectedMemory?.description }}
       </p>
 
-      <!-- VISIBILITY TOGGLE IN LIGHTBOX -->
-      <div class="lightbox-visibility-section">
-        <label class="field-label">Visibility</label>
-        <div class="visibility-options lightbox-visibility">
-          <label class="visibility-checkbox">
-            <input type="checkbox"
-                   [checked]="selectedMemory?.isPublic"
-                   (change)="toggleMemoryVisibility(selectedMemory)">
-            <span>Make this memory public</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="like-badge-lightbox" *ngIf="selectedMemory?.isPublic" (click)="toggleLikedUsers()" style="cursor: pointer;">
+      <div class="like-badge-lightbox" *ngIf="selectedMemory?.visibility === 'public'" (click)="toggleLikedUsers()" style="cursor: pointer;">
         <i class="bi bi-heart-fill"></i>
         {{ selectedMemory?.likeCount || 0 }} loved this
         <i class="bi bi-chevron-down" *ngIf="!showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
         <i class="bi bi-chevron-up" *ngIf="showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
       </div>
 
-      <div class="liked-users-list" *ngIf="selectedMemory?.isPublic && selectedMemory?.likedByUsers?.length > 0 && showLikedUsers">
+      <div class="liked-users-list" *ngIf="selectedMemory?.visibility === 'public' && selectedMemory?.likedByUsers?.length > 0 && showLikedUsers">
         <span class="liked-users-label">Liked by:</span>
         <div class="liked-users-names">
           <span class="liked-user" *ngFor="let user of selectedMemory.likedByUsers">{{ user }}</span>

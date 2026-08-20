@@ -1,0 +1,120 @@
+.notifications-page-container {
+  max-width: 1100px;
+  min-height: calc(100vh - 120px);
+}
+
+.notifications-card {
+  background-color: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+}
+
+.notifications-page-header h4 {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Filter Tabs Styling */
+.filter-tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.filter-tab {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -10px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-tab:hover {
+  color: #0d47a1;
+}
+
+.filter-tab.active {
+  color: #0d47a1;
+  border-bottom-color: #0d47a1;
+}
+
+.filter-tab .badge {
+  font-size: 0.75rem;
+  padding: 0.25em 0.6em;
+  border-radius: 20px;
+}
+
+/* Notification Item Styling */
+.notification-page-item {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background-color: #ffffff;
+}
+
+.notification-page-item:hover {
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.notification-page-item.unread {
+  background-color: rgba(37, 99, 235, 0.02);
+  border-color: rgba(37, 99, 235, 0.15) !important;
+}
+
+.notification-page-icon {
+  font-size: 1.5rem;
+  color: #475569;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-page-icon .icon-blue {
+  color: #3b82f6;
+}
+
+.notification-page-icon .icon-green {
+  color: #10b981;
+}
+
+.notification-page-icon .icon-orange {
+  color: #f59e0b;
+}
+
+.notification-page-icon .icon-red {
+  color: #ef4444;
+}
+
+.notification-page-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.notification-page-time {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.unread-dot-indicator {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+}
