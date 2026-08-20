@@ -275,6 +275,7 @@ namespace SmartJourneyPlanner.Controllers
             }
 
             await _vehicleService.AddReviewAsync(id, review);
+            _cache.Remove(ApprovedVehiclesCacheKey);
             return Ok(new { message = "Review added successfully" });
         }
     }

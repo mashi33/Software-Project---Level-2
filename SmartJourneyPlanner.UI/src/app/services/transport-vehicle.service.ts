@@ -145,6 +145,17 @@ export class TransportVehicleService {
    * Submits a user's star rating and comment for a specific vehicle.
    */
   addVehicleReview(vehicleId: string, review: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${vehicleId}/reviews`, review);
+    return this.http.post<any>(`${this.apiUrl}/${vehicleId}/reviews`, review).pipe(
+      tap(() => {
+        this.vehicleCache.delete(vehicleId);
+        this.cachedVehiclesList = null;
+        try {
+          localStorage.removeItem(this.STORAGE_KEY);
+          sessionStorage.removeItem(this.STORAGE_KEY);
+        } catch {
+          // Storage safe guard
+        }
+      })
+    );
   }
 }
