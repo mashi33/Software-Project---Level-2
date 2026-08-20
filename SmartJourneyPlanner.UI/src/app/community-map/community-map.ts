@@ -9,7 +9,7 @@ import { forkJoin } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { MemoryService } from '../services/memory';
-import { TripMemory } from '../models/memory.model';
+import { TripMemory, MemoryComment } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 import gsap from 'gsap';
@@ -80,6 +80,12 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   popularEntranceComplete = false;
   sortMode: PopularSortMode = 'score';
 
+  // Comments
+  comments: MemoryComment[] = [];
+  newCommentText = '';
+  isLoadingComments = false;
+  isSubmittingComment = false;
+
   // Fixed reference time for priority score calculation.
   // Set once on page load / data refresh. Prevents score drift when sorting.
   // Score is only recalculated for a memory when its likeCount changes.
@@ -109,7 +115,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       this.applyFilters();
     });
   }
-
 
   ngAfterViewInit(): void {
     this.initMap();
@@ -154,6 +159,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       visibility: (memory['visibility'] ?? memory['Visibility'] ?? 'private') as string,
       likeCount: Number(memory['likeCount'] || memory['LikeCount'] || 0),
       likedByUsers: (memory['likedByUsers'] || memory['LikedByUsers'] || []) as string[],
+      commentCount: Number(memory['commentCount'] || memory['CommentCount'] || 0),
       tripId: (memory['tripId'] || memory['TripId']) as string | undefined,
       tripName: (memory['tripName'] || memory['TripName']) as string | undefined,
       userId: (memory['userId'] || memory['UserId'] || '') as string,
@@ -392,7 +398,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   // SweetAlert Helper
   private showSweetAlert(message: string, type: 'like' | 'unlike' | 'album_like' | 'album_unlike' = 'like') {
     const config: any = {
@@ -517,7 +522,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.activeTab = tab;
   }
 
-
   toggleSeeMore(): void {
     this.showAllAlbums = !this.showAllAlbums;
   }
@@ -567,8 +571,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
-toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
+  toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
 
@@ -645,7 +648,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     }
 
     this.refreshMapMarkers(this.filteredMemories);
-    //this.cdr.detectChanges();
   }
 
   getTotalLikes(album: CommunityAlbum): number {
@@ -668,6 +670,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     this.currentMemoryIndex = 0;
     this.selectedMemory = album.memories[0] || null;
     this.isLightboxOpen = true;
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   openLightboxForMemory(memory: TripMemory, album?: CommunityAlbum): void {
@@ -677,20 +682,27 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       this.currentMemoryIndex = album.memories.findIndex(m => m.id === memory.id);
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
-      // Map pin හෝ Popular memory එකකින් ආවොත් ඇල්බම සම්බන්ධ නොකරන්න
-    this.selectedAlbum = null;
-    this.currentMemoryIndex = 0;
+      // Map pin or Popular memory, do not connect album, just show the single memory
+      this.selectedAlbum = null;
+      this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;
     this.isLightboxOpen = true;
     this.cdr.detectChanges();
+
+    if (memory.id) {
+      this.loadComments(memory.id);
+    }
   }
 
   nextMemory(): void {
     if (!this.selectedAlbum) return;
     this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   prevMemory(): void {
@@ -699,12 +711,104 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
       this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   closeLightbox(): void {
     this.isLightboxOpen = false;
     this.selectedAlbum = null;
     this.selectedMemory = null;
+    this.comments = [];
+    this.newCommentText = '';
+  }
+
+  // COMMENTS
+
+  get isLoggedIn(): boolean {
+    return !!this.authService.getUserId();
+  }
+
+  loadComments(memoryId: string): void {
+    this.isLoadingComments = true;
+    this.comments = [];
+    this.memoryService.getComments(memoryId).subscribe({
+      next: (data) => {
+        this.comments = data;
+        this.isLoadingComments = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load comments:', err);
+        this.isLoadingComments = false;
+      }
+    });
+  }
+
+  submitComment(): void {
+    if (!this.selectedMemory?.id || !this.newCommentText.trim() || this.isSubmittingComment) return;
+
+    const currentUserId = this.authService.getUserId();
+    const currentUserName = this.authService.getUserName();
+    if (!currentUserId) return;
+
+    this.isSubmittingComment = true;
+    this.memoryService.addComment(
+      this.selectedMemory.id,
+      currentUserId,
+      currentUserName || '',
+      this.newCommentText.trim()
+    ).subscribe({
+      next: (comment) => {
+        this.comments.unshift(comment);
+        this.newCommentText = '';
+        this.isSubmittingComment = false;
+
+        // Update local commentCount
+        if (this.selectedMemory) {
+          this.selectedMemory.commentCount = (this.selectedMemory.commentCount || 0) + 1;
+        }
+        const mem = this.allMemories.find(m => m.id === this.selectedMemory?.id);
+        if (mem) {
+          mem.commentCount = (mem.commentCount || 0) + 1;
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to add comment:', err);
+        this.isSubmittingComment = false;
+      }
+    });
+  }
+
+  deleteComment(comment: MemoryComment): void {
+    if (!comment.id) return;
+    const currentUserId = this.authService.getUserId();
+    if (!currentUserId || comment.userId !== currentUserId) return;
+
+    this.memoryService.deleteComment(comment.id, currentUserId).subscribe({
+      next: () => {
+        this.comments = this.comments.filter(c => c.id !== comment.id);
+
+        if (this.selectedMemory) {
+          this.selectedMemory.commentCount = Math.max(0, (this.selectedMemory.commentCount || 0) - 1);
+        }
+        const mem = this.allMemories.find(m => m.id === this.selectedMemory?.id);
+        if (mem) {
+          mem.commentCount = Math.max(0, (mem.commentCount || 0) - 1);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to delete comment:', err)
+    });
+  }
+
+  canDeleteComment(comment: MemoryComment): boolean {
+    const currentUserId = this.authService.getUserId();
+    return !!currentUserId && comment.userId === currentUserId;
   }
 
   //  SLIDESHOW 
@@ -716,7 +820,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     album.slideshowInterval = setInterval(() => {
       album.slideIndex = (album.slideIndex + 1) % album.memories.length;
       album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
-      //this.cdr.detectChanges();
     }, 2000);
   }
 
@@ -746,7 +849,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     return dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
   }
-
 
   // MAP
 
@@ -1011,6 +1113,10 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const memoryId = (event as CustomEvent<string>).detail;
     const foundMemory = this.filteredMemories.find(m => m.id === memoryId);
     if (foundMemory) {
+      // Close popup first
+      if (this.map) {
+        this.map.closePopup();
+      }
       this.openLightboxForMemory(foundMemory);
     }
   }

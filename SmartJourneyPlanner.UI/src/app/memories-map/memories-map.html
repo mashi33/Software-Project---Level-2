@@ -97,7 +97,6 @@
         </section>
 
         <!-- VISIBILITY OPTION -->
-        <!-- VISIBILITY OPTION -->
 <section class="form-section">
   <label class="field-label">Visibility</label>
   <div class="visibility-options vertical-cards">
@@ -323,6 +322,38 @@
         <span class="liked-users-label">Liked by:</span>
         <div class="liked-users-names">
           <span class="liked-user" *ngFor="let user of selectedMemory.likedByUsers">{{ user }}</span>
+        </div>
+      </div>
+
+            <!-- COMMENTS SECTION (only for public memories) -->
+      <div class="comments-section" *ngIf="selectedMemory?.visibility === 'public'">
+        <div class="comments-header">
+          <i class="bi bi-chat-left-text-fill"></i>
+          <span>Comments ({{ selectedMemory?.commentCount || comments.length || 0 }})</span>
+        </div>
+
+        <div class="comments-list">
+          <div class="comment-loading" *ngIf="isLoadingComments">
+            <i class="bi bi-arrow-repeat spinning"></i> Loading comments...
+          </div>
+
+          <div class="empty-comments" *ngIf="!isLoadingComments && comments.length === 0">
+            <i class="bi bi-chat"></i>
+            <p>No comments yet</p>
+          </div>
+
+          <div class="comment-item" *ngFor="let comment of comments">
+            <div class="comment-avatar">
+              {{ comment.fullName?.charAt(0) || '?' }}
+            </div>
+            <div class="comment-body">
+              <div class="comment-meta">
+                <span class="comment-author">{{ comment.fullName }}</span>
+                <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
