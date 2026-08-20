@@ -8,17 +8,28 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   // Get allowed roles from route data
-  const expectedRoles = route.data['expectedRoles'] as string[];
+  const expectedRoles =
+    (route.data['expectedRoles'] as string[] || [])
+      .map(role => role.trim().toLowerCase());
 
   // Get the actual role of the logged-in user
-  const userRole = authService.getUserRole();
+  const userRole =
+    (authService.getUserRole() || '').trim().toLowerCase();
+
+  const userType =
+    (authService.getUserSystemType() || '').trim().toLowerCase();
 
   console.log('Role Guard');
   console.log('User Role:', userRole);
+  console.log('User Type:', userType);
   console.log('Expected Roles:', expectedRoles);
 
   // Allow only if user's role matches one of the expected roles
-  if (userRole && expectedRoles.includes(userRole)) {
+  const hasPermission =
+    expectedRoles.includes(userRole) ||
+    expectedRoles.includes(userType);
+
+  if (hasPermission) {
     return true;
   }
 

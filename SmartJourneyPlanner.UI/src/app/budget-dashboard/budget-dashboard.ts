@@ -9,6 +9,7 @@ import { TripService } from '../services/trip.service';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Swal from 'sweetalert2';
+import { AuthService } from '../services/auth.service';
 
 Chart.register(...registerables);
 
@@ -49,18 +50,29 @@ export class BudgetDashboard implements OnInit {
     private tripService: TripService,
     private cd: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) { }
 
   ngOnInit() {
     this.extractLoggedInUser();
+    this.userRole = (this.authService.getUserRole() || '').trim().toLowerCase();
+
+    const userType = (this.authService.getUserSystemType() || '').trim().toLowerCase();
+
+    this.isViewer =
+      this.userRole === 'viewer' ||
+      this.userRole === 'viewonly' ||
+      userType === 'viewer' ||
+      userType === 'viewonly';
+
+    console.log('User Role:', this.userRole);
+    console.log('User Type:', userType);
+    console.log('Is Viewer:', this.isViewer);
+
+    this.cd.detectChanges();
 
     this.route.queryParams.subscribe(params => {
-      if (params['role']) {
-        this.userRole = params['role'];
-        this.isViewer = this.userRole.toLowerCase() === 'viewer';
-      }
-
       if (params['tripId']) {
         this.tripId = params['tripId'];
       }
@@ -87,6 +99,7 @@ export class BudgetDashboard implements OnInit {
                 this.loadBudget();
               }
             });
+            this.cd.detectChanges();
           },
           error: (err) => console.error("Global trips failed to load", err)
         });
@@ -128,6 +141,7 @@ export class BudgetDashboard implements OnInit {
       this.tripDetails = selectedTrip;
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
       this.membersCount = (selectedTrip.members?.length || 1) + 1;
+      this.checkUserTripRole();
     }
 
     this.budgetService.getBudget(this.tripId).subscribe({
@@ -149,6 +163,30 @@ export class BudgetDashboard implements OnInit {
         this.cd.detectChanges();
       }
     });
+  }
+  private checkUserTripRole() {
+    if (!this.tripDetails || !this.currentUserEmail) return;
+
+    const creatorEmail = (this.tripDetails.createdBy || this.tripDetails.CreatedBy || '').trim().toLowerCase();
+    if (creatorEmail && creatorEmail === this.currentUserEmail.trim().toLowerCase()) {
+      this.isViewer = false;
+      return;
+    }
+
+    if (this.tripDetails.members && Array.isArray(this.tripDetails.members)) {
+      const memberRecord = this.tripDetails.members.find((m: any) => {
+        const memberEmail = (m.email || m.Email || '').trim().toLowerCase();
+        return memberEmail === this.currentUserEmail.trim().toLowerCase();
+      });
+
+      if (memberRecord) {
+        const memberRole = (memberRecord.role || memberRecord.Role || '').trim().toLowerCase();
+        this.isViewer = (memberRole === 'viewer' || memberRole === 'viewonly');
+      }
+    }
+
+    console.log('Trip-Specific Resolved Is Viewer:', this.isViewer);
+    this.cd.detectChanges();
   }
 
   private parseBudgetLimit(limitStr: string): number {
