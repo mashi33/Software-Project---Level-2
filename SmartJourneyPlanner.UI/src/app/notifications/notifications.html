@@ -44,11 +44,11 @@
               <div class="notification-page-body flex-grow-1">
                 <div class="d-flex justify-content-between align-items-start gap-2">
                   <h6 class="notification-page-title mb-1">{{ n.title }}</h6>
-                  <span class="notification-page-time text-muted small">{{ n.time }}</span>
+                  <span class="notification-page-time text-muted small">{{ n.time || getRelativeTime(n.createdAt) }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
                   <span class="unread-dot-indicator" *ngIf="!n.isRead">New Alert</span>
-                  <a style="cursor: pointer;" (click)="navigateToRoute(n.route)" class="btn btn-sm btn-link p-0 text-decoration-none text-primary font-weight-bold">{{ n.linkText }} &rarr;</a>
+                  <a style="cursor: pointer;" (click)="markAsRead(n); navigateToRoute(n.route); $event.stopPropagation()" class="btn btn-sm btn-link p-0 text-decoration-none text-primary font-weight-bold">{{ n.linkText }} &rarr;</a>
                 </div>
               </div>
             </div>

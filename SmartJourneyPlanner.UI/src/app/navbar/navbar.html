@@ -34,7 +34,6 @@
         <ng-container *ngIf="userRole === 'TransportProvider' || userRole === 'Provider'">
           <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
           <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
-          <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
           <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
         </ng-container>
 
@@ -85,8 +84,8 @@
                 </div>
                 <div class="notification-item-content">
                   <div class="notification-item-title">{{ n.title }}</div>
-                  <div class="notification-item-time">{{ n.time }}</div>
-                  <a class="notification-item-link" style="cursor: pointer;" (click)="navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
+                  <div class="notification-item-time">{{ n.time || getRelativeTime(n.createdAt) }}</div>
+                  <a class="notification-item-link" style="cursor: pointer;" (click)="markAsRead(n); navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
                 </div>
               </li>
             </ul>

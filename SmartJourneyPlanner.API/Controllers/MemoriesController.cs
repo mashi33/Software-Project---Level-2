@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.SignalR;
+using SmartJourneyPlanner.Hubs;
+using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace SmartJourneyPlanner.API.Controllers;
 
@@ -16,11 +20,25 @@ public class MemoriesController : ControllerBase
 {
     private readonly MemoryService _memoryService;
     private readonly ILogger<MemoriesController> _logger;
+    private readonly NotificationService _notificationService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IMongoCollection<BsonDocument> _tripsCollection;
 
-    public MemoriesController(MemoryService memoryService, ILogger<MemoriesController> logger)
-    {
+    public MemoriesController(
+        MemoryService memoryService, 
+        ILogger<MemoriesController> logger,
+        NotificationService notificationService,
+        IHubContext<ChatHub> hubContext,
+        IConfiguration config)
+    {   
         _memoryService = memoryService ?? throw new ArgumentNullException(nameof(memoryService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+
+        var client = new MongoClient(config.GetValue<string>("DatabaseSettings:ConnectionString"));
+        var database = client.GetDatabase(config.GetValue<string>("DatabaseSettings:DatabaseName"));
+        _tripsCollection = database.GetCollection<BsonDocument>("Trips");
     }
 
     // GET ALL PUBLIC MEMORIES
@@ -94,7 +112,46 @@ public class MemoriesController : ControllerBase
 
             await _memoryService.CreateAsync(newMemory);
 
-            return Ok(newMemory);
+            // Fetch the Trip to notify all members
+            if (!string.IsNullOrEmpty(newMemory.TripId))
+            {
+                var tripFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(newMemory.TripId));
+                var tripDoc = await _tripsCollection.Find(tripFilter).FirstOrDefaultAsync();
+                
+                if (tripDoc != null)
+                {
+                    var trip = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Trip>(tripDoc);
+                    var targetUsers = new HashSet<string>();
+
+                    if (!string.IsNullOrEmpty(trip.CreatedBy)) targetUsers.Add(trip.CreatedBy);
+                    if (!string.IsNullOrEmpty(trip.CreatorEmail)) targetUsers.Add(trip.CreatorEmail);
+                    if (trip.Members != null)
+                    {
+                        foreach (var member in trip.Members)
+                        {
+                            if (!string.IsNullOrEmpty(member.Email)) targetUsers.Add(member.Email);
+                        }
+                    }
+
+                    foreach (var userIdentifier in targetUsers)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = userIdentifier,
+                            Icon = "bi-image",
+                            IconColorClass = "icon-green",
+                            Title = $"New memory uploaded to trip '{trip.TripName}' by {newMemory.FullName}",
+                            IsRead = false,
+                            LinkText = "View Gallery",
+                            Route = $"/trip-summary/{trip.Id}?tab=gallery"
+                        };
+                        await _notificationService.CreateNotificationAsync(notification);
+                        await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+                    }
+                }
+            }
+
+            return Ok(newMemory); 
         }
         catch (Exception ex)
         {
@@ -148,6 +205,30 @@ public class MemoriesController : ControllerBase
             _logger.LogError(ex, "Critical failure during like toggle for Memory ID: {MemoryId}", id);
             return StatusCode(500, "A database concurrency or server error occurred.");
         }
+
+        // Check if the like was ADDED (user is now in the LikedByUsers list)
+        if (updatedMemory.LikedByUsers != null && updatedMemory.LikedByUsers.Contains(request.FullName))
+        {
+            // Do not notify if the user liked their own memory
+            if (updatedMemory.UserId != request.UserId)
+            {
+                var notification = new Notification
+                {
+                    UserId = updatedMemory.UserId,
+                    Icon = "bi-heart-fill",
+                    IconColorClass = "icon-red",
+                    Title = $"{request.FullName} liked your memory at {updatedMemory.LocationName}!",
+                    IsRead = false,
+                    LinkText = "View Memory",
+                    Route = !string.IsNullOrEmpty(updatedMemory.TripId) ? $"/trip-summary/{updatedMemory.TripId}?tab=gallery" : "/social-feed"
+                };
+                
+                await _notificationService.CreateNotificationAsync(notification);
+                await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+            }
+        }
+
+        return Ok(updatedMemory); 
     }
 
     [HttpGet("user/{userId}/count")]

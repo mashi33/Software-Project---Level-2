@@ -39,20 +39,38 @@
     </div>
   </div>
 
+  <!-- Redesigned Professional Metrics Sheet -->
   <div class="bp-metrics-sheet">
-    <div class="metric-block hero-metric">
-      <div class="m-label">Total Spent</div>
-      <div class="m-value core-text">Rs. {{ budget?.totalSpent | number:'1.2-2' }}</div>
-      <div class="m-sub">{{ expenses.length }} expenses added</div>
+    <!-- Card 1: Total Spent -->
+    <div class="metric-block border-start border-primary border-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="m-label">Total Spent</div>
+          <div class="m-value core-text">Rs. {{ budget?.totalSpent | number:'1.2-2' }}</div>
+          <div class="m-sub">{{ expenses.length }} expenses added</div>
+        </div>
+        <div class="stat-icon-box bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+          <i class="bi bi-wallet2 fs-5"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="metric-block">
-      <div class="m-label">Cost Per Person</div>
-      <div class="m-value split-text">Rs. {{ costPerPerson | number:'1.2-2' }}</div>
-      <div class="m-sub">Split equally among {{ membersCount }} people</div>
+    <!-- Card 2: Cost Per Person -->
+    <div class="metric-block border-start border-info border-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="m-label">Cost Per Person</div>
+          <div class="m-value split-text">Rs. {{ costPerPerson | number:'1.2-2' }}</div>
+          <div class="m-sub">Split equally among {{ membersCount }} people</div>
+        </div>
+        <div class="stat-icon-box bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+          <i class="bi bi-people-fill fs-5"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="metric-block progress-block full-width-progress">
+    <!-- Card 3: Budget Usage -->
+    <div class="metric-block progress-block full-width-progress border-start border-warning border-4">
       <div class="progress-header-split">
         <div class="m-label">Budget Usage</div>
         <div class="m-limit-badge">Limit: Rs. {{ totalAllowedBudget | number:'1.0-0' }}</div>
@@ -74,7 +92,6 @@
   </div>
 
   <div class="bp-grid">
-    
     <div class="bp-card structure-table-card">
       <div class="bp-card-head-modern">
         <div>
@@ -178,7 +195,6 @@
     
     <div class="side-card">
       <div class="side-section-split">
-        
         <div class="split-card-deck-sidebar" *ngIf="expenses && expenses.length > 0">
           <h4 class="side-title"><i class="bi bi-people-fill"></i> Split Bill Between Members</h4>
           <div class="split-box-modern-sidebar">
@@ -216,9 +232,7 @@
             <p>Select a trip above to look at your categorical charts view.</p>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </div>
