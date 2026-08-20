@@ -14,6 +14,12 @@ public record LikeRequest(
     [property: JsonPropertyName("fullName")] string FullName
 );
 
+public record CommentRequest(
+    [property: JsonPropertyName("userId")] string UserId,
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("text")] string Text
+);
+
 [ApiController]
 [Route("api/[controller]")]
 public class MemoriesController : ControllerBase
@@ -41,7 +47,7 @@ public class MemoriesController : ControllerBase
         _tripsCollection = database.GetCollection<BsonDocument>("Trips");
     }
 
-    // GET ALL PUBLIC MEMORIES
+// GET ALL PUBLIC MEMORIES
     [HttpGet]
     public async Task<ActionResult<List<TripMemory>>> GetPublicMemories()
     {
@@ -57,7 +63,7 @@ public class MemoriesController : ControllerBase
         }
     }
 
-    // GET USER'S PRIVATE MEMORIES
+// GET USER'S PRIVATE MEMORIES
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<List<TripMemory>>> GetUserMemories(string userId)
     {
@@ -73,7 +79,7 @@ public class MemoriesController : ControllerBase
         }
     }
 
-    // GET MEMORIES FOR A TRIP (public + tripMembers only)
+// GET MEMORIES FOR A TRIP (public + tripMembers only)
     [HttpGet("trip/{tripId}")]
     public async Task<ActionResult<List<TripMemory>>> GetTripMemories(string tripId, [FromQuery] string? userId = null)
     {
@@ -89,7 +95,7 @@ public class MemoriesController : ControllerBase
         }
     }
 
-    // POST – now accepts FormData + image file → uploads to Cloudinary
+// POST – now accepts FormData + image file → uploads to Cloudinary
     [HttpPost]
     public async Task<IActionResult> Post([FromForm] TripMemory newMemory, IFormFile? image)
     {
@@ -242,6 +248,70 @@ public class MemoriesController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, $"SERVER ERROR: {ex.Message}");
+        }
+    }
+
+    // COMMENTS 
+
+    [HttpGet("{id}/comments")]
+    public async Task<ActionResult<List<MemoryComment>>> GetComments(string id)
+    {
+        try
+        {
+            var comments = await _memoryService.GetCommentsByMemoryIdAsync(id);
+            return Ok(comments);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching comments for memory {MemoryId}", id);
+            return StatusCode(500, "An internal server error occurred.");
+        }
+    }
+
+    [HttpPost("{id}/comments")]
+    public async Task<ActionResult<MemoryComment>> AddComment([FromRoute] string id, [FromBody] CommentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest("Memory ID is required.");
+
+        if (request == null || string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.FullName))
+            return BadRequest("User ID and Full Name are required.");
+
+        if (string.IsNullOrWhiteSpace(request.Text))
+            return BadRequest("Comment text is required.");
+
+        try
+        {
+            var comment = await _memoryService.AddCommentAsync(id, request.UserId, request.FullName, request.Text);
+
+            if (comment == null)
+                return NotFound("Memory not found or not public.");
+
+            return Ok(comment);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding comment to memory {MemoryId}", id);
+            return StatusCode(500, "An internal server error occurred.");
+        }
+    }
+
+    [HttpDelete("comments/{commentId}")]
+    public async Task<IActionResult> DeleteComment(string commentId, [FromQuery] string userId)
+    {
+        if (string.IsNullOrWhiteSpace(commentId) || string.IsNullOrWhiteSpace(userId))
+            return BadRequest("Comment ID and User ID are required.");
+
+        try
+        {
+            var success = await _memoryService.DeleteCommentAsync(commentId, userId);
+            if (!success) return NotFound("Comment not found or you are not the owner.");
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting comment {CommentId}", commentId);
+            return StatusCode(500, "An internal server error occurred.");
         }
     }
 }

@@ -71,6 +71,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   activeTab: 'upload' | 'albums' = 'upload';
   showLikedUsers: boolean = false;
 
+  comments: any[] = [];
+  isLoadingComments = false;
+
   constructor(
     private http: HttpClient,
     private location: Location,
@@ -189,14 +192,26 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // LIGHTBOX 
 
-  openAlbum(album: any) {
+    openAlbum(album: any) {
     this.selectedAlbum = album;
     this.currentMemoryIndex = 0;
     this.selectedMemory = album.memories[0] || null;
     this.isLightboxOpen = true;
+    this.showLikedUsers = false;
+
+    // Close the map pin popup when lightbox opens
+    if (this.map) {
+      this.map.closePopup();
+    }
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  openLightboxForMemory(memory: any, album?: any) {
+    openLightboxForMemory(memory: any, album?: any) {
     if (!memory) return;
 
     if (album) {
@@ -210,13 +225,32 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.selectedMemory = memory;
     this.isLightboxOpen = true;
+    this.showLikedUsers = false;
     this.cdr.detectChanges();
+
+    // Close the map pin popup when lightbox opens
+    if (this.map) {
+      this.map.closePopup();
+    }
+
+    if (memory.id && memory.visibility === 'public') {
+      this.loadComments(memory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  nextMemory() {
+    nextMemory() {
     if (!this.selectedAlbum) return;
     this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    this.showLikedUsers = false;
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
   prevMemory() {
@@ -225,12 +259,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
       this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    this.showLikedUsers = false;
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  closeLightbox() {
+    closeLightbox() {
     this.isLightboxOpen = false;
     this.selectedAlbum = null;
     this.selectedMemory = null;
+    this.comments = [];
+    this.showLikedUsers = false;
   }
 
   closeModal() {
@@ -1009,6 +1052,31 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+    // COMMENTS 
+
+  loadComments(memoryId: string): void {
+    this.isLoadingComments = true;
+    this.comments = [];
+
+    const token = localStorage.getItem('token');
+    const headers = token
+      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      : undefined;
+
+    this.http.get<any[]>(`${this.apiUrl}/${memoryId}/comments`, { headers }).subscribe({
+      next: (data) => {
+        this.comments = data || [];
+        this.isLoadingComments = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load comments:', err);
+        this.comments = [];
+        this.isLoadingComments = false;
+      }
+    });
+  }
+
   // EVENTS 
 
   @HostListener('window:viewBig', ['$event'])
@@ -1017,6 +1085,10 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const foundMemory = this.allMemories.find(m => m.id === memoryId);
 
     if (foundMemory) {
+      // Close popup first
+      if (this.map) {
+        this.map.closePopup();
+      }
       this.openLightboxForMemory(foundMemory);
     } else {
       this.showError('Memory not found', 'This memory could not be loaded.');
