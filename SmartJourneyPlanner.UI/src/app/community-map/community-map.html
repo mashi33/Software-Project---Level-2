@@ -146,7 +146,6 @@
         <span class="memories-count">{{ filteredMemories.length }} memories</span>
       </div>
 
-
       <div class="gallery-grid">
         <div class="empty-state" *ngIf="groupedAlbums.length === 0">
           <i class="bi bi-collection"></i>
@@ -319,8 +318,64 @@
           ({{ getTotalLikes(selectedAlbum) }})
         </button>
       </div>
+
+      <!-- COMMENTS SECTION -->
+      <div class="comments-section" *ngIf="selectedMemory">
+        <div class="comments-header">
+          <i class="bi bi-chat-left-text-fill"></i>
+          <span>Comments ({{ selectedMemory.commentCount || comments.length || 0 }})</span>
+        </div>
+
+        <div class="comment-form" *ngIf="isLoggedIn">
+          <textarea
+            [(ngModel)]="newCommentText"
+            class="comment-input"
+            rows="2"
+            placeholder="Write a comment..."
+            [disabled]="isSubmittingComment"
+            maxlength="500"></textarea>
+          <button
+            class="btn-submit-comment"
+            type="button"
+            [disabled]="!newCommentText.trim() || isSubmittingComment"
+            (click)="submitComment()">
+            <i class="bi bi-send-fill"></i>
+            {{ isSubmittingComment ? 'Posting...' : 'Post' }}
+          </button>
+        </div>
+
+        <div class="comments-list">
+          <div class="comment-loading" *ngIf="isLoadingComments">
+            <i class="bi bi-arrow-repeat spinning"></i> Loading comments...
+          </div>
+
+          <div class="empty-comments" *ngIf="!isLoadingComments && comments.length === 0">
+            <i class="bi bi-chat"></i>
+            <p>No comments yet. Be the first!</p>
+          </div>
+
+          <div class="comment-item" *ngFor="let comment of comments">
+            <div class="comment-avatar">
+              {{ comment.fullName.charAt(0) || '?' }}
+            </div>
+            <div class="comment-body">
+              <div class="comment-meta">
+                <span class="comment-author">{{ comment.fullName }}</span>
+                <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+              <button
+                *ngIf="canDeleteComment(comment)"
+                class="btn-delete-comment"
+                type="button"
+                (click)="deleteComment(comment)"
+                title="Delete comment">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
-

@@ -54,6 +54,21 @@ public async Task<IActionResult> GetStats()
             return Ok(await _dashboardService.GetAllVehicles(providerIdentifier));
         }
 
+        // Single endpoint for entire dashboard 
+        [HttpGet("full")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<IActionResult> GetFullDashboard()
+        {
+            var providerIdentifier = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                                     ?? User.FindFirst("email")?.Value
+                                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(providerIdentifier)) return Unauthorized();
+
+            return Ok(await _dashboardService.GetFullDashboard(providerIdentifier));
+        }
+
         [HttpPut("vehicles/{id}/availability")]
         public async Task<IActionResult> UpdateAvailability(string id, [FromBody] bool available)
         {
@@ -114,9 +129,17 @@ public async Task<IActionResult> GetBookings()
                 return BadRequest(new { message = "StartDate and EndDate are required." });
             }
             
-            var result = await _dashboardService.AddBlockedDateRange(id, request.StartDate, request.EndDate, request.Reason);
-            if (!result.Success) return BadRequest(new { message = result.Message });
-            return Ok(new { message = "Blocked date range added successfully" });
+            var result = await _dashboardService.AddBlockedDateRange(
+                id, request.StartDate, request.EndDate, request.Reason);
+
+           if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+                return Ok(new   
+           {
+                 message = result.Message,
+                 id = result.Id
+           });
         }
 
         // Edit blocked date range with overlap validation
