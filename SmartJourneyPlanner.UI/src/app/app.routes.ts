@@ -15,7 +15,6 @@ import { ProviderDashboardComponent } from './provider-dashboard/provider-dashbo
 import { TripCreateComponent } from './trip-create/trip-create';
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
-import { TripHistoryComponent } from './trip-history/trip-history';
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
 import { TransportProvider } from './transport-provider/transport-provider';
@@ -35,14 +34,16 @@ import { HelpComponent } from './help/help';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { SlideshowComponent } from './slideshow/slideshow';
 
+
 export const routes: Routes = [
-  //  PUBLIC ROUTES 
+  //  PUBLIC ROUTES
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: Signup },
   { path: 'verify-email', component: VerifyEmailComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+
 
   //  PROTECTED ROUTES 
   //{path: 'home',component: HomeComponent, canActivate: [authGuard]},
@@ -67,7 +68,6 @@ export const routes: Routes = [
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
   { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
-  { path: 'trip-history/:id', component: TripHistoryComponent, canActivate: [authGuard] },
 
 
   {
@@ -99,9 +99,16 @@ export const routes: Routes = [
   },
   { path: 'admin-panel', redirectTo: 'admin-dashboard', pathMatch: 'full' },
 
-  //  ROLE-BASED PROTECTED DASHBOARDS 
+  // 🛡️ ROLE-BASED PROTECTED DASHBOARDS 
   {
     path: 'provider-dashboard',
+    component: ProviderDashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { expectedRoles: ['Provider', 'TransportProvider'] }
+  },
+  // Alias route to satisfy previous and new naming conventions — transport providers may be redirected to this path
+  {
+    path: 'transport-provider-dashboard',
     component: ProviderDashboardComponent,
     canActivate: [authGuard, roleGuard],
     data: { expectedRoles: ['Provider', 'TransportProvider'] }

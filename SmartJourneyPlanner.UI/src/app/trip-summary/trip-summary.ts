@@ -29,7 +29,7 @@ export class TripSummaryComponent implements OnInit {
   savedPlacesCount = 0;
   membersCount = 0;
   tripDurationDays = 0;
-  
+
   // Holds the calculated live budget sum for the UI layout display
   liveTotalSpent: number = 0;
 
@@ -50,7 +50,7 @@ export class TripSummaryComponent implements OnInit {
     private router: Router,
     private weatherService: WeatherService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
@@ -75,9 +75,9 @@ export class TripSummaryComponent implements OnInit {
           this.budgetService.getBudget(this.tripId).subscribe({
             next: (budgetData: any) => {
               if (budgetData) {
-                this.liveTotalSpent = budgetData.totalSpent || 
-                                      budgetData.TotalSpent || 
-                                      (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
+                this.liveTotalSpent = budgetData.totalSpent ||
+                  budgetData.TotalSpent ||
+                  (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
               }
             },
             error: (err) => {
@@ -85,13 +85,22 @@ export class TripSummaryComponent implements OnInit {
               this.liveTotalSpent = 0;
             }
           });
-          
+
           this.filterSavedPlaces();
           this.loadTripWeather();
           this.loading = false;
         },
-        error: () => {
-          this.loadFromTemp();
+        error: (err: any) => {
+          // If backend explicitly forbids access for transport providers, show an error and redirect to dashboard
+          if (err && err.status === 403) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Access Denied',
+              text: 'Access Denied. Transport providers cannot view trip summaries. If you want to join this trip, please log in or register as a Traveller.'
+            }).then(() => this.router.navigate(['/transport-provider-dashboard']));
+          } else {
+            this.loadFromTemp();
+          }
           this.loading = false;
         }
       });
@@ -335,7 +344,7 @@ export class TripSummaryComponent implements OnInit {
   navigateToSlideshow() {
     const actualTripId = this.tripId; // Use the tripId from URL parameter
     const actualTripName = this.tripName;
-    
+
     if (actualTripId && actualTripName) {
       this.router.navigate(['/slideshow', actualTripName], { queryParams: { tripId: actualTripId } });
     }

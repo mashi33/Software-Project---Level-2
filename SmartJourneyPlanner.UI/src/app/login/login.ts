@@ -90,7 +90,47 @@ export class LoginComponent implements OnInit {
         }
 
         /**
-         * Display login success notification.
+         * Retrieve the logged-in user's role early to enforce provider-specific redirection.
+         */
+        const currentUserType = this.authService.getUserSystemType() || '';
+
+        // If the user is a transport provider, always send them to the transport-provider dashboard
+        const lowerType = currentUserType.toLowerCase();
+        if (lowerType === 'transportprovider' || lowerType === 'provider' || lowerType.includes('provider')) {
+          // If the user came via an invitation link, show a specific informational message before redirecting
+          if (this.invitedTripId) {
+            Swal.fire({
+              icon: 'info',
+              title: 'Welcome!',
+              text: 'Welcome! You are logged in as a Transport Provider. Trip invitation links are for Travellers. You have been redirected to your Provider Dashboard.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#00A86B',
+              allowOutsideClick: false
+            }).then(() => {
+              this.router.navigate(['/transport-provider-dashboard']);
+            });
+
+            return; // Prevent any other redirect logic (including invited trip) from running
+          }
+
+          // Default provider login flow (no invitation link)
+          Swal.fire({
+            icon: 'success',
+            title: 'Welcome Back!',
+            html: `<div style="font-size:15px;"><p>Login successful.</p><p>Redirecting to your dashboard.</p></div>`,
+            confirmButtonText: 'Continue',
+            confirmButtonColor: '#00A86B',
+            allowOutsideClick: false
+          }).then(() => {
+            // Use the transport-provider-dashboard route as requested
+            this.router.navigate(['/transport-provider-dashboard']);
+          });
+
+          return; // Prevent any other redirect logic (including invited trip) from running
+        }
+
+        /**
+         * Display login success notification for non-provider users.
          */
         Swal.fire({
           icon: 'success',
@@ -129,24 +169,9 @@ export class LoginComponent implements OnInit {
             return;
           }
 
-          /**
-           * Retrieve the logged-in user's role
-           * to determine the correct dashboard.
-           */
-          const currentUserType =
-            this.authService.getUserSystemType();
-
           // Redirect admin
           if (currentUserType === 'Admin') {
             this.router.navigate(['/admin-dashboard']);
-          }
-
-          // Redirect transport providers
-          else if (
-            currentUserType === 'TransportProvider' ||
-            currentUserType === 'Provider'
-          ) {
-            this.router.navigate(['/provider-dashboard']);
           }
 
           // Redirect travellers
