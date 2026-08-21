@@ -1,9 +1,11 @@
 <div class="main-layout">
-  <div class="header-content">
-    <h1>WELCOME</h1>
-    <p>Smart Journey Group Chat</p>
+    <div class="header-content">
+    <div class="header-row">
+      <div class="header-title-block">
+        <h1>Smart Journey Group Chat</h1>
+        <p><span class="material-icons subtitle-icon">forum</span> Your trip, your team, one decision.</p>
+      </div>
 
-    <div class="trip-selection-wrapper">
       <div class="trip-selector">
         <label for="tripSelect">Select Trip:</label>
         <select id="tripSelect" [(ngModel)]="selectedTripId" (change)="onTripChange()" class="minimal-dropdown">

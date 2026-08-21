@@ -24,6 +24,8 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   private voteSub!: Subscription;
   private deleteSub!: Subscription;
   private newDiscussionSub!: Subscription;
+  private memberLimitSub!: Subscription;
+
   private avatarColors: string[] = [
   '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
   '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
@@ -95,6 +97,7 @@ getAvatarColor(username: string): string {
     if (this.voteSub) this.voteSub.unsubscribe();
     if (this.deleteSub) this.deleteSub.unsubscribe();
     if (this.newDiscussionSub) this.newDiscussionSub.unsubscribe();
+    if (this.memberLimitSub) this.memberLimitSub.unsubscribe(); 
   }
 
   // Load trips associated with the user — filters by the logged-in user's email
@@ -220,6 +223,22 @@ getAvatarColor(username: string): string {
           this.discussions = [...this.discussions, newItem];
           this.cdr.detectChanges();
         }
+      });
+    });
+
+    // NEW — when trip members change, update memberLimit on pending discussions only.
+    // Confirmed/Rejected discussions stay untouched (their vote is already final).
+    this.memberLimitSub = this.signalrService.memberLimitChanged.subscribe((data: any) => {
+      this.zone.run(() => {
+        if (data.tripId !== this.selectedTripId) return;
+
+        this.discussions = this.discussions.map(d =>
+          (d.type === 'Trip' && !d.isConfirmed && !d.isRejected)
+            ? { ...d, memberLimit: data.newLimit }
+            : d
+        );
+
+        this.cdr.detectChanges();
       });
     });
   }
@@ -407,7 +426,7 @@ getAvatarColor(username: string): string {
         const memberCount = members.length;
 
         // memberCount = invited members, + 1 for creator (stored separately in CreatedBy)
-        const dynamicLimit = memberCount + 1;
+        const dynamicLimit = memberCount; 
 
         console.log('Calculated dynamic limit:', dynamicLimit);
 

@@ -13,6 +13,7 @@ export class SignalrService {
   public discussionDeleted = new Subject<string>();
   public newDiscussion = new Subject<any>();
   public notificationReceived = new Subject<any>();
+    public memberLimitChanged = new Subject<any>(); 
 
   constructor() {
     this.startConnection();
@@ -66,6 +67,14 @@ export class SignalrService {
         this.hubConnection.on('NewDiscussion', (data: any) => {
           console.log("SignalR: New Discussion Created", data);
           this.newDiscussion.next(data);
+        });
+
+
+        // 4.5 Member Limit Changed — fired when a trip's member list changes
+        this.hubConnection.off('MemberLimitChanged');
+        this.hubConnection.on('MemberLimitChanged', (data: any) => {
+          console.log("SignalR: Member Limit Changed", data);
+          this.memberLimitChanged.next(data);
         });
 
         // 5. New Real-time Notification (user-targeted via Group)
@@ -139,4 +148,4 @@ export class SignalrService {
       console.error('Error while invoking SendMessage: ', err);
     }
   }
-}
+}
