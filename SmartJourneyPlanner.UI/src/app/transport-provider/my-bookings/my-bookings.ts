@@ -62,7 +62,7 @@ export class MyBookings implements OnInit {
       if (!travelerId) { this.loading = false; return; }
       this.transportBookingService.getUserBookings(travelerId).subscribe({
         next: (res) => {
-          this.userBookings = res;
+          this.userBookings = this.sortUserBookings(res);
           this.enrichBookings(this.userBookings);
           this.loading = false;
           this.scrollToTargetBooking();
@@ -86,6 +86,31 @@ export class MyBookings implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Sorts traveler bookings so that active/pending/confirmed (newest first) appear at the top,
+   * while completed, cancelled, and rejected bookings appear at the bottom.
+   */
+  private sortUserBookings(bookings: Booking[]): Booking[] {
+    if (!bookings || bookings.length === 0) return [];
+    
+    const isPastOrInactive = (status: string) => 
+      status === 'Completed' || status === 'Cancelled' || status === 'Rejected';
+
+    return [...bookings].sort((a, b) => {
+      const aIsPast = isPastOrInactive(a.status);
+      const bIsPast = isPastOrInactive(b.status);
+
+      // Active / Confirmed / Pending come before Completed / Cancelled / Rejected
+      if (!aIsPast && bIsPast) return -1;
+      if (aIsPast && !bIsPast) return 1;
+
+      // Within the same group, sort newest first (by createdAt or startDate)
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (a.startDate ? new Date(a.startDate).getTime() : 0);
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (b.startDate ? new Date(b.startDate).getTime() : 0);
+      return dateB - dateA;
+    });
   }
 
   scrollToTargetBooking() {
@@ -148,6 +173,7 @@ export class MyBookings implements OnInit {
         if (!booking.id) return;
         this.transportBookingService.updateBookingStatus(booking.id, 'Cancelled').subscribe(() => {
           booking.status = 'Cancelled';
+          this.userBookings = this.sortUserBookings(this.userBookings);
           Swal.fire('Cancelled', 'Your booking has been cancelled.', 'success');
         });
       }
