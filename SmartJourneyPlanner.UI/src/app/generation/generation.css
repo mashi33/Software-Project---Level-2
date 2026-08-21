@@ -1,25 +1,32 @@
-
 .btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  margin-top: 20px;
-  padding: 12px 20px;
-  background-color: #007bff;
+  padding: 13px;
+  background: #1a56db;
   color: white;
   border: none;
-  border-radius: 5px;
-  font-weight: bold;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.2s;
+  margin-top: 12px;
 }
 
 .btn-download:hover {
-  background-color: #1557b0;
+  background: #1440a8;
 }
 
 .btn-download:disabled {
-  background-color: #6c757d;
+  background: #93a8d4;
   cursor: not-allowed;
-  opacity: 0.7;
+}
+
+.btn-icon {
+  font-size: 20px;
 }
 
 

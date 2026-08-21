@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 export class GenerationComponent implements OnInit, OnChanges {
   @Input() routeData: any;
   @Input() busData: any  = null;  // ✅ add
-  @Input() transportMode: 'private' | 'public' = 'private'; // ✅ add
+  @Input() transportMode: string = 'private'; // ✅ add
   mapBase64:    string  = '';
   isLoadingMap: boolean = false;
   today:        number  = Date.now();
@@ -23,17 +23,20 @@ export class GenerationComponent implements OnInit, OnChanges {
   constructor(private mapService: GenerationService) {}
 
   ngOnInit(): void {
-    console.log('🚀 GenerationComponent initialized, routeData:', this.routeData);
-    if (this.routeData) this.loadMapFromBackend();
+  if (this.transportMode === 'private' && this.routeData) {
+    this.loadMapFromBackend();
   }
+  // ✅ map loading is now conditional on transportMode being 'private'
+}
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('🔄 ngOnChanges triggered:', changes);
-    if (changes['routeData'] && !changes['routeData'].firstChange && this.routeData) {
-      console.log('✅ routeData changed, reloading map...');
-      this.loadMapFromBackend();
-    }
+  if (this.transportMode === 'private' &&
+      changes['routeData'] &&
+      !changes['routeData'].firstChange &&
+      this.routeData) {
+    this.loadMapFromBackend();
   }
+}
 
   loadMapFromBackend() {
     console.log('🔍 Full routeData received:', this.routeData);
@@ -103,13 +106,14 @@ export class GenerationComponent implements OnInit, OnChanges {
       return englishPart;
     }
 
-    // ✅ Fully Sinhala/Tamil — try Places API with English language
+        // ✅ Fully Sinhala/Tamil — try Places API with English language
     try {
-      const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`
-        + `?location=${spot.lat},${spot.lng}`
+      const placesUrl = `${environment.apiUrl}/map/nearby-search`
+        + `?lat=${spot.lat}`
+        + `&lng=${spot.lng}`
         + `&radius=200`
-        + `&language=en`
-        + `&key=${this.apiKey}`;
+        + `&apiKey=${this.apiKey}`
+        + `&language=en`;
 
       const placesRes  = await fetch(placesUrl);
       const placesData = await placesRes.json();
@@ -131,8 +135,9 @@ export class GenerationComponent implements OnInit, OnChanges {
       console.error('❌ Translation failed:', spot.name, err);
     }
 
-    // ✅ Last resort — return original
-    return spot.name;
+        // ✅ Last resort — translation failed, use generic English label instead of untranslated symbols
+    console.warn(`⚠️ Translation failed for "${spot.name}" — using generic label`);
+    return 'Unnamed Scenic Spot';
   }
 
   // ── TRANSLATE ALL SPOTS BEFORE BUILDING PDF ───────────────
@@ -485,27 +490,58 @@ export class GenerationComponent implements OnInit, OnChanges {
 
     let yPos = 66;
 
-    // ── DIRECT ROUTE ─────────────────────────────────────────
+        // ── DIRECT ROUTE(S) ─────────────────────────────────────
     if (!this.busData.isMultiLeg) {
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(14, yPos, pageWidth - 28, 40, 2, 2, 'F');
+      const options = this.busData.directOptions?.length
+        ? this.busData.directOptions
+        : [{ routeNo: this.busData.routeNo, from: this.busData.from, to: this.busData.to,
+             via: this.busData.via, fare: this.busData.fare }];
 
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 86, 219);
-      doc.text(`Bus Route ${this.busData.routeNo}`, 20, yPos + 10);
+      const cheapestFare = options[0]?.fare;
+      const highestFare  = options[options.length - 1]?.fare;
+      const showCheapestBadge = options.length > 1 && cheapestFare !== highestFare;  
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(50, 50, 50);
-      doc.text(`From : ${this.busData.from}`, 20, yPos + 20);
-      doc.text(`To   : ${this.busData.to}`,   20, yPos + 28);
+      options.forEach((option: any, index: number) => {
+        // Page break check
+        const cardHeight = option.via ? 48 : 40;
+        if (yPos + cardHeight > pageHeight - 60) {
+          doc.addPage();
+          yPos = 20;
+        }
 
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 86, 219);
-      doc.text(`Fare : Rs. ${this.busData.fare}`, 20, yPos + 36);
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(14, yPos, pageWidth - 28, cardHeight, 2, 2, 'F');
 
-      yPos += 50;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(26, 86, 219);
+        doc.text(`Bus ${option.routeNo}: ${option.from || ''} - ${option.to || ''}`, 20, yPos + 10);
+
+        // Cheapest badge
+        if (showCheapestBadge && option.fare === cheapestFare) {   // ✅ updated condition
+          doc.setFontSize(8);
+          doc.setTextColor(16, 122, 68);
+          doc.text('Cheapest', pageWidth - 20, yPos + 10, { align: 'right' });
+        }
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        doc.text(`From : ${this.busData.from}`, 20, yPos + 20);
+        doc.text(`To   : ${this.busData.to}`,   20, yPos + 28);
+
+        let fareY = yPos + 36;
+        if (option.via) {
+          doc.text(`Via  : ${option.via}`, 20, fareY);
+          fareY += 8;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(26, 86, 219);
+        doc.text(`Fare : Rs. ${option.fare}`, 20, fareY);
+
+        yPos += cardHeight + 6;
+      });
     }
     // ── MULTI-LEG ROUTE ──────────────────────────────────────
     else {

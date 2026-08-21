@@ -137,7 +137,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
     const cityName = this.searchControl.value?.trim();
     if (!cityName || cityName.length < 3) return;
 
-    // ✅ NEW — autocomplete ලදී select නොකළොත් block
+    // ✅ NEW — Block if the city is not selected from suggestions
     if (!this.isValidSriLankaCity) {
     Swal.fire({
 

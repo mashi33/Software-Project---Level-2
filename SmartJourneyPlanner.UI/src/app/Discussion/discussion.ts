@@ -24,6 +24,22 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   private voteSub!: Subscription;
   private deleteSub!: Subscription;
   private newDiscussionSub!: Subscription;
+  private avatarColors: string[] = [
+  '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
+  '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
+  '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
+  '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
+];
+
+getAvatarColor(username: string): string {
+  const name = (username || 'Guest').trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  const index = hash % this.avatarColors.length;
+  return this.avatarColors[index];
+}
   
   userTrips: any[] = []; 
   selectedTripId: string = '';

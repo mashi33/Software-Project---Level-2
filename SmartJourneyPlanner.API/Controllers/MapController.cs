@@ -73,6 +73,47 @@ namespace SmartJourneyPlanner.Controllers
                 return StatusCode(500, new { message = $"Internal Server Error: {ex.Message}" });
             }
         }
+
+        [HttpGet("nearby-search")]
+        public async Task<IActionResult> NearbySearch(
+            [FromQuery] double lat,
+            [FromQuery] double lng,
+            [FromQuery] int radius,
+            [FromQuery] string apiKey,
+            [FromQuery] string type = null,
+            [FromQuery] string language = "en")
+        {
+            if (lat == 0 || lng == 0 || string.IsNullOrEmpty(apiKey))
+            {
+                return BadRequest(new { message = "lat, lng, and apiKey are required." });
+            }
+
+            try
+            {
+                string url = $"https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                            $"?location={lat},{lng}" +
+                            $"&radius={radius}" +
+                            $"&language={language}" + 
+                            (!string.IsNullOrEmpty(type) ? $"&type={type}" : "") +
+                            $"&key={apiKey}";
+
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.GetAsync(url);
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Content(content, "application/json");
+                }
+
+                return StatusCode((int)response.StatusCode, new { message = "Google API Error", details = content });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Internal Server Error: {ex.Message}" });
+            }
+        }
     }
 
     // Data model for the map request

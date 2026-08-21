@@ -7,22 +7,28 @@
 }
 
 :root {
-    --glass-bg: rgba(255, 255, 255, 0.2);
-    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
     --primary-blue: #007bff;
     --agree-green: #4cd964;
     --disagree-red: #ff5a5f;
-    --text-soft-header: #e0e0e0;
 
-    /* ── NEW: glass tokens ── */
-    --glass-panel-bg:   rgba(10, 18, 40, 0.62);
-    --glass-panel-blur: blur(22px) saturate(1.5);
-    --glass-border:     rgba(255, 255, 255, 0.20);
-    --glass-border-top: rgba(255, 255, 255, 0.38);
-    --glass-border-left:rgba(255, 255, 255, 0.28);
-    --text-primary:     rgba(255, 255, 255, 0.95);
-    --text-secondary:   rgba(255, 255, 255, 0.72);
-    --text-hint:        rgba(255, 255, 255, 0.50);
+    /* ── DARK THEME (default) ── */
+    --page-bg:           #14141a;
+    --glass-panel-bg:    #1e1e28;
+    --glass-panel-blur:  none;
+    --glass-border:      rgba(255, 255, 255, 0.10);
+    --glass-border-top:  rgba(255, 255, 255, 0.10);
+    --glass-border-left: rgba(255, 255, 255, 0.10);
+    --text-primary:      rgba(255, 255, 255, 0.95);
+    --text-secondary:    rgba(255, 255, 255, 0.65);
+    --text-hint:         rgba(255, 255, 255, 0.45);
+    --input-bg:          #2a2a36;
+    --input-text:        rgba(255, 255, 255, 0.95);
+    --dropdown-bg:       #2a2a36;
+    --scrollbar-thumb:   rgba(255, 255, 255, 0.20);
+    --track-bg:          rgba(255, 255, 255, 0.12);
+    --divider-bg:        #2a2a36;
+    --header-bg:         #1e1e28;
 }
 
 .main-layout {
@@ -30,19 +36,17 @@
     display: flex;
     flex-direction: column;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.25)),
-                    url('https://i.postimg.cc/vTbRqbr1/download-(2).jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background: var(--page-bg);
     overflow: hidden;
 }
 
 .header-content {
     text-align: center;
-    color: white;
+    color: var(--text-primary);
     padding: 15px 0 10px 0;
     flex-shrink: 0;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .header-content h1 {
@@ -57,6 +61,7 @@
     opacity: 0.8;
     font-weight: 400;
     margin-top: 5px;
+    color: var(--text-secondary);
 }
 
 .split-container {
@@ -86,13 +91,15 @@
 
 .left-column::-webkit-scrollbar { width: 6px; }
 .left-column::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
 }
 
 .trip-selection-wrapper {
   display: flex;
-  justify-content: flex-start; 
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
   margin-top: 15px;
   padding-left: 10px;
 }
@@ -101,21 +108,21 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: (255, 255, 255, 0.1);
+  background: var(--glass-panel-bg);
   padding: 8px 15px;
   border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--glass-border);
 }
 
 .trip-selector label {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
 }
 
 .minimal-dropdown {
-  background: #1a1a2e;
-  color: white;
+  background: var(--dropdown-bg);
+  color: var(--text-primary);
   border: 1px solid #007bff;
   border-radius: 15px;
   padding: 5px 10px;
@@ -123,20 +130,31 @@
   cursor: pointer;
 }
 
+.suggestions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.section-icon {
+    font-size: 20px;
+    color: #4facfe;
+}
+
 /* ==========================================================================
    2. GLASS CARDS & CREATION UI
    ========================================================================== */
 .glass-card {
     background: var(--glass-panel-bg) !important;
-    backdrop-filter: var(--glass-panel-blur) !important;
-    -webkit-backdrop-filter: var(--glass-panel-blur) !important;
-    border-radius: 20px;
+    border-radius: 12px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     border: 1px solid var(--glass-border) !important;
-    border-top-color: var(--glass-border-top)!important;
-    border-left-color: var(--glass-border-left)!important;
-    box-shadow: var(--card-shadow)!important;
+    box-shadow: var(--card-shadow) !important;
 }
 
 .creation-box {
@@ -157,8 +175,8 @@
     border: none;
     border-radius: 10px;
     font-size: 15px;
-    background-color: rgba(255, 255, 255, 0.92);
-    color: #333;
+    background-color: var(--input-bg);
+    color: var(--input-text);
 }
 
 .minimal-input::placeholder { color: #888; }
@@ -166,9 +184,9 @@
 .description-area { height: 60px; resize: none; }
 
 .btn-add-option {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(128, 128, 128, 0.12);
     color: var(--text-primary);
-    border: 1px dashed rgba(255, 255, 255, 0.45);
+    border: 1px dashed var(--text-hint);
     padding: 8px 16px;
     border-radius: 10px;
     cursor: pointer;
@@ -179,7 +197,7 @@
 }
 
 .btn-add-option:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(128, 128, 128, 0.2);
 }
 
 .radio-group {
@@ -222,17 +240,47 @@
     margin-bottom: 10px;
 }
 
-.user-info,
-.user-info span,
+.user-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.user-info strong,
 .user-info i {
     color: #4facfe !important;
     font-weight: 700 !important;
     opacity: 1 !important;
 }
 
+.avatar-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+}
+
+.suggested-text {
+    color: var(--text-secondary) !important;
+    font-weight: 400 !important;
+    font-size: 14px;
+}
+
 .status-pill.confirmed {
     background: rgba(76, 217, 100, 0.25);
-    color: #7debb3;
+    color: #1f9e4c;
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 8px;
@@ -254,6 +302,10 @@
     font-weight: 400;
 }
 
+.item-description {
+    color: var(--text-secondary);
+}
+
 .vote-action-container {
     display: flex;
     gap: 12px;
@@ -273,15 +325,25 @@
 }
 
 .vote-btn.agree {
-    background: #e8fcf0;
-    color: #28a745;
-    border: 1px solid #c3f2d7;
+    background: rgba(76, 217, 100, 0.14);
+    color: #4cd964;
+    border: 1px solid rgba(76, 217, 100, 0.35);
 }
 
 .vote-btn.disagree {
-    background: #fff5f5;
-    color: #dc3545;
-    border: 1px solid #ffdada;
+    background: rgba(255, 90, 95, 0.14);
+    color: #ff5a5f;
+    border: 1px solid rgba(255, 90, 95, 0.35);
+}
+
+.vote-btn {
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.vote-btn .btn-label {
+    font-size: 15px;
+    font-weight: 700;
 }
 
 .vote-count-label {
@@ -305,7 +367,7 @@
     overflow: hidden;
     width: 100%;
     margin: 10px 0;
-    background: rgba(255,255,255,0.12);
+    background: var(--track-bg);
 }
 
 .fill {
@@ -338,7 +400,7 @@
 .poll-progress-track {
     width: 100%;
     height: 10px;
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--track-bg);
     border-radius: 100px;
     overflow: hidden;
     position: relative;
@@ -362,7 +424,7 @@
     font-size: 10px;
     color: var(--text-secondary);
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid var(--glass-border);
 }
 
 .footer-left, .footer-right { flex: 1; }
@@ -432,14 +494,14 @@
 }
 
 .poll-bar-wrapper:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(128, 128, 128, 0.06);
     border-radius: 12px;
 }
 
 .vote-indicator {
     width: 14px;
     height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.45);
+    border: 2px solid var(--text-hint);
     border-radius: 50%;
     display: inline-block;
     transition: all 0.3s ease;
@@ -471,7 +533,7 @@
    ========================================================================== */
 .status-pill.rejected {
     background: rgba(255, 90, 95, 0.25);
-    color: #ff8a8e;
+    color: #e0454b;
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 8px;

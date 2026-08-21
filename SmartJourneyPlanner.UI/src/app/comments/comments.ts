@@ -41,6 +41,22 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   private commentSub!:       Subscription;
   private commentDeleteSub!: Subscription;
+  private avatarColors: string[] = [
+  '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
+  '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
+  '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
+  '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
+];
+
+getAvatarColor(username: string): string {
+  const name = (username || 'Guest').trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  const index = hash % this.avatarColors.length;
+  return this.avatarColors[index];
+}
 
   constructor(
     private commentsService: CommentsService,
@@ -207,7 +223,7 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
       },
       error: () => {
         this.isUploading = false;
-        Swal.fire('Upload failed', 'Could not upload the PDF.', 'error');
+        Swal.fire('Upload failed', 'Only PDF files under 20MB can be shared.', 'error');
       }
     });
   }
