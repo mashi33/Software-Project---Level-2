@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Booking } from '../models/transport.model';
 
@@ -54,9 +54,17 @@ export class TransportBookingService {
   /**
    * Updates the status of a trip (e.g. to 'Confirmed', 'Rejected', or 'Cancelled').
    */
-  updateBookingStatus(id: string, status: string): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${id}/status`, { status });
+  updateBookingStatus(id: string, status: string, cancelledBy?: string): Observable<void> {
+  const body: any = { status };
+  if (cancelledBy) {
+    body.cancelledBy = cancelledBy;
   }
+
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+  return this.http.patch<void>(`${this.apiUrl}/${id}/status`, body, { headers });
+}
 
   /**
    * Marks a booking as 'Rated' after the user submits their review.
