@@ -22,7 +22,26 @@ namespace SmartJourneyPlanner.API.Services
 
         public async Task<List<Notification>> GetNotificationsByUserIdAsync(string userId, string userType)
         {
-            var notifications = await _notificationsCollection.Find(n => n.UserId == userId).ToListAsync();
+            if (string.IsNullOrEmpty(userId))
+                return new List<Notification>();
+
+            // Find user to match both ObjectId and Email
+            var userFilter = Builders<User>.Filter.Or(
+                Builders<User>.Filter.Eq(u => u.Id, userId),
+                Builders<User>.Filter.Eq(u => u.Email, userId)
+            );
+            var user = await _usersCollection.Find(userFilter).FirstOrDefaultAsync();
+            var targetId = user?.Id ?? userId;
+            var targetEmail = user?.Email;
+
+            var filter = !string.IsNullOrEmpty(targetEmail)
+                ? Builders<Notification>.Filter.Or(
+                    Builders<Notification>.Filter.Eq(n => n.UserId, targetId),
+                    Builders<Notification>.Filter.Eq(n => n.UserId, targetEmail)
+                  )
+                : Builders<Notification>.Filter.Eq(n => n.UserId, targetId);
+
+            var notifications = await _notificationsCollection.Find(filter).ToListAsync();
             
             // Sort newest first
             notifications.Sort((a, b) => b.CreatedAt.CompareTo(a.CreatedAt));
@@ -33,7 +52,12 @@ namespace SmartJourneyPlanner.API.Services
         {
             if (!string.IsNullOrEmpty(newNotification.UserId) && newNotification.UserId.Contains("@"))
             {
-                var user = await _usersCollection.Find(u => u.Email == newNotification.UserId).FirstOrDefaultAsync();
+                var cleanEmail = newNotification.UserId.Trim();
+                var emailFilter = Builders<User>.Filter.Regex(
+                    u => u.Email, 
+                    new MongoDB.Bson.BsonRegularExpression($"^{System.Text.RegularExpressions.Regex.Escape(cleanEmail)}$", "i")
+                );
+                var user = await _usersCollection.Find(emailFilter).FirstOrDefaultAsync();
                 if (user != null && !string.IsNullOrEmpty(user.Id))
                 {
                     newNotification.UserId = user.Id;

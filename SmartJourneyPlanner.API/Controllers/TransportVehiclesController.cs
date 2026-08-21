@@ -4,9 +4,11 @@
  */
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
+using SmartJourneyPlanner.Hubs;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using MongoDB.Bson;
@@ -25,14 +27,23 @@ namespace SmartJourneyPlanner.Controllers
     {
         private readonly AdminService _adminService;
         private readonly TransportVehicleService _vehicleService;
+        private readonly NotificationService _notificationService;
+        private readonly IHubContext<ChatHub> _hubContext;
         private readonly IMemoryCache _cache;
         private const string ApprovedVehiclesCacheKey = "ApprovedVehicles_List_Cache";
 
         // Constructor connects to the needed services
-        public TransportVehiclesController(AdminService adminService, TransportVehicleService vehicleService, IMemoryCache cache)
+        public TransportVehiclesController(
+            AdminService adminService, 
+            TransportVehicleService vehicleService, 
+            NotificationService notificationService,
+            IHubContext<ChatHub> hubContext,
+            IMemoryCache cache)
         {
             _adminService = adminService;
             _vehicleService = vehicleService;
+            _notificationService = notificationService;
+            _hubContext = hubContext;
             _cache = cache;
         }
 
@@ -276,6 +287,40 @@ namespace SmartJourneyPlanner.Controllers
 
             await _vehicleService.AddReviewAsync(id, review);
             _cache.Remove(ApprovedVehiclesCacheKey);
+
+            // 🔔 Generate Real-Time Notification for Transport Provider
+            try
+            {
+                if (!string.IsNullOrEmpty(vehicle.ProviderId))
+                {
+                    var reviewerName = !string.IsNullOrWhiteSpace(review.UserName) ? review.UserName : "A traveler";
+                    var vehicleName = !string.IsNullOrWhiteSpace(vehicle.ModelName) ? vehicle.ModelName : "your vehicle";
+                    
+                    var notification = new Notification
+                    {
+                        UserId = vehicle.ProviderId,
+                        Icon = "bi-star-fill",
+                        IconColorClass = "icon-gold",
+                        Title = $"{reviewerName} gave a {review.Rating}★ rating and review for your vehicle {vehicleName}!",
+                        IsRead = false,
+                        LinkText = "View Fleet",
+                        Route = "/provider-dashboard?panel=fleet"
+                    };
+
+                    await _notificationService.CreateNotificationAsync(notification);
+                    await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+
+                    if (!string.IsNullOrEmpty(vehicle.ProviderId) && vehicle.ProviderId != notification.UserId)
+                    {
+                        await _hubContext.Clients.Group(vehicle.ProviderId).SendAsync("ReceiveNotification", notification);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error sending review notification: {ex.Message}");
+            }
+
             return Ok(new { message = "Review added successfully" });
         }
     }
