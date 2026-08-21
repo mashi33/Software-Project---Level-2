@@ -289,13 +289,17 @@ namespace SmartJourneyPlanner.Services
         if (vehicle == null)
             return (false, "Vehicle not found", null);
 
-        if (vehicle.BlockedDateRanges != null && vehicle.BlockedDateRanges.Any())
-        {
-            var overlap = vehicle.BlockedDateRanges.FirstOrDefault(r =>
-                CheckDateOverlap(startDate, endDate, r.StartDate, r.EndDate));
+        // Allow overlap only when the range is created from a booking cancellation
+        bool isFromCancellation = !string.IsNullOrWhiteSpace(reason) &&
+                          reason.StartsWith("Cancelled booking", StringComparison.OrdinalIgnoreCase);
 
-            if (overlap != null)
-                return (false, $"Date range overlaps with existing blocked range: {overlap.StartDate} to {overlap.EndDate}", null);
+        if (!isFromCancellation && vehicle.BlockedDateRanges != null && vehicle.BlockedDateRanges.Any())
+        {
+              var overlap = vehicle.BlockedDateRanges.FirstOrDefault(r =>
+              CheckDateOverlap(startDate, endDate, r.StartDate, r.EndDate));
+
+        if (overlap != null)
+            return (false, $"Date range overlaps with existing blocked range: {overlap.StartDate} to {overlap.EndDate}", null);
         }
 
         // Create new blocked date range
