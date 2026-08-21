@@ -75,7 +75,6 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     this.showOngoingList = true;
     this.loadDashboardData();
-    this.loadMemoriesCount();
 
     // Load booking/vehicle restriction alerts and poll every 30 seconds
     this.loadCustomerAlerts();
@@ -270,6 +269,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
           
           this.setNextTrip(this.upcomingTrips);
+          this.loadMemoriesCount();
         },
         error: () => {
           Swal.fire({
@@ -463,6 +463,23 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     this.calculateCountdown(this.nextTrip.startDate);
 
+    let startDateStr = this.nextTrip.startDate.split('T')[0];
+    
+    const today = new Date();
+    const maxForecastDate = new Date();
+    maxForecastDate.setDate(today.getDate() + 14); // 14 date limit
+
+    const targetTripDate = new Date(startDateStr);
+
+    // set last year weather if date is after more than 14 days
+    if (targetTripDate > maxForecastDate) {
+      const lastYear = targetTripDate.getFullYear() - 1;
+      const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetTripDate.getDate()).padStart(2, '0');
+      startDateStr = `${lastYear}-${month}-${day}`;
+      
+    }
+
     this.weatherService
       .getCoordinates(this.nextTrip.destination)
       .subscribe({
@@ -470,8 +487,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           if (!res || !res.length) return;
           const lat = res[0].lat;
           const lon = res[0].lon;
-          const date = this.nextTrip.startDate.split('T')[0];
-          this.loadWeather(lat, lon, date);
+          this.loadWeather(lat, lon, startDateStr);
         },
         error: () => {
           Swal.fire({
@@ -498,8 +514,9 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
         next: (weather: any) => {
           this.weather = weather;
         },
-        error: () => {
-          Swal.fire({
+        error: (err) => {
+        console.error('Weather API Error Details:', err); 
+        Swal.fire({
             icon: 'error',
             title: 'Weather Error',
             text: 'Failed to load weather information.',

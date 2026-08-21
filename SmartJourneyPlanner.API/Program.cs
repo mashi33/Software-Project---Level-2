@@ -92,6 +92,7 @@ builder.Services.AddHttpClient<PlacesService>(client =>
 });
 builder.Services.AddHttpClient<VotePlacesService>();
 builder.Services.AddSingleton<MemoryService>();
+builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddSingleton<AchievementService>();
 builder.Services.AddScoped<WeatherSuggestionService>();
 builder.Services.AddScoped<ProviderDashboardService>();

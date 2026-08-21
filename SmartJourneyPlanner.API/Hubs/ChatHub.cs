@@ -29,6 +29,29 @@ namespace SmartJourneyPlanner.Hubs
             }
         }
 
+        /// Adds a user to their personal notification group using their userId.
+        /// Call this from the frontend immediately after SignalR connects.
+        /// This enables Clients.Group(userId) targeted notifications.
+        public async Task JoinUserGroup(string userId)
+        {
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} joined user group: {userId}");
+            }
+        }
+
+        /// Removes a user from their personal notification group.
+        /// Call this on logout or disconnect cleanup.
+        public async Task LeaveUserGroup(string userId)
+        {
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
+                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} left user group: {userId}");
+            }
+        }
+
         /// Broadcasts a message to all connected clients.
         /// Note: While this broadcasts globally, it can be modified to target specific groups.
         public async Task SendMessage(object comment)

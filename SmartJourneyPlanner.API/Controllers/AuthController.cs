@@ -323,5 +323,26 @@ namespace SmartJourneyPlanner.API.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        // Delete account endpoint
+        [HttpDelete("delete-account/{id}")]
+        public async Task<IActionResult> DeleteAccount(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest(new { message = "User ID is missing!" });
+            }
+
+            //  Check if the user exists
+            var filter = Builders<User>.Filter.Eq(u => u.Id, id);
+            var result = await _users.DeleteOneAsync(filter);
+
+            if (result.DeletedCount == 0)
+            {
+                return NotFound(new { message = "User not found or already deleted." });
+            }
+
+            return Ok(new { message = "Account deleted successfully." });
+        }
     }
 }

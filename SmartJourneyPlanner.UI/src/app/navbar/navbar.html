@@ -84,8 +84,8 @@
                 </div>
                 <div class="notification-item-content">
                   <div class="notification-item-title">{{ n.title }}</div>
-                  <div class="notification-item-time">{{ n.time }}</div>
-                  <a class="notification-item-link" style="cursor: pointer;" (click)="navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
+                  <div class="notification-item-time">{{ n.time || getRelativeTime(n.createdAt) }}</div>
+                  <a class="notification-item-link" style="cursor: pointer;" (click)="markAsRead(n); navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
                 </div>
               </li>
             </ul>
