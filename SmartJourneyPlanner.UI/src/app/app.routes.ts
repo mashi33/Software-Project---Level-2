@@ -35,6 +35,7 @@ import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-
 import { SlideshowComponent } from './slideshow/slideshow';
 import { PrivacyPolicy } from './privacy-policy/privacy-policy';
 import { TermsOfService } from './terms-of-service/terms-of-service';
+import { LandingPageComponent } from './landing page/landing-page';
 
 export const routes: Routes = [
   //  PUBLIC ROUTES
@@ -70,6 +71,7 @@ export const routes: Routes = [
   { path: 'editTrip/:id', component: TripCreateComponent, canActivate: [authGuard] },
   { path: 'trip-summary/:id', component: TripSummaryComponent, canActivate: [authGuard] },
   { path: 'trip-summary', component: TripSummaryComponent, canActivate: [authGuard] },
+  { path: 'landing-page', component: LandingPageComponent, canActivate: [authGuard] },
 
 
   {
