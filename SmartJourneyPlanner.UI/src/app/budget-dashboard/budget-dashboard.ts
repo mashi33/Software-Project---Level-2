@@ -367,9 +367,6 @@ export class BudgetDashboard implements OnInit {
     doc.setTextColor(15, 23, 42);
     doc.text(tripName, 48, 42);
 
-    doc.setFont('Helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('Report Generated:', 130, 42);
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
     doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 164, 42);
@@ -446,7 +443,8 @@ export class BudgetDashboard implements OnInit {
       doc.text(formattedTotal, boxX + boxWidth - 6, boxY + 10.5, { align: 'right' });
     }
 
-    const sanitizedName = tripName.replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`Budget_Report_${sanitizedName}.pdf`);
+  // 7. Save PDF
+  const sanitizedName = tripName.replace(/[^a-zA-Z0-9]/g, '_');
+  doc.save(`Budget_Report_${sanitizedName}.pdf`);
   }
 }

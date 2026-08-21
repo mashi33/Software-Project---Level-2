@@ -1,4 +1,4 @@
-import {Component,OnInit,AfterViewInit,OnDestroy,ElementRef,ViewChild,Input,Output,EventEmitter,ChangeDetectorRef,inject} from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, Input, Output, EventEmitter, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -118,6 +118,8 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showCloseButton = false;
     this.close.emit();
 
+    if (!this.map) return;
+
     this.renderImageMarkers();
 
     if (this.filteredMemories.length > 0) {
@@ -188,7 +190,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
           this.tripMembers.push({
             name: displayName,
             email: m.email || '',
-            role: role.toLowerCase() === 'owner' ? 'Organizer' : role,
+            role: role.toLowerCase() === 'owner' ? 'Owner' : role,
             hasMemory: hasUploaded
           });
         }
@@ -284,6 +286,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     const mapElement = document.getElementById('leaflet-map-background');
     if (this.filteredMemories.length === 0 || !mapElement) return;
 
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'assets/marker-icon-2x.png',
+      iconUrl: 'assets/marker-icon.png',
+      shadowUrl: 'assets/marker-shadow.png'
+    });
+
     if (this.map) {
       this.map.off();
       this.map.remove();
@@ -330,7 +339,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.vehicleMarker = L.marker([activeCoords.latitude, activeCoords.longitude], {
       icon: vehicleIcon,
-      zIndexOffset: 1000
+      zIndexOffset: 3000
     }).addTo(this.map);
 
     this.map.on('moveend', () => {
@@ -339,45 +348,64 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderImageMarkers(): void {
-    this.markersClusterGroup.clearLayers();
-    this.mapMarkers = [];
+  if (!this.map) return;
 
-    this.filteredMemories.forEach((memory, idx) => {
-      if (memory.latitude && memory.longitude) {
-        const pinColor = this.getPinColor(idx);
-        const locationName = memory.title ? memory.title.split(' ')[0] : 'Stop';
+  this.markersClusterGroup.clearLayers();
+  this.mapMarkers = [];
 
-        const customPinIcon = L.divIcon({
-          className: 'vignette-map-pin-wrapper',
-          html: `
-            <div class="vignette-pin-container" style="--pin-color: ${pinColor}">
-              <div class="vignette-image-holder">
-                <img src="${memory.imageUrl}" alt="${memory.title || 'Trip stop'}" />
-              </div>
-              <div class="vignette-pin-tail"></div>
-              <div class="vignette-location-badge">${locationName}</div>
+  this.filteredMemories.forEach((memory, idx) => {
+    if (memory.latitude && memory.longitude) {
+      const pinColor = this.getPinColor(idx);
+      const locationName = memory.title ? memory.title.split(' ')[0] : 'Stop';
+      const isActive = idx === this.activeIndex;
+
+      const pulseMarkup = isActive
+        ? `<div class="pin-pulse-wave"></div><div class="pin-pulse-wave delay"></div>`
+        : '';
+
+      const customPinIcon = L.divIcon({
+        className: `vignette-pin-wrapper ${isActive ? 'active-pin-leaflet' : ''}`,
+        html: `
+          ${pulseMarkup}
+          <div class="vignette-pin-container ${isActive ? 'active' : ''}" style="--pin-color: ${pinColor}">
+            <div class="vignette-image-holder ${isActive ? 'active-border' : ''}">
+              <img src="${memory.imageUrl}" alt="${memory.title || 'Trip stop'}" />
             </div>
-          `,
-          iconSize: [60, 75],
-          iconAnchor: [30, 75]
-        });
+            <div class="vignette-pin-tail"></div>
+            <div class="vignette-location-badge">${locationName}</div>
+          </div>
+        `,
+        iconSize: isActive ? [80, 100] : [60, 75],
+        iconAnchor: isActive ? [40, 100] : [30, 75]
+      });
 
-        const marker = L.marker([memory.latitude, memory.longitude], { icon: customPinIcon }).on('click', () => {
-          this.setActiveIndex(idx);
-          this.onReopenSlideshow();
-        });
+      const marker = L.marker([memory.latitude, memory.longitude], {
+        icon: customPinIcon,
+        zIndexOffset: isActive ? 99999 : idx
+      }).on('click', () => {
+        this.setActiveIndex(idx);
+        this.onReopenSlideshow();
+      });
 
-        this.mapMarkers.push(marker);
-        this.markersClusterGroup.addLayer(marker);
-      }
-    });
+      this.mapMarkers.push(marker);
+      this.markersClusterGroup.addLayer(marker);
+    }
+  });
 
+  if (!this.map.hasLayer(this.markersClusterGroup)) {
     this.markersClusterGroup.addTo(this.map);
-
-    this.markersClusterGroup.on('clusterclick', (e: any) => {
-      e.layer.spiderfy();
-    });
   }
+
+  // Force active marker DOM element to highest z-index
+  const activeMarker = this.mapMarkers[this.activeIndex];
+  if (activeMarker) {
+    activeMarker.setZIndexOffset(99999);
+    const markerEl = activeMarker.getElement();
+    if (markerEl) {
+      markerEl.style.zIndex = '99999';
+    }
+  }
+}
 
   private getPinColor(index: number): string {
     const colors = ['#e11d48', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
@@ -386,12 +414,21 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async executeSequentialAnimation(
     oldCoords: L.LatLngLiteral,
-    newCoords: L.LatLngLiteral
+    newCoords: L.LatLngLiteral,
+    targetIndex: number
   ): Promise<void> {
+    //  Hide slideshow screen FIRST (only in normal mode)
     if (this.slideshowScreenRef && !this.isFullscreen) {
       this.slideshowScreenRef.nativeElement.classList.add('hide-during-move');
     }
 
+    // In FULLSCREEN mode, update activeIndex IMMEDIATELY so image changes without delay
+    if (this.isFullscreen) {
+      this.activeIndex = targetIndex;
+      this.cdr.detectChanges();
+    }
+
+    //  Animate vehicle and map pan to target location
     await this.mapAnimationService.animateVehicleMovement(
       this.vehicleMarker,
       this.map,
@@ -400,14 +437,23 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       this.isFullscreen
     );
 
-    if (this.slideshowScreenRef) {
-      this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
+    //  In NORMAL mode, update activeIndex NOW while the slideshow is hidden
+    if (!this.isFullscreen) {
+      this.activeIndex = targetIndex;
+      this.cdr.detectChanges();
     }
 
-    const targetMarker = this.mapMarkers[this.activeIndex];
-    await this.mapAnimationService.triggerClusterSpiderify(this.markersClusterGroup, targetMarker);
+    //  Update map pins and spiderfy target cluster if needed
+    this.renderImageMarkers();
 
-    if (this.slideshowScreenRef) {
+    const targetMarker = this.mapMarkers[this.activeIndex];
+    if (targetMarker) {
+      await this.mapAnimationService.triggerClusterSpiderify(this.markersClusterGroup, targetMarker);
+    }
+
+    //  Reveal slideshow screen (only in normal mode)
+    if (this.slideshowScreenRef && !this.isFullscreen) {
+      this.slideshowScreenRef.nativeElement.classList.remove('hide-during-move');
       await this.mapAnimationService.animateSlideshowBoxShow(this.slideshowScreenRef.nativeElement);
     }
   }
@@ -418,13 +464,12 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = index;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[index].latitude,
+      lng: this.filteredMemories[index].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, index);
   }
 
   prevSlide(): void {
@@ -433,13 +478,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
+    const newIndex = this.activeIndex === 0 ? this.filteredMemories.length - 1 : this.activeIndex - 1;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[newIndex].latitude,
+      lng: this.filteredMemories[newIndex].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, newIndex);
   }
 
   nextSlide(): void {
@@ -448,13 +493,13 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
       lat: this.filteredMemories[this.activeIndex].latitude,
       lng: this.filteredMemories[this.activeIndex].longitude
     };
-    this.activeIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
+    const newIndex = this.activeIndex === this.filteredMemories.length - 1 ? 0 : this.activeIndex + 1;
     const newCoords = {
-      lat: this.filteredMemories[this.activeIndex].latitude,
-      lng: this.filteredMemories[this.activeIndex].longitude
+      lat: this.filteredMemories[newIndex].latitude,
+      lng: this.filteredMemories[newIndex].longitude
     };
 
-    this.executeSequentialAnimation(oldCoords, newCoords);
+    this.executeSequentialAnimation(oldCoords, newCoords, newIndex);
   }
 
   public async downloadAlbumAsPhotos(): Promise<void> {
@@ -567,12 +612,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         this.togglePlay();
         break;
       case 'ArrowLeft':
-      case 'End':
         event.preventDefault();
         this.prevSlide();
         break;
       case 'ArrowRight':
-      case 'Home':
         event.preventDefault();
         this.nextSlide();
         break;
@@ -582,7 +625,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   togglePlay(): void {
     this.isPlaying = !this.isPlaying;
     if (this.isPlaying) {
-      this.playbackInterval = setInterval(() => this.nextSlide(), 5000);
+      this.playbackInterval = setInterval(() => this.nextSlide(), 7000);
     } else {
       clearInterval(this.playbackInterval);
     }

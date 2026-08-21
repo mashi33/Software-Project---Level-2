@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
+using Microsoft.AspNetCore.SignalR;
+using SmartJourneyPlanner.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,10 +14,12 @@ namespace SmartJourneyPlanner.API.Controllers
     public class NotificationsController : ControllerBase
     {
         private readonly NotificationService _notificationService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public NotificationsController(NotificationService notificationService)
+        public NotificationsController(NotificationService notificationService, IHubContext<ChatHub> hubContext)
         {
             _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("user/{userId}")]
@@ -43,6 +47,7 @@ namespace SmartJourneyPlanner.API.Controllers
                 }
 
                 await _notificationService.CreateNotificationAsync(newNotification);
+                await _hubContext.Clients.Group(newNotification.UserId).SendAsync("ReceiveNotification", newNotification);
                 return Ok(newNotification);
             }
             catch (Exception ex)
@@ -109,6 +114,54 @@ namespace SmartJourneyPlanner.API.Controllers
 
                 await _notificationService.SaveNotificationSettingsAsync(settings);
                 return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"SERVER ERROR: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ADMIN UTILITY: Returns a summary of all notifications in the database grouped by userId.
+        /// Use this to inspect what data exists before running cleanup.
+        /// GET /api/notifications/admin/summary
+        /// </summary>
+        [HttpGet("admin/summary")]
+        public async Task<IActionResult> GetAllNotificationsSummary()
+        {
+            try
+            {
+                var summary = await _notificationService.GetAllNotificationsSummaryAsync();
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"SERVER ERROR: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ADMIN UTILITY: Deletes all hardcoded/fake/orphan notifications from the database.
+        /// This removes:
+        ///   - Notifications with fake userIds like "u1", "p1", etc.
+        ///   - Notifications with empty/null userIds
+        ///   - Notifications whose userId does not match any real user in the Users collection
+        /// DELETE /api/notifications/admin/cleanup
+        /// </summary>
+        [HttpDelete("admin/cleanup")]
+        public async Task<IActionResult> CleanupHardcodedNotifications()
+        {
+            try
+            {
+                var result = await _notificationService.CleanupHardcodedNotificationsAsync();
+                return Ok(new
+                {
+                    message = $"Cleanup complete. {result.TotalDeleted} notifications deleted.",
+                    fakeIdDeleted = result.FakeIdDeleted,
+                    emptyUserIdDeleted = result.EmptyUserIdDeleted,
+                    orphanDeleted = result.OrphanDeleted,
+                    totalDeleted = result.TotalDeleted
+                });
             }
             catch (Exception ex)
             {

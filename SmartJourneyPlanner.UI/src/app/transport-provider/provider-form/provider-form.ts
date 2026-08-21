@@ -10,6 +10,7 @@ import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { VehicleType, VehicleClass, Vehicle } from '../../models/transport.model';
 import Swal from 'sweetalert2';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-provider-form',
@@ -80,10 +81,12 @@ export class ProviderForm implements OnInit {
     private eRef: ElementRef,
     private transportVehicleService: TransportVehicleService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
+    window.scrollTo(0, 0);
     // Generate today's date string for HTML date inputs
     const today = new Date();
     const y = today.getFullYear();
@@ -504,7 +507,7 @@ export class ProviderForm implements OnInit {
     const rawValue = this.vehicleForm.value;
     const formData: Vehicle = {
       ...rawValue,
-      providerId: 'p1', // Mock Provider ID
+      providerId: this.authService.getUserEmail() || '', // Real provider email from auth session
       interiorPhoto: this.interiorPreview as string,
       exteriorPhoto: this.exteriorPreview as string,
       driverNicUrl: this.nicPreview as string,

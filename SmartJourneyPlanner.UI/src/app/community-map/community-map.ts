@@ -9,7 +9,7 @@ import { forkJoin } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { MemoryService } from '../services/memory';
-import { TripMemory } from '../models/memory.model';
+import { TripMemory, MemoryComment } from '../models/memory.model';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 import gsap from 'gsap';
@@ -38,14 +38,21 @@ type PopularSortMode = 'score' | 'date' | 'likes' | 'location';
 export class CommunityMapComponent implements OnInit, AfterViewInit {
   private map!: leaflet.Map;
   private markersLayer = (leaflet as any).markerClusterGroup({
-      iconCreateFunction: (cluster: any) => {
+    iconCreateFunction: (cluster: any) => {
       const count = cluster.getChildCount();
       return leaflet.divIcon({
         html: `<div class="custom-cluster-icon"><span>${count}</span></div>`,
         className: 'my-cluster-wrapper',
         iconSize: leaflet.point(40, 40)
       });
-    }
+    },
+    zoomToBoundsOnClick: false,
+    spiderfyOnMaxZoom: false,
+    showCoverageOnHover: false,
+    animate: true,
+    animateAddingMarkers: false,
+    maxClusterRadius: 70,
+    spiderfyDistanceMultiplier: 1.6
   });
 
   private readonly sriLankaBounds = leaflet.latLngBounds(
@@ -73,6 +80,17 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   popularEntranceComplete = false;
   sortMode: PopularSortMode = 'score';
 
+  // Comments
+  comments: MemoryComment[] = [];
+  newCommentText = '';
+  isLoadingComments = false;
+  isSubmittingComment = false;
+
+  // Fixed reference time for priority score calculation.
+  // Set once on page load / data refresh. Prevents score drift when sorting.
+  // Score is only recalculated for a memory when its likeCount changes.
+  private priorityScoreBaseTime = Date.now();
+
   @ViewChild('popularGrid') popularGridRef?: ElementRef<HTMLElement>;
 
   constructor(
@@ -98,7 +116,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   ngAfterViewInit(): void {
     this.initMap();
   }
@@ -108,10 +125,19 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   loadCommunityMemories(): void {
     this.memoryService.getPublicMemories().subscribe({
       next: (data) => {
+        // Reset base time only on full data load / page refresh
+        this.priorityScoreBaseTime = Date.now();
+
         this.allMemories = data
           .filter(m => m.visibility === 'public')
           .map(m => this.formatData(m))
           .slice(0, 500);
+
+        // Compute initial priority scores once using the fixed base time
+        this.allMemories.forEach(m => {
+          (m as any).priorityScore = this.calculatePriorityScore(m, this.priorityScoreBaseTime);
+        });
+
         this.applyFilters();
       },
       error: (err) => console.error('Failed to load community memories:', err)
@@ -133,6 +159,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
       visibility: (memory['visibility'] ?? memory['Visibility'] ?? 'private') as string,
       likeCount: Number(memory['likeCount'] || memory['LikeCount'] || 0),
       likedByUsers: (memory['likedByUsers'] || memory['LikedByUsers'] || []) as string[],
+      commentCount: Number(memory['commentCount'] || memory['CommentCount'] || 0),
       tripId: (memory['tripId'] || memory['TripId']) as string | undefined,
       tripName: (memory['tripName'] || memory['TripName']) as string | undefined,
       userId: (memory['userId'] || memory['UserId'] || '') as string,
@@ -156,6 +183,9 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
         m.locationName?.toLowerCase().includes(query)
       );
     }
+
+    // Do NOT recompute priority scores here.
+    // Scores are computed on load and only updated when likeCount changes.
 
     this.filteredMemories = this.sortMemories(memories, this.sortMode);
     this.topRatedMemories = this.getTopRatedMemories(this.filteredMemories, 10);
@@ -368,7 +398,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   // SweetAlert Helper
   private showSweetAlert(message: string, type: 'like' | 'unlike' | 'album_like' | 'album_unlike' = 'like') {
     const config: any = {
@@ -413,11 +442,10 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
   }
 
   private sortMemoriesByLikesAndDate(memories: TripMemory[]): TripMemory[] {
-    const now = Date.now();
-
+    // Use the pre-computed / locked priorityScore (only changes on like or page load)
     return [...memories].sort((a, b) => {
-      const scoreA = this.calculatePriorityScore(a, now);
-      const scoreB = this.calculatePriorityScore(b, now);
+      const scoreA = (a as any).priorityScore ?? 0;
+      const scoreB = (b as any).priorityScore ?? 0;
       return scoreB - scoreA;
     });
   }
@@ -494,7 +522,6 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.activeTab = tab;
   }
 
-
   toggleSeeMore(): void {
     this.showAllAlbums = !this.showAllAlbums;
   }
@@ -544,8 +571,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     });
   }
 
-
-toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
+  toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
 
@@ -590,7 +616,15 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const updateInList = (list: TripMemory[]) => {
       const idx = list.findIndex(m => m.id === memoryId);
       if (idx !== -1) {
+        // Merge updated fields (including new likeCount)
         list[idx] = { ...list[idx], ...updatedMemory };
+
+        // Recalculate priority score ONLY because likeCount changed.
+        // Uses the same fixed base time so only likes affect the score value.
+        (list[idx] as any).priorityScore = this.calculatePriorityScore(
+          list[idx],
+          this.priorityScoreBaseTime
+        );
       }
     };
 
@@ -606,18 +640,23 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       }
     } else if (this.selectedMemory && this.selectedMemory.id === memoryId) {
       this.selectedMemory = { ...this.selectedMemory, ...updatedMemory };
+      // Keep selectedMemory score in sync as well
+      (this.selectedMemory as any).priorityScore = this.calculatePriorityScore(
+        this.selectedMemory,
+        this.priorityScoreBaseTime
+      );
     }
 
     this.refreshMapMarkers(this.filteredMemories);
-    //this.cdr.detectChanges();
   }
 
   getTotalLikes(album: CommunityAlbum): number {
     return album.memories.reduce((sum, m) => sum + (m.likeCount || 0), 0);
   }
 
+  // Returns the locked / pre-computed priorityScore
   getPriorityScore(memory: TripMemory): number {
-    return this.calculatePriorityScore(memory);
+    return (memory as any).priorityScore ?? this.calculatePriorityScore(memory, this.priorityScoreBaseTime);
   }
 
   openTopRatedMemory(memory: TripMemory): void {
@@ -631,6 +670,9 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     this.currentMemoryIndex = 0;
     this.selectedMemory = album.memories[0] || null;
     this.isLightboxOpen = true;
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   openLightboxForMemory(memory: TripMemory, album?: CommunityAlbum): void {
@@ -640,20 +682,27 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       this.currentMemoryIndex = album.memories.findIndex(m => m.id === memory.id);
       if (this.currentMemoryIndex < 0) this.currentMemoryIndex = 0;
     } else {
-      // Map pin හෝ Popular memory එකකින් ආවොත් ඇල්බම සම්බන්ධ නොකරන්න
-    this.selectedAlbum = null;
-    this.currentMemoryIndex = 0;
+      // Map pin or Popular memory, do not connect album, just show the single memory
+      this.selectedAlbum = null;
+      this.currentMemoryIndex = 0;
     }
 
     this.selectedMemory = memory;
     this.isLightboxOpen = true;
     this.cdr.detectChanges();
+
+    if (memory.id) {
+      this.loadComments(memory.id);
+    }
   }
 
   nextMemory(): void {
     if (!this.selectedAlbum) return;
     this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   prevMemory(): void {
@@ -662,12 +711,104 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
       (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
       this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    if (this.selectedMemory?.id) {
+      this.loadComments(this.selectedMemory.id);
+    }
   }
 
   closeLightbox(): void {
     this.isLightboxOpen = false;
     this.selectedAlbum = null;
     this.selectedMemory = null;
+    this.comments = [];
+    this.newCommentText = '';
+  }
+
+  // COMMENTS
+
+  get isLoggedIn(): boolean {
+    return !!this.authService.getUserId();
+  }
+
+  loadComments(memoryId: string): void {
+    this.isLoadingComments = true;
+    this.comments = [];
+    this.memoryService.getComments(memoryId).subscribe({
+      next: (data) => {
+        this.comments = data;
+        this.isLoadingComments = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load comments:', err);
+        this.isLoadingComments = false;
+      }
+    });
+  }
+
+  submitComment(): void {
+    if (!this.selectedMemory?.id || !this.newCommentText.trim() || this.isSubmittingComment) return;
+
+    const currentUserId = this.authService.getUserId();
+    const currentUserName = this.authService.getUserName();
+    if (!currentUserId) return;
+
+    this.isSubmittingComment = true;
+    this.memoryService.addComment(
+      this.selectedMemory.id,
+      currentUserId,
+      currentUserName || '',
+      this.newCommentText.trim()
+    ).subscribe({
+      next: (comment) => {
+        this.comments.unshift(comment);
+        this.newCommentText = '';
+        this.isSubmittingComment = false;
+
+        // Update local commentCount
+        if (this.selectedMemory) {
+          this.selectedMemory.commentCount = (this.selectedMemory.commentCount || 0) + 1;
+        }
+        const mem = this.allMemories.find(m => m.id === this.selectedMemory?.id);
+        if (mem) {
+          mem.commentCount = (mem.commentCount || 0) + 1;
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to add comment:', err);
+        this.isSubmittingComment = false;
+      }
+    });
+  }
+
+  deleteComment(comment: MemoryComment): void {
+    if (!comment.id) return;
+    const currentUserId = this.authService.getUserId();
+    if (!currentUserId || comment.userId !== currentUserId) return;
+
+    this.memoryService.deleteComment(comment.id, currentUserId).subscribe({
+      next: () => {
+        this.comments = this.comments.filter(c => c.id !== comment.id);
+
+        if (this.selectedMemory) {
+          this.selectedMemory.commentCount = Math.max(0, (this.selectedMemory.commentCount || 0) - 1);
+        }
+        const mem = this.allMemories.find(m => m.id === this.selectedMemory?.id);
+        if (mem) {
+          mem.commentCount = Math.max(0, (mem.commentCount || 0) - 1);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to delete comment:', err)
+    });
+  }
+
+  canDeleteComment(comment: MemoryComment): boolean {
+    const currentUserId = this.authService.getUserId();
+    return !!currentUserId && comment.userId === currentUserId;
   }
 
   //  SLIDESHOW 
@@ -679,7 +820,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     album.slideshowInterval = setInterval(() => {
       album.slideIndex = (album.slideIndex + 1) % album.memories.length;
       album.currentDisplayImage = album.memories[album.slideIndex].imageUrl;
-      //this.cdr.detectChanges();
     }, 2000);
   }
 
@@ -709,7 +849,6 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     return dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
   }
-
 
   // MAP
 
@@ -878,6 +1017,78 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
 
     this.markersLayer.addTo(this.map);
     this.refreshMapMarkers(this.filteredMemories);
+
+    this.markersLayer.on('clusterclick', (e: any) => {
+      const cluster = e.layer;
+      if (!cluster) return;
+
+      // Unspiderfy if already expanded
+      if ((cluster as any)._spiderfied) {
+        cluster.unspiderfy();
+        return;
+      }
+
+      // Close any other open spiderfied clusters
+      try { 
+        this.markersLayer.unspiderfy(); 
+      } catch {}
+
+      const childMarkers = cluster.getAllChildMarkers();
+      if (!childMarkers.length) return;
+
+      const latLngs = childMarkers.map((m: any) => m.getLatLng());
+      const first = latLngs[0];
+
+      // Check if ALL child markers share the exact same coordinates
+      const allSameLocation = latLngs.every((ll: any) =>
+        Math.abs(ll.lat - first.lat) < 0.00001 &&
+        Math.abs(ll.lng - first.lng) < 0.00001
+      );
+
+      // Stop any active map movements
+      this.map.stop();
+
+      if (allSameLocation) {
+        // EXACT SAME LOCATION: NO flying/zooming at all.
+        // Directly spiderfy on the spot without map movement or visual shaking.
+        if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+          cluster.spiderfy();
+        }
+      } else {
+        // DIFFERENT / NEARBY LOCATIONS: Perform flight/zoom to bounds
+        const bounds = cluster.getBounds().pad(0.15);
+        const currentZoom = this.map.getZoom();
+        const targetZoom = Math.min(17, this.map.getBoundsZoom(bounds, false, leaflet.point(50, 50)));
+
+        const needsZoom =
+          currentZoom < targetZoom - 0.5 ||
+          !this.map.getBounds().contains(bounds);
+
+        if (needsZoom) {
+          this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 17,
+            duration: 1.2,
+            easeLinearity: 0.25
+          });
+
+          this.map.once('moveend', () => {
+            // Wait for map movement and CSS transitions to settle before spiderfying
+            setTimeout(() => {
+              const activeCluster = this.markersLayer.getVisibleParent(childMarkers[0]) || cluster;
+              if (activeCluster && typeof activeCluster.spiderfy === 'function' && !(activeCluster as any)._spiderfied) {
+                activeCluster.spiderfy();
+              }
+            }, 180);
+          });
+        } else {
+          // Already zoomed in close enough -> spiderfy immediately
+          if (cluster.getChildCount() > 1 && !(cluster as any)._spiderfied) {
+            cluster.spiderfy();
+          }
+        }
+      }
+    });
   }
 
   private fixLeafletIcons(): void {
@@ -902,9 +1113,11 @@ toggleAlbumLike(album: CommunityAlbum, event?: Event): void {
     const memoryId = (event as CustomEvent<string>).detail;
     const foundMemory = this.filteredMemories.find(m => m.id === memoryId);
     if (foundMemory) {
+      // Close popup first
+      if (this.map) {
+        this.map.closePopup();
+      }
       this.openLightboxForMemory(foundMemory);
     }
   }
 }
-
-

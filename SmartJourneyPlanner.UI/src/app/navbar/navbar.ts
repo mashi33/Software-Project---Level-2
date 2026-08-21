@@ -59,10 +59,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Subscribe to real-time notifications via SignalR
     this.notificationSub = this.signalrService.notificationReceived.subscribe({
       next: (notif: any) => {
-        const userId = this.authService.getUserId();
-        if (notif && notif.userId === userId) {
-          // Add the new notification to the beginning of the list
-          this.notifications.unshift(notif);
+        if (notif) {
+          // Add the new notification to the beginning of the list with relative time
+          const mappedNotif = {
+            ...notif,
+            time: this.getRelativeTime(notif.createdAt)
+          };
+          this.notifications.unshift(mappedNotif);
           this.updateUnreadCount();
         }
       },
@@ -88,7 +91,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     this.notificationService.getNotifications(userId, userType).subscribe({
       next: (dbNotifications) => {
-        this.notifications = dbNotifications;
+        const mapped = dbNotifications.map((n: any) => ({
+          ...n,
+          time: this.getRelativeTime(n.createdAt)
+        }));
+        this.notifications = mapped;
         this.updateUnreadCount();
 
         // Dynamically fetch traveler upcoming trips to inject countdown notification
@@ -119,20 +126,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
                       title = `Only ${daysLeft} days left until your trip to ${nextTrip.destination || 'your destination'}!`;
                     }
 
+                    const tripId = nextTrip.id || nextTrip.Id;
+                    const isRead = localStorage.getItem(`countdown_read_${tripId}`) === 'true';
+
                     const countdownNotification = {
                       id: 'countdown-999',
                       icon: 'bi-clock-fill',
                       iconColorClass: 'icon-orange',
                       title: title,
                       time: 'Just now',
-                      isRead: false,
+                      isRead: isRead,
                       linkText: 'View Trip',
-                      route: '/trip-summary/' + (nextTrip.id || nextTrip.Id)
+                      route: '/trip-summary/' + tripId,
+                      tripId: tripId
                     };
 
                     this.notifications = [
                       countdownNotification,
-                      ...dbNotifications.filter(n => n.id !== 'countdown-999')
+                      ...this.notifications.filter(n => n.id !== 'countdown-999')
                     ];
                     this.updateUnreadCount();
                   }
@@ -161,7 +172,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     this.notificationService.markAllAsRead(userId).subscribe({
       next: () => {
-        this.notifications.forEach(n => n.isRead = true);
+        this.notifications.forEach(n => {
+          n.isRead = true;
+          if (n.id === 'countdown-999' && n.tripId) {
+            localStorage.setItem(`countdown_read_${n.tripId}`, 'true');
+          }
+        });
         this.notifications = [...this.notifications];
         this.updateUnreadCount();
       },
@@ -172,6 +188,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   markAsRead(notification: any) {
     if (notification.id === 'countdown-999') {
       notification.isRead = true;
+      if (notification.tripId) {
+        localStorage.setItem(`countdown_read_${notification.tripId}`, 'true');
+      }
       this.updateUnreadCount();
       return;
     }
@@ -212,6 +231,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     const savedPic = localStorage.getItem('profilePic');
     this.profilePic = savedPic ? savedPic : '/profilePic.jpg';
+
+    // Join the user's SignalR group for targeted real-time notifications
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      this.signalrService.joinUserGroup(userId);
+    }
 
     // Clear and reload notifications for the active user session
     this.notifications = [];
@@ -260,6 +285,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // Handles user logout
   onLogout(): void {
+    const userId = this.authService.getUserId();
+    if (userId) {
+      this.signalrService.leaveUserGroup(userId);
+    }
     this.authService.logout();
     this.closeDropdown();
     this.router.navigate(['/login']);
@@ -269,5 +298,40 @@ export class NavbarComponent implements OnInit, OnDestroy {
   selectOption(option: string) {
     this.dropdownLabel = option;
     this.isMemoryDropdownOpen = false;
+  }
+
+  getRelativeTime(createdAt: any): string {
+    if (!createdAt) return 'Just now';
+    try {
+      const createdDate = new Date(createdAt);
+      const now = new Date();
+      const diffMs = now.getTime() - createdDate.getTime();
+      
+      if (diffMs < 60000) {
+        return 'Just now';
+      }
+      
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) {
+        return `${diffMins}m ago`;
+      }
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) {
+        return `${diffHours}h ago`;
+      }
+      
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) {
+        return 'Yesterday';
+      }
+      if (diffDays < 7) {
+        return `${diffDays}d ago`;
+      }
+      
+      return createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Just now';
+    }
   }
 }

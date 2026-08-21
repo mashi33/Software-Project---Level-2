@@ -29,9 +29,8 @@ namespace SmartJourneyPlanner.API.Models
         [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
 
-        [BsonElement("time")]
-        [JsonPropertyName("time")]
-        public string Time { get; set; } = string.Empty;
+        // Note: Time is NOT stored in the database.
+        // The frontend computes a relative time string (e.g. "5m ago") from the createdAt timestamp.
 
         [BsonElement("createdAt")]
         [JsonPropertyName("createdAt")]
