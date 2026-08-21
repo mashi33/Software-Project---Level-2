@@ -1,11 +1,14 @@
-<app-navbar *ngIf="showNavbarFooter()"></app-navbar>
+<!-- Navbar hidden on landing and auth pages -->
+<app-navbar *ngIf="showNavbarSidebar()"></app-navbar>
 
 <div class="layout-container">
-  <app-sidebar *ngIf="showNavbarFooter()"></app-sidebar>
+  <!-- Sidebar hidden on landing and auth pages -->
+  <app-sidebar *ngIf="showNavbarSidebar()"></app-sidebar>
 
   <main class="content-area">
     <router-outlet></router-outlet>
   </main>
 </div>
 
-<app-footer *ngIf="showNavbarFooter()"></app-footer>
+<!-- Footer hidden ONLY on login/signup, but visible on Landing Page and Dashboards -->
+<app-footer *ngIf="showFooter()"></app-footer>

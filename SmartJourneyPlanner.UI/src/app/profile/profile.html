@@ -23,7 +23,6 @@
         <div *ngIf="!user?.profilePictureUrl" class="avatar-img avatar-fallback">
           {{ (user?.fullName || 'T').charAt(0).toUpperCase() }}
         </div>
-
       </div>
 
       <h1 class="profile-name">{{ user.fullName || user.username }}</h1>
@@ -33,7 +32,7 @@
         {{ isProvider() ? '🚐 Transport Provider' : '✈ Traveller' }}
       </span>
 
-      <!-- Traveller rank from achievements -->
+      <!-- Traveller rank -->
       <div class="rank-card traveller-rank" *ngIf="!isProvider()">
         <div class="rank-header">
           <i class="bi bi-award"></i>
@@ -68,8 +67,51 @@
           </span>
           <span>{{ stats.averageRating }} / 5.0</span>
         </div>
-        <p class="no-rating" *ngIf="!loadingStats && stats.averageRating === 0">No ratings yet — complete trips to earn
-          reviews!</p>
+        <p class="no-rating" *ngIf="!loadingStats && stats.averageRating === 0">
+          No ratings yet — complete trips to earn reviews!
+        </p>
+      </div>
+
+
+      <!-- ========== Interests / Fleet on LEFT side ========== -->
+      <div class="sidebar-interests-card" *ngIf="!isProvider()">
+        <div class="sidebar-card-header">
+          <h3><i class="bi bi-heart-fill"></i> Travel Interests</h3>
+          <button class="edit-link" (click)="onEditProfile()">Edit</button>
+        </div>
+
+        <p class="sidebar-hint" *ngIf="!user.interests?.length">
+          Your travel interests help us personalize your experience.
+        </p>
+
+        <div class="interest-chips" *ngIf="user.interests?.length">
+          <span *ngFor="let interest of user.interests" class="interest-chip" [attr.data-interest]="interest">
+            <span class="chip-emoji">{{ getInterestEmoji(interest) }}</span>
+            {{ interest }}
+          </span>
+        </div>
+
+        <p class="empty-hint" *ngIf="!user.interests?.length">
+          No interests added yet.
+        </p>
+      </div>
+
+      <div class="sidebar-interests-card" *ngIf="isProvider()">
+        <div class="sidebar-card-header">
+          <h3><i class="bi bi-truck"></i> Fleet & Services</h3>
+          <button class="edit-link" (click)="onEditProfile()">Edit</button>
+        </div>
+
+        <div class="interest-chips" *ngIf="user.interests?.length">
+          <span *ngFor="let vehicle of user.interests" class="interest-chip fleet-chip">
+            <span class="chip-emoji">🚗</span>
+            {{ vehicle }}
+          </span>
+        </div>
+
+        <p class="empty-hint" *ngIf="!user.interests?.length">
+          No fleet types listed yet.
+        </p>
       </div>
 
       <!-- Stats grid -->
@@ -176,34 +218,30 @@
         <a routerLink="/achievements" class="btn-start-journey">Explore Achievements</a>
       </section>
 
-      <!-- Interests / Fleet -->
-      <section class="content-card" *ngIf="!isProvider()">
-        <h2><i class="bi bi-heart-fill"></i> Travel Interests</h2>
-        <div class="chip-list" *ngIf="user.interests?.length">
-          <span *ngFor="let interest of user.interests" class="interest-tag">{{ interest }}</span>
-        </div>
-        <p class="empty-hint" *ngIf="!user.interests?.length">No interests added yet. Click Edit Profile to add yours!
+      <!-- Feedback / Review Section (Common for both) -->
+      <section class="content-card feedback-section-card">
+        <h2><i class="bi bi-chat-quote-fill"></i> Share Your Experience</h2>
+        <p class="about-text" style="margin-bottom: 15px; font-size: 0.9rem;">
+          Your feedback will be featured on our landing page to help other travellers and providers!
         </p>
-      </section>
 
-      <section class="content-card" *ngIf="isProvider()">
-        <h2><i class="bi bi-truck"></i> Fleet & Services</h2>
-        <div class="chip-list" *ngIf="user.interests?.length">
-          <span *ngFor="let vehicle of user.interests" class="interest-tag fleet-tag">🚗 {{ vehicle }}</span>
-        </div>
-        <p class="empty-hint" *ngIf="!user.interests?.length">No fleet types listed. Edit your profile to showcase your
-          vehicles!</p>
-        <div class="provider-actions" *ngIf="isProvider()">
-          <a routerLink="/register-vehicle" class="action-link"><i class="bi bi-plus-circle"></i> Add Vehicle</a>
-          <a routerLink="/provider-dashboard" class="action-link secondary"><i class="bi bi-grid"></i> Manage Fleet</a>
-        </div>
+        <form (ngSubmit)="submitFeedback()">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <textarea class="custom-input" rows="3" [(ngModel)]="feedbackData.comment" name="comment"
+              placeholder="Write your thoughts or experience about Smart Journey Planner..." required></textarea>
+          </div>
+          <button type="submit" class="btn-done" [disabled]="isSubmitting"
+            style="width: auto; padding: 10px 24px; font-size: 0.9rem;">
+            {{ isSubmitting ? 'Posting...' : 'Post Feedback' }}
+          </button>
+        </form>
       </section>
 
     </main>
   </div>
 </div>
 
-<!-- Edit modal (unchanged structure, cleaner classes) -->
+<!-- Edit modal -->
 <div class="custom-modal-overlay" *ngIf="isEditMode">
   <div class="custom-modal-content">
     <button type="button" class="modal-close-btn" (click)="onCancel()">×</button>

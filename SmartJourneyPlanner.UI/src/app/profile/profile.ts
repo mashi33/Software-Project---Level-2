@@ -61,6 +61,11 @@ export class ProfileComponent implements OnInit {
 
   availableInterests: string[] = [];
 
+  feedbackData = {
+    comment: ''
+  };
+  isSubmitting: boolean = false;
+
   constructor(
     private userService: UserService,
     private authService: AuthService,
@@ -138,6 +143,26 @@ export class ProfileComponent implements OnInit {
       .slice(0, 4);
   }
 
+  getInterestEmoji(interest: string): string {
+    const map: { [key: string]: string } = {
+      'Hiking': '🥾',
+      'Beach': '🏖️',
+      'Photography': '📸',
+      'Camping': '⛺',
+      'Foodie': '🍜',
+      'Culture': '🏛️',
+      'Adventure': '⛰️',
+      'Nature': '🌿',
+      'Car (Sedan)': '🚗',
+      'SUV / Jeep': '🚙',
+      'KDH Van': '🚐',
+      'Mini Bus': '🚌',
+      'Luxury Coaster': '🚍',
+      '4x4 Off-Road': '🛻'
+    };
+    return map[interest] || '✨';
+  }
+
   showSuccess(message: string) {
     Swal.fire({ icon: 'success', title: 'Success', text: message, timer: 2500, timerProgressBar: true });
   }
@@ -154,7 +179,7 @@ export class ProfileComponent implements OnInit {
         this.user = data;
         this.availableInterests = this.isProvider()
           ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
-          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'];
+          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture', 'Adventure', 'Nature'];
         this.loadProfileStats();
       },
       error: (err) => console.error('Error fetching profile:', err)
@@ -323,5 +348,48 @@ export class ProfileComponent implements OnInit {
   onRemovePhoto() {
     this.editData.profilePictureUrl = '';
     this.editData.profileImageFile = null;
+  }
+
+  submitFeedback() {
+    if (!this.feedbackData.comment.trim()) {
+      Swal.fire('Warning', 'Please write something before submitting!', 'warning');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    const payload = {
+      comment: this.feedbackData.comment,
+      userName: this.user?.fullName || 'Anonymous',
+      userRole: this.user?.userType || this.user?.role || 'Traveller',
+      profilePictureUrl: this.user?.profilePictureUrl || ''
+    };
+
+    const feedbackRequest = this.userService.addComment(payload) as any;
+
+    if (!feedbackRequest || typeof feedbackRequest.subscribe !== 'function') {
+      this.isSubmitting = false;
+      Swal.fire('Error', 'Feedback service is unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
+    feedbackRequest.subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        Swal.fire({
+          icon: 'success',
+          title: 'Thank You!',
+          text: 'Your feedback has been successfully shared.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        this.feedbackData.comment = '';
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        console.error('Failed to submit feedback', err);
+        Swal.fire('Error', 'Failed to submit feedback. Please try again later.', 'error');
+      }
+    });
   }
 }

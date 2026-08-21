@@ -70,8 +70,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/login',
-    pathMatch: 'full'
+    component: LandingPageComponent
   },
 
   {
@@ -97,6 +96,11 @@ export const routes: Routes = [
   {
     path: 'reset-password',
     component: ResetPasswordComponent
+  },
+
+  {
+    path: 'landing-page',
+    component: LandingPageComponent
   },
 
 
