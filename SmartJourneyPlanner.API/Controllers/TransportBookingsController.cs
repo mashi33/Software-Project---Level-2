@@ -18,6 +18,7 @@ namespace SmartJourneyPlanner.Controllers
     public class StatusUpdateDto 
     { 
         public string Status { get; set; } = string.Empty; 
+        public string? CancelledBy { get; set; }
     }
 
     // This controller defines the API endpoints starting with /api/TransportBookings
@@ -215,6 +216,15 @@ namespace SmartJourneyPlanner.Controllers
             booking.Status = dto.Status;
             booking.StatusChangedDate = DateTime.UtcNow.ToString("o");
 
+            // persist who cancelled
+            if (string.Equals(dto.Status, "Cancelled", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(dto.Status, "Canceled", StringComparison.OrdinalIgnoreCase))
+            {
+                booking.CancelledBy = string.IsNullOrWhiteSpace(dto.CancelledBy) 
+                 ? "Traveller" 
+                 : dto.CancelledBy;
+            }
+
             await _bookingService.UpdateAsync(id, booking);
             System.Console.WriteLine("Booking status updated in database");
 
@@ -255,28 +265,50 @@ namespace SmartJourneyPlanner.Controllers
                     await _notificationService.CreateNotificationAsync(travelerNotification);
                     await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
                 }
-                else if (dto.Status == "Cancelled")
-                {
-                    var providerNotification = new Notification
-                    {
-                        UserId = booking.ProviderId,
-                        Icon = "bi-x-circle-fill",
-                        IconColorClass = "icon-red",
-                        Title = $"Booking request for {booking.vehicleName} has been cancelled by traveler {booking.userName}.",
-                        IsRead = false,
-                        LinkText = "Check Status",
-                        Route = $"/provider-dashboard?panel=bookings&bookingId={booking.Id}"
-                    };
-                    await _notificationService.CreateNotificationAsync(providerNotification);
-                    await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
-                }
+                else if (dto.Status == "Cancelled" || dto.Status == "Canceled")
+    {
+        var cancelledByProvider = string.Equals(booking.CancelledBy, "Provider", StringComparison.OrdinalIgnoreCase);
+
+        if (cancelledByProvider)
+        {
+            // Provider cancelled → notify Traveller
+            var travelerNotification = new Notification
+            {
+                UserId = booking.UserId,
+                Icon = "bi-x-circle-fill",
+                IconColorClass = "icon-red",
+                Title = $"Your booking for {booking.vehicleName} has been cancelled by the provider.",
+                IsRead = false,
+                LinkText = "View Details",
+                Route = $"/transport?tab=bookings&bookingId={booking.Id}"
+            };
+            await _notificationService.CreateNotificationAsync(travelerNotification);
+            await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
+        }
+        else
+        {
+            // Traveller cancelled → notify Provider
+            var providerNotification = new Notification
+            {
+                UserId = booking.ProviderId,
+                Icon = "bi-x-circle-fill",
+                IconColorClass = "icon-red",
+                Title = $"Booking request for {booking.vehicleName} has been cancelled by traveler {booking.userName}.",
+                IsRead = false,
+                LinkText = "Check Status",
+                Route = $"/provider-dashboard?panel=bookings&bookingId={booking.Id}"
+            };
+            await _notificationService.CreateNotificationAsync(providerNotification);
+            await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
+        }
+            }
             }
             catch (Exception ex)
             {
                 System.Console.WriteLine($"Error creating status update notification: {ex.Message}");
-            }
+         }
 
-            return NoContent();
+             return NoContent();
         }
 
         /**
