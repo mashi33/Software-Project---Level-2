@@ -26,7 +26,6 @@ namespace SmartJourneyPlanner.API.Controllers
         {
             var budget = await _budgetService.GetBudgetByTripIdAsync(tripId);
             
-            // If no budget exists yet,return an empty container instead of a 404
             // the frontend can still show a "Total: 0" dashboard
             if (budget == null) 
             {
@@ -81,7 +80,6 @@ namespace SmartJourneyPlanner.API.Controllers
                 return StatusCode(403, new { message = "Access Denied: You cannot delete an expense created by another member." });
             }
 
-            // If authorization validation succeeds, allow your teammate's exact execution logic to run
             await _budgetService.DeleteExpenseAsync(tripId, expenseId);
             return Ok(new { message = "Expense removed successfully." });
         }
@@ -97,11 +95,9 @@ namespace SmartJourneyPlanner.API.Controllers
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserEmail)) return Unauthorized(new { message = "User identity context invalid." });
 
-            // Pull down original baseline dataset
             var budget = await _budgetService.GetBudgetByTripIdAsync(tripId);
             if (budget == null) return NotFound("Budget container not found.");
 
-            // Find the specific expense in the list using its ID
             var existingExpense = budget.Expenses?.FirstOrDefault(e => e.Id == expenseId);
             if (existingExpense == null) return NotFound("Specific expense not found.");
 
@@ -110,14 +106,14 @@ namespace SmartJourneyPlanner.API.Controllers
             {
                 return StatusCode(403, new { message = "Access Denied: You cannot modify an expense created by another member." });
             }
-            // Update fields (Description replaces Name based on your new Model)
+            // Update fields
             existingExpense.Description = updatedExpense.Description;
             existingExpense.Amount = updatedExpense.Amount;
             existingExpense.Category = updatedExpense.Category;
             existingExpense.Date = updatedExpense.Date;
 
             // Recalculate Total
-            budget.TotalSpent = (double)budget.Expenses.Sum(e => e.Amount);
+            budget.TotalSpent = (double)(budget.Expenses?.Sum(e => e.Amount) ?? 0);
 
             await _budgetService.UpdateBudgetAsync(budget);
             return Ok(new { message = "Expense updated successfully." });

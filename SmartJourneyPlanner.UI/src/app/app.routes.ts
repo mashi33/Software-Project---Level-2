@@ -47,6 +47,7 @@ import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { GettingStartedComponent } from './help/getting-started/getting-started';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+import { BudgetHelpComponent } from './help/budget-help/budget-help';
 import { TripPlanningHelpComponent } from './help/trip-planning-help/trip-planning-help';
 
 import { SlideshowComponent } from './slideshow/slideshow';
@@ -254,6 +255,15 @@ export const routes: Routes = [
   },
 
   {
+    path: 'budget-help',
+    component: BudgetHelpComponent, 
+    canActivate: [authGuard],
+    data: {
+      expectedRoles: ['Traveller', 'Traveler']
+    }
+  },
+
+  {
     path: 'slideshow/:tripName',
     component: SlideshowComponent,
     canActivate: [authGuard, roleGuard],
@@ -392,7 +402,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['TransportProvider', 'Provider']
+      expectedRoles: ['TransportProvider', 'Provider', 'Traveller', 'Traveler']
     },
 
     loadComponent: () =>
@@ -460,7 +470,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['Admin']
+      expectedRoles: ['Admin', 'admin']
     }
   },
 

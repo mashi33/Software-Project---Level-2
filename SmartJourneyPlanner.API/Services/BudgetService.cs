@@ -55,7 +55,6 @@ namespace SmartJourneyPlanner.API.Services
             }
             return tripDropdownList;
         }
-        // CORE BUDGET OPERATIONS
         public async Task<TripBudget> GetBudgetByTripIdAsync(string tripId)
         {
             var budget = await _budgetCollection.Find(x => x.TripId == tripId).FirstOrDefaultAsync();
@@ -121,7 +120,7 @@ namespace SmartJourneyPlanner.API.Services
                 var percentBefore = limit > 0 ? (amountBeforeAdd / limit) : 0;
                 var percentAfter = limit > 0 ? (amountAfterAdd / limit) : 0;
 
-                // Threshold 1: 80% (exceeded 80% but was below 80% before)
+                // exceeded 80% but was below 80% before
                 if (percentAfter >= 0.8 && percentBefore < 0.8 && percentAfter < 0.95)
                 {
                     foreach (var userIdentifier in targetUsers)
@@ -140,7 +139,7 @@ namespace SmartJourneyPlanner.API.Services
                         await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
                     }
                 }
-                // Threshold 2: 95% (exceeded 95% but was below 95% before)
+                // exceeded 95% but was below 95% before
                 else if (percentAfter >= 0.95 && percentBefore < 0.95)
                 {
                     foreach (var userIdentifier in targetUsers)

@@ -79,7 +79,7 @@
         <div class="card-icon4"><i class="bi bi-file-earmark-text-fill text-success fs-3"></i></div>
         <div class="card-data">
           <h3>Detailed Fleet</h3>
-          <h1>{{ allVehicles.length }}</h1>
+          <h1>{{ stats.totalVehicles || allVehicles.length }}</h1>
         </div>
         <button class="btn-action4" (click)="onReviewFleet()">View Fleet</button>
       </div>
@@ -105,7 +105,7 @@
           </div>
         </div>
 
-        <!-- Modern & Professional Stats Cards Bar (3 Cards) -->
+        <!-- Stats Cards Bar -->
         <div class="row g-2 mb-4 mx-0">
           
           <!-- Card 1: Pending Verification -->
@@ -215,9 +215,9 @@
             </td>
             <td>
               <div class="action-btn-group">
-                <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p)">View</button>
-                <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p)">Approve</button>
-                <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p)">Reject</button>
+                <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p); $event.stopPropagation();">View</button>
+                <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p); $event.stopPropagation();">Approve</button>
+                <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p); $event.stopPropagation();">Reject</button>
               </div>
             </td>
           </tr>
@@ -237,7 +237,7 @@
         <h2><i class="bi bi-camera-fill me-2"></i>  Trip Memory Moderation</h2>
         <p class="text-muted small">Monitor, audit, and manage media uploaded across shared travel groups.</p>
         
-      <!-- Creative Stats Cards Bar -->
+      <!-- Stats Cards Bar -->
     <div class="d-flex flex-wrap gap-3 mb-4 w-100">
       <!-- Card 1: Total Uploads -->
       <div class="flex-fill" style="min-width: 260px;">
@@ -383,7 +383,7 @@
           </div>
         </div>
 
-        <!-- Perfectly Width-Constrained Fleet Stats Cards Bar -->
+        <!-- Fleet Stats Cards Bar -->
         <div class="row g-2 mb-4 mx-0">
           
           <!-- Card 1: Approved -->
@@ -538,9 +538,19 @@
               <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'revenue')" [class.doc-incomplete]="!hasDocument(v, 'revenue')">
                 <i class="bi bi-receipt"></i> Revenue
               </div>
-              <!-- Added Certificate of Registration Mini-Badge -->
               <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'registration')" [class.doc-incomplete]="!hasDocument(v, 'registration')">
                 <i class="bi bi-file-earmark-richtext"></i> Reg
+              </div>
+            </div>
+
+            <!-- Booking Information Section -->
+            <div *ngIf="getVehicleBookings(getVehicleId(v)).length > 0" class="fleet-booking-section">
+              <div class="booking-section-header" (click)="openVehicleBookingsModal(v)">
+                <div class="booking-header-left">
+                  <i class="bi bi-calendar-check"></i>
+                  <span>All Bookings ({{ getVehicleBookings(getVehicleId(v)).length }})</span>
+                </div>
+                <i class="bi bi-box-arrow-up-right"></i>
               </div>
             </div>
 
@@ -578,7 +588,7 @@
         </div>
       </div>
 
-    <!-- Trip Budget Monitoring Stats Cards (Aligned precisely with Table starting point) -->
+    <!-- Trip Budget Monitoring Stats Cards -->
 <div class="row g-3 mb-4 mx-0">
   <!-- Card 1: Total Trips -->
   <div class="col-xl-3 col-md-6 px-2">
@@ -1043,8 +1053,8 @@
 
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-cancel" (click)="selectedProvider = null">Close Review</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px; margin-top: 20px;">
+          <button class="btn-cancel" (click)="closeReview(); $event.stopPropagation();">Close Review</button>
         <div class="action-group">
           <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Rejected'" 
                   class="btn-ctrl-vibrant btn-delete-ink btn-modal-action" 
@@ -1136,4 +1146,3 @@
       </div>
     </div>
   </div>
-</div>

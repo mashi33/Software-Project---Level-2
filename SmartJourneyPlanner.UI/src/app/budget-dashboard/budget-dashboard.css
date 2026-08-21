@@ -1,16 +1,12 @@
-/* ==========================================================================
-   🏢 1. COMPONENT ROOT WORKSPACE MATRIX
-   ========================================================================== */
 .bp-root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100%;
   background-color: #f6f8fa;
   padding: 24px 32px;
+  padding-top: 90px;
 }
 
-/* ==========================================================================
-   🔔 HIGHLY VIBRANT ALERT STATUS CARDS
-   ========================================================================== */
+/* HIGHLY VIBRANT ALERT STATUS CARDS */
 .summary-spacing {
   margin-bottom: 24px;
   width: 100%;
@@ -59,7 +55,6 @@
   letter-spacing: 0.8px;
 }
 
-/* 🧭 ACTION TOP CONSOLE BELT */
 .bp-top-belt {
   display: flex;
   justify-content: space-between;
@@ -115,9 +110,6 @@
 }
 .bp-belt-export-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
 
-/* ==========================================================================
-   📊 2. METRICS DISPLAY SHEET (REDESIGNED PROFESSIONAL KPI CARDS)
-   ========================================================================== */
 .bp-metrics-sheet {
   display: grid;
   grid-template-columns: 1fr 1fr 1.5fr;
@@ -163,9 +155,6 @@
 .bp-bar-fill.warning { background: #f59e0b !important; }
 .bp-bar-fill.danger { background: #ef4444 !important; }
 
-/* ==========================================================================
-   🎴 3. TWO-COLUMN WORKSPACE GRID
-   ========================================================================== */
 .bp-grid {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
@@ -176,9 +165,6 @@
 
 .bp-card, .side-card { background: #ffffff; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015); overflow: hidden; position: relative; }
 
-/* ==========================================================================
-   🎨 4. EXPENSE HISTORY TABLE (COMPACT & REFINED LOOK & FEEL)
-   ========================================================================== */
 .bp-card-head-modern { padding: 28px 32px 18px 32px; display: flex; justify-content: space-between; align-items: center; }
 .bp-card-title { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
 .bp-card-subtitle-sub { font-size: 0.85rem; color: #64748b; font-weight: 500; }
@@ -208,7 +194,7 @@
 .bp-creative-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 8px; /* Row අතර පරතරය ප්‍රශස්ත මට්ටමකට (8px) අඩු කළා */
+  border-spacing: 0 8px; 
   margin-top: -6px;
 }
 
@@ -257,9 +243,8 @@
   color: #0284c7 !important;
 }
 
-/* Table cells styling with compact padding */
 .bp-creative-table td { 
-  padding: 14px 18px; /* Padding එක අඩු කර වඩාත් සංයුක්ත කළා */
+  padding: 14px 18px; 
   font-size: 14.5px; 
   color: #1e293b;
   background: #ffffff;
@@ -345,9 +330,7 @@
   cursor: not-allowed !important; 
 }
 
-/* ==========================================================================
-   🧱 5. SMART USER INTERACTIVE HOVER TOOLTIPS
-   ========================================================================== */
+/* SMART USER INTERACTIVE HOVER TOOLTIPS */
 .tooltip-container {
   position: relative;
   display: inline-block;
@@ -410,9 +393,7 @@
 .summary-label-text { font-size: 12px; font-weight: 800; color: #0369a1; text-transform: uppercase; letter-spacing: 1.2px; }
 .summary-value-text { font-size: 18px; font-weight: 900; color: #0284c7; }
 
-/* ==========================================================================
-   🧱 6. SWEETALERT MODAL BRAND COSMETIC MATCH OVERRIDES
-   ========================================================================== */
+/* SWEETALERT MODAL BRAND COSMETIC MATCH OVERRIDES */
 .swal2-premium-popup {
   font-family: 'Inter', -apple-system, sans-serif !important;
   border-radius: 24px !important;
@@ -436,9 +417,7 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* ==========================================================================
-   🔢 7. SIDEBAR COMPACT NUMERIC SPLITTER & CHARTS
-   ========================================================================== */
+/* SIDEBAR COMPACT NUMERIC SPLITTER & CHARTS */
 .side-section-split { 
   padding: 28px; 
   display: flex; 

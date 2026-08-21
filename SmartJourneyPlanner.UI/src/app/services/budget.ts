@@ -29,10 +29,6 @@ export class BudgetService {
     return this.http.put(`${this.apiUrl}/update-expense/${tripId}/${expenseId}`, updatedExpense);
   }
 
-  /**
-   * Pulls direct items belonging to the active user profile 
-   * straight out from the correct collection pipeline.
-   */
   getUserTripsForDropdown(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/user-trips`);
   }
