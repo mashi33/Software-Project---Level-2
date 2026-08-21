@@ -1,6 +1,7 @@
 /* Getting Started Page Styles */
 .container {
     animation: fadeIn 0.4s ease-in-out;
+    padding-top: 90px;
 }
 
 h1 {

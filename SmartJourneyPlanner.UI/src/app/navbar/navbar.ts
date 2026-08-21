@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -21,6 +21,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // 🔑 THE FIX: Declare the missing variable so the HTML template can find it!
   userRole: string = 'Traveler';
+  @Output() onToggleSidebar = new EventEmitter<void>();
 
   // 💡 Subscription
   private userSub!: Subscription;
@@ -353,5 +354,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     } catch (e) {
       return 'Just now';
     }
+  }
+
+  toggleSidebar() {
+    this.onToggleSidebar.emit();
   }
 }
