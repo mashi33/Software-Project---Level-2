@@ -28,7 +28,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Filtered menu items based on search
   filteredMenuItems: any[] = [];
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit(): void {
     this.loadUserRole();
@@ -68,10 +68,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       if (token) {
         const tokenPayload = JSON.parse(atob(token.split('.')[1]));
         this.userRole = tokenPayload.UserType ||
-                       tokenPayload.userType ||
-                       tokenPayload.role ||
-                       tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-                       'Traveler';
+          tokenPayload.userType ||
+          tokenPayload.role ||
+          tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          'Traveler';
       }
     } catch (e) {
       console.error('Failed to extract user role:', e);
@@ -105,7 +105,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { icon: 'bi-chat-dots', label: 'Community', route: '/community-map', category: 'Social' },
       { icon: 'bi-person', label: 'Profile', route: '/profile', category: 'Account' },
       { icon: 'bi-trophy', label: 'Achievements', route: '/achievements', category: 'Account' },
-      { icon: 'bi-question-circle', label: 'Help', route: '/help', category: 'Support' }
+
     ];
 
     const providerMenu = [
