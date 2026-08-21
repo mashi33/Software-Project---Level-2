@@ -351,6 +351,11 @@ namespace SmartJourneyPlanner.Controllers
 
             booking.HasBeenRated = true;
             await _bookingService.UpdateAsync(id, booking);
+
+            // Invalidate cached bookings so the UI reflects the rated status immediately
+            if (!string.IsNullOrEmpty(booking.UserId)) _cache.Remove($"User_Bookings_{booking.UserId}");
+            if (!string.IsNullOrEmpty(booking.ProviderId)) _cache.Remove($"Provider_Bookings_{booking.ProviderId}");
+
             return NoContent();
         }
 
@@ -366,6 +371,13 @@ namespace SmartJourneyPlanner.Controllers
 
             updatedBooking.Id = booking.Id;
             await _bookingService.UpdateAsync(id, updatedBooking);
+
+            // Invalidate cache
+            if (!string.IsNullOrEmpty(booking.UserId)) _cache.Remove($"User_Bookings_{booking.UserId}");
+            if (!string.IsNullOrEmpty(booking.ProviderId)) _cache.Remove($"Provider_Bookings_{booking.ProviderId}");
+            if (!string.IsNullOrEmpty(updatedBooking.UserId)) _cache.Remove($"User_Bookings_{updatedBooking.UserId}");
+            if (!string.IsNullOrEmpty(updatedBooking.ProviderId)) _cache.Remove($"Provider_Bookings_{updatedBooking.ProviderId}");
+
             return NoContent();
         }
 
@@ -380,6 +392,11 @@ namespace SmartJourneyPlanner.Controllers
             if (booking is null) return NotFound();
 
             await _bookingService.RemoveAsync(id);
+
+            // Invalidate cached bookings so that removed item disappears on reload
+            if (!string.IsNullOrEmpty(booking.UserId)) _cache.Remove($"User_Bookings_{booking.UserId}");
+            if (!string.IsNullOrEmpty(booking.ProviderId)) _cache.Remove($"Provider_Bookings_{booking.ProviderId}");
+
             return NoContent();
         }
     }

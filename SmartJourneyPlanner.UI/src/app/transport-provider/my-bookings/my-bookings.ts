@@ -240,11 +240,15 @@ export class MyBookings implements OnInit {
       next: () => {
         // Step 2: Update the booking record to remember it has been rated
         if (this.selectedBooking?.id) {
-          this.transportBookingService.markBookingAsRated(this.selectedBooking.id).subscribe({
+          const bookingId = this.selectedBooking.id;
+          this.transportBookingService.markBookingAsRated(bookingId).subscribe({
             next: () => {
               this.showSuccessMessage = true;
               if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
               
+              const item = this.userBookings.find(b => b.id === bookingId);
+              if (item) item.hasBeenRated = true;
+
               // Close the popup after a short success pause
               setTimeout(() => {
                 this.closeModal();
@@ -317,9 +321,17 @@ export class MyBookings implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         if (!booking.id) return;
-        this.transportBookingService.deleteBooking(booking.id).subscribe(() => {
-          Swal.fire('Removed', 'The booking has been removed.', 'success');
-          this.loadBookings();
+        this.transportBookingService.deleteBooking(booking.id).subscribe({
+          next: () => {
+            // Remove immediately from memory for instant UI responsiveness
+            this.userBookings = this.userBookings.filter(b => b.id !== booking.id);
+            this.providerBookings = this.providerBookings.filter(b => b.id !== booking.id);
+            Swal.fire('Removed', 'The booking has been removed.', 'success');
+            this.loadBookings();
+          },
+          error: () => {
+            Swal.fire('Error', 'Failed to remove booking.', 'error');
+          }
         });
       }
     });
