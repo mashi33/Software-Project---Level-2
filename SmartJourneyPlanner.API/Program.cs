@@ -10,7 +10,7 @@ using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
-using Tomlyn.Extensions.Configuration; // TOML Support
+using Tomlyn.Extensions.Configuration;// TOML Support
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,5 +143,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
