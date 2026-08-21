@@ -88,7 +88,6 @@ namespace SmartJourneyPlanner.Controllers
         {
             // Set the creation timestamp automatically
             newBooking.CreatedAt = DateTime.UtcNow.ToString("o");
-<<<<<<< HEAD
 
             if (string.IsNullOrEmpty(newBooking.Status))
             {

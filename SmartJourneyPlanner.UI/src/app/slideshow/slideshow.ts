@@ -625,7 +625,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
   togglePlay(): void {
     this.isPlaying = !this.isPlaying;
     if (this.isPlaying) {
-      this.playbackInterval = setInterval(() => this.nextSlide(), 7000);
+      this.playbackInterval = setInterval(() => this.nextSlide(), 5000);
     } else {
       clearInterval(this.playbackInterval);
     }

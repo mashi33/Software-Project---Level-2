@@ -31,7 +31,7 @@ export class MapAnimationService {
 
     this.resetOpenCluster();
 
-    const duration = 2800; // Animation duration in milliseconds
+    const duration = 1300; // Animation duration in milliseconds
     const startLat = oldCoords.lat;
     const startLng = oldCoords.lng;
     const endLat = newCoords.lat;

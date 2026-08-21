@@ -52,6 +52,7 @@ import { TripHistoryComponent } from './trip-history/trip-history';
 
 import { PrivacyPolicy } from './privacy-policy/privacy-policy';
 import { TermsOfService } from './terms-of-service/terms-of-service';
+import { LandingPageComponent } from './landing page/landing-page';
 
 
 export const routes: Routes = [
