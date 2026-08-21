@@ -50,6 +50,15 @@ export class ProviderDashboardComponent implements OnInit {
   editingBlockedRange: any = null;
   todayDate: string = '';
 
+  // Cancel Booking Modal properties
+  showCancelBookingModal: boolean = false;
+  cancelBookingData: any = null;
+  cancelReason: string = '';
+  cancelBlockStartDate: string = '';
+  cancelBlockEndDate: string = '';
+  cancelWarningHtml: string = '';
+  cancelStep: 'reason' | 'dates' = 'reason';
+
   private providerCancelledIds = new Set<string>();
   private tempCancelReason: string = '';
 
@@ -912,250 +921,171 @@ export class ProviderDashboardComponent implements OnInit {
     }).length;
 
     let warningHtml = '';
-    if (isShortNotice) {
-      warningHtml = `
-        <div style="background:#FFF8E6;border-left:4px solid #F59E0B;border-radius:6px;padding:12px 14px;margin:14px 0;text-align:left;">
-          <div style="font-weight:600;color:#B45309;margin-bottom:4px;">Short-notice cancellation</div>
-          <div style="font-size:13px;color:#78350F;line-height:1.45;">
-            This booking starts within 24 hours. Cancelling now will significantly inconvenience the customer.
-          </div>
-        </div>`;
+if (isShortNotice) {
+  warningHtml = `
+    <div class="warning-box short-notice">
+      <div class="title">Short-notice cancellation</div>
+      <div class="text">
+        This booking starts within 24 hours. Cancelling now will significantly inconvenience the customer.
+      </div>
+    </div>`;
 
-      if (shortNoticeCancelsThisMonth >= 3) {
-        warningHtml += `
-          <div style="background:#FEF2F2;border-left:4px solid #EF4444;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-weight:600;color:#B91C1C;margin-bottom:4px;">Monthly limit reached</div>
-            <div style="font-size:13px;color:#7F1D1D;line-height:1.45;">
-              You have already made <strong>${shortNoticeCancelsThisMonth}</strong> short-notice cancellation(s) this month.
-              Further short-notice cancellations may result in temporary restrictions or forced blocked date ranges.
-            </div>
-          </div>`;
-      } else if (shortNoticeCancelsThisMonth === 2) {
-        warningHtml += `
-          <div style="background:#FFF8E6;border-left:4px solid #F59E0B;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-size:13px;color:#78350F;line-height:1.45;">
-              This will be your <strong>3rd</strong> short-notice cancellation this month.
-              Exceeding 3 may lead to temporary account restrictions.
-            </div>
-          </div>`;
-      } else {
-        warningHtml += `
-          <div style="background:#EFF6FF;border-left:4px solid #3B82F6;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-size:13px;color:#1E40AF;line-height:1.45;">
-              Short-notice cancellations this month: <strong>${shortNoticeCancelsThisMonth}</strong> / 3 allowed
-            </div>
-          </div>`;
-      }
+  if (shortNoticeCancelsThisMonth >= 3) {
+    warningHtml += `
+      <div class="warning-box limit-reached">
+        <div class="title">Monthly limit reached</div>
+        <div class="text">
+          You have already made <strong>${shortNoticeCancelsThisMonth}</strong> short-notice cancellation(s) this month.
+          Further short-notice cancellations may result in temporary restrictions or forced blocked date ranges.
+        </div>
+      </div>`;
+  } else if (shortNoticeCancelsThisMonth === 2) {
+    warningHtml += `
+      <div class="warning-box short-notice">
+        <div class="text">
+          This will be your <strong>3rd</strong> short-notice cancellation this month.
+          Exceeding 3 may lead to temporary account restrictions.
+        </div>
+      </div>`;
+  } else {
+    warningHtml += `
+      <div class="warning-box warning-info">
+        <div class="text">
+          Short-notice cancellations this month: <strong>${shortNoticeCancelsThisMonth}</strong> / 3 allowed
+        </div>
+      </div>`;
+  }
+}
+
+    // Initialize cancel booking modal
+    this.cancelBookingData = booking;
+    this.cancelReason = this.tempCancelReason || '';
+    this.cancelBlockStartDate = new Date(booking.startDate).toISOString().split('T')[0];
+    this.cancelBlockEndDate = new Date(booking.endDate).toISOString().split('T')[0];
+    this.cancelWarningHtml = warningHtml;
+    this.cancelStep = 'reason';
+    this.showCancelBookingModal = true;
+  }
+
+  closeCancelBookingModal() {
+    this.showCancelBookingModal = false;
+    this.cancelBookingData = null;
+    this.cancelReason = '';
+    this.cancelBlockStartDate = '';
+    this.cancelBlockEndDate = '';
+    this.cancelWarningHtml = '';
+    this.cancelStep = 'reason';
+  }
+
+  onCancelReasonNext() {
+    if (!this.cancelReason || !this.cancelReason.trim()) {
+      Swal.fire('Error', 'Please provide a reason for cancellation', 'error');
+      return;
+    }
+    this.cancelStep = 'dates';
+  }
+
+  onCancelDatesBack() {
+    this.cancelStep = 'reason';
+  }
+
+  onCancelDatesConfirm() {
+    if (!this.cancelBookingData) return;
+
+    const booking = this.cancelBookingData;
+    const cancelReason = this.cancelReason.trim();
+    const blockStart = this.cancelBlockStartDate;
+    const blockEnd = this.cancelBlockEndDate;
+
+    // Validate dates
+    const defaultStart = new Date(booking.startDate).toISOString().split('T')[0];
+    const defaultEnd = new Date(booking.endDate).toISOString().split('T')[0];
+
+    if (!blockStart || !blockEnd) {
+      Swal.fire('Error', 'Both start and end dates are required', 'error');
+      return;
+    }
+    if (blockEnd < blockStart) {
+      Swal.fire('Error', 'End date must be on or after the start date', 'error');
+      return;
+    }
+    if (blockStart < defaultStart || blockEnd > defaultEnd) {
+      Swal.fire('Error', 'Dates must be within the original booking period', 'error');
+      return;
     }
 
-        // Confirm + Reason 
-    Swal.fire({
-      title: 'Cancel Booking',
-      width: '520px',
-      confirmButtonText: 'Continue',
-      cancelButtonText: 'Keep Booking',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6c757d',
-      showCancelButton: true,
-      reverseButtons: true,
-      focusConfirm: false,
-      html: `
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-    <!-- Booking summary card -->
-    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
-      <p style="margin:0 0 6px 0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Customer:</strong> ${booking.userName || 'Customer'}
-      </p>
-      <p style="margin:0 0 6px 0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Vehicle:</strong> ${booking.vehicleName || 'Vehicle'}
-      </p>
-      <p style="margin:0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Dates:</strong>
-        ${new Date(booking.startDate).toLocaleDateString()} – ${new Date(booking.endDate).toLocaleDateString()}
-      </p>
-    </div>
+    // Close modal and proceed with cancellation
+    this.closeCancelBookingModal();
+    this.tempCancelReason = cancelReason;
 
-    ${warningHtml}
-
-    <!-- Reason label -->
-    <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-      Reason for cancellation <span style="color:#ef4444;">*</span>
-    </label>
-  </div>
-`,
-      input: 'textarea',
-      inputValue: this.tempCancelReason || '',          //  pre-fill previous reason
-      inputPlaceholder: 'e.g. Vehicle breakdown, personal emergency, scheduled maintenance…',
-      inputAttributes: {
-        rows: '3',
-        maxlength: '250',
-        class: 'form-control'
-      },
-      inputValidator: (value) => {
-        if (!value || !value.trim()) {
-          return 'Please provide a reason for cancellation';
-        }
-        return null;
-      }
-       }).then((result) => {
-      if (!result.isConfirmed) {
-        // Provider clicked "Keep Booking" → clear temporary reason
+    // Cancel the booking
+    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+      next: () => {
+        booking.status = 'Cancelled';
+        booking.statusChangedDate = new Date().toISOString();
+        this.providerCancelledIds.add(booking.id!);
         this.tempCancelReason = '';
-        return;
-      }
 
-      const cancelReason = (result.value || '').trim();
-      this.tempCancelReason = cancelReason;   // save reason
-
-      const defaultStart = new Date(booking.startDate).toISOString().split('T')[0];
-      const defaultEnd = new Date(booking.endDate).toISOString().split('T')[0];
-      const todayStr = this.todayDate || new Date().toISOString().split('T')[0];
-
-            // Ask unavailable dates 
-      Swal.fire({
-        title: 'Unavailable Dates',
-        width: '480px',
-        confirmButtonText: 'Cancel Booking & Block Dates',
-        cancelButtonText: 'Back',
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        showCancelButton: true,
-        reverseButtons: true,
-        focusConfirm: false,
-        allowOutsideClick: false,
-        html: `
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-    <p style="margin:0 0 18px 0; font-size:14px; color:#475569; line-height:1.5;">
-      Select the date range when this vehicle should <strong style="color:#0f172a;">not be available</strong> to customers.
-      You can only select dates within the original booking period.
-    </p>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-      <div>
-        <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-          From
-        </label>
-        <input type="date" id="swal-start" 
-               value="${defaultStart}"
-               min="${defaultStart}"
-               max="${defaultEnd}"
-               style="width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; color:#0f172a; background:#fff; box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-          To
-        </label>
-        <input type="date" id="swal-end" 
-               value="${defaultEnd}"
-               min="${defaultStart}"
-               max="${defaultEnd}"
-               style="width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; color:#0f172a; background:#fff; box-sizing:border-box;">
-      </div>
-    </div>
-  </div>
-`,
-        preConfirm: () => {
-          const startInput = (document.getElementById('swal-start') as HTMLInputElement)?.value;
-          const endInput = (document.getElementById('swal-end') as HTMLInputElement)?.value;
-
-          if (!startInput || !endInput) {
-            Swal.showValidationMessage('Both start and end dates are required');
-            return false;
-          }
-          if (endInput < startInput) {
-            Swal.showValidationMessage('End date must be on or after the start date');
-            return false;
-          }
-          //  stay inside original booking range
-          if (startInput < defaultStart || endInput > defaultEnd) {
-            Swal.showValidationMessage('Dates must be within the original booking period');
-            return false;
-          }
-          return { startDate: startInput, endDate: endInput };
-        }
-      }).then((dateResult) => {
-        //  Back button clicked → return to Reason popup 
-        if (dateResult.dismiss === Swal.DismissReason.cancel) {
-          // Re-open the reason step 
-          this.cancelBooking(booking);   
+        // Add blocked range
+        const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
+        if (!vehicleId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Booking Cancelled',
+            text: 'The booking was cancelled, but the vehicle could not be identified. Please block the dates manually from Fleet Management.',
+            confirmButtonColor: '#0c92f4'
+          });
+          this.loadAll();
           return;
         }
 
-        if (!dateResult.isConfirmed || !dateResult.value) return;
+        const blockReason = cancelReason
+          ? `Cancelled booking: ${cancelReason}`
+          : 'Cancelled booking – provider unavailable';
 
-        const { startDate: blockStart, endDate: blockEnd } = dateResult.value;
-        //  Cancel the booking
-        this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+        this.vehicleService.addBlockedDateRange(vehicleId, blockStart, blockEnd, blockReason).subscribe({
           next: () => {
-            booking.status = 'Cancelled';
-            booking.statusChangedDate = new Date().toISOString();
-
-            this.providerCancelledIds.add(booking.id!);
-
-            this.tempCancelReason = '';
-
-            //  Add blocked range
-            const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
-            if (!vehicleId) {
-              Swal.fire({
-                icon: 'warning',
-                title: 'Booking Cancelled',
-                text: 'The booking was cancelled, but the vehicle could not be identified. Please block the dates manually from Fleet Management.',
-                confirmButtonColor: '#0c92f4'
-              });
-              this.loadAll();
-              return;
-            }
-
-            const blockReason = cancelReason
-              ? `Cancelled booking: ${cancelReason}`
-              : 'Cancelled booking – provider unavailable';
-
-            this.vehicleService.addBlockedDateRange(vehicleId, blockStart, blockEnd, blockReason).subscribe({
-              next: () => {
-                               Swal.fire({
-                  icon: 'success',
-                  title: 'Booking Cancelled',
-                  width: '480px',
-                  confirmButtonText: 'Done',
-                  confirmButtonColor: '#0c92f4',
-                  html: `
-                    <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-                      <p class="mb-2">The booking has been successfully cancelled.</p>
-                      <div class="bg-light p-2 rounded border">
-                        <p class="m-0"><strong>Vehicle blocked</strong></p>
-                        <p class="m-0">Unavailable from <strong>${blockStart}</strong> to <strong>${blockEnd}</strong>.</p>
-                        <p class="m-0 text-muted">All other dates remain available.</p>
-                      </div>
-                    </div>
-                  `
-                });
-                this.loadAll();
-              },
-              error: (err) => {
-                console.error('Failed to add blocked range:', err);
-                const msg = err.error?.message || 'Booking was cancelled, but the dates could not be blocked automatically. You can still block them manually.';
-                Swal.fire({
-                  icon: 'warning',
-                  title: 'Partial Success',
-                  text: msg,
-                  confirmButtonColor: '#0c92f4'
-                });
-                this.loadAll();
-              }
+            Swal.fire({
+              icon: 'success',
+              title: 'Booking Cancelled',
+              width: '480px',
+              confirmButtonText: 'Done',
+              confirmButtonColor: '#0c92f4',
+              html: `
+                <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+                  <p class="mb-2">The booking has been successfully cancelled.</p>
+                  <div class="bg-light p-2 rounded border">
+                    <p class="m-0"><strong>Vehicle blocked</strong></p>
+                    <p class="m-0">Unavailable from <strong>${blockStart}</strong> to <strong>${blockEnd}</strong>.</p>
+                    <p class="m-0 text-muted">All other dates remain available.</p>
+                  </div>
+                </div>
+              `
             });
+            this.loadAll();
           },
           error: (err) => {
-            console.error('Cancel booking failed:', err);
+            console.error('Failed to add blocked range:', err);
+            const msg = err.error?.message || 'Booking was cancelled, but the dates could not be blocked automatically. You can still block them manually.';
             Swal.fire({
-              icon: 'error',
-              title: 'Unable to Cancel',
-              text: 'Something went wrong while cancelling the booking. Please try again.',
+              icon: 'warning',
+              title: 'Partial Success',
+              text: msg,
               confirmButtonColor: '#0c92f4'
             });
+            this.loadAll();
           }
         });
-      });
+      },
+      error: (err) => {
+        console.error('Cancel booking failed:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Unable to Cancel',
+          text: 'Something went wrong while cancelling the booking. Please try again.',
+          confirmButtonColor: '#0c92f4'
+        });
+      }
     });
   }
 

@@ -1576,6 +1576,170 @@
   color: #dc2626;
 }
 
+/* CANCEL BOOKING MODAL STYLES */
+.booking-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.warning-messages {
+  margin-bottom: 18px;
+}
+
+.warning-messages > div {
+  margin-bottom: 10px;
+}
+
+.cancel-step {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cancel-step .form-group {
+  margin-bottom: 16px;
+}
+
+.cancel-step .form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.cancel-step .required {
+  color: #ef4444;
+}
+
+.cancel-step .form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.cancel-step .form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cancel-step textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.step-description {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.date-range-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-actions .btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.form-actions .btn-secondary:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.form-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* PREMIUM HIGHLIGHT STYLING */
 .booking-highlighted {
   border: 2px solid #6366f1 !important;
@@ -1592,6 +1756,66 @@
     box-shadow: 0 0 25px rgba(99, 102, 241, 0.65);
     transform: scale(1.01);
   }
+}
+
+:host ::ng-deep .warning-messages {
+  margin-bottom: 18px;
+}
+
+:host ::ng-deep .warning-box {
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  text-align: left;
+  border-left: 4px solid;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .warning-box.short-notice {
+  background: #FFF8E6;
+  border-left-color: #F59E0B;
+}
+
+:host ::ng-deep .warning-box.short-notice .title {
+  font-weight: 600;
+  color: #B45309;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+:host ::ng-deep .warning-box.short-notice .text {
+  font-size: 13px;
+  color: #78350F;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .warning-box.limit-reached {
+  background: #FEF2F2;
+  border-left-color: #EF4444;
+}
+
+:host ::ng-deep .warning-box.limit-reached .title {
+  font-weight: 600;
+  color: #B91C1C;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+:host ::ng-deep .warning-box.limit-reached .text {
+  font-size: 13px;
+  color: #7F1D1D;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .warning-box.warning-info {
+  background: #EFF6FF;
+  border-left-color: #3B82F6;
+}
+
+:host ::ng-deep .warning-box.warning-info .text {
+  font-size: 13px;
+  color: #1E40AF;
+  line-height: 1.5;
 }
 
 
