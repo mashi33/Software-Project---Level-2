@@ -97,54 +97,53 @@
         </section>
 
         <!-- VISIBILITY OPTION -->
-        <!-- VISIBILITY OPTION -->
-<section class="form-section">
-  <label class="field-label">Visibility</label>
-  <div class="visibility-options vertical-cards">
-    
-    <!-- PRIVATE OPTION -->
-    <label class="visibility-card private-card" [class.active]="visibilityStatus === 'private'">
-      <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
-      <div class="card-icon">
-        <i class="bi bi-lock-fill"></i>
-      </div>
-      <div class="card-content">
-        <span class="card-title">Private</span>
-        <span class="card-desc">Only visible to you.</span>
-      </div>
-    </label>
+        <section class="form-section">
+          <label class="field-label">Visibility</label>
+          <div class="visibility-options vertical-cards">
 
-    <!-- TRIP MEMBERS OPTION -->
-    <label class="visibility-card trip-card" [class.active]="visibilityStatus === 'tripMembers'">
-      <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
-      <div class="card-icon">
-        <i class="bi bi-people-fill"></i>
-      </div>
-      <div class="card-content">
-        <span class="card-title">Trip Members</span>
-        <span class="card-desc">Only visible to people added to this trip.</span>
-      </div>
-    </label>
+             <!-- PRIVATE OPTION -->
+            <label class="visibility-card private-card" [class.active]="visibilityStatus === 'private'">
+              <input type="radio" value="private" [(ngModel)]="visibilityStatus" name="visibility">
+              <div class="card-icon">
+                <i class="bi bi-lock-fill"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Private</span>
+                <span class="card-desc">Only visible to you.</span>
+              </div>
+            </label>
 
-    <!-- PUBLIC OPTION -->
-    <label class="visibility-card public-card" [class.active]="visibilityStatus === 'public'">
-      <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
-      <div class="card-icon">
-        <i class="bi bi-globe2"></i>
-      </div>
-      <div class="card-content">
-        <span class="card-title">Public</span>
-        <span class="card-desc">Anyone can see this memories.</span>
-      </div>
-    </label>
+             <!-- TRIP MEMBERS OPTION -->
+            <label class="visibility-card trip-card" [class.active]="visibilityStatus === 'tripMembers'">
+              <input type="radio" value="tripMembers" [(ngModel)]="visibilityStatus" name="visibility">
+              <div class="card-icon">
+                <i class="bi bi-people-fill"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Trip Members</span>
+                <span class="card-desc">Only visible to people added to this trip.</span>
+              </div>
+            </label>
 
-  </div>
+             <!-- PUBLIC OPTION -->
+            <label class="visibility-card public-card" [class.active]="visibilityStatus === 'public'">
+              <input type="radio" value="public" [(ngModel)]="visibilityStatus" name="visibility">
+              <div class="card-icon">
+                <i class="bi bi-globe2"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Public</span>
+                <span class="card-desc">Anyone can see this memories.</span>
+              </div>
+            </label>
 
-  <div class="visibility-message" *ngIf="visibilityStatus === 'tripMembers'">
-    <i class="bi bi-check-circle-fill"></i>
-    <span>This memory will be visible to all members of "{{ selectedTrip?.tripName || 'this trip' }}" in the slideshow.</span>
-  </div>
-</section>
+          </div>
+
+          <div class="visibility-message" *ngIf="visibilityStatus === 'tripMembers'">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>This memory will be visible to all members of "{{ selectedTrip?.tripName || 'this trip' }}" in the slideshow.</span>
+          </div>
+        </section>
 
         <button (click)="saveMemory()" class="btn-save"
                 [disabled]="!newMemory.title || !newMemory.imageUrl || newMemory.latitude === 0">
@@ -196,7 +195,7 @@
             </div>
 
             <div class="album-action-buttons">
-              
+
               <button class="card-action-btn delete-album-btn"
                       title="Delete entire album"
                       (click)="deleteAlbum(album, $event)">
@@ -308,21 +307,90 @@
         </div>
       </div>
 
+      <h4 class="section-title">Trip Notes & Highlights</h4>
       <p class="description-text" *ngIf="selectedMemory?.description">
         {{ selectedMemory?.description }}
       </p>
 
-      <div class="like-badge-lightbox" *ngIf="selectedMemory?.visibility === 'public'" (click)="toggleLikedUsers()" style="cursor: pointer;">
-        <i class="bi bi-heart-fill"></i>
-        {{ selectedMemory?.likeCount || 0 }} loved this
-        <i class="bi bi-chevron-down" *ngIf="!showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
-        <i class="bi bi-chevron-up" *ngIf="showLikedUsers" style="margin-left: 8px; font-size: 14px;"></i>
+      <!-- Likes + Comments Summary Cards -->
+      <div class="engagement-row" *ngIf="selectedMemory?.visibility === 'public'">
+
+        <!-- Liked by card -->
+        <div class="engagement-card likes-card" (click)="toggleLikedUsers()">
+          <div class="engagement-top">
+            <i class="bi bi-heart-fill"></i>
+            <span>Liked by {{ selectedMemory?.likeCount || 0 }} people</span>
+          </div>
+          <div class="avatar-stack" *ngIf="selectedMemory?.likedByUsers?.length">
+            <span class="avatar-circle"
+                  *ngFor="let user of selectedMemory.likedByUsers | slice:0:4; let i = index"
+                  [style.background]="getAvatarColor(i)">
+              {{ getInitial(user) }}
+            </span>
+            <span class="avatar-more" *ngIf="selectedMemory.likedByUsers.length > 4">
+              +{{ selectedMemory.likedByUsers.length - 4 }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Comments card -->
+        <div class="engagement-card comments-card">
+          <div class="engagement-top">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <span>{{ comments.length || selectedMemory?.commentCount || 0 }} Comments</span>
+          </div>
+          <div class="avatar-stack" *ngIf="comments.length">
+            <span class="avatar-circle"
+                  *ngFor="let c of comments | slice:0:3; let i = index"
+                  [style.background]="getAvatarColor(i + 2)">
+              {{ getInitial(c.fullName) }}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div class="liked-users-list" *ngIf="selectedMemory?.visibility === 'public' && selectedMemory?.likedByUsers?.length > 0 && showLikedUsers">
-        <span class="liked-users-label">Liked by:</span>
-        <div class="liked-users-names">
-          <span class="liked-user" *ngFor="let user of selectedMemory.likedByUsers">{{ user }}</span>
+      <!-- Expanded liked users list -->
+<div class="liked-users-expanded"
+     *ngIf="selectedMemory?.visibility === 'public' && showLikedUsers && selectedMemory?.likedByUsers?.length">
+  <h4 class="section-title">Liked by</h4>
+  <div class="liked-user-item" *ngFor="let user of selectedMemory.likedByUsers; let i = index">
+    <div class="liked-user-avatar" [style.background]="getAvatarColor(i)">
+      {{ getInitial(user) }}
+    </div>
+    <div class="liked-user-info">
+      <span class="liked-user-name">{{ user }}</span>
+    </div>
+  </div>
+</div>
+
+      <!-- Comments List  -->
+      <div class="comments-section" *ngIf="selectedMemory?.visibility === 'public'">
+        <div class="comments-list">
+          <h4 class="section-title">Comments</h4>
+          <div class="comment-loading" *ngIf="isLoadingComments">
+            <i class="bi bi-arrow-repeat spinning"></i> Loading comments...
+          </div>
+
+          <div class="empty-comments" *ngIf="!isLoadingComments && comments.length === 0">
+            <i class="bi bi-chat"></i>
+            <p>No comments yet</p>
+          </div>
+
+          <div class="comment-item" *ngFor="let comment of comments">
+            <div class="comment-avatar"
+                 [style.background]="getAvatarColor(comment.fullName?.charCodeAt(0) || 0)">
+              {{ getInitial(comment.fullName) }}
+            </div>
+            <div class="comment-body">
+              <div class="comment-meta">
+                <span class="comment-author">{{ comment.fullName }}</span>
+                <span class="comment-time">
+                  {{ comment.createdAt | date:'mediumDate' }}, {{ comment.createdAt | date:'shortTime' }}
+                </span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+            </div>
+          </div>
         </div>
       </div>
 

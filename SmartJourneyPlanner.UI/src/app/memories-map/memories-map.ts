@@ -53,6 +53,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     visibility: 'private'
   };
 
+  selectedFile: File | null = null;  
+
   searchQuery: string = '';
   allMemories: any[] = [];
   myRecentUploads: any[] = [];
@@ -68,6 +70,9 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   showAllAlbums: boolean = false;
   activeTab: 'upload' | 'albums' = 'upload';
   showLikedUsers: boolean = false;
+
+  comments: any[] = [];
+  isLoadingComments = false;
 
   constructor(
     private http: HttpClient,
@@ -151,7 +156,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // FILE UPLOAD
+  // FILE UPLOAD 
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
@@ -159,12 +164,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (file.size > 2 * 1024 * 1024) {
       this.showError(
-        'File too large', 
+        'File too large',
         'Please choose an image under 2MB.'
       );
       return;
     }
 
+    this.selectedFile = file;
+
+    // Local preview only (do not goto base64 database )
     const reader = new FileReader();
     reader.onload = (e: any) => {
       this.newMemory.imageUrl = e.target.result;
@@ -178,19 +186,32 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   removeImage(fileInput: HTMLInputElement): void {
     this.newMemory.imageUrl = '';
+    this.selectedFile = null;
     fileInput.value = '';
   }
 
-   // LIGHTBOX 
+  // LIGHTBOX 
 
-  openAlbum(album: any) {
+    openAlbum(album: any) {
     this.selectedAlbum = album;
     this.currentMemoryIndex = 0;
     this.selectedMemory = album.memories[0] || null;
     this.isLightboxOpen = true;
+    this.showLikedUsers = false;
+
+    // Close the map pin popup when lightbox opens
+    if (this.map) {
+      this.map.closePopup();
+    }
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  openLightboxForMemory(memory: any, album?: any) {
+    openLightboxForMemory(memory: any, album?: any) {
     if (!memory) return;
 
     if (album) {
@@ -204,13 +225,32 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.selectedMemory = memory;
     this.isLightboxOpen = true;
+    this.showLikedUsers = false;
     this.cdr.detectChanges();
+
+    // Close the map pin popup when lightbox opens
+    if (this.map) {
+      this.map.closePopup();
+    }
+
+    if (memory.id && memory.visibility === 'public') {
+      this.loadComments(memory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  nextMemory() {
+    nextMemory() {
     if (!this.selectedAlbum) return;
     this.currentMemoryIndex = (this.currentMemoryIndex + 1) % this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    this.showLikedUsers = false;
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
   prevMemory() {
@@ -219,12 +259,21 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       (this.currentMemoryIndex - 1 + this.selectedAlbum.memories.length) %
       this.selectedAlbum.memories.length;
     this.selectedMemory = this.selectedAlbum.memories[this.currentMemoryIndex];
+    this.showLikedUsers = false;
+
+    if (this.selectedMemory?.id && this.selectedMemory?.visibility === 'public') {
+      this.loadComments(this.selectedMemory.id);
+    } else {
+      this.comments = [];
+    }
   }
 
-  closeLightbox() {
+    closeLightbox() {
     this.isLightboxOpen = false;
     this.selectedAlbum = null;
     this.selectedMemory = null;
+    this.comments = [];
+    this.showLikedUsers = false;
   }
 
   closeModal() {
@@ -369,7 +418,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
- // SEARCH & SAVE 
+  // SEARCH & SAVE 
 
   searchLocation() {
     if (!this.searchQuery) {
@@ -427,6 +476,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // SAVE MEMORY for Cloudinary
   saveMemory() {
     const userId = localStorage.getItem('userId');
     const fullName = localStorage.getItem('userName');
@@ -437,16 +487,25 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (!this.selectedFile) {
+      this.showError('No image', 'Please select an image first.');
+      return;
+    }
+
     this.newMemory.visibility = this.visibilityStatus;
 
-    const body = {
-      ...this.newMemory,
-      userId,
-      fullName,
-      visibility: this.newMemory.visibility,
-      tripId: this.selectedTrip?.id || null,
-      tripName: this.selectedTrip?.tripName || null
-    };
+    const formData = new FormData();
+    formData.append('title', this.newMemory.title);
+    formData.append('description', this.newMemory.description || '');
+    formData.append('locationName', this.newMemory.locationName);
+    formData.append('latitude', this.newMemory.latitude.toString());
+    formData.append('longitude', this.newMemory.longitude.toString());
+    formData.append('visibility', this.newMemory.visibility);
+    formData.append('userId', userId);
+    formData.append('fullName', fullName || '');
+    formData.append('tripId', this.selectedTrip?.id || '');
+    formData.append('tripName', this.selectedTrip?.tripName || '');
+    formData.append('image', this.selectedFile);
 
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
@@ -456,7 +515,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       didOpen: () => Swal.showLoading()
     });
 
-    this.http.post(this.apiUrl, body, { headers }).subscribe({
+    this.http.post(this.apiUrl, formData, { headers }).subscribe({
       next: (response: any) => {
         Swal.close();
 
@@ -479,6 +538,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
           longitude: 0,
           visibility: 'private'
         };
+        this.selectedFile = null;
         this.visibilityStatus = 'private';
         this.searchQuery = '';
         this.selectedTrip = null;
@@ -628,7 +688,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-   // MAP POPUP 
+  // MAP POPUP 
 
   private isUserLiked(memory: any): boolean {
     const userName = localStorage.getItem('userName');
@@ -823,7 +883,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markersLayer.addLayers(markers);
   }
 
- // SLIDESHOW 
+  // SLIDESHOW 
 
   startSlideshow(album: any) {
     if (album.memories.length <= 1) return;
@@ -846,7 +906,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     album.currentDisplayImage = album.memories[0]?.imageUrl || album.latestImage;
   }
 
-   // MAP INIT 
+  // MAP INIT 
 
   private initMap(): void {
     this.map = leaflet.map('map', {
@@ -876,8 +936,8 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Close any other open spiderfied cluster
-      try { 
-        this.markersLayer.unspiderfy(); 
+      try {
+        this.markersLayer.unspiderfy();
       } catch {}
 
       const childMarkers = cluster.getAllChildMarkers();
@@ -954,7 +1014,7 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     leaflet.Marker.prototype.options.icon = iconDefault;
   }
 
-   // ALBUM HELPERS 
+  // ALBUM HELPERS 
 
   getTotalLikes(album: any): number {
     return album.memories.reduce((sum: number, m: any) => sum + (m.likeCount || 0), 0);
@@ -992,6 +1052,31 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+    // COMMENTS 
+
+  loadComments(memoryId: string): void {
+    this.isLoadingComments = true;
+    this.comments = [];
+
+    const token = localStorage.getItem('token');
+    const headers = token
+      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      : undefined;
+
+    this.http.get<any[]>(`${this.apiUrl}/${memoryId}/comments`, { headers }).subscribe({
+      next: (data) => {
+        this.comments = data || [];
+        this.isLoadingComments = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load comments:', err);
+        this.comments = [];
+        this.isLoadingComments = false;
+      }
+    });
+  }
+
   // EVENTS 
 
   @HostListener('window:viewBig', ['$event'])
@@ -1000,11 +1085,36 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const foundMemory = this.allMemories.find(m => m.id === memoryId);
 
     if (foundMemory) {
+      // Close popup first
+      if (this.map) {
+        this.map.closePopup();
+      }
       this.openLightboxForMemory(foundMemory);
     } else {
       this.showError('Memory not found', 'This memory could not be loaded.');
     }
   }
+
+    getInitial(name: any): string {
+  if (!name || typeof name !== 'string') return '?';
+  return name.charAt(0).toUpperCase();
+  }
+
+   getAvatarColor(index: number): string {
+
+  const colors = [
+    '#7C9CF5', 
+    '#69B7E8', 
+    '#65C7B7', 
+    '#9B86D9', 
+    '#D98BAF', 
+    '#E7A978', 
+    '#72B995', 
+    '#D6B85A'  
+  ];
+
+  return colors[Math.abs(index) % colors.length];
+}
 
   openLightboxById(id: string) {
     const foundMemory = this.allMemories.find(m => m.id === id);

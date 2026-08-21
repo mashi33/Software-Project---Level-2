@@ -96,77 +96,87 @@ public async Task<IActionResult> GetTrip(string id)
 {
     try
     {
-        var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+                // If the requester is an authenticated Transport Provider, explicitly forbid access
+                var userTypeClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                                    ?? User?.FindFirst("UserType")?.Value;
 
-        if (trip == null)
-            return NotFound(new { message = "Trip not found in database!" });
+                if (!string.IsNullOrEmpty(userTypeClaim) &&
+                    userTypeClaim.Equals("TransportProvider", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StatusCode(403, new { message = "Access Denied. Transport providers cannot view trip summaries. If you want to join this trip, please log in or register as a Traveller." });
+                }
+
+                var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+
+                if (trip == null)
+                    return NotFound(new { message = "Trip not found in database!" });
 
 
-        var history = await _historyCollection
-            .Find(h => h.TripId == id)
-            .SortByDescending(h => h.EditedAt)
-            .ToListAsync();
+                var history = await _historyCollection
+                    .Find(h => h.TripId == id)
+                    .SortByDescending(h => h.EditedAt)
+                    .ToListAsync();
 
-        var usersCollection = _tripsCollection.Database.GetCollection<User>("Users");
+                var usersCollection = _tripsCollection.Database.GetCollection<User>("Users");
 
-        var allMembers = new List<object>();
+                var allMembers = new List<object>();
 
-         // Add owner
-        var ownerEmail = trip.CreatorEmail ?? trip.CreatedBy;
+                 // Add owner
+                var ownerEmail = trip.CreatorEmail ?? trip.CreatedBy;
         
-        var ownerUser = await usersCollection.Find(u => u.Email == ownerEmail || u.Id == trip.CreatedBy).FirstOrDefaultAsync();
+                var ownerUser = await usersCollection.Find(u => u.Email == ownerEmail || u.Id == trip.CreatedBy).FirstOrDefaultAsync();
         
-        var ownerDisplayName = !string.IsNullOrEmpty(ownerUser?.FullName) ? ownerUser.FullName : ownerEmail;
+                var ownerDisplayName = !string.IsNullOrEmpty(ownerUser?.FullName) ? ownerUser.FullName : ownerEmail;
 
-        allMembers.Add(new
-        {
-            Name = ownerDisplayName,
-            Email = ownerEmail, 
-            Role = "Owner"
-        });
+                allMembers.Add(new
+                {
+                    Name = ownerDisplayName,
+                    Email = ownerEmail, 
+                    Role = "Owner"
+                });
 
-        foreach (var m in trip.Members)
-        {
-            var memberEmail = m.Email;
+                foreach (var m in trip.Members)
+                {
+                    var memberEmail = m.Email;
             
-            var memberUser = await usersCollection.Find(u => u.Email == memberEmail).FirstOrDefaultAsync();
+                    var memberUser = await usersCollection.Find(u => u.Email == memberEmail).FirstOrDefaultAsync();
             
-            var memberDisplayName = !string.IsNullOrEmpty(memberUser?.FullName) ? memberUser.FullName : memberEmail;
+                    var memberDisplayName = !string.IsNullOrEmpty(memberUser?.FullName) ? memberUser.FullName : memberEmail;
 
-            allMembers.Add(new
+                    allMembers.Add(new
+                    {
+                        Name = memberDisplayName,
+                        Email = memberEmail, 
+                        Role = m.Role
+                    });
+                }
+
+                return Ok(new
+                {
+                    trip.Id,
+                    trip.TripName,
+                    trip.DepartFrom,
+                    trip.Destination,
+                    trip.StartDate,
+                    trip.EndDate,
+                    trip.BudgetLimit,
+                    trip.TransportMode,
+                    trip.Description,
+                    trip.SavedPlaces,
+                    trip.CreatedBy,
+                    trip.CreatorEmail,
+                    Members = allMembers,
+                    EditHistory = history
+                });
+            }
+            catch (Exception ex)
             {
-                Name = memberDisplayName,
-                Email = memberEmail, 
-                Role = m.Role
-            });
+                return BadRequest(new 
+                { 
+                    message = "Error fetching trip: " + ex.Message 
+                });
+            }
         }
-
-        return Ok(new
-        {
-            trip.Id,
-            trip.TripName,
-            trip.DepartFrom,
-            trip.Destination,
-            trip.StartDate,
-            trip.EndDate,
-            trip.BudgetLimit,
-            trip.TransportMode,
-            trip.Description,
-            trip.SavedPlaces,
-            trip.CreatedBy,
-            trip.CreatorEmail,
-            Members = allMembers,
-            EditHistory = history
-        });
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new 
-        { 
-            message = "Error fetching trip: " + ex.Message 
-        });
-    }
-}
 
         // Fetch trips where the user is either the creator or a member
         [HttpGet("by-email/{email}")]

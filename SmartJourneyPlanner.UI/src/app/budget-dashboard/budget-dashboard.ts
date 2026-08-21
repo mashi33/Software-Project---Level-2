@@ -3,31 +3,32 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartData, ChartType, Chart, registerables } from 'chart.js'; 
+import { ChartData, ChartType, Chart, registerables } from 'chart.js';
 import { BudgetService } from '../services/budget';
-import { TripService } from '../services/trip.service'; 
+import { TripService } from '../services/trip.service';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Swal from 'sweetalert2';
+import { AuthService } from '../services/auth.service';
 
-Chart.register(...registerables); 
+Chart.register(...registerables);
 
 @Component({
-    selector: 'app-budget-dashboard',
-    standalone: true,
-    imports: [CommonModule, BaseChartDirective, FormsModule, RouterModule],
-    templateUrl: './budget-dashboard.html',
-    styleUrls: ['./budget-dashboard.css']
+  selector: 'app-budget-dashboard',
+  standalone: true,
+  imports: [CommonModule, BaseChartDirective, FormsModule, RouterModule],
+  templateUrl: './budget-dashboard.html',
+  styleUrls: ['./budget-dashboard.css']
 })
 export class BudgetDashboard implements OnInit {
 
   budget: any = null;
-  expenses: any[] = []; 
-  allTrips: any[] = []; 
-  tripId: string = ''; 
+  expenses: any[] = [];
+  allTrips: any[] = [];
+  tripId: string = '';
   costPerPerson: number = 0;
   membersCount: number = 1;
-  totalAllowedBudget: number = 50000; 
+  totalAllowedBudget: number = 50000;
   budgetPercentage: number = 0;
 
   sortColumn: string = '';
@@ -35,6 +36,8 @@ export class BudgetDashboard implements OnInit {
   userTripsList: any[] = [];
   currentUserEmail: string = '';
   tripDetails: any = null;
+  userRole: string = '';
+  isViewer: boolean = false;
 
   public doughnutChartType: ChartType = 'pie';
   public chartColors: string[] = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#1A535C', '#88D49E', '#FF9F1C'];
@@ -44,20 +47,42 @@ export class BudgetDashboard implements OnInit {
 
   constructor(
     private budgetService: BudgetService,
-    private tripService: TripService, 
+    private tripService: TripService,
     private cd: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) { }
 
   ngOnInit() {
     this.extractLoggedInUser();
-    
+    this.userRole = (this.authService.getUserRole() || '').trim().toLowerCase();
+
+    const userType = (this.authService.getUserSystemType() || '').trim().toLowerCase();
+
+    this.isViewer =
+      this.userRole === 'viewer' ||
+      this.userRole === 'viewonly' ||
+      userType === 'viewer' ||
+      userType === 'viewonly';
+
+    console.log('User Role:', this.userRole);
+    console.log('User Type:', userType);
+    console.log('Is Viewer:', this.isViewer);
+
+    this.cd.detectChanges();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['tripId']) {
+        this.tripId = params['tripId'];
+      }
+    });
+
     this.budgetService.getUserTripsForDropdown().subscribe({
       next: (data: any[]) => {
         this.userTripsList = Array.from(new Map(data.map(trip => [trip.id, trip])).values());
 
-        this.tripService.getAllTrips().subscribe({ 
+        this.tripService.getAllTrips().subscribe({
           next: (res: any[]) => {
             this.allTrips = Array.from(new Map(res.map(trip => [trip._id || trip.id, trip])).values());
 
@@ -74,6 +99,7 @@ export class BudgetDashboard implements OnInit {
                 this.loadBudget();
               }
             });
+            this.cd.detectChanges();
           },
           error: (err) => console.error("Global trips failed to load", err)
         });
@@ -87,20 +113,20 @@ export class BudgetDashboard implements OnInit {
       const token = localStorage.getItem('token');
       if (token) {
         const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        this.currentUserEmail = 
-          tokenPayload.email || 
-          tokenPayload.unique_name || 
-          tokenPayload.sub || 
-          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
-          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 
-           '';
+        this.currentUserEmail =
+          tokenPayload.email ||
+          tokenPayload.unique_name ||
+          tokenPayload.sub ||
+          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
+          tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
+          '';
         console.log("🔒 Security Payload Active Session Email Context Discovered ->", this.currentUserEmail);
       }
     } catch (e) {
       console.error("Row Security Error parsing profile identities:", e);
     }
   }
-  
+
   onTripDropdownChange(newTripId: string): void {
     if (!newTripId) return;
     this.tripId = newTripId;
@@ -109,18 +135,19 @@ export class BudgetDashboard implements OnInit {
 
   loadBudget() {
     if (!this.tripId) return;
-    
+
     const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
     if (selectedTrip) {
       this.tripDetails = selectedTrip;
       this.totalAllowedBudget = this.parseBudgetLimit(selectedTrip.budgetLimit || selectedTrip.BudgetLimit);
       this.membersCount = (selectedTrip.members?.length || 1) + 1;
+      this.checkUserTripRole();
     }
 
     this.budgetService.getBudget(this.tripId).subscribe({
       next: (data: any) => {
         this.budget = data;
-        this.expenses = data.expenses || []; 
+        this.expenses = data.expenses || [];
         this.calculateTotal();
         this.updateChartData();
         this.cd.detectChanges();
@@ -131,11 +158,35 @@ export class BudgetDashboard implements OnInit {
         this.expenses = [];
         this.costPerPerson = 0;
         this.budgetPercentage = 0;
-        this.tripDetails = null; 
+        this.tripDetails = null;
         this.updateChartData();
         this.cd.detectChanges();
       }
     });
+  }
+  private checkUserTripRole() {
+    if (!this.tripDetails || !this.currentUserEmail) return;
+
+    const creatorEmail = (this.tripDetails.createdBy || this.tripDetails.CreatedBy || '').trim().toLowerCase();
+    if (creatorEmail && creatorEmail === this.currentUserEmail.trim().toLowerCase()) {
+      this.isViewer = false;
+      return;
+    }
+
+    if (this.tripDetails.members && Array.isArray(this.tripDetails.members)) {
+      const memberRecord = this.tripDetails.members.find((m: any) => {
+        const memberEmail = (m.email || m.Email || '').trim().toLowerCase();
+        return memberEmail === this.currentUserEmail.trim().toLowerCase();
+      });
+
+      if (memberRecord) {
+        const memberRole = (memberRecord.role || memberRecord.Role || '').trim().toLowerCase();
+        this.isViewer = (memberRole === 'viewer' || memberRole === 'viewonly');
+      }
+    }
+
+    console.log('Trip-Specific Resolved Is Viewer:', this.isViewer);
+    this.cd.detectChanges();
   }
 
   private parseBudgetLimit(limitStr: string): number {
@@ -207,7 +258,7 @@ export class BudgetDashboard implements OnInit {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e53e3e',
-      cancelButtonColor: '#64748b',  
+      cancelButtonColor: '#64748b',
       confirmButtonText: 'Yes, delete',
       cancelButtonText: 'Keep it',
       background: '#ffffff',
@@ -220,14 +271,14 @@ export class BudgetDashboard implements OnInit {
         this.budgetService.deleteExpense(this.tripId, expenseId).subscribe({
           next: () => {
             this.loadBudget();
-            
+
             Swal.fire({
-              position: 'top-end', 
+              position: 'top-end',
               icon: 'success',
               title: 'Expense removed',
-              showConfirmButton: false, 
-              timer: 1200, 
-              toast: true, 
+              showConfirmButton: false,
+              timer: 1200,
+              toast: true,
               background: '#ffffff'
             });
           },
@@ -243,13 +294,13 @@ export class BudgetDashboard implements OnInit {
   editExpense(item: any) {
     this.router.navigate(['/add-expense'], {
       queryParams: {
-        tripId: this.tripId, 
-        mode: 'edit', 
+        tripId: this.tripId,
+        mode: 'edit',
         expenseId: item.id,
-        description: item.description, 
-        amount: item.amount, 
+        description: item.description,
+        amount: item.amount,
         category: item.category,
-        addedBy: item.addedBy 
+        addedBy: item.addedBy
       }
     });
   }
@@ -257,13 +308,13 @@ export class BudgetDashboard implements OnInit {
   // 🔑 MONGO REFERENCE LOOKUP: Case-insensitive dynamic user record mapping
   resolveMemberName(email: string): string {
     if (!email) return 'Teammate';
-    
+
     const searchEmail = email.trim().toLowerCase();
-    
+
     if (searchEmail === this.currentUserEmail?.trim().toLowerCase()) {
       return 'You';
     }
-    
+
     // Cross-reference safely against MongoDB collection structures
     if (this.tripDetails && this.tripDetails.members) {
       const foundMember = this.tripDetails.members.find((m: any) => {
@@ -276,165 +327,121 @@ export class BudgetDashboard implements OnInit {
         if (fullName) return fullName;
       }
     }
-    
+
     // Safe procedural string slice formatting fallback rule
     const fallbackPrefix = email.split('@')[0].split(/[\._0-9]/)[0];
     return fallbackPrefix.charAt(0).toUpperCase() + fallbackPrefix.slice(1) || 'Teammate';
   }
 
   exportToPDF() {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-  const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
-  const tripName = selectedTrip?.tripName || 'Trip Workspace';
-  
-  // 1. Modern Top Accent Bar
-  doc.setFillColor(37, 99, 235); // Primary Blue
-  doc.rect(0, 0, 105, 3.5, 'F');
-  doc.setFillColor(14, 165, 233); // Cyan Accent
-  doc.rect(105, 0, 105, 3.5, 'F');
+    const selectedTrip = this.allTrips.find(t => (t._id || t.id) === this.tripId);
+    const tripName = selectedTrip?.tripName || 'Trip Workspace';
 
-  // 2. Document Title & Subtitle
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(15, 23, 42); 
-  doc.text('Smart Journey Planner', 14, 18);
-
-  doc.setFontSize(12);
-  doc.setFont('Helvetica', 'normal');
-  doc.setTextColor(100, 116, 139); 
-  doc.text('Expense Allocation & Budget Audit Report', 14, 24);
-
-  doc.setDrawColor(226, 232, 240); 
-  doc.setLineWidth(0.4);
-  doc.line(14, 29, 196, 29);
-
-  // 3. Extended Metadata Info Box (Height expanded to fit 4 items neatly)
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
-
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139); 
-
-  // Row 1: Destination & Date Generated
-  doc.text('Target Destination:', 20, 40);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(tripName, 52, 40);
-
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Report Generated:', 115, 40);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 146, 40);
-
-  // Row 2: Members Count & Cost Per Person
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Cost Shared Among:', 20, 50);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`${this.membersCount || 1} People`, 52, 50);
-
-  const dynamicSum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const calculatedCostPerPerson = this.membersCount > 0 ? dynamicSum / this.membersCount : dynamicSum;
-  const formattedCpp = 'Rs. ' + calculatedCostPerPerson.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Cost Per Person:', 115, 50);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(2, 132, 199); // Blue highlight for per person cost
-  doc.text(formattedCpp, 146, 50);
-
-  // 4. Expenses Table Data Mapping
-  const tableBodyRows = this.expenses.map(e => [
-    e.category, 
-    'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
-    new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), 
-    e.description || '-'
-  ]);
-
-  // 5. Professional AutoTable Configuration (startY shifted down to 62 to match box height)
-  autoTable(doc, {
-    startY: 62,
-    head: [['Category', 'Amount', 'Date Logged', 'Description']],
-    body: tableBodyRows,
-    theme: 'striped',
-    headStyles: { 
-      fillColor: [15, 23, 42], 
-      textColor: [248, 250, 252], 
-      fontStyle: 'bold',
-      fontSize: 10,
-      cellPadding: 6
-    },
-    bodyStyles: {
-      fontSize: 9.5,
-      textColor: [51, 65, 85], 
-      cellPadding: 5.5,
-      lineColor: [241, 245, 249]
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252] 
-    },
-    columnStyles: {
-      0: { cellWidth: 40, fontStyle: 'bold' },
-      1: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }, 
-      2: { cellWidth: 35, halign: 'center' }, 
-      3: { cellWidth: 'auto' }
-    },
-    didParseCell: (data) => {
-      if (data.section === 'head' && data.column.index === 1) {
-        data.cell.styles.halign = 'right';
-      }
-    },
-    didDrawPage: (data) => {
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(8.5);
-      doc.setFont('Helvetica', 'italic');
-      doc.setTextColor(148, 163, 184); 
-      doc.text('Smart Journey Planner — Official Financial Audit Report', 14, pageHeight - 10);
-      doc.text(`Generated on: ${new Date().toLocaleTimeString()}`, 196, pageHeight - 10, { align: 'right' });
-    }
-  });
-
-  // 6. Aggregate Sum Total Card Box
-  if (this.budget) {
-    const finalY = (doc as any).lastAutoTable.finalY || 60;
-    const boxWidth = 182;
-    const boxHeight = 15;
-    const boxX = 14;
-    const boxY = finalY + 6;
-
-    doc.setFillColor(240, 253, 244); 
-    doc.setDrawColor(187, 247, 208); 
-    doc.setLineWidth(0.5);
-    
-    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2.5, 2.5, 'FD');
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, 210, 4, 'F');
 
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(22, 101, 52); 
-    doc.text('AGGREGATE SUM TOTAL SPENT', boxX + 6, boxY + 9.5);
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Smart Journey Planner', 14, 20);
 
-    const formattedTotal = 'Rs. ' + dynamicSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    doc.setFontSize(12);
-    doc.setTextColor(21, 128, 61); 
-    doc.text(formattedTotal, boxX + boxWidth - 6, boxY + 9.5, { align: 'right' });
-  }
+    doc.setFontSize(13);
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text('Expense Allocation & Budget Report', 14, 26);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, 196, 32);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Target Destination:', 14, 42);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(tripName, 48, 42);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 164, 42);
+
+    const tableBodyRows = this.expenses.map(e => [
+      e.category,
+      'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      e.description || '-'
+    ]);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['Category', 'Amount', 'Date Logged', 'Description']],
+      body: tableBodyRows,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [15, 23, 42],
+        textColor: [248, 250, 252],
+        fontStyle: 'bold',
+        fontSize: 10,
+        cellPadding: 5
+      },
+      bodyStyles: {
+        fontSize: 10,
+        textColor: [51, 65, 85],
+        cellPadding: 5,
+        lineColor: [241, 245, 249]
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 35, fontStyle: 'bold' },
+        1: { cellWidth: 40, halign: 'right', fontStyle: 'bold' },
+        2: { cellWidth: 35, halign: 'center' },
+        3: { cellWidth: 'auto' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'head' && data.column.index === 1) {
+          data.cell.styles.halign = 'right';
+        }
+      },
+      didDrawPage: (data) => {
+        doc.setFontSize(8);
+        doc.setFont('Helvetica', 'italic');
+        doc.setTextColor(148, 163, 184);
+        doc.text('Thank you for choosing Smart Journey Planner for your travels.', 14, doc.internal.pageSize.height - 10);
+      }
+    });
+
+    if (this.budget) {
+      const finalY = (doc as any).lastAutoTable.finalY || 60;
+      const boxWidth = 182;
+      const boxHeight = 16;
+      const boxX = 14;
+      const boxY = finalY + 6;
+
+      doc.setFillColor(240, 253, 244);
+      doc.setDrawColor(187, 247, 208);
+      doc.setLineWidth(0.5);
+
+      doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 3, 3, 'FD');
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(22, 101, 52);
+      doc.text('AGGREGATE SUM TOTAL SPENT', boxX + 6, boxY + 10.5);
+
+      const dynamicSum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const formattedTotal = 'Rs. ' + dynamicSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      doc.setFontSize(13);
+      doc.setTextColor(21, 128, 61);
+      doc.text(formattedTotal, boxX + boxWidth - 6, boxY + 10.5, { align: 'right' });
+    }
 
   // 7. Save PDF
   const sanitizedName = tripName.replace(/[^a-zA-Z0-9]/g, '_');

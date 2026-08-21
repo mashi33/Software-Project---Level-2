@@ -26,7 +26,7 @@ public class TripMemory
 
     [BsonElement("description")]
     [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; } = string.Empty;
 
     [BsonElement("locationName")]
     [JsonPropertyName("locationName")]
@@ -75,6 +75,10 @@ public class TripMemory
     [BsonElement("likedByUsers")]
     [JsonPropertyName("likedByUsers")]
     public List<string> LikedByUsers { get; set; } = new List<string>();
+
+    [BsonElement("commentCount")]
+    [JsonPropertyName("commentCount")]
+    public int CommentCount { get; set; } = 0;
 
     [BsonElement("tripId")]
     [JsonPropertyName("tripId")]

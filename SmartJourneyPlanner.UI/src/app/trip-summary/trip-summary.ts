@@ -18,24 +18,26 @@ export class TripSummaryComponent implements OnInit {
   tripDetails: any;
   editHistory: any[] = [];
   isDropdownOpen = false;
-  userRole: string = 'owner';
+
+  // SECURITY: default to the least-privileged role. This is only ever
+  // overwritten by determineUserRole(), which compares the JWT-derived
+  // email against tripDetails.createdBy / tripDetails.members from the DB.
+  // It is NEVER set from the URL. If role resolution fails for any reason,
+  // the user stays a viewer (fail-closed) instead of defaulting to 'owner'.
+  userRole: string = 'viewer';
+
   tripId: string = '';
   loading = true;
 
   savedHotels: any[] = [];
   savedRestaurants: any[] = [];
-  // NEW — confirmed vote places from group chat discussions
   savedVotedPlaces: any[] = [];
   savedPlacesCount = 0;
   membersCount = 0;
   tripDurationDays = 0;
-  
-  // Holds the calculated live budget sum for the UI layout display
+
   liveTotalSpent: number = 0;
 
-  // =========================
-  // SUMMARY PAGE WEATHER
-  // =========================
   summaryWeather: any = null;
   summarySuggestion: any = null;
   forecastDays: any[] = [];
@@ -50,17 +52,16 @@ export class TripSummaryComponent implements OnInit {
     private router: Router,
     private weatherService: WeatherService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const tripIdFromUrl = this.route.snapshot.paramMap.get('id');
-    const roleFromUrl = this.route.snapshot.queryParamMap.get('role');
-
     this.tripId = tripIdFromUrl || '';
 
-    if (roleFromUrl) {
-      this.userRole = roleFromUrl.toLowerCase();
-    }
+    // NOTE: the `role` query param is intentionally never read here.
+    // It is a client-supplied, trivially-editable value and must never
+    // influence access decisions. userRole is only ever computed by
+    // determineUserRole() from the authenticated user + DB trip record.
 
     if (this.tripId) {
       this.tripService.getTripById(this.tripId).subscribe({
@@ -69,15 +70,13 @@ export class TripSummaryComponent implements OnInit {
           this.editHistory = data.editHistory || data.EditHistory || [];
           this.determineUserRole();
           this.computeTripMeta();
-          console.log('Data received from database:', data);
 
-          // Immediately pull down the corresponding budget payload
           this.budgetService.getBudget(this.tripId).subscribe({
             next: (budgetData: any) => {
               if (budgetData) {
-                this.liveTotalSpent = budgetData.totalSpent || 
-                                      budgetData.TotalSpent || 
-                                      (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
+                this.liveTotalSpent = budgetData.totalSpent ||
+                  budgetData.TotalSpent ||
+                  (budgetData.expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0);
               }
             },
             error: (err) => {
@@ -85,13 +84,21 @@ export class TripSummaryComponent implements OnInit {
               this.liveTotalSpent = 0;
             }
           });
-          
+
           this.filterSavedPlaces();
           this.loadTripWeather();
           this.loading = false;
         },
-        error: () => {
-          this.loadFromTemp();
+        error: (err: any) => {
+          if (err && err.status === 403) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Access Denied',
+              text: 'Access Denied. Transport providers cannot view trip summaries. If you want to join this trip, please log in or register as a Traveller.'
+            }).then(() => this.router.navigate(['/transport-provider-dashboard']));
+          } else {
+            this.loadFromTemp();
+          }
           this.loading = false;
         }
       });
@@ -142,22 +149,38 @@ export class TripSummaryComponent implements OnInit {
     return this.userRole === 'owner';
   }
 
+  // Treat 'viewer' and 'viewonly' as the same restricted role — some
+  // member records in the DB use one spelling, some the other.
   get isViewer(): boolean {
-    return this.userRole === 'viewer';
+    return this.userRole === 'viewer' || this.userRole === 'viewonly';
   }
 
   get canEdit(): boolean {
     return this.userRole === 'owner' || this.userRole === 'editor';
   }
 
+  /**
+   * SECURITY-CRITICAL: this is the ONLY place userRole is ever assigned.
+   * It strictly cross-references the authenticated user's identity
+   * (from the JWT, via AuthService) against the DB-sourced tripDetails
+   * (createdBy + members[].role). The URL is never consulted.
+   *
+   * This still only gates the UI (buttons/links). The API itself must
+   * independently enforce the same rule server-side on every mutating
+   * endpoint — see note in the chat response.
+   */
   determineUserRole(): void {
-    if (this.route.snapshot.queryParamMap.get('role')) return;
-
     const userId = this.authService.getUserId();
     const userEmail = this.authService.getUserEmail()?.toLowerCase();
     const createdBy = (this.tripDetails?.createdBy || this.tripDetails?.CreatedBy || '').toLowerCase();
 
-    if (userId && createdBy && (createdBy === userId.toLowerCase() || createdBy === userEmail)) {
+    // Fail-closed: no authenticated user identity → stay viewer.
+    if (!userId && !userEmail) {
+      this.userRole = 'viewer';
+      return;
+    }
+
+    if (createdBy && (createdBy === userId?.toLowerCase() || createdBy === userEmail)) {
       this.userRole = 'owner';
       return;
     }
@@ -169,7 +192,11 @@ export class TripSummaryComponent implements OnInit {
 
     if (memberMatch) {
       this.userRole = (memberMatch.role || memberMatch.Role || 'viewer').toLowerCase();
+      return;
     }
+
+    // Authenticated, but not the owner and not a listed member: least privilege.
+    this.userRole = 'viewer';
   }
 
   computeTripMeta(): void {
@@ -250,6 +277,8 @@ export class TripSummaryComponent implements OnInit {
 
   navigateToBudget() {
     if (this.tripId) {
+      // Role is no longer forwarded via query params — the budget page
+      // must resolve its own role the same way (JWT + DB), not trust this.
       this.router.navigate(['/budget'], { queryParams: { tripId: this.tripId } });
     }
   }
@@ -275,7 +304,6 @@ export class TripSummaryComponent implements OnInit {
       const cat = (p.category || p.Category || '').toLowerCase();
       return cat.includes('restaurant') || cat.includes('food');
     });
-    // Confirmed vote places from group chat discussions
     this.savedVotedPlaces = places.filter((p: any) => {
       const cat = (p.category || p.Category || '').toLowerCase();
       return cat.includes('confirmed') || cat.includes('vote');
@@ -323,6 +351,8 @@ export class TripSummaryComponent implements OnInit {
   }
 
   navigateToTimeline() {
+    // Role no longer forwarded via query params — trip-timeline.component.ts
+    // must resolve its own role from JWT + DB, exactly like this component does.
     this.router.navigate(['/timeline'], {
       queryParams: { tripId: this.tripId }
     });
@@ -333,9 +363,9 @@ export class TripSummaryComponent implements OnInit {
   }
 
   navigateToSlideshow() {
-    const actualTripId = this.tripId; // Use the tripId from URL parameter
+    const actualTripId = this.tripId;
     const actualTripName = this.tripName;
-    
+
     if (actualTripId && actualTripName) {
       this.router.navigate(['/slideshow', actualTripName], { queryParams: { tripId: actualTripId } });
     }

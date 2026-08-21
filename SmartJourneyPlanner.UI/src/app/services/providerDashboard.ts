@@ -10,20 +10,24 @@ export class VehicleService {
 
   constructor(private http: HttpClient) {}
 
-  
   getStats(): Observable<any> {
     // Fetches aggregated dashboard data to avoid multiple frontend calculations
     return this.http.get<any>(`${this.apiUrl}/stats`);
   }
 
- // Look for getVehicles() inside your service file and change ONLY it:
-getVehicles(): Observable<any[]> {
-  const token = localStorage.getItem('token');
-  const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  getVehicles(): Observable<any[]> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get<any[]>(`${this.apiUrl}/vehicles`, { headers });
+  }
 
-  // Passes headers securely to the endpoint we configured in the controller
-  return this.http.get<any[]>(`${this.apiUrl}/vehicles`, { headers });
-}
+  //  Single call for entire dashboard 
+  getFullDashboard(): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get<any>(`${this.apiUrl}/full`, { headers });
+  }
+
   getBookings(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/bookings`);
   }

@@ -28,7 +28,7 @@ export class TripCreateComponent implements OnInit {
     { value: 'Cycle', label: 'Cycle', icon: 'bi-bicycle', eco: true },
     { value: 'Public Transport', label: 'Public Transport', icon: 'bi-bus-front', eco: true },
     { value: 'Walking', label: 'Walking', icon: 'bi-person-walking', eco: true },
-    { value: 'Transport Provider', label: 'Transport Provider (from system)', icon: 'bi-truck', eco: false }
+    { value: 'Transport Provider', label: 'Transport Provider (from SmartJourneyPlanner)', icon: 'bi-truck', eco: false }
   ];
 
   constructor(

@@ -1,0 +1,249 @@
+<!--  HERO  -->
+<section class="hero-section">
+  <div class="hero-bg">
+    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80"
+         alt="Tropical beach">
+    <div class="hero-overlay"></div>
+  </div>
+
+  <div class="hero-content">
+    <h1>Plan <span>Smarter.</span><br>Travel <span>Together.</span></h1>
+    <p>The all-in-one platform to plan trips, collaborate with friends, manage budgets, discover amazing places, and create unforgettable memories.</p>
+
+    <div class="hero-buttons">
+      <button class="btn-primary btn-large" routerLink="/trips/create">
+        <i class="bi bi-airplane-fill"></i> Start Planning
+      </button>
+      <button class="btn-secondary btn-large" routerLink="/explore">
+        <i class="bi bi-play-circle-fill"></i> Explore Places
+      </button>
+    </div>
+  </div>
+
+  <!-- Search + Stats -->
+  <div class="search-card-wrapper">
+    <div class="search-card">
+      <div class="search-field">
+        <i class="bi bi-geo-alt-fill icon"></i>
+        <div>
+          <label>Where to?</label>
+          <input type="text" placeholder="Enter destination"
+                 [(ngModel)]="searchData.destination" name="destination">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="search-field">
+        <i class="bi bi-calendar-event icon"></i>
+        <div>
+          <label>Start Date</label>
+          <input type="text" placeholder="Select date"
+                 [(ngModel)]="searchData.startDate" name="startDate">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="search-field">
+        <i class="bi bi-calendar-event icon"></i>
+        <div>
+          <label>End Date</label>
+          <input type="text" placeholder="Select date"
+                 [(ngModel)]="searchData.endDate" name="endDate">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="search-field">
+        <i class="bi bi-people-fill icon"></i>
+        <div>
+          <label>Travelers</label>
+          <input type="text" placeholder="Add people"
+                 [(ngModel)]="searchData.travelers" name="travelers">
+        </div>
+      </div>
+      <button class="btn-search" (click)="onSearchTrip()">
+        Search Trip <i class="bi bi-search"></i>
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item" *ngFor="let stat of stats">
+        <div class="stat-icon" [ngClass]="stat.colorClass">
+          <i class="bi" [ngClass]="stat.icon"></i>
+        </div>
+        <div>
+          <h4>{{ stat.value }}</h4>
+          <p>{{ stat.label }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POPULAR DESTINATIONS -->
+<section class="container section" #animateSection>
+  <div class="section-header">
+    <h2>Popular Destinations <span class="wave-line"></span></h2>
+    <a routerLink="/explore" class="see-all">
+      View All Places <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+  <div style="position: relative;">
+    <div class="destinations-slider" id="destSlider">
+      <div class="dest-card" *ngFor="let dest of destinations">
+        <img [src]="dest.imageUrl" [alt]="dest.name">
+        <div class="dest-info">
+          <h3>{{ dest.name }}</h3>
+          <p><i class="bi bi-geo-alt-fill"></i> {{ dest.location }}</p>
+        </div>
+      </div>
+    </div>
+    <button class="slider-arrow" (click)="scrollDestinations('right')">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="container section features-section" #animateSection>
+  <h2>Everything You Need for the <span>Perfect Trip</span></h2>
+  <div class="features-grid">
+    <div class="feature-card" *ngFor="let feat of features">
+      <div class="feat-icon" [ngClass]="feat.bgColorClass">
+        <i class="bi" [ngClass]="feat.icon"></i>
+      </div>
+      <h3>{{ feat.title }}</h3>
+      <p>{{ feat.description }}</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" #animateSection>
+  <div class="container">
+    <h2 class="section-title">How It Works <span class="wave"></span></h2>
+
+    <div class="steps-wrapper">
+      <div class="step-card">
+        <div class="step-left">
+          <div class="step-number">1</div>
+          <div>
+            <h3>Create a Trip</h3>
+            <p>Add your destination, dates and travel details.</p>
+          </div>
+        </div>
+        <div class="step-illustration">
+          <img [src]="steps[0].image" alt="Create a Trip">
+        </div>
+      </div>
+
+      <div class="connector">
+        <div class="dotted-line"></div>
+        <i class="bi bi-airplane-fill plane-icon"></i>
+      </div>
+
+      <div class="step-card">
+        <div class="step-left">
+          <div class="step-number">2</div>
+          <div>
+            <h3>Plan Together</h3>
+            <p>Invite friends, plan activities, track budget and itineraries.</p>
+          </div>
+        </div>
+        <div class="step-illustration">
+          <img [src]="steps[1].image" alt="Plan Together">
+        </div>
+      </div>
+
+      <div class="connector">
+        <div class="dotted-line"></div>
+        <i class="bi bi-airplane-fill plane-icon"></i>
+      </div>
+
+      <div class="step-card">
+        <div class="step-left">
+          <div class="step-number">3</div>
+          <div>
+            <h3>Travel & Remember</h3>
+            <p>Enjoy your trip and save memories that last forever.</p>
+          </div>
+        </div>
+        <div class="step-illustration">
+          <img [src]="steps[2].image" alt="Travel & Remember">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLORE MORE -->
+<section class="explore-section" #animateSection>
+  <div class="container">
+    <h2 class="explore-title">Explore More <span class="wave white"></span></h2>
+
+    <div class="explore-grid">
+      <!-- Smart Route Planner -->
+      <div class="explore-card">
+        <div class="card-left">
+          <h3>Smart Route Planner</h3>
+          <p>Find the best routes and travel time between multiple destinations.</p>
+          <button class="btn-explore" routerLink="/map">Explore</button>
+        </div>
+        <div class="card-right map-preview">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
+               alt="Sri Lanka Map" class="map-img">
+          <div class="pin pin-1"></div>
+          <div class="pin pin-2"></div>
+          <div class="pin pin-3"></div>
+          <div class="pin pin-4"></div>
+        </div>
+      </div>
+
+      <!-- Find Places Nearby -->
+      <div class="explore-card">
+        <div class="card-left">
+          <h3>Find Places Nearby</h3>
+          <p>Discover top hotels, restaurants and attractions near your location.</p>
+          <button class="btn-explore" routerLink="/explore">Explore</button>
+        </div>
+        <div class="card-right places-preview">
+          <div class="place-item" *ngFor="let place of nearbyPlaces">
+            <img [src]="place.image" [alt]="place.name">
+            <div class="place-info">
+              <span class="place-name">{{ place.name }}</span>
+              <span class="place-rating">
+                <i class="bi bi-star-fill"></i> {{ place.rating }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Memories Map -->
+      <div class="explore-card">
+        <div class="card-left">
+          <h3>Memories Map</h3>
+          <p>Relive your past trips and see all the places you've explored on the map.</p>
+          <button class="btn-explore" routerLink="/memories">Explore</button>
+        </div>
+        <div class="card-right memories-preview">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
+               alt="Sri Lanka Map" class="world-map">
+          <div class="memory-pin" style="top: 28%; left: 48%;">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=60&q=80" alt="">
+          </div>
+          <div class="memory-pin" style="top: 42%; left: 55%;">
+            <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=60&q=80" alt="">
+          </div>
+          <div class="memory-pin" style="top: 58%; left: 42%;">
+            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=60&q=80" alt="">
+          </div>
+          <div class="memory-pin" style="top: 35%; left: 35%;">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=60&q=80" alt="">
+          </div>
+          <div class="memory-pin" style="top: 65%; left: 52%;">
+            <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=60&q=80" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
