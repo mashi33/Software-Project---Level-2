@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
@@ -17,6 +17,10 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
     currentUrl: string = '';
+
+    // 👇 ViewChild එක මෙතැනට එකතු කරන්න
+    @ViewChild(SidebarComponent) sidebar!: SidebarComponent;
+
     constructor(public router: Router, private authService: AuthService) { }
 
     ngOnInit(): void {
@@ -29,15 +33,20 @@ export class AppComponent implements OnInit {
         });
     }
 
+    // 👇 Navbar එකෙන් එන සිග්නල් එකෙන් Sidebar එක ඕපන්/ක්ලෝස් කරන ෆන්ෂන් එක
+    toggleSidebarFromNavbar() {
+        if (this.sidebar) {
+            this.sidebar.toggleSidebar();
+        }
+    }
+
     // Function to determine whether to show Navbar and Sidebar
     showNavbarSidebar(): boolean {
         const cleanUrl = this.currentUrl.split('?')[0];
 
-
         if (this.authService.isLoggedIn() && (cleanUrl === '/' || cleanUrl === '/landing')) {
             return true;
         }
-
 
         const hiddenRoutes = [
             '/',

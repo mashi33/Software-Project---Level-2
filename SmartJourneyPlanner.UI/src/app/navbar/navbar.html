@@ -1,131 +1,149 @@
 <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
   <div class="container-fluid px-4">
 
-    <a class="navbar-brand brand-container"
-      [routerLink]="userRole === 'Admin' ? '/admin-dashboard' : (userRole === 'Provider' || userRole === 'TransportProvider' ? '/provider-dashboard' : '/traveller-dashboard')">
-      <img src="/logo.jpg" alt="Logo" class="brand-logo">
-      <div class="brand-text">
-        <span class="secular one"><b>Smart</b></span>
-        <span class="secular one"><b>Journey Planner</b></span>
-      </div>
-    </a>
+    <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
+      <div class="container-fluid px-4">
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+        <nav class="navbar navbar-expand-lg navbar-dark custom-nav">
+          <div class="container-fluid px-4">
 
-    <!-- Navbar links -->
-    <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Sidebar Toggle Button (ලෝගෝ එකට වම්පසින්) -->
+            <button class="btn btn-link text-white fs-4 me-2 p-0 border-0" (click)="toggleSidebar()"
+              title="Toggle Sidebar">
+              <i class="bi bi-list"></i>
+            </button>
 
-      <div class="navbar-nav mx-auto nav-links-group">
-        <!-- Admin Navigation -->
-        <ng-container *ngIf="userRole === 'Admin'">
-          <a class="nav-link" routerLink="/admin-dashboard" routerLinkActive="active">Admin Panel</a>
-          <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-          <div class="dropdown memory-dropdown" [class.show]="isMemoryDropdownOpen">
-            <a class="dropdown-toggle" (click)="toggleDropdown('memory')">{{ dropdownLabel }}</a>
-            <div class="dropdown-menu" [class.show]="isMemoryDropdownOpen">
-              <a routerLink="/memories" routerLinkActive="active" (click)="selectOption('My Memories')">My Memories</a>
-              <a routerLink="/community" routerLinkActive="active" (click)="selectOption('Community Map')">Community
-                Map</a>
-            </div>
-          </div>
-        </ng-container>
+            <!-- Logo and Brand Name (Dashboard එකට යන එක එලෙසම ඇත) -->
+            <a class="navbar-brand brand-container"
+              [routerLink]="userRole === 'Admin' ? '/admin-dashboard' : (userRole === 'Provider' || userRole === 'TransportProvider' ? '/provider-dashboard' : '/traveller-dashboard')">
+              <img src="/logo.jpg" alt="Logo" class="brand-logo">
+              <div class="brand-text">
+                <span class="secular one"><b>Smart</b></span>
+                <span class="secular one"><b>Journey Planner</b></span>
+              </div>
+            </a>
 
-        <!-- Transport Provider Navigation -->
-        <ng-container *ngIf="userRole === 'TransportProvider' || userRole === 'Provider'">
-          <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
-          <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
-          <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-        </ng-container>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+              <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <!-- Traveller Navigation -->
-        <ng-container *ngIf="userRole === 'Traveller' || userRole === 'Traveler'">
-          <a class="nav-link" routerLink="/traveller-dashboard" routerLinkActive="active">Traveller Dashboard</a>
-          <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
-          <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
-          <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
-          <a class="nav-link" routerLink="/memories-welcome" routerLinkActive="active">Memory</a>
-          <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
-        </ng-container>
-      </div>
+            <!-- Navbar links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
 
-      <div class="user-actions">
+              <div class="navbar-nav mx-auto nav-links-group">
+                <!-- Admin Navigation -->
+                <ng-container *ngIf="userRole === 'Admin'">
+                  <a class="nav-link" routerLink="/admin-dashboard" routerLinkActive="active">Admin Panel</a>
+                  <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
+                  <div class="dropdown memory-dropdown" [class.show]="isMemoryDropdownOpen">
+                    <a class="dropdown-toggle" (click)="toggleDropdown('memory')">{{ dropdownLabel }}</a>
+                    <div class="dropdown-menu" [class.show]="isMemoryDropdownOpen">
+                      <a routerLink="/memories" routerLinkActive="active" (click)="selectOption('My Memories')">My
+                        Memories</a>
+                      <a routerLink="/community" routerLinkActive="active"
+                        (click)="selectOption('Community Map')">Community
+                        Map</a>
+                    </div>
+                  </div>
+                </ng-container>
 
-        <!-- Notification dropdown -->
-        <div class="dropdown notification-dropdown" [class.show]="isNotificationDropdownOpen">
-          <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown"
-            (click)="toggleDropdown('notification')" style="cursor: pointer;">
-            <i class="bi bi-bell"></i>
-            <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
-          </a>
+                <!-- Transport Provider Navigation -->
+                <ng-container *ngIf="userRole === 'TransportProvider' || userRole === 'Provider'">
+                  <a class="nav-link" routerLink="/provider-dashboard" routerLinkActive="active">Provider Dashboard</a>
+                  <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
+                  <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
+                </ng-container>
 
-          <div class="dropdown-menu notification-menu dropdown-menu-end shadow"
-            [class.show]="isNotificationDropdownOpen">
-            <!-- Header -->
-            <div class="notification-header">
-              <h5>Notifications</h5>
-              <div class="notification-header-actions">
-                <div class="tooltip-container">
-                  <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()"></i>
-                  <span class="custom-tooltip">Mark all as read</span>
+                <!-- Traveller Navigation -->
+                <ng-container *ngIf="userRole === 'Traveller' || userRole === 'Traveler'">
+                  <a class="nav-link" routerLink="/traveller-dashboard" routerLinkActive="active">Traveller
+                    Dashboard</a>
+                  <a class="nav-link" routerLink="/createTrip" routerLinkActive="active">Create Trip</a>
+                  <a class="nav-link" routerLink="/budget" routerLinkActive="active">Budget</a>
+                  <a class="nav-link" routerLink="/explore" routerLinkActive="active">Explore</a>
+                  <a class="nav-link" routerLink="/memories-welcome" routerLinkActive="active">Memory</a>
+                  <a class="nav-link" routerLink="/transport" routerLinkActive="active">Transport</a>
+                </ng-container>
+              </div>
+
+              <div class="user-actions">
+
+                <!-- Notification dropdown -->
+                <div class="dropdown notification-dropdown" [class.show]="isNotificationDropdownOpen">
+                  <a class="nav-link dropdown-toggle hide-caret" id="notificationDropdown"
+                    (click)="toggleDropdown('notification')" style="cursor: pointer;">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+                  </a>
+
+                  <div class="dropdown-menu notification-menu dropdown-menu-end shadow"
+                    [class.show]="isNotificationDropdownOpen">
+                    <!-- Header -->
+                    <div class="notification-header">
+                      <h5>Notifications</h5>
+                      <div class="notification-header-actions">
+                        <div class="tooltip-container">
+                          <i class="bi bi-check2-all" (click)="markAllAsRead(); $event.stopPropagation()"></i>
+                          <span class="custom-tooltip">Mark all as read</span>
+                        </div>
+                        <div class="tooltip-container tooltip-align-right" routerLink="/settings"
+                          (click)="closeDropdown(); $event.stopPropagation()" style="cursor: pointer;">
+                          <i class="bi bi-gear"></i>
+                          <span class="custom-tooltip">Notification Settings</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- List -->
+                    <ul class="notification-list">
+                      <li *ngIf="notifications.length === 0" class="text-center py-4 text-muted">
+                        No notifications yet.
+                      </li>
+                      <li *ngFor="let n of notifications.slice(0, 8)" class="notification-item"
+                        [class.unread]="!n.isRead" (click)="markAsRead(n); $event.stopPropagation()">
+                        <div class="notification-item-icon">
+                          <i class="bi" [ngClass]="n.icon + ' ' + n.iconColorClass"></i>
+                        </div>
+                        <div class="notification-item-content">
+                          <div class="notification-item-title">{{ n.title }}</div>
+                          <div class="notification-item-time">{{ n.time || getRelativeTime(n.createdAt) }}</div>
+                          <a class="notification-item-link" style="cursor: pointer;"
+                            (click)="markAsRead(n); navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText
+                            }}</a>
+                        </div>
+                      </li>
+                    </ul>
+
+                    <!-- Footer -->
+                    <div class="notification-footer">
+                      <a class="notification-footer-link" routerLink="/notifications" (click)="closeDropdown()">See
+                        all</a>
+                    </div>
+                  </div>
                 </div>
-                <div class="tooltip-container tooltip-align-right" routerLink="/settings"
-                  (click)="closeDropdown(); $event.stopPropagation()" style="cursor: pointer;">
-                  <i class="bi bi-gear"></i>
-                  <span class="custom-tooltip">Notification Settings</span>
+
+                <!-- Profile dropdown -->
+                <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
+                  <a class="dropdown-toggle profile-trigger" id="profileDropdown" style="cursor: pointer;"
+                    (click)="toggleDropdown()">
+                    <img [src]="profilePic || 'profilePic.jpg'" alt="user" class="profile-img"
+                      (error)="profilePic = 'profilePic.jpg'">
+                    <span class="profile-name">{{ userName }}</span>
+                  </a>
+
+                  <!-- Profile dropdown menu -->
+                  <ul class="dropdown-menu dropdown-menu-end shadow" [class.show]="isDropdownOpen"
+                    aria-labelledby="profileDropdown">
+                    <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">Profile</a></li>
+                    <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">Settings</a></li>
+                    <li>
+                      <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item text-danger" (click)="onLogout()">Sign out</a></li>
+                  </ul>
                 </div>
+
               </div>
             </div>
-
-            <!-- List -->
-            <ul class="notification-list">
-              <li *ngIf="notifications.length === 0" class="text-center py-4 text-muted">
-                No notifications yet.
-              </li>
-              <li *ngFor="let n of notifications.slice(0, 8)" class="notification-item" [class.unread]="!n.isRead"
-                (click)="markAsRead(n); $event.stopPropagation()">
-                <div class="notification-item-icon">
-                  <i class="bi" [ngClass]="n.icon + ' ' + n.iconColorClass"></i>
-                </div>
-                <div class="notification-item-content">
-                  <div class="notification-item-title">{{ n.title }}</div>
-                  <div class="notification-item-time">{{ n.time || getRelativeTime(n.createdAt) }}</div>
-                  <a class="notification-item-link" style="cursor: pointer;"
-                    (click)="markAsRead(n); navigateToRoute(n.route); $event.stopPropagation()">{{ n.linkText }}</a>
-                </div>
-              </li>
-            </ul>
-
-            <!-- Footer -->
-            <div class="notification-footer">
-              <a class="notification-footer-link" routerLink="/notifications" (click)="closeDropdown()">See all</a>
-            </div>
           </div>
-        </div>
-
-        <!-- Profile dropdown -->
-        <div class="dropdown profile-dropdown" [class.show]="isDropdownOpen">
-          <a class="dropdown-toggle profile-trigger" id="profileDropdown" style="cursor: pointer;"
-            (click)="toggleDropdown()">
-            <img [src]="profilePic || 'profilePic.jpg'" alt="user" class="profile-img"
-              (error)="profilePic = 'profilePic.jpg'">
-            <span class="profile-name">{{ userName }}</span>
-          </a>
-
-          <!-- Profile dropdown menu -->
-          <ul class="dropdown-menu dropdown-menu-end shadow" [class.show]="isDropdownOpen"
-            aria-labelledby="profileDropdown">
-            <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">Profile</a></li>
-            <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">Settings</a></li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item text-danger" (click)="onLogout()">Sign out</a></li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</nav>
+        </nav>

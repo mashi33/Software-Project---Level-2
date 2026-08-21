@@ -1,5 +1,5 @@
 <!-- Navbar hidden on landing and auth pages -->
-<app-navbar *ngIf="showNavbarSidebar()"></app-navbar>
+<app-navbar *ngIf="showNavbarSidebar()" (onToggleSidebar)="toggleSidebarFromNavbar()"></app-navbar>
 
 <div class="layout-container">
   <!-- Sidebar hidden on landing and auth pages -->

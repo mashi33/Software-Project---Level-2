@@ -1,7 +1,8 @@
 .summary-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-  padding-top: 1rem;
+  padding-top: 90px;
+
 }
 
 .loading-state {
