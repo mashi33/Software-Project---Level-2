@@ -12,6 +12,7 @@ import Swal from 'sweetalert2';
   styleUrl: './login.css',
 })
 export class LoginComponent implements OnInit {
+  showPassword: boolean = false;
 
   /**
    * Stores user credentials entered in the login form.

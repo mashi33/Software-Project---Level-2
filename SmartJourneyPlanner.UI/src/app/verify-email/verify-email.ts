@@ -3,13 +3,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-verify-email',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './verify-email.html', 
-  styleUrl: './verify-email.css'     
+  templateUrl: './verify-email.html',
+  styleUrl: './verify-email.css'
 })
 export class VerifyEmailComponent implements OnInit {
   loading = true;
@@ -21,10 +22,10 @@ export class VerifyEmailComponent implements OnInit {
   role: string | null = null;
 
   constructor(
-    private route: ActivatedRoute, 
-    private http: HttpClient, 
+    private route: ActivatedRoute,
+    private http: HttpClient,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit() {
     const token = this.route.snapshot.queryParamMap.get('token');
@@ -36,32 +37,56 @@ export class VerifyEmailComponent implements OnInit {
         next: (res: any) => {
           this.loading = false;
           this.success = true;
-          
-          setTimeout(() => {
-            this.goToLogin();
-          }, 4000);
+
+          // සාර්ථක වූ පසු SweetAlert පෝප්-අප් එක පෙන්වීම
+          Swal.fire({
+            icon: 'success',
+            title: '🎉 Email Verified Successfully!',
+            text: 'Your account is now fully active. You can now log in.',
+            confirmButtonText: 'Go to Login',
+            confirmButtonColor: '#1a73e8',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.goToLogin();
+            }
+          });
         },
-        error: (err) => {
+        error: (err: any) => {
           this.loading = false;
           this.error = true;
           if (err.error && err.error.message) {
             this.errorMessage = err.error.message;
           }
+
+          Swal.fire({
+            icon: 'error',
+            title: '❌ Verification Failed',
+            text: this.errorMessage,
+            confirmButtonColor: '#1a73e8'
+          });
         }
       });
     } else {
       this.loading = false;
       this.error = true;
       this.errorMessage = 'Secure token is missing from your verification link!';
+
+      Swal.fire({
+        icon: 'error',
+        title: '❌ Link Error',
+        text: this.errorMessage,
+        confirmButtonColor: '#1a73e8'
+      });
     }
   }
 
-  // Method to navigate to the login page, including any trip invitation details if they exist, to ensure a seamless user experience after email verification
   goToLogin() {
     if (this.tripId) {
       console.log('Navigating to login with trip details:', this.tripId);
-      this.router.navigate(['/login'], { 
-        queryParams: { tripId: this.tripId, role: this.role } 
+      this.router.navigate(['/login'], {
+        queryParams: { tripId: this.tripId, role: this.role }
       });
     } else {
       this.router.navigate(['/login']);
