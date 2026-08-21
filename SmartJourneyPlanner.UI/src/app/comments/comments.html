@@ -1,5 +1,8 @@
 <div class="right-column glass-chat-panel full-width-component">
-
+    <div class="suggestions-title">
+      <span class="material-icons section-icon">chat_bubble_outline</span>
+      Group chat
+    </div>
   <!-- ── SEARCH BAR ── -->
   <div class="search-bar-wrapper" *ngIf="isSearchOpen">
     <div class="search-input-row">
@@ -46,7 +49,7 @@
            ]">
         <div class="chat-bubble">
 
-          <span class="chat-user">
+          <span class="chat-user" [ngStyle]="{'color': getAvatarColor(comment.user)}">
             {{ comment.user === currentUser ? 'You' : comment.user }}
           </span>
 

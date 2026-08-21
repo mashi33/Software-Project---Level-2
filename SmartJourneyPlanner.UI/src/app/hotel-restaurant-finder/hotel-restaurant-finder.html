@@ -1,19 +1,18 @@
 <div class="finder-container">
 
-  <div class="header-section">
-    <div class="header-icon">
-      <i class="fas fa-map-marked-alt"></i>
-    </div>
-    <div class="header-content">
-      <h2>Hotel &amp; Restaurant Finder</h2>
-      <p class="header-subtitle">Discover great places to stay and eat across Sri Lanka</p>
-    </div>
-  </div>
-
   <div class="main-layout">
 
-    <!-- Sidebar: filters + search + results -->
+    <!-- Sidebar: header + filters + search + results -->
     <aside class="sidebar">
+      <div class="header-section">
+        <div class="header-icon">
+          <i class="fas fa-map-marked-alt"></i>
+        </div>
+        <div class="header-content">
+          <h2>Hotel &amp; Restaurant Finder</h2>
+          <p class="header-subtitle">Discover great places to stay and eat across Sri Lanka</p>
+        </div>
+      </div>
       <app-filter></app-filter>
       <div class="list-section">
         <app-place-card (quickCitySelected)="onQuickCitySearch($event)"></app-place-card>

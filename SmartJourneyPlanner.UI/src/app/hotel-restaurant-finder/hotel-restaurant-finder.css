@@ -1,63 +1,15 @@
-:host {
-  display: block;
-  height: 100vh;
-}
-
 .finder-container {
   background-color: #f4f6fb;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-sizing: border-box;
   overflow: hidden;
 }
 
-/* ---------- Header ---------- */
-.header-section {
-  background: white;
-  padding: 14px 28px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-bottom: 1px solid #e8edf5;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.header-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: #0070f3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.15rem;
-  flex-shrink: 0;
-}
-
-.header-content h2 {
-  color: #1a2340;
-  margin: 0;
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: 0.2px;
-}
-
-.header-subtitle {
-  color: #8a96b0;
-  margin: 2px 0 0;
-  font-size: 0.82rem;
-  font-weight: 400;
-}
-
-/* ---------- Main layout: sidebar + map ---------- */
+/* ---------- Main layout: sidebar + map, full height ---------- */
 .main-layout {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
 }
 
 .sidebar {
@@ -70,6 +22,45 @@
   border-right: 1px solid #e8edf5;
   box-shadow: 2px 0 8px rgba(0,0,0,0.04);
   overflow: hidden;
+}
+
+/* ---------- Header (inside sidebar) ---------- */
+.header-section {
+  background: white;
+  padding: 14px 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #0070f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.header-content h2 {
+  color: #1a2340;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.2px;
+}
+
+.header-subtitle {
+  color: #8a96b0;
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  font-weight: 400;
 }
 
 app-filter {
@@ -146,7 +137,7 @@ app-place-card {
 /* ---------- Responsive ---------- */
 @media (max-width: 992px) {
   .finder-container { height: auto; overflow: auto; }
-  .main-layout { flex-direction: column; }
+  .main-layout { flex-direction: column; height: auto; }
   .sidebar {
     width: 100%;
     min-width: 0;

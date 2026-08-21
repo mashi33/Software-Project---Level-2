@@ -11,18 +11,12 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    /* ── CHANGED: was rgba(255,255,255,0.12) — now dark glass at 62% opacity ── */
-    background: rgba(10, 18, 40, 0.62);
-    backdrop-filter: blur(22px) saturate(1.5);
-    -webkit-backdrop-filter: blur(22px) saturate(1.5);
-    border-radius: 20px;
-    /* ── CHANGED: asymmetric light-catching border ── */
-    border: 1px solid rgba(255, 255, 255, 0.20);
-    border-top-color: rgba(255, 255, 255, 0.38);
-    border-left-color: rgba(255, 255, 255, 0.28);
+    background: var(--glass-panel-bg);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
     overflow: hidden;
     position: relative;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: var(--card-shadow);
     height: 100%;
 }
 
@@ -37,7 +31,7 @@
 
 .chat-area-wrapper::-webkit-scrollbar { width: 6px; }
 .chat-area-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
 }
 
@@ -54,19 +48,15 @@
     max-width: 85%;
     padding: 8px 12px;
     border-radius: 15px;
-    background: rgba(255, 255, 255, 0.10);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.20);
-    border-top-color: rgba(255, 255, 255, 0.35);
-    color: rgba(255, 255, 255, 0.95);
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
     position: relative;
 }
 
 .chat-bubble-row.row-right .chat-bubble {
-    background: rgba(0, 123, 255, 0.45);
-    border-color: rgba(0, 150, 255, 0.35);
-    border-top-color: rgba(100, 190, 255, 0.55);
+    background: #2b5fa8;
+    border-color: #2b5fa8;
     border-bottom-right-radius: 4px;
 }
 
@@ -74,12 +64,11 @@
     font-size: 12px;
     font-weight: 800;
     margin-bottom: 4px;
-    color: #ffd54f;
     display: block;
 }
 
 .chat-bubble-row.row-right .chat-user {
-    color: #63d4f5;
+    color: rgba(255, 255, 255, 0.85) !important;
     text-align: right;
 }
 
@@ -87,8 +76,12 @@
     margin: 0;
     font-size: 16px;
     line-height: 1.5;
-    color: rgba(255, 255, 255, 0.95) !important;
+    color: var(--text-primary) !important;
     opacity: 1;
+}
+
+.chat-bubble-row.row-right .chat-content p {
+    color: #ffffff !important;
 }
 
 .chat-footer-row {
@@ -102,7 +95,7 @@
 
 .chat-time {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-hint);
 }
 
 .chat-actions {
@@ -127,13 +120,13 @@
 }
 
 .btn-chat-action .material-icons {
-    color: rgba(255, 255, 255, 0.75) !important;
+    color: var(--text-secondary) !important;
     font-size: 14px !important;
     transition: color 0.2s ease;
 }
 
 .btn-chat-action:hover .material-icons {
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
 }
 
 .cancel-edit-btn {
@@ -153,8 +146,8 @@
 }
 
 .date-divider span {
-    background: rgba(0, 0, 0, 0.58);
-    color: rgba(255, 255, 255, 0.90);
+    background: var(--divider-bg);
+    color: var(--text-primary);
     padding: 3px 12px;
     border-radius: 20px;
     font-size: 11px;
@@ -162,8 +155,8 @@
 
 .chat-input-container {
     padding: 10px 15px;
-    background: rgba(0, 0, 0, 0.28);
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(128, 128, 128, 0.10);
+    border-top: 1px solid var(--glass-border);
 }
 
 .chat-input-container.editing-mode {
@@ -171,7 +164,7 @@
 }
 
 .chat-input-wrapper {
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--input-bg);
     border-radius: 25px;
     display: flex;
     padding: 2px 2px 2px 12px;
@@ -185,7 +178,7 @@
     padding: 8px 5px;
     outline: none;
     font-size: 14px;
-    color: #333;
+    color: var(--input-text);
 }
 
 .send-btn-circle {
@@ -207,8 +200,23 @@
     .right-column { min-height: 500px; height: auto; overflow: visible; }
 }
 
+.suggestions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.section-icon {
+    font-size: 20px;
+    color: #4facfe;
+}
+
 /* ==========================================================================
-   2.  PDF ATTACHMENT — NEW STYLES
+   2.  PDF ATTACHMENT
    ========================================================================== */
 .pdf-attach-btn {
     display: flex;
@@ -226,8 +234,8 @@
 .upload-progress-bar-wrapper {
     position: relative;
     height: 22px;
-    background: rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(128, 128, 128, 0.08);
+    border-top: 1px solid var(--glass-border);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -245,7 +253,7 @@
 .upload-progress-label {
     position: relative;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.90);
+    color: var(--text-primary);
     z-index: 1;
 }
 
@@ -253,9 +261,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    /* ── CHANGED: was 0.08 — slightly more opaque for legibility ── */
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(128, 128, 128, 0.14);
+    border: 1px solid var(--glass-border);
     border-radius: 10px;
     padding: 8px 10px;
     min-width: 200px;
@@ -277,7 +284,7 @@
 .pdf-bubble-name {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -285,7 +292,7 @@
 
 .pdf-bubble-size {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.72);
+    color: var(--text-secondary);
     margin-top: 2px;
 }
 
@@ -301,35 +308,34 @@
     justify-content: center;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.80);
+    color: var(--text-secondary);
     text-decoration: none;
     transition: color 0.2s;
     cursor: pointer;
     padding: 4px;
 }
 
-.pdf-action-btn:hover { color: #ffffff; }
+.pdf-action-btn:hover { color: var(--text-primary); }
 .pdf-action-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 .pdf-action-btn .material-icons { font-size: 18px; }
 
 .mini-spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(128, 128, 128, 0.3);
     border-radius: 50%;
-    border-top-color: #ffffff;
+    border-top-color: var(--text-primary);
     animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ==========================================================================
-   3.  SEARCH — NEW STYLES
+   3.  SEARCH
    ========================================================================== */
 .search-bar-wrapper {
-    /* ── CHANGED: was 0.25 — bumped for clear separation ── */
-    background: rgba(0, 0, 0, 0.40);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(128, 128, 128, 0.20);
+    border-bottom: 1px solid var(--glass-border);
     padding: 8px 12px;
     animation: slideDown 0.15s ease;
 }
@@ -346,29 +352,29 @@
 }
 
 .search-icon {
-    color: rgba(255, 255, 255, 0.60);
+    color: var(--text-secondary);
     font-size: 18px;
     flex-shrink: 0;
 }
 
 .search-input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid var(--glass-border);
     border-radius: 20px;
     padding: 5px 12px;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary);
     font-size: 13px;
     outline: none;
     transition: border-color 0.2s;
 }
 
-.search-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+.search-input::placeholder { color: var(--text-hint); }
 .search-input:focus { border-color: rgba(0, 150, 255, 0.70); }
 
 .search-count {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.70);
+    color: var(--text-secondary);
     white-space: nowrap;
     min-width: 60px;
     text-align: center;
@@ -377,7 +383,7 @@
 .search-nav-btn {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -388,8 +394,8 @@
 }
 
 .search-nav-btn:hover:not(:disabled) {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    background: rgba(128, 128, 128, 0.12);
 }
 
 .search-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -398,7 +404,7 @@
 .search-close-btn {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
