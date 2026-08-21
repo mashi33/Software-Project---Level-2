@@ -30,6 +30,11 @@ export class HotelRestaurantFinder implements OnInit {
     this.placesService.clearPlaces();
   }
 
+  onQuickCitySearch(city: string) {
+  // TODO: wire this to match performSearch() in filter.component.ts
+  console.log('Quick search for city:', city);
+}
+
   goBack() {
     this.router.navigate(['/explore']);
   }

@@ -1,6 +1,15 @@
 <div class="main-container">
   <div class="sidebar">
-    <h2>Optimize Your Route</h2>
+    <!-- ✅ Header with icon + title + subtitle -->
+    <div class="sidebar-header">
+      <div class="header-icon">
+        <span class="material-icons">alt_route</span>
+      </div>
+      <div class="header-text">
+        <h2>Optimize Your Route</h2>
+        <p class="header-subtitle">Find the best way to travel</p>
+      </div>
+    </div>
 
     <!-- ✅ Transport mode toggle -->
     <div class="transport-toggle">
@@ -17,6 +26,9 @@
     </div>
     
     <div class="search-section">
+      <!-- ✅ Section label -->
+      <p class="section-label">Pick-up & Destination</p>
+
       <div class="input-wrapper">
         <input [(ngModel)]="start" (input)="search('start')" placeholder="Pick-up location">
         <ul *ngIf="startSuggestions.length" class="suggestions">
@@ -40,6 +52,14 @@
       <button class="btn-traffic" [class.active]="showTraffic" (click)="toggleTraffic()">
         🚦 {{ showTraffic ? 'Hide Traffic' : 'Show Traffic' }}
       </button>
+    </div>
+
+        <!-- ✅ Empty state — before any search -->
+    <div class="route-empty-state" 
+         *ngIf="!results && !busResult && !isLoading && !isBusLoading">
+      <span class="material-icons empty-icon">route</span>
+      <h4 class="empty-heading">Plan Your Journey</h4>
+      <p class="empty-subtext">Enter a pick-up location and destination to find the best routes</p>
     </div>
 
         <div class="results" *ngIf="isLoading && transportMode === 'private'">
@@ -226,14 +246,36 @@
       <!-- Bus Loading skeleton -->
       <div *ngIf="isBusLoading">
         <p class="loading-label">Finding bus routes...</p>
+        
         <div class="card skeleton-card" *ngFor="let i of [1,2]">
-          <div class="card-header">
-            <div class="skel skel-circle"></div>
-            <div class="skel skel-title"></div>
+          <!-- Card header — icon + title -->
+          <div class="skel-card-header">
+            <div class="skel skel-card-icon"></div>
+            <div class="skel skel-card-title"></div>
           </div>
-          <div class="details-section">
-            <div class="skel skel-line"></div>
-            <div class="skel skel-line short"></div>
+
+          <div class="skel-divider"></div>
+
+          <!-- From / To / Via rows -->
+          <div class="skel-detail-row">
+            <div class="skel skel-label"></div>
+            <div class="skel skel-value"></div>
+          </div>
+          <div class="skel-detail-row">
+            <div class="skel skel-label"></div>
+            <div class="skel skel-value"></div>
+          </div>
+          <div class="skel-detail-row">
+            <div class="skel skel-label"></div>
+            <div class="skel skel-value short"></div>
+          </div>
+
+          <div class="skel-divider"></div>
+
+          <!-- Fare row -->
+          <div class="skel-detail-row">
+            <div class="skel skel-label"></div>
+            <div class="skel skel-value fuel"></div>
           </div>
         </div>
       </div>
@@ -246,20 +288,26 @@
             *ngIf="busResult.directOptions?.length <= 1">
           <div class="card-header">
             <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
-            <h4>Bus Route {{ busResult.routeNo }}</h4>
+             <h4>Bus {{ busResult.routeNo }}: {{ busResult.from }} - {{ busResult.to }}</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
               <span class="detail-label">
                 <span class="material-icons row-icon">place</span> From
               </span>
-              <span class="detail-value">{{ start.split(',')[0] }}</span>
+              <span class="detail-value">{{ start.split(',')[0] }}</span>  <!-- ✅ user search -->
             </div>
             <div class="detail-row">
               <span class="detail-label">
                 <span class="material-icons row-icon">place</span> To
               </span>
-              <span class="detail-value">{{ end.split(',')[0] }}</span>
+              <span class="detail-value">{{ end.split(',')[0] }}</span>   <!-- ✅ user search -->
+            </div>
+            <div class="detail-row" *ngIf="busResult.via">
+              <span class="detail-label">
+                <span class="material-icons row-icon">alt_route</span> Via
+              </span>
+              <span class="detail-value">{{ busResult.via }}</span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
@@ -282,22 +330,32 @@
               *ngFor="let option of busResult.directOptions; let i = index">
             <div class="card-header">
               <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
-              <h4>Bus {{ option.routeNo }}</h4>
+              <h4>Bus {{ option.routeNo }}: {{ option.from }} - {{ option.to }}</h4>
               <!-- Cheapest badge -->
-              <span class="cheapest-badge" *ngIf="i === 0">Cheapest</span>
+              <span class="cheapest-badge" 
+            *ngIf="option.fare === busResult.directOptions[0].fare && 
+             option.fare !== busResult.directOptions[busResult.directOptions.length - 1].fare">
+              Cheapest
+            </span>
             </div>
             <div class="details-section">
               <div class="detail-row">
                 <span class="detail-label">
                   <span class="material-icons row-icon">place</span> From
                 </span>
-                <span class="detail-value">{{ start.split(',')[0] }}</span>
+                <span class="detail-value">{{ start.split(',')[0] }}</span>  <!-- ✅ user search -->
               </div>
               <div class="detail-row">
                 <span class="detail-label">
                   <span class="material-icons row-icon">place</span> To
                 </span>
-                <span class="detail-value">{{ end.split(',')[0] }}</span>
+                <span class="detail-value">{{ end.split(',')[0] }}</span>     <!-- ✅ user search -->
+              </div>
+              <div class="detail-row" *ngIf="option.via">
+                <span class="detail-label">
+                  <span class="material-icons row-icon">alt_route</span> Via
+                </span>
+                <span class="detail-value">{{ option.via }}</span>
               </div>
               <div class="detail-divider"></div>
               <div class="detail-row">
@@ -319,7 +377,7 @@
         <div class="card bus-card">
           <div class="card-header">
             <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
-            <h4>Bus {{ busResult.routeNo1 }}</h4>
+            <h4>Bus {{ busResult.routeNo1 }}: {{ busResult.from1 }} - {{ busResult.to1 }}</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
@@ -334,6 +392,12 @@
               </span>
               <span class="detail-value">{{ busResult.interchange }}</span>
             </div>
+            <div class="detail-row" *ngIf="busResult.viaLeg1">
+            <span class="detail-label">
+              <span class="material-icons row-icon">alt_route</span> Via
+            </span>
+            <span class="detail-value">{{ busResult.viaLeg1 }}</span>
+          </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
               <span class="detail-label">
@@ -354,7 +418,7 @@
         <div class="card bus-card">
           <div class="card-header">
             <span class="material-icons route-icon" style="color:#1a56db">directions_bus</span>
-            <h4>Bus {{ busResult.routeNo2 }}</h4>
+            <h4>Bus {{ busResult.routeNo2 }}: {{ busResult.from2 }} - {{ busResult.to2 }}</h4>
           </div>
           <div class="details-section">
             <div class="detail-row">
@@ -369,6 +433,12 @@
               </span>
               <span class="detail-value">{{ end.split(',')[0] }}</span>
             </div>
+            <div class="detail-row" *ngIf="busResult.viaLeg2">
+            <span class="detail-label">
+              <span class="material-icons row-icon">alt_route</span> Via
+            </span>
+            <span class="detail-value">{{ busResult.viaLeg2 }}</span>
+          </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
               <span class="detail-label">
@@ -390,9 +460,10 @@
 
       <!-- Not found -->
       <div class="bus-not-found"
-           *ngIf="busResult && !busResult.found && !isBusLoading">
-        <span class="material-icons">info</span>
-        <p>No bus route found for this journey. Try a nearby city.</p>
+          *ngIf="busResult && !busResult.found && !isBusLoading">
+        <span class="material-icons empty-icon">directions_bus</span>
+        <h4 class="empty-heading">No Routes Found</h4>
+        <p class="empty-subtext">No bus route found for this journey. Try a nearby city.</p>
       </div>
 
       <!-- ✅ ADD THIS — PDF download button -->
@@ -464,8 +535,14 @@
     </div>
 
     <div class="map-actions-container">
-      <button class="btn-action" (click)="goToExplore()">Back</button>
-      <button class="btn-action" routerLink="/explore/hotel-restaurant-finder">View Hotels</button>
+      <button class="btn-action back-btn" (click)="goToExplore()">
+        <span class="material-icons">arrow_back</span>
+        Back
+      </button>
+      <button class="btn-action" routerLink="/explore/hotel-restaurant-finder">
+        <span class="material-icons">share_location</span>
+        View Hotels
+      </button>
     </div>
   </div>
 </div>

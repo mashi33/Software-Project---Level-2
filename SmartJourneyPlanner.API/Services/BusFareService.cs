@@ -238,7 +238,9 @@ namespace SmartJourneyPlanner.Services
                     {
                         RouteNo = x.Route.RouteNo,
                         Fare = Math.Round(x.Fare!.Value, 0),
-                        Via = !string.IsNullOrEmpty(v) ? v : x.Route.Via
+                        Via = x.Route.Via,
+                        From = x.Route.From,  
+                        To = x.Route.To  
                     };
                 }).ToList();
 
@@ -249,8 +251,10 @@ namespace SmartJourneyPlanner.Services
                     IsPrincipal = best.Route.IsPrincipal,
                     IsApproximateFare = best.IsApproximate,
                     RouteNo = best.Route.RouteNo,
-                    Via = !string.IsNullOrEmpty(viaCities) ? viaCities : best.Route.Via,
+                    Via = best.Route.Via,
                     Fare = Math.Round(best.Fare!.Value, 2),
+                    From = best.Route.From,   
+                    To = best.Route.To,  
                     DirectOptions = directOptions
                 };
 
@@ -334,9 +338,12 @@ namespace SmartJourneyPlanner.Services
                     FareLeg1 = Math.Round(bestFit.Fare1, 2),
                     FareLeg2 = Math.Round(bestFit.Fare2, 2),
                     TotalFare = Math.Round(bestFit.Total, 2),
-                    ViaLeg1 = finalVia1,
-                    ViaLeg2 = finalVia2,
-                    Via = $"Leg 1 Via: {finalVia1} | Leg 2 Via: {finalVia2}"
+                    ViaLeg1 = bestFit.Leg1.Via,      
+                    ViaLeg2 = bestFit.Leg2.Via,      
+                    From1 = bestFit.Leg1.From,       
+                    To1 = bestFit.Leg1.To,           
+                    From2 = bestFit.Leg2.From,       
+                    To2 = bestFit.Leg2.To            
                 };
             }
 

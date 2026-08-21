@@ -1,5 +1,23 @@
-<div class="card-container">
 
+
+Place card.component · HTML
+<div class="card-container">
+ 
+  <!-- Initial state: nothing searched yet -->
+  <div *ngIf="places === null && !isLoading" class="initial-state">
+    <div class="initial-icon">
+      <i class="fas fa-map-marked-alt"></i>
+    </div>
+    <h3>Find hotels &amp; restaurants</h3>
+    <p>Search a city or town in Sri Lanka to see nearby places</p>
+    <div class="quick-cities">
+      <button (click)="quickSearch('Colombo')">Colombo</button>
+      <button (click)="quickSearch('Kandy')">Kandy</button>
+      <button (click)="quickSearch('Galle')">Galle</button>
+      <button (click)="quickSearch('Negombo')">Negombo</button>
+    </div>
+  </div>
+ 
   <!-- Skeleton loader -->
   <ng-container *ngIf="isLoading">
     <div *ngFor="let item of skeletonItems" class="skeleton-card">
@@ -12,13 +30,13 @@
       </div>
     </div>
   </ng-container>
-
+ 
   <ng-container *ngIf="places !== null">
     <div *ngFor="let place of places"
       [id]="'card-' + place.id"
       class="place-card"
       [class.selected-card]="place.id === selectedPlaceId">
-
+ 
       <img
         *ngIf="place.photoReference"
         [src]="'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=' + place.photoReference + '&key=' + googleMapsApiKey"
@@ -26,7 +44,7 @@
         class="card-img"
       />
       <div *ngIf="!place.photoReference" class="no-img">No Image Available</div>
-
+ 
       <div class="details">
         <div class="card-header">
           <h3>{{ place.name }}</h3>
@@ -37,11 +55,9 @@
         <p>{{ place.address }}</p>
         <div class="meta">
           <span>⭐ {{ place.rating }}</span>
-          <!-- ✅ BUG 9 FIX — if price level 0 add N/A  -->
           <span>{{ place.priceLevel > 0 ? '$'.repeat(place.priceLevel) : 'N/A' }}</span>
         </div>
-
-        <!-- ✅ always button blue — no added state -->
+ 
         <button
           class="add-to-trip-btn"
           (click)="addToTrip(place)">
@@ -49,10 +65,12 @@
         </button>
       </div>
     </div>
-
+ 
     <div *ngIf="places.length === 0" class="empty-state">
-      No places found. Try a different search or category.
+      <i class="fas fa-search"></i>
+      <p>No places found. Try a different search or category.</p>
     </div>
   </ng-container>
-
+ 
 </div>
+ 

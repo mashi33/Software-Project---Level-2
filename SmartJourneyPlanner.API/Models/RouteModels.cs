@@ -130,6 +130,8 @@ namespace SmartJourneyPlanner.Models
         public string? RouteNo { get; set; }
         public string? Via     { get; set; }
         public double? Fare    { get; set; }
+        public string? From    { get; set; }  
+        public string? To      { get; set; }  
 
         // Multi leg
         public string? RouteNo1    { get; set; }
@@ -140,6 +142,11 @@ namespace SmartJourneyPlanner.Models
         public double? TotalFare   { get; set; }
         public string? ViaLeg1     { get; set; }
         public string? ViaLeg2     { get; set; }
+
+        public string? From1 { get; set; }
+        public string? To1   { get; set; }
+        public string? From2 { get; set; }
+        public string? To2   { get; set; }
 
         // ✅ Multiple direct options — sorted by fare ascending
         public List<BusOption> DirectOptions { get; set; } = new();
@@ -153,5 +160,7 @@ namespace SmartJourneyPlanner.Models
             public string RouteNo { get; set; } = string.Empty;
             public double Fare    { get; set; }
             public string? Via    { get; set; }
+            public string From    { get; set; } = string.Empty;  
+            public string To      { get; set; } = string.Empty;
         }
 }

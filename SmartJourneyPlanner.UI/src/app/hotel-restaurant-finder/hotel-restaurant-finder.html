@@ -1,18 +1,37 @@
 <div class="finder-container">
+
   <div class="header-section">
-    <h2>Hotel & Restaurant Finder</h2>
+    <div class="header-icon">
+      <i class="fas fa-map-marked-alt"></i>
+    </div>
+    <div class="header-content">
+      <h2>Hotel &amp; Restaurant Finder</h2>
+      <p class="header-subtitle">Discover great places to stay and eat across Sri Lanka</p>
+    </div>
   </div>
-  <app-filter></app-filter>
+
   <div class="main-layout">
+
+    <!-- Sidebar: filters + search + results -->
+    <aside class="sidebar">
+      <app-filter></app-filter>
+      <div class="list-section">
+        <app-place-card (quickCitySelected)="onQuickCitySearch($event)"></app-place-card>
+      </div>
+    </aside>
+
+    <!-- Map -->
     <div class="map-section">
       <app-map-view></app-map-view>
       <div class="floating-buttons">
-        <button class="nav-btn back-btn" (click)="goBack()">Back</button>
-        <button class="nav-btn route-btn" (click)="viewRoute()">View Route</button>
+        <button class="nav-btn back-btn" (click)="goBack()">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <button class="nav-btn route-btn" (click)="viewRoute()">
+          <i class="fas fa-route"></i> View Route
+        </button>
       </div>
     </div>
-    <div class="list-section">
-      <app-place-card></app-place-card>
-    </div>
+
   </div>
-</div>  
+</div>
