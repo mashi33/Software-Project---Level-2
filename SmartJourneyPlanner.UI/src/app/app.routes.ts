@@ -99,6 +99,11 @@ export const routes: Routes = [
     component: ResetPasswordComponent
   },
 
+  {
+    path: 'landing-page',
+    component: LandingPageComponent
+  },
+
 
   // =====================================================
   // COMMON PROTECTED ROUTES

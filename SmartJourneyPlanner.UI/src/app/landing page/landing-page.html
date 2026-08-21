@@ -2,13 +2,14 @@
 <section class="hero-section">
   <div class="hero-bg">
     <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80"
-         alt="Tropical beach">
+      alt="Tropical beach">
     <div class="hero-overlay"></div>
   </div>
 
   <div class="hero-content">
     <h1>Plan <span>Smarter.</span><br>Travel <span>Together.</span></h1>
-    <p>The all-in-one platform to plan trips, collaborate with friends, manage budgets, discover amazing places, and create unforgettable memories.</p>
+    <p>The all-in-one platform to plan trips, collaborate with friends, manage budgets, discover amazing places, and
+      create unforgettable memories.</p>
 
     <div class="hero-buttons">
       <button class="btn-primary btn-large" routerLink="/trips/create">
@@ -27,8 +28,7 @@
         <i class="bi bi-geo-alt-fill icon"></i>
         <div>
           <label>Where to?</label>
-          <input type="text" placeholder="Enter destination"
-                 [(ngModel)]="searchData.destination" name="destination">
+          <input type="text" placeholder="Enter destination" [(ngModel)]="searchData.destination" name="destination">
         </div>
       </div>
       <div class="divider"></div>
@@ -36,8 +36,7 @@
         <i class="bi bi-calendar-event icon"></i>
         <div>
           <label>Start Date</label>
-          <input type="text" placeholder="Select date"
-                 [(ngModel)]="searchData.startDate" name="startDate">
+          <input type="text" placeholder="Select date" [(ngModel)]="searchData.startDate" name="startDate">
         </div>
       </div>
       <div class="divider"></div>
@@ -45,8 +44,7 @@
         <i class="bi bi-calendar-event icon"></i>
         <div>
           <label>End Date</label>
-          <input type="text" placeholder="Select date"
-                 [(ngModel)]="searchData.endDate" name="endDate">
+          <input type="text" placeholder="Select date" [(ngModel)]="searchData.endDate" name="endDate">
         </div>
       </div>
       <div class="divider"></div>
@@ -54,8 +52,7 @@
         <i class="bi bi-people-fill icon"></i>
         <div>
           <label>Travelers</label>
-          <input type="text" placeholder="Add people"
-                 [(ngModel)]="searchData.travelers" name="travelers">
+          <input type="text" placeholder="Add people" [(ngModel)]="searchData.travelers" name="travelers">
         </div>
       </div>
       <button class="btn-search" (click)="onSearchTrip()">
@@ -112,6 +109,66 @@
       </div>
       <h3>{{ feat.title }}</h3>
       <p>{{ feat.description }}</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEEDBACKS -->
+<section class="feedbacks-section section" #animateSection>
+  <div class="container">
+    <div class="section-header feedback-header">
+      <h2>What Our Users Say <span class="wave-line"></span></h2>
+      <p class="feedback-subtitle">
+        Real experiences from travellers and service providers using Smart Journey Planner
+      </p>
+    </div>
+
+    <div class="feedback-carousel-wrapper" *ngIf="feedbacks.length > 0">
+      <!-- Left Arrow -->
+      <button class="feedback-nav-btn prev" (click)="scrollFeedbacks('left')" aria-label="Previous">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+
+      <!-- Cards track -->
+      <div class="feedback-track" #feedbackTrack>
+        <div class="feedback-card" *ngFor="let fb of feedbacks">
+          <div class="quote-icon">
+            <i class="bi bi-quote"></i>
+          </div>
+
+
+          <p class="feedback-text">“{{ fb.comment }}”</p>
+
+          <div class="feedback-user">
+            <img
+              [src]="fb.profilePictureUrl || 'https://ui-avatars.com/api/?name=' + (fb.userName || 'User') + '&background=2563eb&color=fff'"
+              [alt]="fb.userName" class="user-avatar" />
+            <div class="user-info">
+              <h4>{{ fb.userName || 'Anonymous' }}</h4>
+              <span class="role-badge" [class.provider]="(fb.userRole || '').toLowerCase().includes('provider')">
+                {{ fb.userRole || 'Traveller' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Arrow -->
+      <button class="feedback-nav-btn next" (click)="scrollFeedbacks('right')" aria-label="Next">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Dots (simple version) -->
+    <div class="feedback-dots" *ngIf="feedbacks.length > 1">
+      <span *ngFor="let fb of feedbacks; let i = index" class="dot" [class.active]="i === activeFeedbackIndex"
+        (click)="goToFeedback(i)">
+      </span>
+    </div>
+
+    <!-- Empty state -->
+    <div class="feedback-empty" *ngIf="feedbacks.length === 0">
+      No feedbacks shared yet. Be the first to share your experience from your profile!
     </div>
   </div>
 </section>
@@ -188,8 +245,9 @@
           <button class="btn-explore" routerLink="/map">Explore</button>
         </div>
         <div class="card-right map-preview">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
-               alt="Sri Lanka Map" class="map-img">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
+            alt="Sri Lanka Map" class="map-img">
           <div class="pin pin-1"></div>
           <div class="pin pin-2"></div>
           <div class="pin pin-3"></div>
@@ -225,22 +283,28 @@
           <button class="btn-explore" routerLink="/memories">Explore</button>
         </div>
         <div class="card-right memories-preview">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
-               alt="Sri Lanka Map" class="world-map">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Sri_Lanka_location_map.svg/800px-Sri_Lanka_location_map.svg.png"
+            alt="Sri Lanka Map" class="world-map">
           <div class="memory-pin" style="top: 28%; left: 48%;">
-            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=60&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=60&q=80"
+              alt="">
           </div>
           <div class="memory-pin" style="top: 42%; left: 55%;">
-            <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=60&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=60&q=80"
+              alt="">
           </div>
           <div class="memory-pin" style="top: 58%; left: 42%;">
-            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=60&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=60&q=80"
+              alt="">
           </div>
           <div class="memory-pin" style="top: 35%; left: 35%;">
-            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=60&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=60&q=80"
+              alt="">
           </div>
           <div class="memory-pin" style="top: 65%; left: 52%;">
-            <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=60&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=60&q=80"
+              alt="">
           </div>
         </div>
       </div>

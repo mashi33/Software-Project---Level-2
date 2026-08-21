@@ -844,3 +844,156 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========== Sidebar Interests Card (Clean Version) ========== */
+.sidebar-interests-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  text-align: left;
+}
+
+.sidebar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sidebar-card-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-card-header h3 i {
+  color: #ec4899;
+  font-size: 1.05rem;
+}
+
+.provider-theme .sidebar-card-header h3 i {
+  color: #0284c7;
+}
+
+.edit-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.edit-link:hover {
+  background: #eff6ff;
+  text-decoration: none;
+}
+
+.sidebar-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.interest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.interest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.interest-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.chip-emoji {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Nice colored chips */
+.interest-chip[data-interest="Beach"] {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.interest-chip[data-interest="Adventure"] {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.interest-chip[data-interest="Nature"] {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.interest-chip[data-interest="Culture"] {
+  background: #faf5ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
+}
+
+.interest-chip[data-interest="Photography"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.interest-chip[data-interest="Hiking"] {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.interest-chip[data-interest="Camping"] {
+  background: #fefce8;
+  color: #a16207;
+  border-color: #fef08a;
+}
+
+.interest-chip[data-interest="Foodie"] {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+.fleet-chip {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.empty-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+  font-style: italic;
+}
