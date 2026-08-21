@@ -1143,13 +1143,14 @@ if (isShortNotice) {
     this.closeCancelBookingModal();
     this.tempCancelReason = cancelReason;
 
-    // Cancel the booking
-    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+    // Cancel the booking  
+    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled', 'Provider').subscribe({
       next: () => {
-        booking.status = 'Cancelled';
-        booking.statusChangedDate = new Date().toISOString();
-        this.providerCancelledIds.add(booking.id!);
-        this.tempCancelReason = '';
+       booking.status = 'Cancelled';
+       booking.statusChangedDate = new Date().toISOString();
+       (booking as any).CancelledBy = 'Provider';   
+       this.providerCancelledIds.add(booking.id!);
+       this.tempCancelReason = '';
 
         // Add blocked range
         const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
