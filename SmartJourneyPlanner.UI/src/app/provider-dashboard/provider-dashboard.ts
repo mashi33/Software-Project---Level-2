@@ -514,137 +514,193 @@ export class ProviderDashboardComponent implements OnInit {
     });
   }
 
-    viewBookingDetails(id: string | undefined) {
-  const b = this.bookings.find(x => x.id === id);
-  if (!b) return;
+  viewBookingDetails(id: string | undefined) {
+    const b = this.bookings.find(x => x.id === id);
+    if (!b) return;
 
-  const status = (b.status || (b as any).Status || '').toString();
-  const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'canceled';
+    const status = (b.status || (b as any).Status || '').toString();
+    const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'canceled';
 
-  // Who cancelled?
-  const cancelledByRaw = (
-    (b as any).cancelledBy ||
-    (b as any).CancelledBy ||
-    (b as any).cancellationSource ||
-    (b as any).CancellationSource ||
-    ''
-  ).toString().toLowerCase();
+    // Who cancelled?
+    const cancelledByRaw = (
+      (b as any).cancelledBy ||
+      (b as any).CancelledBy ||
+      (b as any).cancellationSource ||
+      (b as any).CancellationSource ||
+      ''
+    ).toString().toLowerCase();
 
-  //  also checks the current session
-  const cancelledByProvider = isCancelled && (
-    this.providerCancelledIds.has(b.id!) ||          // provider cancelled in this session
-    cancelledByRaw === 'provider' ||
-    cancelledByRaw === 'you' ||
-    cancelledByRaw === 'owner' ||
-    (b as any).cancelledByProvider === true
-  );
+    //  also checks the current session
+    const cancelledByProvider = isCancelled && (
+      this.providerCancelledIds.has(b.id!) ||          // provider cancelled in this session
+      cancelledByRaw === 'provider' ||
+      cancelledByRaw === 'you' ||
+      cancelledByRaw === 'owner' ||
+      (b as any).cancelledByProvider === true
+    );
 
-  const formattedStatusDate = b.statusChangedDate
-    ? new Date(b.statusChangedDate).toLocaleDateString() + ' ' +
-      new Date(b.statusChangedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : 'Not Updated Yet';
+    const formattedStatusDate = b.statusChangedDate
+      ? new Date(b.statusChangedDate).toLocaleDateString() + ' ' +
+        new Date(b.statusChangedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : 'Not Updated Yet';
 
-  const s = b.startDate ? new Date(b.startDate).setHours(0, 0, 0, 0) : 0;
-  const e = b.endDate ? new Date(b.endDate).setHours(0, 0, 0, 0) : 0;
-  const days = (s && e) ? Math.ceil(Math.abs(e - s) / 86400000) + 1 : ((b as any).days || 1);
-  const nights = (b as any).nights || (days > 1 ? days - 1 : 0);
+    const s = b.startDate ? new Date(b.startDate).setHours(0, 0, 0, 0) : 0;
+    const e = b.endDate ? new Date(b.endDate).setHours(0, 0, 0, 0) : 0;
+    const days = (s && e) ? Math.ceil(Math.abs(e - s) / 86400000) + 1 : ((b as any).days || 1);
+    const nights = (b as any).nights || (days > 1 ? days - 1 : 0);
 
-  const pr = (b as any).pricingSummary;
-  const rate = pr?.dailyRate || 0;
-  const rental = pr?.dailyRental || (rate * days);
-  const nRate = pr?.nightlyRate || 0;
-  const nightFee = pr?.driverNightOut || (nRate * nights);
-  const total = b.totalAmount || (rental + nightFee);
+    const pr = (b as any).pricingSummary;
+    const rate = pr?.dailyRate || 0;
+    const rental = pr?.dailyRental || (rate * days);
+    const nRate = pr?.nightlyRate || 0;
+    const nightFee = pr?.driverNightOut || (nRate * nights);
+    const total = b.totalAmount || (rental + nightFee);
 
-  // Status badge text
-  let statusDisplay = status;
-  let statusBadgeClass = 'bg-warning text-dark';
+    // Status badge text
+    let statusDisplay = status;
+    let statusBadgeClass = 'bg-warning';
 
-  if (isCancelled) {
-    statusDisplay = cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller';
-    statusBadgeClass = 'bg-danger text-white';
-  } else if (status === 'Confirmed') {
-    statusBadgeClass = 'bg-success text-white';
-  } else if (status === 'Completed') {
-    statusBadgeClass = 'bg-primary text-white';
-  } else if (status === 'Rejected') {
-    statusBadgeClass = 'bg-danger text-white';
+    if (isCancelled) {
+      statusDisplay = cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller';
+      statusBadgeClass = 'bg-danger';
+    } else if (status === 'Confirmed') {
+      statusBadgeClass = 'bg-success';
+    } else if (status === 'Completed') {
+      statusBadgeClass = 'bg-primary';
+    } else if (status === 'Rejected') {
+      statusBadgeClass = 'bg-danger';
+    }
+
+    // Optional notice for cancelled bookings
+    const cancelledNotice = isCancelled
+      ? `
+        <div class="premium-cancelled-notice ${cancelledByProvider ? 'cancelled-by-provider' : 'cancelled-by-traveller'}">
+          <div class="notice-badge">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+            </svg>
+          </div>
+          <div class="notice-text">
+            <div class="notice-title">${cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller'}</div>
+            ${formattedStatusDate !== 'Not Updated Yet' ? `<div class="notice-subtitle">On ${formattedStatusDate}</div>` : ''}
+          </div>
+        </div>
+      `
+      : '';
+
+    Swal.fire({
+      title: 'Booking Request Details',
+      width: '480px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'swal2-custom-popup',
+        title: 'swal2-custom-title',
+        htmlContainer: 'swal2-custom-html',
+        confirmButton: 'swal2-confirm'
+      },
+      html: `
+        <div class="premium-details-container">
+          ${cancelledNotice}
+
+          <!-- Customer Details -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon customer-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              Customer Details
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Name</span>
+                <span class="list-value">${b.userName || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Phone</span>
+                <span class="list-value">${(b as any).contactNumber || 'Not Provided'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Status</span>
+                <span class="list-value">
+                  <span class="premium-status-badge ${statusBadgeClass}">${statusDisplay}</span>
+                </span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Last Update</span>
+                <span class="list-value">${formattedStatusDate}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Itinerary -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon itinerary-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+              </div>
+              Trip Itinerary
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Vehicle</span>
+                <span class="list-value">${b.vehicleName || 'Standard Car'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Travel Dates</span>
+                <span class="list-value">${new Date(b.startDate).toLocaleDateString()} → ${new Date(b.endDate).toLocaleDateString()} (${days} Days)</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Pickup</span>
+                <span class="list-value">${(b as any).pickupAddress || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Destination</span>
+                <span class="list-value">${(b as any).destinationAddress || (b as any).pickupAddress || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing Breakdown -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon pricing-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Pricing Breakdown
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Daily Rental</span>
+                <span class="list-value">LKR ${rate.toLocaleString()} × ${days} Days = LKR ${rental.toLocaleString()}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Driver Night Fee</span>
+                <span class="list-value">LKR ${nRate.toLocaleString()} × ${nights} Nights = LKR ${nightFee.toLocaleString()}</span>
+              </div>
+              <div class="list-item total-item">
+                <span class="list-label">Total Earnings</span>
+                <span class="list-value">LKR ${total.toLocaleString()}</span>
+              </div>
+            </div>
+            <div class="premium-pricing-note">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Extra KM charges are collected separately based on usage.
+            </div>
+          </div>
+        </div>
+      `
+    });
   }
-
-  // Optional notice for cancelled bookings
-  const cancelledNotice = isCancelled
-    ? `
-      <div class="alert ${cancelledByProvider ? 'alert-danger' : 'alert-secondary'} py-2 px-3 mb-3" style="font-size: 0.9rem;">
-        <strong>${cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller'}</strong>
-        ${formattedStatusDate !== 'Not Updated Yet' ? `<br><small>On ${formattedStatusDate}</small>` : ''}
-      </div>
-    `
-    : '';
-
-  Swal.fire({
-    title: 'Booking Request Details',
-    width: '620px',
-    confirmButtonText: 'Close',
-    confirmButtonColor: '#0c92f4',
-    html: `
-      <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-        ${cancelledNotice}
-
-        <h6 class="text-primary fw-bold mb-1">Customer Details</h6>
-        <div class="bg-light p-2 rounded border mb-3">
-          <p class="m-0"><strong>Name:</strong> ${b.userName || 'N/A'}</p>
-          <p class="m-1 0"><strong>Phone:</strong> ${(b as any).contactNumber || 'Not Provided'}</p>
-          <p class="m-0">
-            <strong>Status:</strong>
-            <span class="badge ${statusBadgeClass}">${statusDisplay}</span>
-          </p>
-          <p class="m-0 mt-1">
-            <small class="text-muted"><strong>Last Status Update:</strong> ${formattedStatusDate}</small>
-          </p>
-        </div>
-
-        <h6 class="text-primary fw-bold mb-1">Trip Itinerary</h6>
-        <div class="bg-light p-2 rounded border mb-3">
-          <p class="m-0"><strong>Vehicle:</strong> ${b.vehicleName || 'Standard Car'}</p>
-          <p class="m-1 0">
-            <strong>Travel Dates:</strong>
-            ${new Date(b.startDate).toLocaleDateString()} to ${new Date(b.endDate).toLocaleDateString()}
-            (${days} Days)
-          </p>
-          <p class="m-1 0"><strong>Pickup:</strong> ${(b as any).pickupAddress || 'N/A'}</p>
-          <p class="m-0"><strong>Destination:</strong> ${(b as any).destinationAddress || (b as any).pickupAddress || 'N/A'}</p>
-        </div>
-
-        <h6 class="text-primary fw-bold mb-1">Pricing Breakdown</h6>
-        <table class="table table-sm table-bordered m-0 fs-6">
-          <thead class="table-light">
-            <tr>
-              <th>Item</th>
-              <th class="text-end">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Daily Rental (LKR ${rate.toLocaleString()} × ${days} Days)</td>
-              <td class="text-end">LKR ${rental.toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td>Driver Night Fee (LKR ${nRate.toLocaleString()} × ${nights} Nights)</td>
-              <td class="text-end">LKR ${nightFee.toLocaleString()}</td>
-            </tr>
-            <tr class="table-primary fw-bold text-primary">
-              <td>Total Earnings (Estimated)</td>
-              <td class="text-end fs-5">LKR ${total.toLocaleString()}</td>
-            </tr>
-          </tbody>
-        </table>
-        <small class="text-muted d-block mt-2">
-          <i>* Extra KM charges are collected separately based on usage.</i>
-        </small>
-      </div>
-    `
-  });
-}
 
   // Blocked Date Ranges Methods
 
@@ -802,32 +858,101 @@ export class ProviderDashboardComponent implements OnInit {
     
     Swal.fire({
       title: vehicle.ModelName || vehicle.modelName || 'Vehicle Details',
-      width: '620px',
+      width: '460px',
       confirmButtonText: 'Close',
-      confirmButtonColor: '#0c92f4',
+      confirmButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'swal2-custom-popup',
+        title: 'swal2-custom-title',
+        htmlContainer: 'swal2-custom-html',
+        confirmButton: 'swal2-confirm'
+      },
       html: `
-        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-          <h6 class="text-primary fw-bold mb-1">Basic Information</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Model:</strong> ${vehicle.ModelName || vehicle.modelName || 'N/A'}</p>
-            <p class="m-0"><strong>Class:</strong> ${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</p>
-            <p class="m-0"><strong>Year:</strong> ${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</p>
-            <p class="m-0"><strong>Registration:</strong> ${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</p>
+        <div class="premium-details-container">
+
+          <!-- Basic Information -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon basic-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Basic Information
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Model</span>
+                <span class="list-value">${vehicle.ModelName || vehicle.modelName || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Class</span>
+                <span class="list-value">${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Year</span>
+                <span class="list-value">${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Registration</span>
+                <span class="list-value">${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</span>
+              </div>
+            </div>
           </div>
 
-          <h6 class="text-primary fw-bold mb-1">Specifications</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Capacity:</strong> ${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</p>
-            <p class="m-0"><strong>Fuel Type:</strong> ${vehicle.FuelType || vehicle.fuelType || 'N/A'}</p>
-            <p class="m-0"><strong>Transmission:</strong> ${vehicle.Transmission || vehicle.transmission || 'N/A'}</p>
-            <p class="m-0"><strong>Air Conditioning:</strong> ${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</p>
+          <!-- Specifications -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon spec-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              Specifications
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Capacity</span>
+                <span class="list-value">${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Fuel Type</span>
+                <span class="list-value">${vehicle.FuelType || vehicle.fuelType || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Transmission</span>
+                <span class="list-value">${vehicle.Transmission || vehicle.transmission || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Air Conditioning</span>
+                <span class="list-value">${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
           </div>
 
-          <h6 class="text-primary fw-bold mb-1">Pricing & Rating</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
-            <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
+          <!-- Pricing & Rating -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon pricing-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Pricing & Rating
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Daily Rate</span>
+                <span class="list-value">LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Rating</span>
+                <span class="list-value">${ratingDisplay}</span>
+              </div>
+            </div>
           </div>
+
         </div>
       `
     });

@@ -1364,6 +1364,358 @@
   }
 }
 
+/* SweetAlert Custom Popup for vehicle and booking details */
+
+::ng-deep .swal2-custom-popup {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12) !important;
+  padding: 0 !important;
+  max-width: 460px !important;
+  width: 100% !important;
+  border: 1px solid #e5e7eb !important;
+  overflow: hidden !important;
+}
+
+/* Title */
+::ng-deep .swal2-custom-title {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  margin: 0 !important;
+  padding: 18px 48px 12px 22px !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* Close Button */
+::ng-deep .swal2-custom-popup .swal2-close {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: #f3f4f6 !important;
+  border: none !important;
+  color: #6b7280 !important;
+  font-size: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+::ng-deep .swal2-custom-popup .swal2-close:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  transform: scale(1.05) !important;
+}
+
+/* Confirm Button */
+::ng-deep .swal2-custom-popup .swal2-confirm {
+  background: #3b82f6 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+::ng-deep .swal2-custom-popup .swal2-confirm:hover {
+  background: #2563eb !important;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Content area */
+::ng-deep .swal2-custom-html {
+  padding: 0 20px 18px 20px !important;
+}
+
+/* Main Container */
+::ng-deep .premium-details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/*  SECTION BOX  */
+::ng-deep .premium-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Section Title */
+::ng-deep .premium-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  letter-spacing: 0.15px;
+}
+
+::ng-deep .section-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+::ng-deep .basic-icon {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #2563eb;
+}
+
+::ng-deep .spec-icon {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #059669;
+}
+
+::ng-deep .price-icon,
+::ng-deep .pricing-icon {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+}
+
+::ng-deep .customer-icon {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+}
+
+::ng-deep .itinerary-icon {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  color: #db2777;
+}
+
+::ng-deep .section-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/*  LIST STYLES  */
+::ng-deep .premium-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+::ng-deep .list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+::ng-deep .list-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+::ng-deep .list-item:first-child {
+  padding-top: 0;
+}
+
+/* Total row */
+::ng-deep .list-item.total-item {
+  border-top: 1.5px solid #cbd5e1;
+  border-bottom: none;
+  padding-top: 10px;
+  margin-top: 6px;
+}
+
+::ng-deep .list-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.1px;
+  flex-shrink: 0;
+  padding-right: 12px;
+}
+
+::ng-deep .list-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: right;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+::ng-deep .list-value.highlight {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 13.5px;
+}
+
+::ng-deep .list-item.total-item .list-label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 13px;
+}
+
+::ng-deep .list-item.total-item .list-value {
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 14.5px;
+}
+
+/* Status Badge */
+::ng-deep .premium-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+::ng-deep .premium-status-badge.bg-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+::ng-deep .premium-status-badge.bg-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+::ng-deep .premium-status-badge.bg-primary {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+::ng-deep .premium-status-badge.bg-danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Cancelled Notice */
+::ng-deep .premium-cancelled-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  border: 1px solid;
+}
+
+::ng-deep .premium-cancelled-notice.cancelled-by-provider {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fecaca;
+}
+
+::ng-deep .premium-cancelled-notice.cancelled-by-traveller {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: #e2e8f0;
+}
+
+::ng-deep .notice-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+::ng-deep .premium-cancelled-notice.cancelled-by-provider .notice-badge {
+  color: #dc2626;
+}
+
+::ng-deep .premium-cancelled-notice.cancelled-by-traveller .notice-badge {
+  color: #64748b;
+}
+
+::ng-deep .notice-text {
+  flex: 1;
+}
+
+::ng-deep .notice-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1px;
+}
+
+::ng-deep .notice-subtitle {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Pricing Note */
+::ng-deep .premium-pricing-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+::ng-deep .premium-pricing-note svg {
+  flex-shrink: 0;
+  color: #d97706;
+  width: 13px;
+  height: 13px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  ::ng-deep .swal2-custom-popup {
+    max-width: 94vw !important;
+  }
+
+  ::ng-deep .swal2-custom-title {
+    padding: 16px 44px 10px 18px !important;
+    font-size: 16px !important;
+  }
+
+  ::ng-deep .swal2-custom-html {
+    padding: 0 16px 16px 16px !important;
+  }
+
+  ::ng-deep .premium-section {
+    padding: 12px 14px;
+  }
+
+  ::ng-deep .list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 6px 0;
+  }
+
+  ::ng-deep .list-value {
+    text-align: left;
+  }
+}
+
 /* MODAL STYLES */
 .modal-overlay {
   position: fixed;
@@ -1817,5 +2169,3 @@
   color: #1E40AF;
   line-height: 1.5;
 }
-
-
