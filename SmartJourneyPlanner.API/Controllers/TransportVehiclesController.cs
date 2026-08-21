@@ -288,38 +288,41 @@ namespace SmartJourneyPlanner.Controllers
             await _vehicleService.AddReviewAsync(id, review);
             _cache.Remove(ApprovedVehiclesCacheKey);
 
-            // 🔔 Generate Real-Time Notification for Transport Provider
-            try
+            // 🔔 Generate Real-Time Notification for Transport Provider in Background
+            _ = Task.Run(async () =>
             {
-                if (!string.IsNullOrEmpty(vehicle.ProviderId))
+                try
                 {
-                    var reviewerName = !string.IsNullOrWhiteSpace(review.UserName) ? review.UserName : "A traveler";
-                    var vehicleName = !string.IsNullOrWhiteSpace(vehicle.ModelName) ? vehicle.ModelName : "your vehicle";
-                    
-                    var notification = new Notification
+                    if (!string.IsNullOrEmpty(vehicle.ProviderId))
                     {
-                        UserId = vehicle.ProviderId,
-                        Icon = "bi-star-fill",
-                        IconColorClass = "icon-gold",
-                        Title = $"{reviewerName} gave a {review.Rating}★ rating and review for your vehicle {vehicleName}!",
-                        IsRead = false,
-                        LinkText = "View Fleet",
-                        Route = "/provider-dashboard?panel=fleet"
-                    };
+                        var reviewerName = !string.IsNullOrWhiteSpace(review.UserName) ? review.UserName : "A traveler";
+                        var vehicleName = !string.IsNullOrWhiteSpace(vehicle.ModelName) ? vehicle.ModelName : "your vehicle";
+                        
+                        var notification = new Notification
+                        {
+                            UserId = vehicle.ProviderId,
+                            Icon = "bi-star-fill",
+                            IconColorClass = "icon-gold",
+                            Title = $"{reviewerName} gave a {review.Rating}★ rating and review for your vehicle {vehicleName}!",
+                            IsRead = false,
+                            LinkText = "View Fleet",
+                            Route = "/provider-dashboard?panel=fleet"
+                        };
 
-                    await _notificationService.CreateNotificationAsync(notification);
-                    await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+                        await _notificationService.CreateNotificationAsync(notification);
+                        await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
 
-                    if (!string.IsNullOrEmpty(vehicle.ProviderId) && vehicle.ProviderId != notification.UserId)
-                    {
-                        await _hubContext.Clients.Group(vehicle.ProviderId).SendAsync("ReceiveNotification", notification);
+                        if (!string.IsNullOrEmpty(vehicle.ProviderId) && vehicle.ProviderId != notification.UserId)
+                        {
+                            await _hubContext.Clients.Group(vehicle.ProviderId).SendAsync("ReceiveNotification", notification);
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Error sending review notification: {ex.Message}");
-            }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Error sending review notification: {ex.Message}");
+                }
+            });
 
             return Ok(new { message = "Review added successfully" });
         }

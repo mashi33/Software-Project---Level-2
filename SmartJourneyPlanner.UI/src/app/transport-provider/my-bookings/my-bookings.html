@@ -198,10 +198,13 @@
           </div>
 
           <div class="d-flex gap-3">
-            <button class="btn btn-light flex-grow-1 py-3 rounded-pill fw-bold" (click)="closeModal()">Cancel</button>
-            <button class="btn btn-rate-trip flex-grow-1 py-3 rounded-pill fw-bold" 
-                    [disabled]="tempRating === 0" 
-                    (click)="submitReview()">Submit Review</button>
+            <button class="btn btn-light flex-grow-1 py-3 rounded-pill fw-bold" [disabled]="isSubmittingReview" (click)="closeModal()">Cancel</button>
+            <button class="btn btn-rate-trip flex-grow-1 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center" 
+                    [disabled]="tempRating === 0 || isSubmittingReview" 
+                    (click)="submitReview()">
+              <span *ngIf="isSubmittingReview" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span>{{ isSubmittingReview ? 'Submitting...' : 'Submit Review' }}</span>
+            </button>
           </div>
         </div>
 

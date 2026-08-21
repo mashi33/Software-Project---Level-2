@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Booking } from '../../models/transport.model';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { forkJoin } from 'rxjs';
 import { TransportBookingService } from '../../services/transport-booking.service';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 import { AuthService } from '../../services/auth.service';
@@ -35,6 +36,7 @@ export class MyBookings implements OnInit {
   tempComment: string = '';         // Review text typed by the user
   commentError: string = '';        // Validation error message
   showSuccessMessage: boolean = false; 
+  isSubmittingReview: boolean = false; // Loading state for review submission
   
   // Event to tell the parent component to switch back to the search page
   @Output() switchTab = new EventEmitter<'search' | 'bookings'>();
@@ -189,12 +191,14 @@ export class MyBookings implements OnInit {
     this.tempComment = '';
     this.commentError = '';
     this.showSuccessMessage = false;
+    this.isSubmittingReview = false;
     this.showRatingModal = true;
   }
 
   closeModal() {
     this.showRatingModal = false;
     this.selectedBooking = null;
+    this.isSubmittingReview = false;
   }
 
   // Sets the star rating (1 to 5)
@@ -203,10 +207,10 @@ export class MyBookings implements OnInit {
   }
 
   /**
-   * Saves the user's review and marks the booking as "Rated" so they can't review it twice.
+   * Saves the user's review and marks the booking as "Rated" in parallel.
    */
   submitReview() {
-    if (!this.selectedBooking || !this.selectedBooking.id) return;
+    if (!this.selectedBooking || !this.selectedBooking.id || this.isSubmittingReview) return;
     
     // Validation: Stars are mandatory
     if (this.tempRating === 0) {
@@ -228,6 +232,8 @@ export class MyBookings implements OnInit {
       return;
     }
 
+    const bookingId = this.selectedBooking.id;
+    const vehicleId = this.selectedBooking.vehicleId;
     const reviewData = {
       userName: this.selectedBooking.userName || 'Anonymous User',
       rating: this.tempRating,
@@ -235,31 +241,31 @@ export class MyBookings implements OnInit {
       date: new Date().toISOString().split('T')[0]
     };
 
-    // Step 1: Save the review to the vehicle's profile
-    this.transportVehicleService.addVehicleReview(this.selectedBooking.vehicleId, reviewData).subscribe({
-      next: () => {
-        // Step 2: Update the booking record to remember it has been rated
-        if (this.selectedBooking?.id) {
-          const bookingId = this.selectedBooking.id;
-          this.transportBookingService.markBookingAsRated(bookingId).subscribe({
-            next: () => {
-              this.showSuccessMessage = true;
-              if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
-              
-              const item = this.userBookings.find(b => b.id === bookingId);
-              if (item) item.hasBeenRated = true;
+    this.isSubmittingReview = true;
 
-              // Close the popup after a short success pause
-              setTimeout(() => {
-                this.closeModal();
-                this.loadBookings();
-              }, 1500);
-            },
-            error: () => Swal.fire('Error', 'Failed to update booking status.', 'error')
-          });
-        }
+    // Run both API operations in parallel for ultra-fast response
+    forkJoin({
+      reviewRes: this.transportVehicleService.addVehicleReview(vehicleId, reviewData),
+      ratingRes: this.transportBookingService.markBookingAsRated(bookingId)
+    }).subscribe({
+      next: () => {
+        this.showSuccessMessage = true;
+        this.isSubmittingReview = false;
+        
+        if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
+        const item = this.userBookings.find(b => b.id === bookingId);
+        if (item) item.hasBeenRated = true;
+
+        // Close the popup after a brief success acknowledgement
+        setTimeout(() => {
+          this.closeModal();
+          this.loadBookings();
+        }, 1000);
       },
-      error: (err) => Swal.fire('Error', err.error?.message || 'Failed to submit review.', 'error')
+      error: (err) => {
+        this.isSubmittingReview = false;
+        Swal.fire('Error', err.error?.message || 'Failed to submit review.', 'error');
+      }
     });
   }
 
