@@ -12,10 +12,11 @@
       create unforgettable memories.</p>
 
     <div class="hero-buttons">
-      <button class="btn-primary btn-large" routerLink="/trips/create">
-        <i class="bi bi-airplane-fill"></i> Start Planning
+      <button class="btn-start-planning" (click)="goToLogin()">
+        <i class="bi bi-airplane"></i> Start Planning
       </button>
-      <button class="btn-secondary btn-large" routerLink="/explore">
+
+      <button class="btn-secondary btn-large" (click)="goToLogin()">
         <i class="bi bi-play-circle-fill"></i> Explore Places
       </button>
     </div>
@@ -23,42 +24,7 @@
 
   <!-- Search + Stats -->
   <div class="search-card-wrapper">
-    <div class="search-card">
-      <div class="search-field">
-        <i class="bi bi-geo-alt-fill icon"></i>
-        <div>
-          <label>Where to?</label>
-          <input type="text" placeholder="Enter destination" [(ngModel)]="searchData.destination" name="destination">
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="search-field">
-        <i class="bi bi-calendar-event icon"></i>
-        <div>
-          <label>Start Date</label>
-          <input type="text" placeholder="Select date" [(ngModel)]="searchData.startDate" name="startDate">
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="search-field">
-        <i class="bi bi-calendar-event icon"></i>
-        <div>
-          <label>End Date</label>
-          <input type="text" placeholder="Select date" [(ngModel)]="searchData.endDate" name="endDate">
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="search-field">
-        <i class="bi bi-people-fill icon"></i>
-        <div>
-          <label>Travelers</label>
-          <input type="text" placeholder="Add people" [(ngModel)]="searchData.travelers" name="travelers">
-        </div>
-      </div>
-      <button class="btn-search" (click)="onSearchTrip()">
-        Search Trip <i class="bi bi-search"></i>
-      </button>
-    </div>
+
 
     <div class="stats-row">
       <div class="stat-item" *ngFor="let stat of stats">
@@ -242,7 +208,6 @@
         <div class="card-left">
           <h3>Smart Route Planner</h3>
           <p>Find the best routes and travel time between multiple destinations.</p>
-          <button class="btn-explore" routerLink="/map">Explore</button>
         </div>
         <div class="card-right map-preview">
           <img
@@ -260,7 +225,6 @@
         <div class="card-left">
           <h3>Find Places Nearby</h3>
           <p>Discover top hotels, restaurants and attractions near your location.</p>
-          <button class="btn-explore" routerLink="/explore">Explore</button>
         </div>
         <div class="card-right places-preview">
           <div class="place-item" *ngFor="let place of nearbyPlaces">
@@ -280,7 +244,6 @@
         <div class="card-left">
           <h3>Memories Map</h3>
           <p>Relive your past trips and see all the places you've explored on the map.</p>
-          <button class="btn-explore" routerLink="/memories">Explore</button>
         </div>
         <div class="card-right memories-preview">
           <img

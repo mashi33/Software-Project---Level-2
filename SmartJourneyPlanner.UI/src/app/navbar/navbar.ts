@@ -288,15 +288,31 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // Handles user logout
   onLogout(): void {
-    const userId = this.authService.getUserId();
-    if (userId) {
-      this.signalrService.leaveUserGroup(userId);
+    try {
+      const userId = this.authService.getUserId();
+      if (userId && this.signalrService) {
+        this.signalrService.leaveUserGroup(userId);
+      }
+
+      if (this.tripService) {
+        this.tripService.setTempTripData(null);
+      }
+
+      this.authService.logout();
+
+      if (this.closeDropdown) {
+        this.closeDropdown();
+      }
+    } catch (error) {
+      console.error('Error during logout cleanup:', error);
+
+      localStorage.clear();
     }
-    this.tripService.setTempTripData(null);
-    this.authService.logout();
-    this.closeDropdown();
-    this.router.navigate(['/login']);
-    console.log('User logged out successfully');
+
+    // Navigate to the landing page after logout
+    this.router.navigate(['/']).then(() => {
+      console.log('Successfully navigated to landing');
+    });
   }
 
   selectOption(option: string) {

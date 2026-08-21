@@ -1,7 +1,7 @@
 import { Component, AfterViewInit, ElementRef, QueryList, ViewChildren, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterLink, RouterModule } from '@angular/router';
 import { UserService } from '../services/user-profile.service';
 
 export interface Destination {
@@ -34,7 +34,7 @@ export interface NearbyPlace {
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink],
   templateUrl: './landing-page.html',
   styleUrls: ['./landing-page.css']
 })
@@ -46,7 +46,10 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
   feedbacks: any[] = [];
   activeFeedbackIndex = 0;
 
-  constructor(private userProfileService: UserService) { }
+  constructor(
+    private userProfileService: UserService,
+    private router: Router
+  ) { }
 
   // Search form
   searchData = {
@@ -265,5 +268,9 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
     const cardWidth = 340;
     track.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
   }
 }
