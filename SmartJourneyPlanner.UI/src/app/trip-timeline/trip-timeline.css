@@ -2,6 +2,7 @@
 :host {
   display: block;
   width: 100%;
+  min-height: 100vh;
 }
 
 /* Main container that holds everything */
@@ -10,7 +11,7 @@
   flex-direction: column;
   width: 100%;
   background-color: white; /* Clean white base */
-  min-height: auto;
+  min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
