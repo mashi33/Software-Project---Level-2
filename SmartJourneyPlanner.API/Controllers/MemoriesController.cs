@@ -204,6 +204,28 @@ public class MemoriesController : ControllerBase
                 return NotFound($"Memory with ID {id} does not exist.");
             }
 
+            // Check if the like was ADDED (user is now in the LikedByUsers list)
+            if (updatedMemory.LikedByUsers != null && updatedMemory.LikedByUsers.Contains(request.FullName))
+            {
+                // Do not notify if the user liked their own memory
+                if (updatedMemory.UserId != request.UserId)
+                {
+                    var notification = new Notification
+                    {
+                        UserId = updatedMemory.UserId,
+                        Icon = "bi-heart-fill",
+                        IconColorClass = "icon-red",
+                        Title = $"{request.FullName} liked your memory at {updatedMemory.LocationName}!",
+                        IsRead = false,
+                        LinkText = "View Memory",
+                        Route = !string.IsNullOrEmpty(updatedMemory.TripId) ? $"/trip-summary/{updatedMemory.TripId}?tab=gallery" : "/social-feed"
+                    };
+                    
+                    await _notificationService.CreateNotificationAsync(notification);
+                    await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
+                }
+            }
+
             return Ok(updatedMemory);
         }
         catch (Exception ex)
@@ -211,30 +233,6 @@ public class MemoriesController : ControllerBase
             _logger.LogError(ex, "Critical failure during like toggle for Memory ID: {MemoryId}", id);
             return StatusCode(500, "A database concurrency or server error occurred.");
         }
-
-        // Check if the like was ADDED (user is now in the LikedByUsers list)
-        if (updatedMemory.LikedByUsers != null && updatedMemory.LikedByUsers.Contains(request.FullName))
-        {
-            // Do not notify if the user liked their own memory
-            if (updatedMemory.UserId != request.UserId)
-            {
-                var notification = new Notification
-                {
-                    UserId = updatedMemory.UserId,
-                    Icon = "bi-heart-fill",
-                    IconColorClass = "icon-red",
-                    Title = $"{request.FullName} liked your memory at {updatedMemory.LocationName}!",
-                    IsRead = false,
-                    LinkText = "View Memory",
-                    Route = !string.IsNullOrEmpty(updatedMemory.TripId) ? $"/trip-summary/{updatedMemory.TripId}?tab=gallery" : "/social-feed"
-                };
-                
-                await _notificationService.CreateNotificationAsync(notification);
-                await _hubContext.Clients.Group(notification.UserId).SendAsync("ReceiveNotification", notification);
-            }
-        }
-
-        return Ok(updatedMemory); 
     }
 
     [HttpGet("user/{userId}/count")]

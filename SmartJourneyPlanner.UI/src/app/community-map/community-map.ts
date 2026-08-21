@@ -1108,6 +1108,23 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/memories-welcome']);
   }
 
+  onEnterPress(event: Event): void {
+  const keyboardEvent = event as KeyboardEvent;
+
+  // Shift + Enter 
+  if (keyboardEvent.shiftKey) {
+    return;
+  }
+
+  // submit comment for Enter keypress 
+  keyboardEvent.preventDefault();
+
+  // if has Comment and now not Posting, Submit 
+  if (this.newCommentText.trim() && !this.isSubmittingComment) {
+    this.submitComment();
+  }
+}
+
   @HostListener('window:viewBig', ['$event'])
   onViewBig(event: Event): void {
     const memoryId = (event as CustomEvent<string>).detail;

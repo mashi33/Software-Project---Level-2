@@ -294,6 +294,7 @@
         </div>
       </div>
 
+      <h4 class="section-title">Trip Notes & Highlights</h4>
       <p class="description-text" *ngIf="selectedMemory?.description">
         {{ selectedMemory?.description }}
       </p>
@@ -333,7 +334,7 @@
             rows="2"
             placeholder="Write a comment..."
             [disabled]="isSubmittingComment"
-            maxlength="500"></textarea>
+            maxlength="500" (keydown.enter)="onEnterPress($event)"></textarea>
           <button
             class="btn-submit-comment"
             type="button"

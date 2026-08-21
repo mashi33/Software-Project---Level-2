@@ -1095,6 +1095,27 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+    getInitial(name: any): string {
+  if (!name || typeof name !== 'string') return '?';
+  return name.charAt(0).toUpperCase();
+  }
+
+   getAvatarColor(index: number): string {
+
+  const colors = [
+    '#7C9CF5', 
+    '#69B7E8', 
+    '#65C7B7', 
+    '#9B86D9', 
+    '#D98BAF', 
+    '#E7A978', 
+    '#72B995', 
+    '#D6B85A'  
+  ];
+
+  return colors[Math.abs(index) % colors.length];
+}
+
   openLightboxById(id: string) {
     const foundMemory = this.allMemories.find(m => m.id === id);
     if (foundMemory) {
