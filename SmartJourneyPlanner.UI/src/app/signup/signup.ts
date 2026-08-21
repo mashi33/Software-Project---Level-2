@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-signup',
@@ -11,6 +12,7 @@ import { AuthService } from '../services/auth.service';
   styleUrl: './signup.css'
 })
 export class Signup {
+  showPassword: boolean = false;
   //Model for signup form data
   signupData = {
     FullName: '',
@@ -42,9 +44,12 @@ export class Signup {
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
     if (!passwordRegex.test(this.signupData.Password)) {
-      alert(
-        'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.'
-      );
+      Swal.fire({
+        icon: 'error',
+        title: 'Weak Password',
+        text: 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.',
+        confirmButtonColor: '#1a73e8'
+      });
       return;
     }
 
@@ -63,21 +68,31 @@ export class Signup {
       next: (response: any) => {
         console.log('Signup Success!', response);
 
-        alert('Registration Successful! Please check your email inbox to verify your account before logging in.');
-
-        //Redirect to login page after successful registration
-        if (tripId) {
-          console.log('Forwarding trip details to login page:', tripId);
-          this.router.navigate(['/login'], {
-            queryParams: { tripId: tripId, role: role }
-          });
-        } else {
-          this.router.navigate(['/login']);
-        }
+        Swal.fire({
+          icon: 'success',
+          title: 'Registration Successful!',
+          text: 'Please check your email inbox to verify your account before logging in.',
+          confirmButtonColor: '#1a73e8'
+        }).then(() => {
+          // Redirect to login page after successful registration
+          if (tripId) {
+            console.log('Forwarding trip details to login page:', tripId);
+            this.router.navigate(['/login'], {
+              queryParams: { tripId: tripId, role: role }
+            });
+          } else {
+            this.router.navigate(['/login']);
+          }
+        });
       },
       error: (err) => {
         console.error('Signup Failed', err);
-        alert('Registration Failed! Email might already exist.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Registration Failed',
+          text: 'Email might already exist or server error occurred.',
+          confirmButtonColor: '#1a73e8'
+        });
       }
     });
   }

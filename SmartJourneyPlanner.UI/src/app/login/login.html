@@ -23,10 +23,18 @@
       <!-- Password Field -->
       <div class="input-group">
         <label>Password</label>
-        <div class="input-field">
+        <div class="input-field" style="position: relative;">
           <!-- Bootstrap Lock Icon -->
           <i class="bi bi-lock input-icon"></i>
-          <input type="password" name="password" [(ngModel)]="loginData.password" placeholder="Enter your password" />
+
+          <!-- Password Input -->
+          <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="loginData.password"
+            placeholder="Enter your password" autocomplete="current-password" style="padding-right: 45px;" />
+
+          <!-- Eye Icon for Show/Hide Password -->
+          <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"
+            (click)="showPassword = !showPassword"
+            style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(255, 255, 255, 0.75); font-size: 18px; z-index: 10;"></i>
         </div>
       </div>
 
