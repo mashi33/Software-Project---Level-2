@@ -521,7 +521,7 @@ export class ProviderDashboardComponent implements OnInit {
     ''
   ).toString().toLowerCase();
 
-  // ★ Corrected logic – also checks the current session
+  //  also checks the current session
   const cancelledByProvider = isCancelled && (
     this.providerCancelledIds.has(b.id!) ||          // provider cancelled in this session
     cancelledByRaw === 'provider' ||
@@ -863,7 +863,7 @@ export class ProviderDashboardComponent implements OnInit {
   return reason.startsWith('cancelled booking');
 }
 
-    /** Cancel button only visible when status is Confirmed AND the trip has not started yet */
+    /* Cancel button only visible when status is Confirmed AND the trip has not started yet */
   canCancelBooking(booking: any): boolean {
     if (!booking || (booking.status !== 'Confirmed' && booking.Status !== 'Confirmed')) {
       return false;
@@ -948,7 +948,7 @@ export class ProviderDashboardComponent implements OnInit {
       }
     }
 
-        // ========== Step 1: Confirm + Reason ==========
+        // Confirm + Reason 
     Swal.fire({
       title: 'Cancel Booking',
       width: '520px',
@@ -961,7 +961,7 @@ export class ProviderDashboardComponent implements OnInit {
       focusConfirm: false,
       html: `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-    <!-- Booking summary card (ඔබේ image වගේ clean card) -->
+    <!-- Booking summary card -->
     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
       <p style="margin:0 0 6px 0; font-size:14px; color:#334155;">
         <strong style="color:#0f172a;">Customer:</strong> ${booking.userName || 'Customer'}
@@ -977,14 +977,14 @@ export class ProviderDashboardComponent implements OnInit {
 
     ${warningHtml}
 
-    <!-- Reason label (ඔබේ image වගේ clean label) -->
+    <!-- Reason label -->
     <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
       Reason for cancellation <span style="color:#ef4444;">*</span>
     </label>
   </div>
 `,
       input: 'textarea',
-      inputValue: this.tempCancelReason || '',          // ★ pre-fill previous reason
+      inputValue: this.tempCancelReason || '',          //  pre-fill previous reason
       inputPlaceholder: 'e.g. Vehicle breakdown, personal emergency, scheduled maintenance…',
       inputAttributes: {
         rows: '3',
@@ -999,19 +999,19 @@ export class ProviderDashboardComponent implements OnInit {
       }
        }).then((result) => {
       if (!result.isConfirmed) {
-        // ★ Provider clicked "Keep Booking" → clear temporary reason
+        // Provider clicked "Keep Booking" → clear temporary reason
         this.tempCancelReason = '';
         return;
       }
 
       const cancelReason = (result.value || '').trim();
-      this.tempCancelReason = cancelReason;   // ★ save reason
+      this.tempCancelReason = cancelReason;   // save reason
 
       const defaultStart = new Date(booking.startDate).toISOString().split('T')[0];
       const defaultEnd = new Date(booking.endDate).toISOString().split('T')[0];
       const todayStr = this.todayDate || new Date().toISOString().split('T')[0];
 
-            // ========== Step 2: Ask unavailable dates ==========
+            // Ask unavailable dates 
       Swal.fire({
         title: 'Unavailable Dates',
         width: '480px',
@@ -1066,7 +1066,7 @@ export class ProviderDashboardComponent implements OnInit {
             Swal.showValidationMessage('End date must be on or after the start date');
             return false;
           }
-          // Extra safety – stay inside original booking range
+          //  stay inside original booking range
           if (startInput < defaultStart || endInput > defaultEnd) {
             Swal.showValidationMessage('Dates must be within the original booking period');
             return false;
@@ -1074,17 +1074,17 @@ export class ProviderDashboardComponent implements OnInit {
           return { startDate: startInput, endDate: endInput };
         }
       }).then((dateResult) => {
-        // ===== Back button clicked → return to Reason popup =====
+        //  Back button clicked → return to Reason popup 
         if (dateResult.dismiss === Swal.DismissReason.cancel) {
-          // Re-open the reason step (same data)
-          this.cancelBooking(booking);   // simplest & clean way to go back
+          // Re-open the reason step 
+          this.cancelBooking(booking);   
           return;
         }
 
         if (!dateResult.isConfirmed || !dateResult.value) return;
 
         const { startDate: blockStart, endDate: blockEnd } = dateResult.value;
-        // 1. Cancel the booking
+        //  Cancel the booking
         this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
           next: () => {
             booking.status = 'Cancelled';
@@ -1094,7 +1094,7 @@ export class ProviderDashboardComponent implements OnInit {
 
             this.tempCancelReason = '';
 
-            // 2. Add blocked range
+            //  Add blocked range
             const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
             if (!vehicleId) {
               Swal.fire({
