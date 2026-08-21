@@ -21,6 +21,10 @@ namespace SmartJourneyPlanner.API.Models
         [JsonPropertyName("id")] // Tells the API to use the name "id" in JSON
         public string? Id { get; set; }
 
+        // Links this timeline to an existing Trip
+    [JsonPropertyName("tripId")]
+    public string TripId { get; set; } = "";
+
         // The name of the trip (e.g. "My Summer Vacation")
         [JsonPropertyName("name")]
         public string Name { get; set; } = "My Trip";
