@@ -391,7 +391,16 @@ export class VehicleDetailComponent implements OnInit {
           }
         };
 
-        // 5. Send to Server
+        // 5. Show loading indicator and Send to Server
+        Swal.fire({
+          title: 'Submitting Booking Request...',
+          text: 'Please wait while we send your request to the provider.',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
         this.transportBookingService.createBooking(newBooking).subscribe({
           next: () => {
             Swal.fire({
@@ -402,7 +411,7 @@ export class VehicleDetailComponent implements OnInit {
             });
           },
           error: (err) => {
-            Swal.fire('Error', 'Failed to send booking request.', 'error');
+            Swal.fire('Error', err?.error?.message || 'Failed to send booking request.', 'error');
           }
         });
       }

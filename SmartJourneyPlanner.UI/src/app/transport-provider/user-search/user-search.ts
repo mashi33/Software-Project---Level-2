@@ -597,7 +597,16 @@ export class UserSearch implements OnInit {
           createdAt: new Date().toISOString()
         };
 
-        // 3. Backend එකට Booking එක යැවීම සඳහා Booking Service එක Call කිරීම
+        // 3. Loading Indicator එක පෙන්වා Backend එකට Booking එක යැවීම
+        Swal.fire({
+          title: 'Submitting Booking Request...',
+          text: 'Please wait while we submit your booking.',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
         this.transportBookingService.createBooking(newBooking).subscribe({
           next: () => {
             Swal.fire('Request Sent!', 'The provider will review your request.', 'success');

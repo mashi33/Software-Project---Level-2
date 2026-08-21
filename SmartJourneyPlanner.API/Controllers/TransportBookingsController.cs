@@ -174,52 +174,76 @@ namespace SmartJourneyPlanner.Controllers
             // Save to database first so MongoDB assigns the Id before we use it in notifications
             await _bookingService.CreateAsync(newBooking);
 
-            // Invalidate cached bookings
+            // Invalidate cached bookings so that any subsequent load gets fresh data
             if (!string.IsNullOrEmpty(newBooking.UserId)) _cache.Remove($"User_Bookings_{newBooking.UserId}");
             if (!string.IsNullOrEmpty(newBooking.ProviderId)) _cache.Remove($"Provider_Bookings_{newBooking.ProviderId}");
 
-            // Generate notification for the Transport Provider
-            // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
-            try
+            // Generate notifications asynchronously in the background so API responds without delay
+            _ = Task.Run(async () =>
             {
-                var providerNotification = new Notification
+                try
                 {
-                    UserId = newBooking.ProviderId,
-                    Icon = "bi-card-list",
-                    IconColorClass = "icon-blue",
-                    Title = $"New booking request received from traveler {newBooking.userName} for {newBooking.vehicleName}",
-                    IsRead = false,
-                    LinkText = "View Request",
-                    Route = $"/provider-dashboard?panel=bookings&bookingId={newBooking.Id}"
-                };
-                await _notificationService.CreateNotificationAsync(providerNotification);
-                await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Error creating provider notification: {ex.Message}");
-            }
+                    var notifyTasks = new List<Task>();
 
-            // Generate notification for the Traveler
-            try
-            {
-                var travelerNotification = new Notification
+                    if (!string.IsNullOrEmpty(newBooking.ProviderId))
+                    {
+                        notifyTasks.Add(Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var providerNotification = new Notification
+                                {
+                                    UserId = newBooking.ProviderId,
+                                    Icon = "bi-card-list",
+                                    IconColorClass = "icon-blue",
+                                    Title = $"New booking request received from traveler {newBooking.userName} for {newBooking.vehicleName}",
+                                    IsRead = false,
+                                    LinkText = "View Request",
+                                    Route = $"/provider-dashboard?panel=bookings&bookingId={newBooking.Id}"
+                                };
+                                await _notificationService.CreateNotificationAsync(providerNotification);
+                                await _hubContext.Clients.Group(providerNotification.UserId).SendAsync("ReceiveNotification", providerNotification);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Console.WriteLine($"Error sending provider notification: {ex.Message}");
+                            }
+                        }));
+                    }
+
+                    if (!string.IsNullOrEmpty(newBooking.UserId))
+                    {
+                        notifyTasks.Add(Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var travelerNotification = new Notification
+                                {
+                                    UserId = newBooking.UserId,
+                                    Icon = "bi-clock-history",
+                                    IconColorClass = "icon-blue",
+                                    Title = $"Your booking request for {newBooking.vehicleName} has been submitted successfully and is pending approval",
+                                    IsRead = false,
+                                    LinkText = "Check Status",
+                                    Route = $"/transport?tab=bookings&bookingId={newBooking.Id}"
+                                };
+                                await _notificationService.CreateNotificationAsync(travelerNotification);
+                                await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Console.WriteLine($"Error sending traveler notification: {ex.Message}");
+                            }
+                        }));
+                    }
+
+                    await Task.WhenAll(notifyTasks);
+                }
+                catch (Exception ex)
                 {
-                    UserId = newBooking.UserId,
-                    Icon = "bi-clock-history",
-                    IconColorClass = "icon-blue",
-                    Title = $"Your booking request for {newBooking.vehicleName} has been submitted successfully and is pending approval",
-                    IsRead = false,
-                    LinkText = "Check Status",
-                    Route = $"/transport?tab=bookings&bookingId={newBooking.Id}"
-                };
-                await _notificationService.CreateNotificationAsync(travelerNotification);
-                await _hubContext.Clients.Group(travelerNotification.UserId).SendAsync("ReceiveNotification", travelerNotification);
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Error creating traveler notification: {ex.Message}");
-            }
+                    System.Console.WriteLine($"Error in background notifications: {ex.Message}");
+                }
+            });
 
             return CreatedAtAction(nameof(Get), new { id = newBooking.Id }, newBooking);
         }
