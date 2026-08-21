@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service'; 
 import Swal from 'sweetalert2';
 
 @Component({
@@ -16,6 +17,7 @@ import Swal from 'sweetalert2';
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService); 
   private router = inject(Router);
   private cd = inject(ChangeDetectorRef);
 
@@ -42,6 +44,7 @@ export class AdminDashboardComponent implements OnInit {
   selectedBudgetTrip: any = null;
   costsLoading = false;
 
+  totalFleetCount = 0; 
   approvedSessionCount = 0;
   rejectedSessionCount = 0;
 
@@ -66,14 +69,39 @@ export class AdminDashboardComponent implements OnInit {
   providerTypeFilter = 'all';
 
   ngOnInit() {
-    this.adminName = this.authService.getUserName() || 'Admin';
-    this.loadDailyCounters(); 
-    this.refreshDashboard();
-    this.fetchExpenseList();
+  this.adminName = this.authService.getUserName() || 'Admin';
+  this.loadDailyCounters(); 
 
-    (window as any).openAdminFullImage = (url: string) => {
-      this.openImage(url);
-    };
+  // speed loading the neccessary data
+  this.adminService.getDashboardStats().subscribe({
+    next: (data) => { this.stats = data; },
+    error: (err) => console.error("Error loading stats:", err)
+  });
+
+  // next loading next list of data
+  setTimeout(() => {
+    this.fetchExpenseList();
+    this.fetchPendingProviders();
+    this.fetchAllUsers();
+    this.fetchPlatformMemories();
+  }, 200); // 0.2s late (preserve from blocking)
+
+  this.initSignalRConnection();
+
+  (window as any).openAdminFullImage = (url: string) => {
+    this.openImage(url);
+  };
+}
+
+  initSignalRConnection() {
+    try {
+      this.notificationService.startConnection();
+      this.notificationService.addNotificationListener((notification) => {
+        console.log('New notification received on Admin Dashboard:', notification);
+      });
+    } catch (err) {
+      console.error('SignalR Init Error:', err);
+    }
   }
 
   loadDailyCounters() {
@@ -323,7 +351,6 @@ export class AdminDashboardComponent implements OnInit {
     this.selectedBudgetTrip = trip;
   }
 
-  // View switchers
   onReviewProviders() { this.view = 'providers'; this.fetchPendingProviders(); }
   onReviewMemories() { this.view = 'memories'; this.fetchPlatformMemories(); }
   onManageLogins() { this.view = 'users'; this.fetchAllUsers(); }
@@ -340,7 +367,6 @@ export class AdminDashboardComponent implements OnInit {
     this.fetchPendingProviders();
     this.fetchAllUsers();
     this.fetchPlatformMemories();
-    // Only fetch vehicles when needed
     if (this.view === 'fleet-detailed') {
       this.fetchAllVehicles();
     }
@@ -435,7 +461,6 @@ export class AdminDashboardComponent implements OnInit {
         this.rejectedSessionCount++;
         localStorage.setItem('rejectedToday', this.rejectedSessionCount.toString());
 
-        // Check for active bookings and send alerts
         const vehicleBookings = this.getVehicleBookings(id);
         const activeBookings = vehicleBookings.filter((booking: any) => {
           const bookingDate = new Date(booking.bookingDate || booking.date);
@@ -457,7 +482,6 @@ export class AdminDashboardComponent implements OnInit {
               });
             }
 
-            // Cancel the booking
             if (bookingId) {
               this.adminService.cancelBooking(bookingId).subscribe({
                 next: () => console.log('Booking cancelled:', bookingId),
@@ -474,14 +498,23 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   fetchAllVehicles() {
-    this.adminService.getAllVehiclesDetailed().subscribe((data: any) => {
-      this.allVehicles = data;
-      // Only fetch bookings if we're on fleet-detailed view
+  this.adminService.getAllVehiclesDetailed().subscribe({
+    next: (res: any) => {
+      this.allVehicles = res.vehicles || []; 
+      this.totalFleetCount = res.totalCount || 0;
+
       if (this.view === 'fleet-detailed') {
         this.fetchAllBookings();
       }
-    });
-  }
+      this.cd.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error loading detailed vehicles:', err);
+      this.allVehicles = [];
+      this.cd.detectChanges();
+    }
+  });
+}
 
   fetchAllBookings() {
     this.adminService.getAllBookings().subscribe({
@@ -598,9 +631,40 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  isLoadingDetails = false;
+
   viewVehicleDetails(vehicle: any) {
-    console.log("Viewing Vehicle:", vehicle);
+    if (this.isLoadingDetails) return;
+
+    const vehicleId = vehicle.id || vehicle._id || vehicle.Id;
+    if (!vehicleId) {
+      this.selectedProvider = vehicle;
+      return;
+    }
+
     this.selectedProvider = vehicle; 
+    this.isLoadingDetails = true;
+
+    this.adminService.getVehicleById(vehicleId).subscribe({
+      next: (fullVehicleDetails: any) => {
+        this.isLoadingDetails = false;
+        if (fullVehicleDetails) {
+          this.selectedProvider = fullVehicleDetails; 
+        }
+        this.cd.detectChanges();
+      },
+      error: (err: any) => {
+        this.isLoadingDetails = false;
+        console.error('Error fetching vehicle details:', err);
+        this.cd.detectChanges();
+      }
+    });
+  }
+
+  closeReview() {
+    this.selectedProvider = null; 
+    this.isLoadingDetails = false;
+    this.cd.detectChanges();
   }
 
   viewMemoryDetails(m: any) {
@@ -639,10 +703,8 @@ export class AdminDashboardComponent implements OnInit {
         
         <div class="memory-swal-body">
           
-          <!-- GRID MOVED TO THE TOP -->
           <div class="memory-swal-grid">
             
-            <!-- Location and Trip moved to the top of the grid -->
             <div class="memory-swal-info" style="grid-column: span 2;">
               <span class="info-label"><i class="bi bi-geo-alt"></i> Captured Location</span>
               <span class="info-val">${m.locationName || m.location || 'Location Not Specified'}</span>
@@ -653,7 +715,6 @@ export class AdminDashboardComponent implements OnInit {
               <span class="info-val" style="color: #2563eb;">${tripName}</span>
             </div>
 
-            <!-- Uploaded By and Date pushed below Location/Trip -->
             <div class="memory-swal-info">
               <span class="info-label"><i class="bi bi-person"></i> Uploaded By</span>
               <span class="info-val">${m.fullName || m.userName || 'Unknown Traveler'}</span>
@@ -666,7 +727,6 @@ export class AdminDashboardComponent implements OnInit {
             </div>
           </div>
           
-          <!-- DESCRIPTION MOVED TO THE BOTTOM (with adjusted margins) -->
           <div class="memory-swal-desc" style="margin: 20px 0 0 0;">
             <i class="bi bi-quote" style="font-size: 1.5rem; color: #94a3b8; display: block; margin-bottom: 4px;"></i>
             ${description}
@@ -679,6 +739,7 @@ export class AdminDashboardComponent implements OnInit {
       else if (result.isDenied) this.setMemoryStatus(m, 'Flagged');
     });
   }
+
   confirmMemoryApproval(memory: any) {
     Swal.fire({
       title: 'Approve this memory?',
@@ -704,6 +765,9 @@ export class AdminDashboardComponent implements OnInit {
     this.adminService.updateMemoryStatus(id, status).subscribe({
       next: () => {
         this.fetchPlatformMemories();
+        
+        this.cd.detectChanges(); 
+
         Swal.fire('Updated', `Memory marked as ${status}.`, 'success');
       },
       error: () => Swal.fire('Error', 'Could not update memory status.', 'error')
@@ -862,7 +926,6 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // Memory filtering methods
   get filteredMemories(): any[] {
     if (!this.allMemories || this.allMemories.length === 0) return [];
     
@@ -956,7 +1019,6 @@ export class AdminDashboardComponent implements OnInit {
     return true;
   }
 
-  // Fleet filtering methods.
   get filteredVehicles(): any[] {
     if (!this.allVehicles || this.allVehicles.length === 0) return [];
     
@@ -1019,18 +1081,11 @@ export class AdminDashboardComponent implements OnInit {
     let pending = 0;
     let rejected = 0;
 
-    console.log('getTotalBookingCounts called');
-    console.log('allBookings:', this.allBookings);
-    console.log('allVehicles:', this.allVehicles);
-
     if (this.allBookings && this.allBookings.length > 0 && this.allVehicles && this.allVehicles.length > 0) {
       const vehicleIds = new Set(this.allVehicles.map(v => this.getVehicleId(v)).filter(Boolean));
-      console.log('Vehicle IDs in fleet:', vehicleIds);
       
-      // Only count bookings that belong to vehicles in the fleet
       this.allBookings.forEach((booking: any) => {
         const vehicleId = booking.vehicleId || booking.VehicleId || booking.vehicle?._id;
-        console.log('Booking vehicleId:', vehicleId, 'Status:', booking.status || booking.Status);
         if (vehicleId && vehicleIds.has(vehicleId)) {
           const status = (booking.status || booking.Status)?.toLowerCase();
           if (status === 'confirmed' || status === 'approved') {
@@ -1044,7 +1099,6 @@ export class AdminDashboardComponent implements OnInit {
       });
     }
 
-    console.log('Total counts:', { approved, pending, rejected });
     return { approved, pending, rejected };
   }
 
@@ -1085,7 +1139,6 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  // Provider filtering methods.
   get filteredProviders(): any[] {
     if (!this.pendingProviders || this.pendingProviders.length === 0) return [];
     
@@ -1116,5 +1169,4 @@ export class AdminDashboardComponent implements OnInit {
     if (diffDays < 7) return `${diffDays} days ago`;
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
-
 }

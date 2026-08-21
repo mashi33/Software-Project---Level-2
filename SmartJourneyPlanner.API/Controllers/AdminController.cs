@@ -4,6 +4,7 @@ using MongoDB.Driver;
 using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.API.Models;
 using SmartJourneyPlanner.API.Services;
+using SmartJourneyPlanner.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
@@ -27,12 +28,14 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly UserBlockService _userBlockService;
         private readonly NotificationService _notificationService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly TransportVehicleService _vehicleService;
 
         public AdminController(
             IMongoClient mongoClient, 
             UserBlockService userBlockService,
             NotificationService notificationService,
-            IHubContext<ChatHub> hubContext)
+            IHubContext<ChatHub> hubContext,
+            TransportVehicleService vehicleService)
         {
             _database = mongoClient.GetDatabase("SmartJourneyDb");
             _userCollection = _database.GetCollection<User>("Users");
@@ -41,6 +44,7 @@ namespace SmartJourneyPlanner.API.Controllers
             _userBlockService = userBlockService;
             _notificationService = notificationService;
             _hubContext = hubContext;
+            _vehicleService = vehicleService;
         }
 
         private double ParseBudgetLimit(string? raw)
@@ -63,9 +67,12 @@ namespace SmartJourneyPlanner.API.Controllers
             // Calculate how many platform log-in accounts exist
             var totalUsers = await _userCollection.CountDocumentsAsync(_ => true);
 
-            // Count vehicles that are waiting under either pending status variation string
+            // Count vehicles
             var pendingVehicles = await _vehicleCollection.CountDocumentsAsync(v =>
                 v.AdminVerificationStatus == "Pending");
+
+            // Count Total Fleet
+            var totalVehicles = await _vehicleCollection.CountDocumentsAsync(_ => true);
 
             var tripsCollection = _database.GetCollection<Trip>("Trips");
             var totalTrips = await tripsCollection.CountDocumentsAsync(_ => true);
@@ -89,7 +96,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 pendingProvidersCount = pendingVehicles,
                 platformUsers = totalUsers,
                 totalTrips = totalTrips,
-                overBudgetTrips = overBudgetTrips
+                overBudgetTrips = overBudgetTrips,
+                totalVehicles = totalVehicles 
             });
         }
 
@@ -102,11 +110,54 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpGet("all-vehicles-detailed")]
-        public async Task<IActionResult> GetAllVehiclesDetailed()
-        {
-            var vehicles = await _vehicleCollection.Find(_ => true).ToListAsync();
-            return Ok(vehicles);
-        }
+public async Task<IActionResult> GetAllVehiclesDetailed()
+{
+    try
+    {
+        // speeding (weighted materials are excluded in here)
+        var projection = Builders<TransportVehicle>.Projection
+            .Exclude(v => v.InteriorPhoto)
+            .Exclude(v => v.DriverNicUrl)
+            .Exclude(v => v.DriverLicenseUrl)
+            .Exclude(v => v.InsuranceDocUrl)
+            .Exclude(v => v.RevenueLicenseUrl)
+            .Exclude(v => v.RegistrationCertificateUrl);
+
+        var vehicles = await _vehicleCollection
+            .Find(_ => true)
+            .Project<TransportVehicle>(projection)
+            .ToListAsync();
+
+        var totalCount = await _vehicleCollection.CountDocumentsAsync(_ => true);
+        var approvedCount = await _vehicleCollection.CountDocumentsAsync(v => v.AdminVerificationStatus != null && v.AdminVerificationStatus.ToLower() == "approved");
+
+        return Ok(new {
+            totalCount = totalCount,
+            approvedCount = approvedCount,
+            vehicles = vehicles
+        });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error fetching fleet records", error = ex.Message });
+    }
+}
+
+[HttpGet("vehicle-details/{id}")]
+public async Task<IActionResult> GetVehicleById(string id)
+{
+    try
+    {
+        var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
+        if (vehicle == null) return NotFound(new { message = "Vehicle not found" });
+        
+        return Ok(vehicle);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error fetching vehicle details", error = ex.Message });
+    }
+}
 
         [HttpGet("all-bookings")]
         public async Task<IActionResult> GetAllBookings()

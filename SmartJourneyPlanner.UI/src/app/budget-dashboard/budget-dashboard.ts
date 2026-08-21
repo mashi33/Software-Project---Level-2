@@ -359,16 +359,16 @@ export class BudgetDashboard implements OnInit {
 
   // Expenses Table Data Mapping
   const tableBodyRows = this.expenses.map(e => [
-    e.category, 
-    'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
-    new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), 
-    e.description || '-'
+    e.category,                                                                                          
+    new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),     
+    e.description || '-',                                                                                
+    'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
   ]);
 
   // Professional AutoTable Configuration
   autoTable(doc, {
     startY: 62,
-    head: [['Category', 'Amount', 'Date Logged', 'Description']],
+    head: [['Category', 'Date Logged', 'Description' , 'Amount']],
     body: tableBodyRows,
     theme: 'striped',
     headStyles: { 
@@ -386,15 +386,15 @@ export class BudgetDashboard implements OnInit {
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252] 
-    },
+    },  
     columnStyles: {
       0: { cellWidth: 40, fontStyle: 'bold' },
-      1: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }, 
-      2: { cellWidth: 35, halign: 'center' }, 
-      3: { cellWidth: 'auto' }
+      1: { cellWidth: 50, halign: 'left' },
+      2: { cellWidth: 52, halign: 'left' }, 
+      3: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }
     },
     didParseCell: (data) => {
-      if (data.section === 'head' && data.column.index === 1) {
+      if (data.section === 'head' && data.column.index === 3) {
         data.cell.styles.halign = 'right';
       }
     },

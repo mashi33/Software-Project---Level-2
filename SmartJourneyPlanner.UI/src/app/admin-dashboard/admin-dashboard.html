@@ -79,7 +79,7 @@
         <div class="card-icon4"><i class="bi bi-file-earmark-text-fill text-success fs-3"></i></div>
         <div class="card-data">
           <h3>Detailed Fleet</h3>
-          <h1>{{ allVehicles.length }}</h1>
+          <h1>{{ stats.totalVehicles || allVehicles.length }}</h1>
         </div>
         <button class="btn-action4" (click)="onReviewFleet()">View Fleet</button>
       </div>
@@ -1043,7 +1043,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="selectedProvider = null">Close Review</button>
+        <button class="btn-cancel" (click)="closeReview()">Close Review</button>
         <div class="action-group">
           <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Rejected'" 
                   class="btn-ctrl-vibrant btn-delete-ink btn-modal-action" 
