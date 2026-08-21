@@ -440,7 +440,6 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
         return BadRequest(new { message = "Error: " + ex.Message });
     }
 }
-// =========================================================================================
 
         // Add a new place to an existing trip's saved places list
         [HttpPost("{tripId}/add-place")]
@@ -508,6 +507,18 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
 
                 if ((oldTrip.Destination?.Trim().ToLower() ?? "") != (updatedTrip.Destination?.Trim().ToLower() ?? ""))
                     changes += $"Dest: {oldTrip.Destination} -> {updatedTrip.Destination}. ";
+
+                if ((oldTrip.DepartFrom?.Trim().ToLower() ?? "") != (updatedTrip.DepartFrom?.Trim().ToLower() ?? ""))
+                    changes += $"Depart From: {oldTrip.DepartFrom} -> {updatedTrip.DepartFrom}. ";
+
+                if ((oldTrip.BudgetLimit?.Trim() ?? "") != (updatedTrip.BudgetLimit?.Trim() ?? ""))
+                    changes += $"Budget: {oldTrip.BudgetLimit} -> {updatedTrip.BudgetLimit}. ";
+
+                if ((oldTrip.TransportMode?.Trim() ?? "") != (updatedTrip.TransportMode?.Trim() ?? ""))
+                    changes += $"Transport: {oldTrip.TransportMode} -> {updatedTrip.TransportMode}. ";
+
+                if ((oldTrip.Description?.Trim() ?? "") != (updatedTrip.Description?.Trim() ?? ""))
+                    changes += $"Description updated. ";
 
                 if (oldTrip.StartDate != updatedTrip.StartDate || oldTrip.EndDate != updatedTrip.EndDate)
                     changes += $"Dates: {oldTrip.StartDate:yyyy-MM-dd} to {oldTrip.EndDate:yyyy-MM-dd} -> {updatedTrip.StartDate:yyyy-MM-dd} to {updatedTrip.EndDate:yyyy-MM-dd}. ";

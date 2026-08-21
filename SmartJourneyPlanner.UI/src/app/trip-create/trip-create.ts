@@ -123,13 +123,11 @@ export class TripCreateComponent implements OnInit {
         error: (err) => this.showErrorAlert("Error fetching trip for edit.")
       });
     } else {
-      // Check for temporary saved data (e.g., returning from a summary page)
-      const savedData = this.tripService.getTempTripData();
-      if (savedData) {
-        this.isEditMode = true;
-        this.tripId = savedData.Id || savedData.id;
-        this.fillForm(savedData);
-      }
+      this.isEditMode = false;
+      this.tripId = null;
+      this.tripForm.reset();
+      this.invitedMembers = [];
+      this.tripService.setTempTripData(null);
     }
   }
 
