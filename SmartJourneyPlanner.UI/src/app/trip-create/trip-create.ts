@@ -375,7 +375,15 @@ export class TripCreateComponent implements OnInit {
                   cancelButtonText: 'View Summary'
                 }).then(result => {
                   if (result.isConfirmed) {
-                    this.router.navigate(['/transport']);
+                    this.router.navigate(['/transport'], {
+                      queryParams: {
+                        tripId: newId,
+                        start: this.formatDate(tripData.StartDate),
+                        end: this.formatDate(tripData.EndDate),
+                        pickup: tripData.DepartFrom,
+                        destination: tripData.Destination
+                      }
+                    });
                   } else {
                     this.router.navigate(['/trip-summary', newId]);
                   }

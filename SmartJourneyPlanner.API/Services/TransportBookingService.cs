@@ -31,6 +31,10 @@ namespace SmartJourneyPlanner.Services
         public async Task<List<TransportBooking>> GetByProviderAsync(string providerId) =>
             await _bookingsCollection.Find(b => b.ProviderId == providerId).ToListAsync();
 
+        // Get all bookings for a specific trip
+        public async Task<List<TransportBooking>> GetByTripAsync(string tripId) =>
+            await _bookingsCollection.Find(b => b.TripId == tripId).ToListAsync();
+
         // Find one specific booking using its unique ID
         public async Task<TransportBooking?> GetAsync(string id) =>
             await _bookingsCollection.Find(b => b.Id == id).FirstOrDefaultAsync();

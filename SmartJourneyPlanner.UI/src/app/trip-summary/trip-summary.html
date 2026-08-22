@@ -149,6 +149,78 @@
               </span>
             </div>
 
+            <!-- Transport Provider Booking Details (Omit Image as requested) -->
+            <div class="transport-booking-card mt-3 p-3 rounded-3 border bg-light shadow-sm" *ngIf="transportMode === 'Transport Provider'">
+              <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                <span class="fw-bold text-dark small text-uppercase">
+                  <i class="bi bi-truck text-primary me-1"></i> Transport Booking
+                </span>
+                <span class="badge" [ngClass]="{
+                  'bg-warning text-dark': !transportBooking || transportBooking.status === 'Pending',
+                  'bg-success': transportBooking?.status === 'Confirmed',
+                  'bg-danger': transportBooking?.status === 'Rejected' || transportBooking?.status === 'Cancelled'
+                }">
+                  {{ transportBooking ? transportBooking.status : 'No Booking Yet' }}
+                </span>
+              </div>
+
+              <!-- When a Booking Exists -->
+              <div *ngIf="transportBooking" class="transport-booking-content">
+                <!-- Vehicle Name -->
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted small">Vehicle:</span>
+                  <span class="fw-bold text-dark small">{{ transportBooking.vehicleName || 'Reserved Vehicle' }}</span>
+                </div>
+
+                <!-- Provider Name -->
+                <div class="d-flex justify-content-between align-items-center mb-1" *ngIf="transportBooking.providerName">
+                  <span class="text-muted small">Provider:</span>
+                  <span class="fw-semibold text-dark small">{{ transportBooking.providerName }}</span>
+                </div>
+
+                <!-- Provider Contact -->
+                <div class="d-flex justify-content-between align-items-center mb-2" *ngIf="transportBooking.providerPhone">
+                  <span class="text-muted small">Contact:</span>
+                  <a [href]="'tel:' + transportBooking.providerPhone" class="fw-bold text-primary small text-decoration-none">
+                    <i class="bi bi-telephone-fill me-1"></i>{{ transportBooking.providerPhone }}
+                  </a>
+                </div>
+
+                <!-- Pricing Summary Breakdown -->
+                <div class="pricing-breakdown-box p-2 rounded-2 bg-white border mt-2" *ngIf="transportBooking.pricingSummary">
+                  <div class="text-muted fw-bold mb-1" style="font-size: 0.72rem; text-transform: uppercase;">
+                    <i class="bi bi-receipt me-1"></i> Pricing Summary
+                  </div>
+                  <div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
+                    <span>Daily Rental ({{ transportBooking.days || 1 }}d):</span>
+                    <span>Rs. {{ transportBooking.pricingSummary.dailyRental | number }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;" *ngIf="transportBooking.pricingSummary.driverNightOut > 0">
+                    <span>Driver Night Fee ({{ transportBooking.nights || 0 }}n):</span>
+                    <span>Rs. {{ transportBooking.pricingSummary.driverNightOut | number }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between fw-bold text-dark border-top pt-1 mt-1" style="font-size: 0.85rem;">
+                    <span>Estimated Total:</span>
+                    <span class="text-primary">Rs. {{ (transportBooking.totalAmount || transportBooking.totalPrice) | number }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- When No Booking Exists Yet -->
+              <div *ngIf="!transportBooking && !loadingTransportBooking" class="text-center py-2">
+                <p class="text-muted small mb-2">No vehicle reserved for this trip yet.</p>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" (click)="navigateToTransport()">
+                  <i class="bi bi-plus-circle me-1"></i> Book Transport
+                </button>
+              </div>
+
+              <!-- Loading spinner -->
+              <div *ngIf="loadingTransportBooking" class="text-center py-2">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <small class="text-muted ms-2">Loading booking info...</small>
+              </div>
+            </div>
+
             <div class="saved-places-section mt-4 pt-3 border-top">
               <h6 class="text-muted small fw-bold mb-3 text-uppercase">Saved Places</h6>
 

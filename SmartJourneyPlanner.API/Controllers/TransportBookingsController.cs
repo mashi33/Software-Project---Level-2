@@ -69,6 +69,14 @@ namespace SmartJourneyPlanner.Controllers
             await _bookingService.GetByProviderAsync(providerId);
 
         /**
+         * GET: /api/TransportBookings/trip/{tripId}
+         * Returns all booking requests associated with a specific trip.
+         */
+        [HttpGet("trip/{tripId}")]
+        public async Task<List<TransportBooking>> GetByTrip(string tripId) =>
+            await _bookingService.GetByTripAsync(tripId);
+
+        /**
          * GET: /api/TransportBookings/{id}
          * Fetches full details for one specific booking using its ID.
          */

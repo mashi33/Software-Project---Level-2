@@ -6,6 +6,8 @@ import { WeatherService } from '../services/weather.service';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 import { BudgetService } from '../services/budget';
+import { TransportBookingService } from '../services/transport-booking.service';
+import { Booking } from '../models/transport.model';
 
 @Component({
   selector: 'app-trip-summary',
@@ -19,11 +21,6 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
 
-  // SECURITY: default to the least-privileged role. This is only ever
-  // overwritten by determineUserRole(), which compares the JWT-derived
-  // email against tripDetails.createdBy / tripDetails.members from the DB.
-  // It is NEVER set from the URL. If role resolution fails for any reason,
-  // the user stays a viewer (fail-closed) instead of defaulting to 'owner'.
   userRole: string = 'viewer';
 
   tripId: string = '';
@@ -38,6 +35,10 @@ export class TripSummaryComponent implements OnInit {
 
   liveTotalSpent: number = 0;
 
+  // Transport Booking Details
+  transportBooking: Booking | null = null;
+  loadingTransportBooking = false;
+
   summaryWeather: any = null;
   summarySuggestion: any = null;
   forecastDays: any[] = [];
@@ -48,6 +49,7 @@ export class TripSummaryComponent implements OnInit {
   constructor(
     private tripService: TripService,
     private budgetService: BudgetService,
+    private transportBookingService: TransportBookingService,
     private route: ActivatedRoute,
     private router: Router,
     private weatherService: WeatherService,
@@ -87,6 +89,7 @@ export class TripSummaryComponent implements OnInit {
 
           this.filterSavedPlaces();
           this.loadTripWeather();
+          this.loadTransportBooking();
           this.loading = false;
         },
         error: (err: any) => {
@@ -288,6 +291,46 @@ export class TripSummaryComponent implements OnInit {
       next: (data) => { this.editHistory = data; },
       error: (err) => console.error('History load error:', err)
     });
+  }
+
+  loadTransportBooking(): void {
+    if (!this.tripId) return;
+    this.loadingTransportBooking = true;
+    this.transportBookingService.getBookingsByTrip(this.tripId).subscribe({
+      next: (bookings: Booking[]) => {
+        if (bookings && bookings.length > 0) {
+          // Grab the latest booking for this trip
+          this.transportBooking = bookings[bookings.length - 1];
+        } else {
+          this.transportBooking = null;
+        }
+        this.loadingTransportBooking = false;
+      },
+      error: (err) => {
+        console.warn('Could not fetch transport booking for trip:', err);
+        this.transportBooking = null;
+        this.loadingTransportBooking = false;
+      }
+    });
+  }
+
+  navigateToTransport(): void {
+    this.router.navigate(['/transport'], {
+      queryParams: {
+        tripId: this.tripId,
+        start: this.formatDateStr(this.startDate),
+        end: this.formatDateStr(this.endDate),
+        pickup: this.departFrom,
+        destination: this.destination
+      }
+    });
+  }
+
+  formatDateStr(date: any): string {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
   }
 
   toggleDropdown(): void {

@@ -38,6 +38,13 @@ export class TransportBookingService {
   }
 
   /**
+   * Fetches booking requests created for a specific trip.
+   */
+  getBookingsByTrip(tripId: string): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.apiUrl}/trip/${tripId}`);
+  }
+
+  /**
    * Gets details for one specific booking record.
    */
   getBookingById(id: string): Observable<Booking> {
