@@ -353,17 +353,17 @@ export class BudgetDashboard implements OnInit {
     doc.setTextColor(71, 85, 105);
     doc.text('Expense Allocation & Budget Report', 14, 26);
 
-  doc.setDrawColor(226, 232, 240); 
-  doc.setLineWidth(0.4);
-  doc.line(14, 29, 196, 29);
+    doc.setDrawColor(226, 232, 240); 
+    doc.setLineWidth(0.4);
+    doc.line(14, 29, 196, 29);
 
-  // Extended Metadata Info Box
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
+    // Extended Metadata Info Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
 
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139); 
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139); 
 
   // Trip & Date Generated
   doc.text('Target Trip Name :', 20, 40);

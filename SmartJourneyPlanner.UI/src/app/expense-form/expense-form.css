@@ -49,7 +49,6 @@
   max-width: 460px;
   position: relative;
   z-index: 10;
-  
   box-shadow: 
     0 10px 30px -10px rgba(15, 23, 42, 0.08),
     0 20px 50px -15px rgba(15, 23, 42, 0.06),
@@ -164,6 +163,7 @@ input:focus {
   background: linear-gradient(180deg, #eff6ff 0%, #dbeaf8 100%);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.06);
 }
+
 .cat-item.active .cat-name {
   color: #1d4ed8;
 }
@@ -184,6 +184,7 @@ input:focus {
   border-color: #cbd5e1 !important;
   background: #f1f5f9 !important;
 }
+
 .category-grid.disabled-grid .cat-item.active .cat-name {
   color: #475569 !important;
 }
