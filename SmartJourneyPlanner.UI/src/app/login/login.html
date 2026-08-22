@@ -43,10 +43,10 @@
       </div>
 
       <!-- Sign In Button -->
-      <button class="btn-login" type="submit">
-        <span>Sign In</span>
-        <!-- Bootstrap Arrow Right Icon -->
-        <i class="bi bi-arrow-right btn-icon"></i>
+      <button class="btn-login" type="submit" [disabled]="isLoading">
+        <span>{{ isLoading ? 'Signing in...' : 'Sign In' }}</span>
+        <i *ngIf="!isLoading" class="bi bi-arrow-right btn-icon"></i>
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
       </button>
 
       <p class="signup-prompt">

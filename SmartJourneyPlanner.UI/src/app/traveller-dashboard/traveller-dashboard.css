@@ -167,13 +167,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(13, 40, 103, 0.88) 0%,
-    rgba(13, 40, 103, 0.72) 28%,
-    rgba(13, 40, 103, 0.35) 58%,
-    rgba(13, 40, 103, 0.08) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(13, 40, 103, 0.88) 0%,
+      rgba(13, 40, 103, 0.72) 28%,
+      rgba(13, 40, 103, 0.35) 58%,
+      rgba(13, 40, 103, 0.08) 100%);
 }
 
 .trip-top-row,
@@ -440,9 +438,11 @@
 .wic-blue {
   background: #eef4ff;
 }
+
 .wic-green {
   background: #edfaf4;
 }
+
 .wic-yellow {
   background: #fff9e8;
 }

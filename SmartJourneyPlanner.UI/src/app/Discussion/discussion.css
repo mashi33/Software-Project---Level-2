@@ -38,30 +38,54 @@
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--page-bg);
     overflow: hidden;
+    padding-top: 90px;
 }
 
 .header-content {
-    text-align: center;
+    text-align: left;
     color: var(--text-primary);
-    padding: 15px 0 10px 0;
+    padding: 15px 24px;
     flex-shrink: 0;
     background: var(--header-bg);
     border-bottom: 1px solid var(--glass-border);
 }
 
-.header-content h1 {
-    font-size: 22px;
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.header-title-block h1 {
+    font-size: 20px;
     margin: 0;
-    font-weight: 800;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.header-content h2 {
-    font-size: 14px;
+.header-title-block p {
+    font-size: 13px;
     opacity: 0.8;
     font-weight: 400;
-    margin-top: 5px;
+    margin: 4px 0 0 0;
     color: var(--text-secondary);
+}
+
+.subtitle-icon {
+    font-size: 15px;
+    color: #4facfe;
+}
+
+.trip-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--glass-panel-bg);
+  padding: 8px 15px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border);
+  flex-shrink: 0;
 }
 
 .split-container {
@@ -95,24 +119,6 @@
     border-radius: 10px;
 }
 
-.trip-selection-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  margin-top: 15px;
-  padding-left: 10px;
-}
-
-.trip-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--glass-panel-bg);
-  padding: 8px 15px;
-  border-radius: 30px;
-  border: 1px solid var(--glass-border);
-}
 
 .trip-selector label {
   color: var(--text-primary);

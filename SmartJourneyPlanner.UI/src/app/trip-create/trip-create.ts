@@ -5,6 +5,7 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
 
+
 @Component({
   selector: 'app-trip-create',
   standalone: true,
@@ -20,6 +21,9 @@ export class TripCreateComponent implements OnInit {
   isEditMode: boolean = false;
   tripId: string | null = null;
   todayDate: string = '';
+
+  isLoading: boolean = false;
+
   // Owner of the trip being edited; kept so an update never re-assigns ownership
   ownerEmail: string = '';
   ownerId: string = '';
@@ -103,6 +107,52 @@ export class TripCreateComponent implements OnInit {
     const today = new Date();
     this.todayDate = today.toISOString().split('T')[0];
     this.tripForm.updateValueAndValidity();
+
+    // 1. Trip Name - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('tripName')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('tripName')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 2. Depart From - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('departFrom')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('departFrom')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 3. Destination - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('destination')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('destination')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 4. Description - මුල් වාක්‍යයේ පළමු අකුර පමණක් Capital කිරීම (Sentence Case)
+    this.tripForm.get('description')?.valueChanges.subscribe((value: string) => {
+      if (value && value.length > 0) {
+        const sentenceCase = value.charAt(0).toUpperCase() + value.slice(1);
+        if (value !== sentenceCase) {
+          this.tripForm.get('description')?.setValue(sentenceCase, { emitEvent: false });
+        }
+      }
+    });
 
     this.tripForm.get('startDate')?.valueChanges.subscribe(startDate => {
       const endDateControl = this.tripForm.get('endDate');
@@ -245,6 +295,9 @@ export class TripCreateComponent implements OnInit {
 
   // Processes form submission (Create or Update)
   onSubmit() {
+    if (this.isLoading) {
+      return;
+    }
     this.submitted = true;
 
     if (this.tripForm.invalid) {
@@ -260,6 +313,7 @@ export class TripCreateComponent implements OnInit {
       );
       return;
     }
+    this.isLoading = true;
 
     {
       const currentUser = this.getCurrentUser();
@@ -289,6 +343,7 @@ export class TripCreateComponent implements OnInit {
         // Update existing trip
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: () => {
+            this.isLoading = false;
             this.invitedMembers = this.invitedMembers.map(m => ({ ...m, isNew: false }));
             this.tripService.setTempTripData({ ...tripData, Id: this.tripId });
             this.showSuccessAlert(newCount > 0
@@ -296,12 +351,16 @@ export class TripCreateComponent implements OnInit {
               : "Trip updated successfully!");
             this.router.navigate(['/trip-summary', this.tripId]);
           },
-          error: () => this.showErrorAlert("Error updating trip.")
+          error: () => {
+            this.isLoading = false;
+            this.showErrorAlert("Error updating trip.");
+          }
         });
       } else {
         // Create new trip
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
+            this.isLoading = false;
             const newId = res.tripId || res.id;
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
@@ -316,7 +375,15 @@ export class TripCreateComponent implements OnInit {
                   cancelButtonText: 'View Summary'
                 }).then(result => {
                   if (result.isConfirmed) {
-                    this.router.navigate(['/transport']);
+                    this.router.navigate(['/transport'], {
+                      queryParams: {
+                        tripId: newId,
+                        start: this.formatDate(tripData.StartDate),
+                        end: this.formatDate(tripData.EndDate),
+                        pickup: tripData.DepartFrom,
+                        destination: tripData.Destination
+                      }
+                    });
                   } else {
                     this.router.navigate(['/trip-summary', newId]);
                   }
@@ -350,5 +417,15 @@ export class TripCreateComponent implements OnInit {
         this.showSuccessAlert('Member removed successfully!');
       }
     });
+  }
+
+  onCancel() {
+    if (this.isEditMode && this.tripId) {
+
+      this.router.navigate(['/trip-summary', this.tripId]);
+    } else {
+
+      this.router.navigate(['/traveller-dashboard']);
+    }
   }
 }

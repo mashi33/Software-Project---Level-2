@@ -24,6 +24,14 @@ export class DiscussionComponent implements OnInit, OnDestroy {
   private voteSub!: Subscription;
   private deleteSub!: Subscription;
   private newDiscussionSub!: Subscription;
+  private memberLimitSub!: Subscription;
+  private connectionFailedSub!: Subscription; 
+  private connectionRestoredSub!: Subscription; 
+
+  private tripsRetryTimeout: any = null;
+  private discussionsRetryTimeout: any = null;
+  private hasShownLoadErrorPopup: boolean = false;
+
   private avatarColors: string[] = [
   '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
   '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
@@ -95,11 +103,16 @@ getAvatarColor(username: string): string {
     if (this.voteSub) this.voteSub.unsubscribe();
     if (this.deleteSub) this.deleteSub.unsubscribe();
     if (this.newDiscussionSub) this.newDiscussionSub.unsubscribe();
+    if (this.memberLimitSub) this.memberLimitSub.unsubscribe(); 
+    if (this.connectionFailedSub) this.connectionFailedSub.unsubscribe(); 
+    if (this.connectionRestoredSub) this.connectionRestoredSub.unsubscribe(); 
+    if (this.tripsRetryTimeout) clearTimeout(this.tripsRetryTimeout);          
+    if (this.discussionsRetryTimeout) clearTimeout(this.discussionsRetryTimeout);
   }
 
   // Load trips associated with the user — filters by the logged-in user's email
   // so the trip dropdown only shows trips the user created or was invited to
-  loadUserTrips() {
+    loadUserTrips() {
     const email = localStorage.getItem('email') ?? '';
 
     if (!email) {
@@ -118,8 +131,32 @@ getAvatarColor(username: string): string {
           this.joinSignalRGroup();
           this.loadInitialData(); 
         }
+
+        // Success — clear any pending retry and reset the popup flag
+        if (this.tripsRetryTimeout) clearTimeout(this.tripsRetryTimeout);
+        this.hasShownLoadErrorPopup = false;
       },
-      error: (err) => console.error('Error loading user trips:', err)
+      error: (err) => {
+        console.error('Error loading user trips:', err);
+
+        // Only network/server-down errors get silently retried — auth/permission
+        // errors (403 etc.) would just fail the same way again, so don't loop those.
+        if (err?.status === 0 || err?.status === 503) {
+          if (!this.hasShownLoadErrorPopup) {
+            this.hasShownLoadErrorPopup = true;
+            Swal.fire({
+              icon: 'warning',
+              title: 'Connection Problem',
+              text: 'Could not load your trips. Retrying automatically...',
+              timer: 2500,
+              showConfirmButton: false
+            });
+          }
+          this.tripsRetryTimeout = setTimeout(() => this.loadUserTrips(), 5000);
+        } else {
+          this.showNetworkError(err, 'Could not load your trips.');
+        }
+      }
     });
   }
 
@@ -141,7 +178,7 @@ getAvatarColor(username: string): string {
   }
 
   // Fetch discussions for the currently selected trip
-  loadInitialData() {
+    loadInitialData() {
     if (!this.selectedTripId) return;
 
     this.discussionService.getDiscussionsByTrip(this.selectedTripId, this.currentUser).subscribe({
@@ -150,8 +187,19 @@ getAvatarColor(username: string): string {
           this.discussions = data;
           this.cdr.detectChanges();
         });
+        if (this.discussionsRetryTimeout) clearTimeout(this.discussionsRetryTimeout);
       },
-      error: (err) => console.error('Error loading discussions:', err)
+      error: (err) => {
+        console.error('Error loading discussions:', err);
+
+        if (err?.status === 0 || err?.status === 503) {
+          // Silently retry — no repeated popups here since loadUserTrips()
+          // already shows one for the whole initial-load sequence.
+          this.discussionsRetryTimeout = setTimeout(() => this.loadInitialData(), 5000);
+        } else {
+          this.showNetworkError(err, 'Could not load discussions.');
+        }
+      }
     });
   }
 
@@ -220,6 +268,49 @@ getAvatarColor(username: string): string {
           this.discussions = [...this.discussions, newItem];
           this.cdr.detectChanges();
         }
+      });
+    });
+
+    //— when trip members change, update memberLimit on pending discussions only.
+    // Confirmed/Rejected discussions stay untouched (their vote is already final).
+    this.memberLimitSub = this.signalrService.memberLimitChanged.subscribe((data: any) => {
+      this.zone.run(() => {
+        if (data.tripId !== this.selectedTripId) return;
+
+        this.discussions = this.discussions.map(d =>
+          (d.type === 'Trip' && !d.isConfirmed && !d.isRejected)
+            ? { ...d, memberLimit: data.newLimit }
+            : d
+        );
+
+        this.cdr.detectChanges();
+      });
+    });
+
+   //— show a one-time popup if SignalR can't connect or the connection is lost
+    this.connectionFailedSub = this.signalrService.connectionFailed.subscribe((msg: string) => {
+      this.zone.run(() => {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Connection Problem',
+          text: msg,
+        });
+      });
+    });
+
+        //— silently re-join the trip group and refresh data once connection is restored
+    this.connectionRestoredSub = this.signalrService.connectionRestored.subscribe(() => {
+      this.zone.run(() => {
+        this.joinSignalRGroup();
+        this.loadInitialData();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Reconnected',
+          text: 'Your connection is back.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       });
     });
   }
@@ -303,14 +394,14 @@ getAvatarColor(username: string): string {
       next: (updatedItem: any) => {
         console.log('Vote processed');
       },
-      error: (err) => {
+        error: (err) => {
         console.error('Voting failed:', err);
         if (err.status === 403) {
           Swal.fire('Not Allowed', 'Only trip members can vote on this proposal.', 'error');
         } else if (err.status === 400) {
           Swal.fire('Info', err.error?.message || 'Voting is closed.', 'info');
         } else {
-          Swal.fire('Error', 'Vote cast failed.', 'error');
+          this.showNetworkError(err, 'Vote cast failed.');
         }
       }
     });
@@ -407,7 +498,7 @@ getAvatarColor(username: string): string {
         const memberCount = members.length;
 
         // memberCount = invited members, + 1 for creator (stored separately in CreatedBy)
-        const dynamicLimit = memberCount + 1;
+        const dynamicLimit = memberCount; 
 
         console.log('Calculated dynamic limit:', dynamicLimit);
 
@@ -450,10 +541,13 @@ getAvatarColor(username: string): string {
             this.resetForm();
             Swal.fire({ icon: 'success', title: 'Posted', showConfirmButton: false, timer: 1500 });
           },
-          error: (err) => console.error('Creation error:', err)
+            error: (err) => {
+            console.error('Creation error:', err);
+            this.showNetworkError(err, 'Could not post your suggestion.');
+          }
         });
       },
-      error: (err) => Swal.fire('Error', 'Could not verify trip members.', 'error')
+      error: (err) => this.showNetworkError(err, 'Could not verify trip members.')
     });
   }
 
@@ -478,7 +572,7 @@ getAvatarColor(username: string): string {
           next: () => {
             Swal.fire({ icon: 'success', title: 'Deleted!', text: 'The vote box has been deleted.', showConfirmButton: false, timer: 1500 });
           },
-          error: (err) => Swal.fire('Error', 'Could not delete the discussion.', 'error')
+          error: (err) => this.showNetworkError(err, 'Could not delete the discussion.')
         });
       }
     });
@@ -532,6 +626,26 @@ getAvatarColor(username: string): string {
       this.router.navigate(['/trip-summary', this.selectedTripId]);
     } else {
       Swal.fire('Error', 'No trip selected to view summary.', 'error');
+    }
+  }
+
+    // Shows a friendly popup for network/timeout/server errors.
+  // status === 0 means the request never reached the server (offline, timeout, unreachable).
+  private showNetworkError(err: any, fallbackMsg: string = 'Something went wrong. Please try again.') {
+    if (err?.status === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Connection Problem',
+        text: err.error?.message || 'Cannot reach the server. Please check your internet connection.',
+      });
+    } else if (err?.status === 503) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Server Unavailable',
+        text: err.error?.message || 'The server is temporarily unavailable. Please try again shortly.',
+      });
+    } else {
+      Swal.fire('Error', err?.error?.message || fallbackMsg, 'error');
     }
   }
 }

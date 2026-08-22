@@ -53,11 +53,16 @@
             {{ comment.user === currentUser ? 'You' : comment.user }}
           </span>
 
-          <div class="chat-content">
+            <div class="chat-content">
 
-            <p *ngIf="comment.messageType !== 'pdf'">{{ comment.text }}</p>
+            <!-- Deleted placeholder — shown for both deleted text AND deleted PDF messages -->
+            <p *ngIf="comment.isDeleted" class="deleted-message-text">
+              <i class="material-icons deleted-icon">block</i> This message was deleted
+            </p>
 
-            <div *ngIf="comment.messageType === 'pdf'" class="pdf-bubble">
+            <p *ngIf="!comment.isDeleted && comment.messageType !== 'pdf'">{{ comment.text }}</p>
+
+            <div *ngIf="!comment.isDeleted && comment.messageType === 'pdf'" class="pdf-bubble">
               <div class="pdf-bubble-icon">
                 <i class="material-icons">picture_as_pdf</i>
               </div>
@@ -84,7 +89,7 @@
 
             <div class="chat-footer-row">
               <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
-              <div class="chat-actions" *ngIf="comment.user === currentUser">
+              <div class="chat-actions" *ngIf="!comment.isDeleted && comment.user === currentUser">
                 <button *ngIf="comment.messageType !== 'pdf'"
                         (click)="startEditing(comment)"
                         class="btn-chat-action"

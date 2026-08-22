@@ -18,6 +18,7 @@ namespace SmartJourneyPlanner.Models
         public string? Id { get; set; } 
 
         // Linking IDs
+        public string? TripId { get; set; }                     // The trip this booking is created for
         public string VehicleId { get; set; } = string.Empty;   // The vehicle that was chosen
         public string UserId { get; set; } = string.Empty;      // The traveler who made the booking
         public string ProviderId { get; set; } = string.Empty;  // The owner who provides the vehicle
@@ -38,6 +39,7 @@ namespace SmartJourneyPlanner.Models
         public bool? HasBeenRated { get; set; }                 // True if the user has already left a review
 
         public string? StatusChangedDate { get; set; }
+        public string? CancelledBy { get; set; }
 
         // Specific Trip Requirements
         public string? PickupAddress { get; set; }              // Where the driver picks up the traveler

@@ -113,12 +113,16 @@
                   <!-- Profile dropdown menu -->
                   <ul class="dropdown-menu dropdown-menu-end shadow" [class.show]="isDropdownOpen"
                     aria-labelledby="profileDropdown">
-                    <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()">Profile</a></li>
-                    <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()">Settings</a></li>
+                    <li><a class="dropdown-item" routerLink="/profile" (click)="closeDropdown()"
+                        style="cursor: pointer;">Profile</a></li>
+                    <li><a class="dropdown-item" routerLink="/settings" (click)="closeDropdown()"
+                        style="cursor: pointer;">Settings</a>
+                    </li>
                     <li>
                       <hr class="dropdown-divider">
                     </li>
-                    <li><a class="dropdown-item text-danger" (click)="onLogout()">Sign out</a></li>
+                    <li><a class="dropdown-item text-danger" (click)="onLogout()" style="cursor: pointer;">Sign out</a>
+                    </li>
                   </ul>
                 </div>
 

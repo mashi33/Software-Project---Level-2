@@ -23,5 +23,8 @@ namespace SmartJourneyPlanner.Models
         public string? FileId { get; set; }
         public string? FileName { get; set; }
         public long? FileSize { get; set; }
+
+        //  — soft-delete flag. When true, the message content is cleared
+        public bool IsDeleted { get; set; } = false;
     }
 }
