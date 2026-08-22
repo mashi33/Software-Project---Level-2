@@ -57,32 +57,20 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    // Basic form validation
     if (!this.loginData.email || !this.loginData.password) {
-
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
         text: 'Please enter both email and password.',
         confirmButtonColor: '#F4A261'
       });
-
       return;
     }
 
     this.isLoading = true;
 
-    // Send login request to backend API
     this.authService.login(this.loginData).subscribe({
-
       next: (response: any) => {
-
-        console.log('Login Success!', response);
-
-        /**
-         * Save authentication details in local storage
-         * to maintain the user session.
-         */
         this.authService.saveToken(
           response.token,
           response.userType,
@@ -90,22 +78,15 @@ export class LoginComponent implements OnInit {
           response.profilePic
         );
 
-        // Store user ID for future operations
         const id = response.userId || response.id;
-
         if (id) {
           localStorage.setItem('userId', id);
         }
 
-        /**
-         * Retrieve the logged-in user's role early to enforce provider-specific redirection.
-         */
         const currentUserType = this.authService.getUserSystemType() || '';
-
-        // If the user is a transport provider, always send them to the transport-provider dashboard
         const lowerType = currentUserType.toLowerCase();
+
         if (lowerType === 'transportprovider' || lowerType === 'provider' || lowerType.includes('provider')) {
-          // If the user came via an invitation link, show a specific informational message before redirecting
           if (this.invitedTripId) {
             Swal.fire({
               icon: 'info',
@@ -117,11 +98,9 @@ export class LoginComponent implements OnInit {
             }).then(() => {
               this.router.navigate(['/transport-provider-dashboard']);
             });
-
-            return; // Prevent any other redirect logic (including invited trip) from running
+            return;
           }
 
-          // Default provider login flow (no invitation link)
           Swal.fire({
             icon: 'success',
             title: 'Welcome Back!',
@@ -130,69 +109,42 @@ export class LoginComponent implements OnInit {
             confirmButtonColor: '#00A86B',
             allowOutsideClick: false
           }).then(() => {
-            // Use the transport-provider-dashboard route as requested
             this.router.navigate(['/transport-provider-dashboard']);
           });
 
           this.isLoading = false;
-          return; // Prevent any other redirect logic (including invited trip) from running
+          return;
         }
 
-        /**
-         * Display login success notification for non-provider users.
-         */
         Swal.fire({
           icon: 'success',
           title: 'Welcome Back!',
           html: `
-            <div style="font-size:15px;">
-              <p>Login successful.</p>
-              <p>Enjoy planning your next journey with Smart Journey Planner.</p>
-            </div>
-          `,
+          <div style="font-size:15px;">
+            <p>Login successful.</p>
+            <p>Enjoy planning your next journey with Smart Journey Planner.</p>
+          </div>
+        `,
           confirmButtonText: 'Continue',
           confirmButtonColor: '#00A86B',
           allowOutsideClick: false
         }).then(() => {
-
-          /**
-           * If the user arrived through an invitation link,
-           * redirect them directly to the shared trip.
-           */
           if (this.invitedTripId) {
-
-            console.log(
-              'Redirecting invited user to trip:',
-              this.invitedTripId
-            );
-
             this.router.navigate(
               ['/trip-summary', this.invitedTripId],
-              {
-                queryParams: {
-                  role: this.invitedRole
-                }
-              }
+              { queryParams: { role: this.invitedRole } }
             );
-
             return;
           }
 
-          // Redirect admin
           if (currentUserType === 'Admin') {
             this.router.navigate(['/admin-dashboard']);
-          }
-
-          // Redirect travellers
-          else if (
+          } else if (
             currentUserType === 'Traveller' ||
             currentUserType === 'Traveler'
           ) {
             this.router.navigate(['/traveller-dashboard']);
-          }
-
-          // Fallback route
-          else {
+          } else {
             this.router.navigate(['/']);
           }
         });
@@ -201,24 +153,11 @@ export class LoginComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
 
-        console.error('Login Failed', err);
-
-        /**
-         * Default error message.
-         */
-        let errorMessage =
-          'Please check your email and password.';
-
-        /**
-         * Use backend error message if available.
-         */
+        let errorMessage = 'Please check your email and password.';
         if (err?.error?.message) {
           errorMessage = err.error.message;
         }
 
-        /**
-         * Display login failure notification.
-         */
         Swal.fire({
           icon: 'error',
           title: 'Login Failed',

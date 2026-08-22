@@ -74,7 +74,8 @@
   <div class="sidebar-footer" *ngIf="isSidebarOpen && !isCollapsed">
     <div class="user-profile">
       <div class="user-avatar">
-        <img [src]="profilePic" alt="Profile" class="avatar-img" />
+        <img *ngIf="hasProfilePic" [src]="profilePic" alt="Profile" class="avatar-img" />
+        <div *ngIf="!hasProfilePic" class="avatar-fallback">{{ userInitial }}</div>
       </div>
       <div class="user-info">
         <span class="user-name">{{ userName }}</span>
@@ -86,7 +87,8 @@
   <!-- Collapsed User Avatar -->
   <div class="collapsed-user" *ngIf="isCollapsed">
     <div class="collapsed-avatar">
-      <img [src]="profilePic" alt="Profile" class="avatar-img" />
+      <img *ngIf="hasProfilePic" [src]="profilePic" alt="Profile" class="avatar-img" />
+      <div *ngIf="!hasProfilePic" class="avatar-fallback">{{ userInitial }}</div>
     </div>
   </div>
 </aside>

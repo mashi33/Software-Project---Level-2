@@ -357,19 +357,22 @@ export class ProfileComponent implements OnInit {
         let finalPic = '';
 
         if (userRemovedPhoto) {
-          // Force default avatar
-          finalPic = '/profilePic.jpg';
+          // Empty → letter avatar on Profile page
+          finalPic = '';
         } else if (updatedUser?.profilePictureUrl) {
           finalPic = updatedUser.profilePictureUrl;
         } else if (this.editData.profilePictureUrl) {
           finalPic = this.editData.profilePictureUrl;
         } else {
-          finalPic = '/profilePic.jpg';
+          finalPic = '';
         }
 
         this.user.profilePictureUrl = finalPic;
 
-        // Update everywhere immediately (Navbar + Sidebar + Achievements)
+        // Force Angular change detection
+        this.user = { ...this.user };
+
+        // Update Navbar + Sidebar + Achievements immediately
         this.authService.updateProfilePic(finalPic);
 
         if (this.editData.email !== oldEmail) {
