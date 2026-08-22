@@ -97,7 +97,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 platformUsers = totalUsers,
                 totalTrips = totalTrips,
                 overBudgetTrips = overBudgetTrips,
-                totalVehicles = totalVehicles 
+                totalVehicles = totalVehicles,
+                totalUsers = totalUsers
             });
         }
 
