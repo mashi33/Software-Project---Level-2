@@ -47,94 +47,108 @@ namespace SmartJourneyPlanner.Controllers
 
     // GET api/discussions/trip/{tripId}
     // Returns only the discussions that belong to a specific trip
-    [HttpGet("trip/{tripId}")]
-    public async Task<ActionResult<List<DiscussionItem>>> GetByTrip(string tripId, [FromQuery] string? requestingUser = null)
-    {
-      try
-      {
-        var discussions = await _discussionsService.GetByTripAsync(tripId);
-
-        // ── NEW: anonymize each discussion before sending it to the client.
-        // - userVotes: only the requesting user's own vote is included
-        //   (so DevTools/Network tab can't reveal how anyone else voted).
-        // - votedUsers: real names replaced with placeholders, but the
-        //   array length is preserved so "Voted: X/Y" still works.
-        foreach (var d in discussions)
+        [HttpGet("trip/{tripId}")]
+        public async Task<ActionResult<List<DiscussionItem>>> GetByTrip(string tripId, [FromQuery] string? requestingUser = null)
         {
-          if (d.VotedUsers != null && d.VotedUsers.Count > 0)
+          try
           {
-            d.VotedUsers = d.VotedUsers.Select((_, i) => $"Voter {i + 1}").ToList();
-          }
+            var discussions = await _discussionsService.GetByTripAsync(tripId);
 
-          if (d.UserVotes != null)
+            foreach (var d in discussions)
+            {
+              if (d.VotedUsers != null && d.VotedUsers.Count > 0)
+              {
+                d.VotedUsers = d.VotedUsers.Select((_, i) => $"Voter {i + 1}").ToList();
+              }
+
+              if (d.UserVotes != null)
+              {
+                d.UserVotes = string.IsNullOrEmpty(requestingUser)
+                  ? new List<UserVoteRecord>()
+                  : d.UserVotes
+                      .Where(v => v.UserId.Trim().Equals(requestingUser.Trim(), StringComparison.OrdinalIgnoreCase))
+                      .ToList();
+              }
+            }
+
+            return Ok(discussions);
+          }
+          catch (MongoDB.Driver.MongoConnectionException ex)
           {
-            d.UserVotes = string.IsNullOrEmpty(requestingUser)
-              ? new List<UserVoteRecord>()
-              : d.UserVotes
-                  .Where(v => v.UserId.Trim().Equals(requestingUser.Trim(), StringComparison.OrdinalIgnoreCase))
-                  .ToList();
+            Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+            return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+          }
+          catch (TimeoutException ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+            return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"[DiscussionsController] GetByTrip Error: {ex.Message}");
+            return StatusCode(503, new { message = "Network error. Please check your internet connection." });
           }
         }
 
-        return Ok(discussions);
-      }
-      catch (Exception)
-      {
-        return StatusCode(500, "Can not fetch data for this trip.");
-      }
-    }
-
-    // POST api/discussions
-    // Creates a new discussion, sets default values, and notifies the relevant trip group in real time
-    [HttpPost]
-    public async Task<IActionResult> Post(DiscussionItem newDiscussion)
-    {
-      try
-      {
-        newDiscussion.CreatedAt = DateTime.UtcNow;
-        newDiscussion.IsConfirmed = false;
-        newDiscussion.IsRejected = false;
-        newDiscussion.VotedUsers = new List<string>();
-        newDiscussion.UserVotes = new List<UserVoteRecord>();
-        newDiscussion.Comments = new List<CommentItem>();
-
-        // Default member limit to 1 if not set
-        if (newDiscussion.MemberLimit <= 0)
-          newDiscussion.MemberLimit = 1;
-
-        // Trip-type discussions always have Agree/Disagree options
-        if (newDiscussion.Type == "Trip")
+        // POST api/discussions
+        // Creates a new discussion, sets default values, and notifies the relevant trip group in real time
+        [HttpPost]
+        public async Task<IActionResult> Post(DiscussionItem newDiscussion)
         {
-          newDiscussion.Options = new List<VoteOption>
-                    {
-                        new VoteOption { OptionText = "Agree", VoteCount = 0 },
-                        new VoteOption { OptionText = "Disagree", VoteCount = 0 }
-                    };
-        }
-        else if (newDiscussion.Options == null)
-        {
-          newDiscussion.Options = new List<VoteOption>();
-        }
+          try
+          {
+            newDiscussion.CreatedAt = DateTime.UtcNow;
+            newDiscussion.IsConfirmed = false;
+            newDiscussion.IsRejected = false;
+            newDiscussion.VotedUsers = new List<string>();
+            newDiscussion.UserVotes = new List<UserVoteRecord>();
+            newDiscussion.Comments = new List<CommentItem>();
 
-        await _discussionsService.CreateAsync(newDiscussion);
+            if (newDiscussion.MemberLimit <= 0)
+              newDiscussion.MemberLimit = 1;
 
-        // Notify only the trip group, or everyone if no trip is linked
-        if (!string.IsNullOrEmpty(newDiscussion.TripId))
-        {
-          await _hubContext.Clients.Group(newDiscussion.TripId).SendAsync("NewDiscussion", newDiscussion);
-        }
-        else
-        {
-          await _hubContext.Clients.All.SendAsync("NewDiscussion", newDiscussion);
-        }
+            if (newDiscussion.Type == "Trip")
+            {
+              newDiscussion.Options = new List<VoteOption>
+                        {
+                            new VoteOption { OptionText = "Agree", VoteCount = 0 },
+                            new VoteOption { OptionText = "Disagree", VoteCount = 0 }
+                        };
+            }
+            else if (newDiscussion.Options == null)
+            {
+              newDiscussion.Options = new List<VoteOption>();
+            }
 
-        return CreatedAtAction(nameof(Get), new { id = newDiscussion.Id }, newDiscussion);
-      }
-      catch (Exception)
-      {
-        return StatusCode(500, "Discussion creation unsuccessful.");
-      }
-    }
+            await _discussionsService.CreateAsync(newDiscussion);
+
+            if (!string.IsNullOrEmpty(newDiscussion.TripId))
+            {
+              await _hubContext.Clients.Group(newDiscussion.TripId).SendAsync("NewDiscussion", newDiscussion);
+            }
+            else
+            {
+              await _hubContext.Clients.All.SendAsync("NewDiscussion", newDiscussion);
+            }
+
+            return CreatedAtAction(nameof(Get), new { id = newDiscussion.Id }, newDiscussion);
+          }
+          catch (MongoDB.Driver.MongoConnectionException ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+            return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+          }
+          catch (TimeoutException ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+            return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Post Error: {ex.Message}");
+            return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+          }
+        }
 
     // POST api/discussions/{id}/vote
     // Records a user's vote on a discussion option and updates the discussion outcome
@@ -292,32 +306,60 @@ namespace SmartJourneyPlanner.Controllers
 
         return Ok(discussion);
       }
-      catch (Exception)
-      {
-        return StatusCode(500, "Vote failed.");
-      }
+            catch (MongoDB.Driver.MongoConnectionException ex)
+            {
+              Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+              return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+            }
+            catch (TimeoutException ex)
+            {
+              Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+              return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"[DiscussionsController] Vote Error: {ex.Message}");
+              return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+            }
     }
 
-    // DELETE api/discussions/{id}
-    // Deletes a discussion by ID and notifies the relevant trip group
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id)
-    {
-      var discussion = await _discussionsService.GetAsync(id);
-      await _discussionsService.RemoveAsync(id);
+        // DELETE api/discussions/{id}
+        // Deletes a discussion by ID and notifies the relevant trip group
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+          try
+          {
+            var discussion = await _discussionsService.GetAsync(id);
+            await _discussionsService.RemoveAsync(id);
 
-      // Notify only the trip group, or everyone if no trip is linked
-      if (discussion != null && !string.IsNullOrEmpty(discussion.TripId))
-      {
-        await _hubContext.Clients.Group(discussion.TripId).SendAsync("DiscussionDeleted", id);
-      }
-      else
-      {
-        await _hubContext.Clients.All.SendAsync("DiscussionDeleted", id);
-      }
+            if (discussion != null && !string.IsNullOrEmpty(discussion.TripId))
+            {
+              await _hubContext.Clients.Group(discussion.TripId).SendAsync("DiscussionDeleted", id);
+            }
+            else
+            {
+              await _hubContext.Clients.All.SendAsync("DiscussionDeleted", id);
+            }
 
-      return NoContent();
-    }
+            return NoContent();
+          }
+          catch (MongoDB.Driver.MongoConnectionException ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+            return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+          }
+          catch (TimeoutException ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+            return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"[DiscussionsController] Delete Error: {ex.Message}");
+            return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+          }
+        }
 
     // Represents the data sent by the client when casting a vote
     public class VoteRequest

@@ -41,6 +41,8 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   private commentSub!:       Subscription;
   private commentDeleteSub!: Subscription;
+  private connectionRestoredSub!: Subscription;
+    private loadRetryTimeout: any = null; 
   private avatarColors: string[] = [
   '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
   '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
@@ -86,6 +88,8 @@ getAvatarColor(username: string): string {
   ngOnDestroy(): void {
     if (this.commentSub)       this.commentSub.unsubscribe();
     if (this.commentDeleteSub) this.commentDeleteSub.unsubscribe();
+    if (this.connectionRestoredSub) this.connectionRestoredSub.unsubscribe(); 
+    if (this.loadRetryTimeout) clearTimeout(this.loadRetryTimeout); 
 
     if (this.signalrService.hubConnection) {
       this.signalrService.hubConnection.off('CommentDeleted');
@@ -93,11 +97,10 @@ getAvatarColor(username: string): string {
     }
   }
 
-  loadInitialData(): void {
+    loadInitialData(): void {
     if (!this.selectedTripId) return;
 
     this.isLoading = true;
-    this.allComments = []; 
 
     this.commentsService.getCommentsByTrip(this.selectedTripId).subscribe({
       next: (comments) => {
@@ -109,10 +112,18 @@ getAvatarColor(username: string): string {
           this.scrollToBottom();
           this.cdr.detectChanges();
         });
+        if (this.loadRetryTimeout) clearTimeout(this.loadRetryTimeout);
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        Swal.fire('Error', 'Could not load messages for this trip.', 'error');
+
+        if (err?.status === 0 || err?.status === 503) {
+          // Silently retry — discussion.component.ts already shows the
+          // "reconnecting" popup for the whole page's initial-load sequence.
+          this.loadRetryTimeout = setTimeout(() => this.loadInitialData(), 5000);
+        } else {
+          this.showNetworkError(err, 'Could not load messages for this trip.');
+        }
       }
     });
   }
@@ -157,18 +168,36 @@ getAvatarColor(username: string): string {
         });
       });
 
-      this.signalrService.hubConnection.on('CommentUpdated', (updatedComment: any) => {
+        this.signalrService.hubConnection.on('CommentUpdated', (updatedComment: any) => {
         this.zone.run(() => {
           const cId   = updatedComment.id || updatedComment.Id;
           const index = this.allComments.findIndex(c => c.id === cId);
           if (index !== -1) {
-            this.allComments[index].text = updatedComment.text || updatedComment.Text;
+            // Replace the whole comment so isDeleted, messageType, fileId etc.
+            // all stay in sync — not just the text (needed for the delete-placeholder flow)
+            this.allComments[index] = {
+              ...this.allComments[index],
+              text:        updatedComment.text        ?? updatedComment.Text        ?? '',
+              isDeleted:   updatedComment.isDeleted    ?? updatedComment.IsDeleted   ?? false,
+              messageType: updatedComment.messageType  ?? updatedComment.MessageType ?? this.allComments[index].messageType,
+              fileId:      updatedComment.fileId       ?? updatedComment.FileId,
+              fileName:    updatedComment.fileName     ?? updatedComment.FileName,
+              fileSize:    updatedComment.fileSize     ?? updatedComment.FileSize,
+            };
             if (this.searchQuery) this.runSearch();
             this.cdr.detectChanges();
           }
         });
       });
     }
+
+    //— reload comments once connection is restored, to catch any messages
+    // sent by others while this client was disconnected
+    this.connectionRestoredSub = this.signalrService.connectionRestored.subscribe(() => {
+      this.zone.run(() => {
+        this.loadInitialData();
+      });
+    });
   }
 
   postCommentToLatest(): void {
@@ -178,7 +207,7 @@ getAvatarColor(username: string): string {
     if (this.isEditing && this.editingCommentId) {
       this.commentsService.updateComment(this.editingCommentId, text).subscribe({
         next:  () => this.cancelEditing(),
-        error: () => Swal.fire('Error', 'Update failed. Please try again.', 'error')
+        error: (err) => this.showNetworkError(err, 'Update failed. Please try again.')
       });
     } else {
       const comment: CommentItem = {
@@ -189,7 +218,7 @@ getAvatarColor(username: string): string {
       };
       this.commentsService.addComment(comment).subscribe({
         next:  () => { this.globalCommentText = ''; },
-        error: () => Swal.fire('Error', 'Message could not be sent.', 'error')
+        error: (err) => this.showNetworkError(err, 'Message could not be sent.')
       });
     }
   }
@@ -221,9 +250,13 @@ getAvatarColor(username: string): string {
           this.cdr.detectChanges();
         }
       },
-      error: () => {
+      error: (err) => {
         this.isUploading = false;
-        Swal.fire('Upload failed', 'Only PDF files under 20MB can be shared.', 'error');
+        if (err?.status === 0 || err?.status === 503) {
+          this.showNetworkError(err, 'PDF upload failed.');
+        } else {
+          Swal.fire('Upload failed', 'Only PDF files under 20MB can be shared.', 'error');
+        }
       }
     });
   }
@@ -280,7 +313,7 @@ getAvatarColor(username: string): string {
     }).then((result) => {
       if (result.isConfirmed) {
         this.commentsService.deleteComment(commentId).subscribe({
-          error: () => Swal.fire('Error', 'Could not delete the message.', 'error')
+          error: (err) => this.showNetworkError(err, 'Could not delete the message.')
         });
       }
     });
@@ -375,5 +408,25 @@ getAvatarColor(username: string): string {
   isActiveMatch(comment: CommentItem): boolean {
     return this.currentMatchIndex >= 0 &&
            this.searchResults[this.currentMatchIndex]?.id === comment.id;
+  }
+
+  // Shows a friendly popup for network/timeout/server errors.
+  // status === 0 means the request never reached the server (offline, timeout, unreachable).
+  private showNetworkError(err: any, fallbackMsg: string = 'Something went wrong. Please try again.') {
+    if (err?.status === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Connection Problem',
+        text: err.error?.message || 'Cannot reach the server. Please check your internet connection.',
+      });
+    } else if (err?.status === 503) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Server Unavailable',
+        text: err.error?.message || 'The server is temporarily unavailable. Please try again shortly.',
+      });
+    } else {
+      Swal.fire('Error', err?.error?.message || fallbackMsg, 'error');
+    }
   }
 }
