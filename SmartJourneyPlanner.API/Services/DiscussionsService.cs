@@ -20,32 +20,32 @@ namespace SmartJourneyPlanner.Services
     }
 
     // 1. Fetch all discussion
-    public async Task<List<DiscussionItem>> GetAsync() =>
-        await _discussionsCollection.Find(_ => true).ToListAsync();
+    public virtual async Task<List<DiscussionItem>> GetAsync() =>
+    await _discussionsCollection.Find(_ => true).ToListAsync();
 
     // Fetch discussions by TripId
-    public async Task<List<DiscussionItem>> GetByTripAsync(string tripId) =>
-        await _discussionsCollection.Find(x => x.TripId == tripId).ToListAsync();
+    public virtual async Task<List<DiscussionItem>> GetByTripAsync(string tripId) =>
+    await _discussionsCollection.Find(x => x.TripId == tripId).ToListAsync();
 
     // 2. Get discussion according to ID
-    public async Task<DiscussionItem?> GetAsync(string id) =>
+    public virtual async Task<DiscussionItem?> GetAsync(string id) =>
         await _discussionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
     // 3. Begin new discussion (CreatedAt with date)
-    public async Task CreateAsync(DiscussionItem newDiscussion)
+    public virtual async Task CreateAsync(DiscussionItem newDiscussion)
     {
       newDiscussion.CreatedAt = DateTime.UtcNow;
       await _discussionsCollection.InsertOneAsync(newDiscussion);
     }
 
     // 4. update data
-    public async Task UpdateAsync(string id, DiscussionItem updatedDiscussion)
+    public virtual async Task UpdateAsync(string id, DiscussionItem updatedDiscussion)
     {
       await _discussionsCollection.ReplaceOneAsync(x => x.Id == id, updatedDiscussion);
     }
 
     // 5. manual deletion of vote box
-    public async Task RemoveAsync(string id) =>
+    public virtual async Task RemoveAsync(string id) =>
         await _discussionsCollection.DeleteOneAsync(x => x.Id == id);
 
     // 6. vote casting Logic for trip (Updated with Limit & Status Check)

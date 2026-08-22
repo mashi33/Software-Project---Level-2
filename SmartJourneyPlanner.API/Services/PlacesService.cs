@@ -11,13 +11,13 @@ namespace SmartJourneyPlanner.Services
     private readonly string _apiKey = configuration.GetSection("GoogleApi")["ApiKey"] ?? "";
 
     // ✅ NEW — check if API key is missing in controller
-    public string ApiKey => _apiKey;
+    public virtual string ApiKey => _apiKey;
 
-    public bool LastGeocodeNetworkError { get; private set; } = false;
+    public virtual bool LastGeocodeNetworkError { get; protected set; } = false;
 
     // Converts a city name into geographic coordinates (latitude and longitude) using the Google Geocoding API
-        public async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
-      {
+    public virtual async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
+    {
 
           // ✅ Reset flag on every call
           LastGeocodeNetworkError = false;
@@ -100,7 +100,7 @@ namespace SmartJourneyPlanner.Services
     private static double ToRadians(double degrees) => degrees * (Math.PI / 180.0);
 
     // Get nearby places from Google Places API
-    public async Task<List<Place>> GetPlacesFromGoogle(double lat, double lon, string category, string? token)
+    public virtual async Task<List<Place>> GetPlacesFromGoogle(double lat, double lon, string category, string? token)
     {
       string type = string.Equals(category, "hotel", StringComparison.OrdinalIgnoreCase)
           ? "lodging"
