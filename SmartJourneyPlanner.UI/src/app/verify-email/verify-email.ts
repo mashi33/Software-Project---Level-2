@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../environments/environment';
-import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-verify-email',
@@ -36,22 +35,12 @@ export class VerifyEmailComponent implements OnInit {
       this.http.get(`${environment.apiUrl}/Auth/verify-email?token=${token}`).subscribe({
         next: (res: any) => {
           this.loading = false;
-          this.success = true;
+          this.success = true; // මේකෙන් HTML එකේ success-box එක පෙන්වයි
 
-          // සාර්ථක වූ පසු SweetAlert පෝප්-අප් එක පෙන්වීම
-          Swal.fire({
-            icon: 'success',
-            title: '🎉 Email Verified Successfully!',
-            text: 'Your account is now fully active. You can now log in.',
-            confirmButtonText: 'Go to Login',
-            confirmButtonColor: '#1a73e8',
-            allowOutsideClick: false,
-            allowEscapeKey: false
-          }).then((result) => {
-            if (result.isConfirmed) {
-              this.goToLogin();
-            }
-          });
+          // තත්පර 3 කින් Login පේජ් එකට යැවීම
+          setTimeout(() => {
+            this.goToLogin();
+          }, 3000);
         },
         error: (err: any) => {
           this.loading = false;
@@ -59,32 +48,17 @@ export class VerifyEmailComponent implements OnInit {
           if (err.error && err.error.message) {
             this.errorMessage = err.error.message;
           }
-
-          Swal.fire({
-            icon: 'error',
-            title: '❌ Verification Failed',
-            text: this.errorMessage,
-            confirmButtonColor: '#1a73e8'
-          });
         }
       });
     } else {
       this.loading = false;
       this.error = true;
       this.errorMessage = 'Secure token is missing from your verification link!';
-
-      Swal.fire({
-        icon: 'error',
-        title: '❌ Link Error',
-        text: this.errorMessage,
-        confirmButtonColor: '#1a73e8'
-      });
     }
   }
 
   goToLogin() {
     if (this.tripId) {
-      console.log('Navigating to login with trip details:', this.tripId);
       this.router.navigate(['/login'], {
         queryParams: { tripId: this.tripId, role: this.role }
       });

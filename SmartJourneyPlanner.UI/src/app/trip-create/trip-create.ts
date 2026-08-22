@@ -104,6 +104,52 @@ export class TripCreateComponent implements OnInit {
     this.todayDate = today.toISOString().split('T')[0];
     this.tripForm.updateValueAndValidity();
 
+    // 1. Trip Name - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('tripName')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('tripName')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 2. Depart From - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('departFrom')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('departFrom')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 3. Destination - සෑම වචනයකම මුල් අකුර Capital කිරීම (Title Case)
+    this.tripForm.get('destination')?.valueChanges.subscribe((value: string) => {
+      if (value) {
+        const capitalized = value.replace(/\w\S*/g, (txt: string) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        if (value !== capitalized) {
+          this.tripForm.get('destination')?.setValue(capitalized, { emitEvent: false });
+        }
+      }
+    });
+
+    // 4. Description - මුල් වාක්‍යයේ පළමු අකුර පමණක් Capital කිරීම (Sentence Case)
+    this.tripForm.get('description')?.valueChanges.subscribe((value: string) => {
+      if (value && value.length > 0) {
+        const sentenceCase = value.charAt(0).toUpperCase() + value.slice(1);
+        if (value !== sentenceCase) {
+          this.tripForm.get('description')?.setValue(sentenceCase, { emitEvent: false });
+        }
+      }
+    });
+
     this.tripForm.get('startDate')?.valueChanges.subscribe(startDate => {
       const endDateControl = this.tripForm.get('endDate');
       const endDate = endDateControl?.value;
@@ -350,5 +396,15 @@ export class TripCreateComponent implements OnInit {
         this.showSuccessAlert('Member removed successfully!');
       }
     });
+  }
+
+  onCancel() {
+    if (this.isEditMode && this.tripId) {
+
+      this.router.navigate(['/trip-summary', this.tripId]);
+    } else {
+
+      this.router.navigate(['/traveller-dashboard']);
+    }
   }
 }
