@@ -100,6 +100,10 @@ export const routes: Routes = [
     component: ResetPasswordComponent
   },
 
+  {
+    path: 'landing-page',
+    component: LandingPageComponent
+  },
 
   // =====================================================
   // COMMON PROTECTED ROUTES
@@ -229,6 +233,15 @@ export const routes: Routes = [
     path: 'memories-map-help',
     component: MemoriesMapHelpComponent,
     canActivate: [authGuard, roleGuard],
+    data: {
+      expectedRoles: ['Traveller', 'Traveler']
+    }
+  },
+
+  {
+    path: 'budget-help',
+    component: BudgetHelpComponent, 
+    canActivate: [authGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']
     }
@@ -373,7 +386,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['TransportProvider', 'Provider']
+      expectedRoles: ['TransportProvider', 'Provider', 'Traveller', 'Traveler']
     },
 
     loadComponent: () =>
@@ -441,7 +454,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['Admin']
+      expectedRoles: ['Admin', 'admin']
     }
   },
 

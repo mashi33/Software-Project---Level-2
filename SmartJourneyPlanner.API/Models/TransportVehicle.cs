@@ -176,9 +176,10 @@ namespace SmartJourneyPlanner.Models
     /**
      * Blocked date range with optional reason for maintenance/personal use
      */
+    [BsonIgnoreExtraElements]
     public class BlockedDateRange
     {
-        [BsonElement("Id")]
+        [BsonElement("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
         
         [BsonElement("StartDate")]

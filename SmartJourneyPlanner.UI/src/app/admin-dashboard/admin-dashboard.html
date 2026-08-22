@@ -215,9 +215,9 @@
             </td>
             <td>
               <div class="action-btn-group">
-                <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p)">View</button>
-                <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p)">Approve</button>
-                <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p)">Reject</button>
+                <button class="btn-ctrl-action btn-view" (click)="viewVehicleDetails(p); $event.stopPropagation();">View</button>
+                <button class="btn-ctrl-action btn-approve" (click)="confirmApproval(p); $event.stopPropagation();">Approve</button>
+                <button class="btn-ctrl-action btn-reject" (click)="confirmReject(p); $event.stopPropagation();">Reject</button>
               </div>
             </td>
           </tr>
@@ -540,6 +540,17 @@
               </div>
               <div class="doc-status-item" [class.doc-complete]="hasDocument(v, 'registration')" [class.doc-incomplete]="!hasDocument(v, 'registration')">
                 <i class="bi bi-file-earmark-richtext"></i> Reg
+              </div>
+            </div>
+
+            <!-- Booking Information Section -->
+            <div *ngIf="getVehicleBookings(getVehicleId(v)).length > 0" class="fleet-booking-section">
+              <div class="booking-section-header" (click)="openVehicleBookingsModal(v)">
+                <div class="booking-header-left">
+                  <i class="bi bi-calendar-check"></i>
+                  <span>All Bookings ({{ getVehicleBookings(getVehicleId(v)).length }})</span>
+                </div>
+                <i class="bi bi-box-arrow-up-right"></i>
               </div>
             </div>
 
@@ -1042,8 +1053,8 @@
 
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-cancel" (click)="closeReview()">Close Review</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px; margin-top: 20px;">
+          <button class="btn-cancel" (click)="closeReview(); $event.stopPropagation();">Close Review</button>
         <div class="action-group">
           <button *ngIf="(selectedProvider.adminVerificationStatus || selectedProvider.AdminVerificationStatus) !== 'Rejected'" 
                   class="btn-ctrl-vibrant btn-delete-ink btn-modal-action" 
@@ -1135,4 +1146,3 @@
       </div>
     </div>
   </div>
-</div>

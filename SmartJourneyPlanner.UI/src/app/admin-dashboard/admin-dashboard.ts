@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
-import { NotificationService } from '../services/notification.service'; 
+import { NotificationService } from '../services/notification.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private authService = inject(AuthService);
-  private notificationService = inject(NotificationService); 
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
   private cd = inject(ChangeDetectorRef);
 
@@ -63,6 +63,7 @@ export class AdminDashboardComponent implements OnInit {
   allBookings: any[] = [];
   vehicleBookings: { [vehicleId: string]: any[] } = {};
   expandedVehicleBookings: { [vehicleId: string]: boolean } = {};
+  bookingStatusFilter: 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' = 'all';
 
   // Provider filtering
   providerSearch = '';
@@ -179,40 +180,18 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   isVehicleBooked(vehicle: any): boolean {
-    const dates = vehicle?.bookedDates || vehicle?.BookedDates;
-    const embeddedBookings = vehicle?.bookings || vehicle?.Bookings;
-    const isBookedFlag = vehicle?.isBooked || vehicle?.IsBooked;
+  const embeddedBookings = vehicle?.bookings || vehicle?.Bookings;
 
-    console.log('isVehicleBooked check for vehicle:', vehicle?.vehicleClass || vehicle?.VehicleClass);
-    console.log('  - bookedDates:', dates);
-    console.log('  - isBookedFlag:', isBookedFlag);
-    console.log('  - embeddedBookings:', embeddedBookings);
-
-    if (Array.isArray(dates) && dates.length > 0) {
-      console.log('  -> booked via bookedDates');
-      return true;
-    }
-    if (isBookedFlag === true) {
-      console.log('  -> booked via isBookedFlag');
-      return true;
-    }
-
-    if (Array.isArray(embeddedBookings) && embeddedBookings.some((b: any) => this.isActiveBookingStatus(b?.status || b?.Status))) {
-      console.log('  -> booked via embeddedBookings');
-      return true;
-    }
-
-    const vehicleId = this.getVehicleId(vehicle);
-    console.log('  - vehicleId:', vehicleId);
-    console.log('  - vehicleBookings for this vehicle:', this.vehicleBookings[vehicleId]);
-
-    if (!vehicleId) return false;
-
-    const linkedBookings = this.vehicleBookings[vehicleId] || [];
-    const isBookedViaLinked = linkedBookings.some((booking: any) => this.isActiveBookingStatus(booking?.status || booking?.Status));
-    console.log('  -> booked via linkedBookings:', isBookedViaLinked);
-    return isBookedViaLinked;
+  if (Array.isArray(embeddedBookings) && embeddedBookings.some((b: any) => this.isActiveBookingStatus(b?.status || b?.Status))) {
+    return true;
   }
+
+  const vehicleId = this.getVehicleId(vehicle);
+  if (!vehicleId) return false;
+
+  const linkedBookings = this.vehicleBookings[vehicleId] || [];
+  return linkedBookings.some((booking: any) => this.isActiveBookingStatus(booking?.status || booking?.Status));
+}
 
   logout() {
     this.authService.logout();
@@ -450,14 +429,15 @@ export class AdminDashboardComponent implements OnInit {
 
   updateStatus(provider: any, status: string) {
     const id = provider._id || provider.id;
+    const currentStatus = (provider.adminVerificationStatus || provider.AdminVerificationStatus || '').toLowerCase();
 
     this.adminService.updateProviderStatus(id, status).subscribe(() => {
       this.selectedProvider = null;
 
-      if (status === 'Approved') {
+      if (status === 'Approved' && currentStatus !== 'approved') {
         this.approvedSessionCount++;
         localStorage.setItem('approvedToday', this.approvedSessionCount.toString());
-      } else if (status === 'Rejected') {
+      } else if (status === 'Rejected' && currentStatus !== 'rejected') {
         this.rejectedSessionCount++;
         localStorage.setItem('rejectedToday', this.rejectedSessionCount.toString());
 
@@ -557,6 +537,251 @@ export class AdminDashboardComponent implements OnInit {
     return this.expandedVehicleBookings[vehicleId] || false;
   }
 
+  getBookingStatusClass(status: string): string {
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower === 'confirmed' || statusLower === 'active') return 'status-confirmed';
+    if (statusLower === 'pending') return 'status-pending';
+    if (statusLower === 'cancelled' || statusLower === 'canceled') return 'status-cancelled';
+    if (statusLower === 'completed') return 'status-completed';
+    return 'status-unknown';
+  }
+
+  getBookingDuration(booking: any): number {
+    const startDate = new Date(booking.startDate || booking.pickupDate || booking.bookingDate);
+    const endDate = new Date(booking.endDate || booking.dropoffDate);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
+  }
+
+  getBookingsByStatus(vehicleId: string, status: string): any[] {
+    const bookings = this.vehicleBookings[vehicleId] || [];
+    return bookings.filter((booking: any) => {
+      const bookingStatus = (booking.status || booking.Status || '').toLowerCase();
+      return bookingStatus === status.toLowerCase();
+    });
+  }
+
+  getFilteredBookings(vehicleId: string): any[] {
+    const bookings = this.vehicleBookings[vehicleId] || [];
+    if (this.bookingStatusFilter === 'all') {
+      return bookings;
+    }
+    return this.getBookingsByStatus(vehicleId, this.bookingStatusFilter);
+  }
+
+  viewBookingDetails(booking: any): void {
+    Swal.fire({
+      title: 'Booking Details',
+      html: `
+        <div style="text-align: left; font-family: inherit;">
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Booking ID:</strong> ${booking._id || booking.id || 'N/A'}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Status:</strong> ${booking.status || booking.Status || 'Pending'}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Customer:</strong> ${booking.customerName || booking.userName || booking.user?.name || 'Unknown'}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">User ID:</strong> ${booking.customerId || booking.userId || booking.user?._id || 'N/A'}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Start Date:</strong> ${new Date(booking.startDate || booking.pickupDate || booking.bookingDate).toLocaleDateString()}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">End Date:</strong> ${new Date(booking.endDate || booking.dropoffDate).toLocaleDateString()}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Total Amount:</strong> Rs. ${booking.totalAmount || booking.amount || 0}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong style="color: #1e293b;">Location:</strong> ${booking.pickupAddress || booking.location || booking.destination || 'Not specified'}
+          </div>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+            <strong style="color: #1e293b;">Duration:</strong> ${this.getBookingDuration(booking)} days
+          </div>
+        </div>
+      `,
+      width: '500px',
+      confirmButtonColor: '#3b82f6',
+      confirmButtonText: 'Close'
+    });
+  }
+
+  openVehicleBookingsModal(vehicle: any): void {
+    const vehicleId = this.getVehicleId(vehicle);
+    const bookings = this.vehicleBookings[vehicleId] || [];
+    const vehicleName = vehicle.vehicleClass || vehicle.VehicleClass || vehicle.modelName || vehicle.ModelName || 'Vehicle';
+
+    if (bookings.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'No Bookings',
+        text: 'This vehicle has no bookings.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    const generateBookingCards = (filter: string) => {
+      let filteredBookings = bookings;
+      if (filter !== 'all') {
+        filteredBookings = bookings.filter((b: any) => (b.status || b.Status || '').toLowerCase() === filter);
+      }
+
+      if (filteredBookings.length === 0) {
+        return '<div style="text-align: center; padding: 20px; color: #6b7280;">No bookings found for this filter.</div>';
+      }
+
+      return filteredBookings.map((booking: any) => {
+        const status = booking.status || booking.Status || 'Pending';
+        const statusClass = this.getBookingStatusClass(status);
+        const statusColor = statusClass === 'status-confirmed' ? '#166534' :
+                            statusClass === 'status-pending' ? '#92400e' :
+                            statusClass === 'status-cancelled' ? '#991b1b' :
+                            statusClass === 'status-completed' ? '#1e40af' : '#4b5563';
+        const statusBg = statusClass === 'status-confirmed' ? '#dcfce7' :
+                        statusClass === 'status-pending' ? '#fef3c7' :
+                        statusClass === 'status-cancelled' ? '#fee2e2' :
+                        statusClass === 'status-completed' ? '#dbeafe' : '#f3f4f6';
+
+        return `
+          <div class="modal-booking-card" onclick="window.viewBookingDetails('${encodeURIComponent(JSON.stringify(booking))}')" style="cursor: pointer; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+              <div style="padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusColor};">
+                ${status}
+              </div>
+              <small style="color: #6b7280; font-weight: 500;">ID: ${booking._id || booking.id || 'N/A'}</small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 10px; border: 1px solid #bae6fd;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; flex-shrink: 0;">👤</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">${booking.customerName || booking.userName || booking.user?.name || 'Unknown User'}</div>
+                <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">User ID: ${booking.customerId || booking.userId || booking.user?._id || 'N/A'}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 10px; border: 1px solid #e9d5ff;">
+              <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; flex-shrink: 0;">📅</div>
+                <div>
+                  <div style="font-size: 0.7rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Start Date</div>
+                  <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">${new Date(booking.startDate || booking.pickupDate || booking.bookingDate).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div style="color: #8b5cf6; font-size: 1.1rem; margin: 0 8px;">→</div>
+              <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; flex-shrink: 0;">📅</div>
+                <div>
+                  <div style="font-size: 0.7rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">End Date</div>
+                  <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">${new Date(booking.endDate || booking.dropoffDate).toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 20px; border: 1px solid #86efac; font-weight: 700; color: #166534; font-size: 1rem; margin-bottom: 12px;">
+              <i class="bi bi-calendar-check fs-5 text-primary"></i> Rs. ${booking.totalAmount || booking.amount || 0}
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #6b7280; padding: 6px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb; flex: 1;">
+                <i class="bi bi-stopwatch text-muted"></i> Duration: ${this.getBookingDuration(booking)} days
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #6b7280; padding: 6px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb; flex: 1;">
+                <i class="bi bi-geo-alt text-danger"></i> ${booking.pickupAddress || booking.location || booking.destination || 'Not specified'}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // Store current filter on window for the modal
+    (window as any).currentBookingFilter = 'all';
+    (window as any).currentVehicleId = vehicleId;
+    (window as any).allBookings = bookings;
+    (window as any).viewBookingDetails = (bookingStr: string) => {
+      const booking = JSON.parse(decodeURIComponent(bookingStr));
+      this.viewBookingDetails(booking);
+    };
+
+    const getBtnStyle = (filterName: string, currentFilter: string) => {
+      const isActive = currentFilter === filterName;
+      return `padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 16px; background: ${isActive ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#ffffff'}; color: ${isActive ? 'white' : '#6b7280'}; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; flex: 1; text-align: center; white-space: nowrap;`;
+    };
+
+    const updateModalContent = () => {
+      const filter = (window as any).currentBookingFilter || 'all';
+      const content = generateBookingCards(filter);
+      Swal.update({
+        html: `
+          <div style="text-align: left; font-family: inherit;">
+            <div style="display: flex; gap: 4px; margin-bottom: 16px; justify-content: space-between; align-items: center;">
+              <button onclick="window.setFilter('all')" class="modal-filter-tab" style="${getBtnStyle('all', filter)}">All (${bookings.length})</button>
+              <button onclick="window.setFilter('pending')" class="modal-filter-tab" style="${getBtnStyle('pending', filter)}">Pend (${this.getBookingsByStatus(vehicleId, 'pending').length})</button>
+              <button onclick="window.setFilter('confirmed')" class="modal-filter-tab" style="${getBtnStyle('confirmed', filter)}">Conf (${this.getBookingsByStatus(vehicleId, 'confirmed').length})</button>
+              <button onclick="window.setFilter('completed')" class="modal-filter-tab" style="${getBtnStyle('completed', filter)}">Comp (${this.getBookingsByStatus(vehicleId, 'completed').length})</button>
+              <button onclick="window.setFilter('cancelled')" class="modal-filter-tab" style="${getBtnStyle('cancelled', filter)}">Canc (${this.getBookingsByStatus(vehicleId, 'cancelled').length})</button>
+              <button onclick="window.setFilter('rejected')" class="modal-filter-tab" style="${getBtnStyle('rejected', filter)}">Rej (${this.getBookingsByStatus(vehicleId, 'rejected').length})</button>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+              ${content}
+            </div>
+          </div>
+        `
+      });
+    };
+
+    (window as any).setFilter = (newFilter: string) => {
+      (window as any).currentBookingFilter = newFilter;
+      updateModalContent();
+    };
+
+    Swal.fire({
+      title: `Bookings`,
+      html: `
+        <div style="text-align: left; font-family: inherit;">
+          <div style="display: flex; gap: 4px; margin-bottom: 16px; justify-content: space-between; align-items: center;">
+            <button onclick="window.setFilter('all')" class="modal-filter-tab" style="${getBtnStyle('all', 'all')}">All (${bookings.length})</button>
+            <button onclick="window.setFilter('pending')" class="modal-filter-tab" style="${getBtnStyle('pending', 'all')}">Pend (${this.getBookingsByStatus(vehicleId, 'pending').length})</button>
+            <button onclick="window.setFilter('confirmed')" class="modal-filter-tab" style="${getBtnStyle('confirmed', 'all')}">Conf (${this.getBookingsByStatus(vehicleId, 'confirmed').length})</button>
+            <button onclick="window.setFilter('completed')" class="modal-filter-tab" style="${getBtnStyle('completed', 'all')}">Comp (${this.getBookingsByStatus(vehicleId, 'completed').length})</button>
+            <button onclick="window.setFilter('cancelled')" class="modal-filter-tab" style="${getBtnStyle('cancelled', 'all')}">Canc (${this.getBookingsByStatus(vehicleId, 'cancelled').length})</button>
+            <button onclick="window.setFilter('rejected')" class="modal-filter-tab" style="${getBtnStyle('rejected', 'all')}">Rej (${this.getBookingsByStatus(vehicleId, 'rejected').length})</button>
+          </div>
+          <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+            ${generateBookingCards('all')}
+          </div>
+        </div>
+      `,
+      width: '740px',
+      confirmButtonColor: '#3b82f6',
+      confirmButtonText: 'Close',
+      didOpen: () => {
+        const style = document.createElement('style');
+        style.textContent = `
+          .modal-filter-tab:hover {
+            background: #f8fafc !important;
+            border-color: #3b82f6 !important;
+            color: #3b82f6 !important;
+          }
+          .modal-booking-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+            border-color: #3b82f6 !important;
+            transform: translateY(-2px) !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }).then(() => {
+      // Cleanup window functions when modal closes
+      delete (window as any).currentBookingFilter;
+      delete (window as any).currentVehicleId;
+      delete (window as any).allBookings;
+      delete (window as any).setFilter;
+      delete (window as any).viewBookingDetails;
+    });
+  }
+
   fetchExpenseList() {
     this.costsLoading = true;
     this.adminService.getBudgetDetails().subscribe({
@@ -634,7 +859,9 @@ export class AdminDashboardComponent implements OnInit {
   isLoadingDetails = false;
 
   viewVehicleDetails(vehicle: any) {
-    if (this.isLoadingDetails) return;
+    if (this.selectedProvider || this.isLoadingDetails) {
+      return;
+    }
 
     const vehicleId = vehicle.id || vehicle._id || vehicle.Id;
     if (!vehicleId) {
@@ -664,7 +891,9 @@ export class AdminDashboardComponent implements OnInit {
   closeReview() {
     this.selectedProvider = null; 
     this.isLoadingDetails = false;
-    this.cd.detectChanges();
+    setTimeout(() => {
+      this.cd.detectChanges();
+    }, 50);
   }
 
   viewMemoryDetails(m: any) {
@@ -1064,16 +1293,6 @@ export class AdminDashboardComponent implements OnInit {
   getBookedVehiclesCount(): number {
     if (!this.allVehicles) return 0;
     return this.allVehicles.filter(v => this.isVehicleBooked(v)).length;
-  }
-
-  getBookingStatusClass(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': return 'booking-status-confirmed';
-      case 'pending': return 'booking-status-pending';
-      case 'cancelled': return 'booking-status-cancelled';
-      case 'completed': return 'booking-status-completed';
-      default: return 'booking-status-default';
-    }
   }
 
   getTotalBookingCounts(): { approved: number; pending: number; rejected: number } {
