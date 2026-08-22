@@ -149,23 +149,24 @@ export class TransportVehicleService {
     return this.http.post<any>(`${this.apiUrl}/${vehicleId}/reviews`, review).pipe(
       tap(() => {
         // 1. Update vehicle inside the fleet list cache
+        let listVehicle: Vehicle | undefined;
         if (this.cachedVehiclesList) {
-          const veh = this.cachedVehiclesList.find(v => v.id === vehicleId);
-          if (veh) {
-            veh.reviews = veh.reviews || [];
-            veh.reviews.push(review);
+          listVehicle = this.cachedVehiclesList.find(v => v.id === vehicleId);
+          if (listVehicle) {
+            listVehicle.reviews = listVehicle.reviews || [];
+            listVehicle.reviews.push(review);
           }
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cachedVehiclesList));
           } catch {}
         }
 
-        // 2. Update individual vehicle cache
+        // 2. Update individual vehicle cache only if it's a different object reference
         if (this.vehicleCache.has(vehicleId)) {
-          const veh = this.vehicleCache.get(vehicleId);
-          if (veh) {
-            veh.reviews = veh.reviews || [];
-            veh.reviews.push(review);
+          const mapVehicle = this.vehicleCache.get(vehicleId);
+          if (mapVehicle && mapVehicle !== listVehicle) {
+            mapVehicle.reviews = mapVehicle.reviews || [];
+            mapVehicle.reviews.push(review);
           }
         }
       })
