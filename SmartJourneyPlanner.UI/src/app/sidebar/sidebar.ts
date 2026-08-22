@@ -12,15 +12,18 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  isSidebarOpen: boolean = true;
+  isSidebarOpen: boolean = false;
   isCollapsed: boolean = false;
-  isIconOpen: boolean = true;
+  isIconOpen: boolean = false;
   isMobile: boolean = false;
   searchQuery: string = '';
   userRole: string = 'Traveler';
   userName: string = 'User';
   profilePic: string = '/profilePic.jpg';
   private userSub!: Subscription;
+  isOpen: boolean = false;
+
+
 
   // Navigation menu items based on user role
   menuItems: any[] = [];
@@ -57,7 +60,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.isSidebarOpen = false;
       this.isCollapsed = false;
     } else {
-      this.isSidebarOpen = true;
+      this.isSidebarOpen = false;
       this.isCollapsed = false;
     }
   }
@@ -146,6 +149,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
     this.isIconOpen = this.isSidebarOpen;
+    this.isOpen = !this.isOpen;
   }
 
   toggleCollapse() {

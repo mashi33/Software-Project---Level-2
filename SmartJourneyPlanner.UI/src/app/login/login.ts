@@ -3,16 +3,18 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class LoginComponent implements OnInit {
   showPassword: boolean = false;
+  isLoading: boolean = false;
 
   /**
    * Stores user credentials entered in the login form.
@@ -51,6 +53,9 @@ export class LoginComponent implements OnInit {
   }
 
   onLogin(): void {
+    if (this.isLoading) {
+      return;
+    }
 
     // Basic form validation
     if (!this.loginData.email || !this.loginData.password) {
@@ -64,6 +69,8 @@ export class LoginComponent implements OnInit {
 
       return;
     }
+
+    this.isLoading = true;
 
     // Send login request to backend API
     this.authService.login(this.loginData).subscribe({
@@ -127,6 +134,7 @@ export class LoginComponent implements OnInit {
             this.router.navigate(['/transport-provider-dashboard']);
           });
 
+          this.isLoading = false;
           return; // Prevent any other redirect logic (including invited trip) from running
         }
 
@@ -191,6 +199,7 @@ export class LoginComponent implements OnInit {
       },
 
       error: (err) => {
+        this.isLoading = false;
 
         console.error('Login Failed', err);
 
