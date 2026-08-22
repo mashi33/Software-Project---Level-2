@@ -286,7 +286,24 @@ namespace SmartJourneyPlanner.Controllers
             }
 
             await _vehicleService.AddReviewAsync(id, review);
-            _cache.Remove(ApprovedVehiclesCacheKey);
+
+            // 🚀 In-Place Cache Update: Update the cached vehicles in RAM without clearing the whole cache
+            if (_cache.TryGetValue(ApprovedVehiclesCacheKey, out List<TransportVehicle>? approvedList) && approvedList != null)
+            {
+                var cachedVeh = approvedList.FirstOrDefault(v => v.Id == id);
+                if (cachedVeh != null)
+                {
+                    cachedVeh.Reviews ??= new List<TransportReview>();
+                    cachedVeh.Reviews.Add(review);
+                }
+            }
+
+            var singleVehicleCacheKey = $"Vehicle_Detail_{id}";
+            if (_cache.TryGetValue(singleVehicleCacheKey, out TransportVehicle? singleCachedVeh) && singleCachedVeh != null)
+            {
+                singleCachedVeh.Reviews ??= new List<TransportReview>();
+                singleCachedVeh.Reviews.Add(review);
+            }
 
             // 🔔 Generate Real-Time Notification for Transport Provider in Background
             _ = Task.Run(async () =>

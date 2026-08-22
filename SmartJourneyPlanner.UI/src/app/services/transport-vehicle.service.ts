@@ -143,17 +143,30 @@ export class TransportVehicleService {
 
   /**
    * Submits a user's star rating and comment for a specific vehicle.
+   * 🚀 In-Place Cache Update: Updates cached vehicle rating immediately so Find Transport loads in 0ms!
    */
   addVehicleReview(vehicleId: string, review: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/${vehicleId}/reviews`, review).pipe(
       tap(() => {
-        this.vehicleCache.delete(vehicleId);
-        this.cachedVehiclesList = null;
-        try {
-          localStorage.removeItem(this.STORAGE_KEY);
-          sessionStorage.removeItem(this.STORAGE_KEY);
-        } catch {
-          // Storage safe guard
+        // 1. Update vehicle inside the fleet list cache
+        if (this.cachedVehiclesList) {
+          const veh = this.cachedVehiclesList.find(v => v.id === vehicleId);
+          if (veh) {
+            veh.reviews = veh.reviews || [];
+            veh.reviews.push(review);
+          }
+          try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cachedVehiclesList));
+          } catch {}
+        }
+
+        // 2. Update individual vehicle cache
+        if (this.vehicleCache.has(vehicleId)) {
+          const veh = this.vehicleCache.get(vehicleId);
+          if (veh) {
+            veh.reviews = veh.reviews || [];
+            veh.reviews.push(review);
+          }
         }
       })
     );

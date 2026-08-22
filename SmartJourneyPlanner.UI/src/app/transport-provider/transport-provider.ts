@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { UserSearch } from './user-search/user-search';
 import { MyBookings } from './my-bookings/my-bookings';
 import { AuthService } from '../services/auth.service';
+import { TransportBookingService } from '../services/transport-booking.service';
 
 @Component({
     selector: 'app-transport-provider',
@@ -19,7 +20,8 @@ export class TransportProvider implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private transportBookingService: TransportBookingService
   ) {}
 
   ngOnInit() {
@@ -28,6 +30,16 @@ export class TransportProvider implements OnInit {
 
     if (this.isProvider) {
       this.activeTab = 'search';
+    }
+
+    // 🚀 Pre-fetch traveler bookings in the background so switching to 'My Bookings' tab is instant (0ms)
+    if (!this.isProvider) {
+      const travelerId = this.authService.getUserId();
+      if (travelerId) {
+        this.transportBookingService.getUserBookings(travelerId).subscribe({
+          error: () => {} // Silently ignore background prefetch errors
+        });
+      }
     }
 
     this.route.queryParams.subscribe(params => {

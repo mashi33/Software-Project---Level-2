@@ -56,13 +56,23 @@ export class MyBookings implements OnInit {
 
   /**
    * Fetches the correct list of bookings from the database based on who is logged in.
+   * ⚡ Uses Stale-While-Revalidate caching for 0ms instant display.
    */
-  loadBookings() {
-    this.loading = true;
+  loadBookings(forceRefresh = false) {
     if (this.role === 'user') {
       const travelerId = this.authService.getUserId();
       if (!travelerId) { this.loading = false; return; }
-      this.transportBookingService.getUserBookings(travelerId).subscribe({
+
+      // 🏎️ Instant 0ms render from memory cache if available
+      const cached = this.transportBookingService.getCachedUserBookings(travelerId);
+      if (cached && cached.length > 0) {
+        this.userBookings = this.sortUserBookings(cached);
+        this.loading = false;
+      } else {
+        this.loading = true;
+      }
+
+      this.transportBookingService.getUserBookings(travelerId, forceRefresh).subscribe({
         next: (res) => {
           this.userBookings = this.sortUserBookings(res);
           this.enrichBookings(this.userBookings);
@@ -76,7 +86,17 @@ export class MyBookings implements OnInit {
     } else {
       const providerId = this.authService.getUserEmail();
       if (!providerId) { this.loading = false; return; }
-      this.transportBookingService.getProviderBookings(providerId).subscribe({
+
+      // 🏎️ Instant 0ms render from memory cache if available
+      const cached = this.transportBookingService.getCachedProviderBookings(providerId);
+      if (cached && cached.length > 0) {
+        this.providerBookings = cached;
+        this.loading = false;
+      } else {
+        this.loading = true;
+      }
+
+      this.transportBookingService.getProviderBookings(providerId, forceRefresh).subscribe({
         next: (res) => {
           this.providerBookings = res;
           this.enrichBookings(this.providerBookings);
@@ -137,6 +157,8 @@ export class MyBookings implements OnInit {
     }
   }
 
+  private vehicleProfileCache = new Map<string, any>();
+
   /**
    * Sometimes booking records are missing the provider's phone number.
    * This helper function looks up the vehicle details to fill in the missing info.
@@ -144,9 +166,19 @@ export class MyBookings implements OnInit {
   private enrichBookings(bookings: Booking[]) {
     bookings.forEach(b => {
       if (!b.providerPhone && b.vehicleId) {
+        if (this.vehicleProfileCache.has(b.vehicleId)) {
+          const cachedProfile = this.vehicleProfileCache.get(b.vehicleId);
+          if (cachedProfile) {
+            b.providerPhone = cachedProfile.phone;
+            if (!b.providerName) b.providerName = cachedProfile.name;
+          }
+          return;
+        }
+
         this.transportVehicleService.getVehicleById(b.vehicleId).subscribe({
           next: (v) => {
             if (v && v.providerProfile) {
+              this.vehicleProfileCache.set(b.vehicleId, v.providerProfile);
               b.providerPhone = v.providerProfile.phone;
               if (!b.providerName) b.providerName = v.providerProfile.name;
             }
@@ -252,14 +284,14 @@ export class MyBookings implements OnInit {
         this.showSuccessMessage = true;
         this.isSubmittingReview = false;
         
+        // Update local state in-place for seamless 0-reload UI update
         if (this.selectedBooking) this.selectedBooking.hasBeenRated = true;
         const item = this.userBookings.find(b => b.id === bookingId);
         if (item) item.hasBeenRated = true;
 
-        // Close the popup after a brief success acknowledgement
+        // Close the popup after a brief success acknowledgement without triggering a full page reload
         setTimeout(() => {
           this.closeModal();
-          this.loadBookings();
         }, 1000);
       },
       error: (err) => {
@@ -329,11 +361,10 @@ export class MyBookings implements OnInit {
         if (!booking.id) return;
         this.transportBookingService.deleteBooking(booking.id).subscribe({
           next: () => {
-            // Remove immediately from memory for instant UI responsiveness
+            // Remove immediately from memory for instant UI responsiveness without full page reload
             this.userBookings = this.userBookings.filter(b => b.id !== booking.id);
             this.providerBookings = this.providerBookings.filter(b => b.id !== booking.id);
             Swal.fire('Removed', 'The booking has been removed.', 'success');
-            this.loadBookings();
           },
           error: () => {
             Swal.fire('Error', 'Failed to remove booking.', 'error');
