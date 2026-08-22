@@ -95,7 +95,7 @@ export class CommunityMapComponent implements OnInit, AfterViewInit {
 
   constructor(
     private readonly memoryService: MemoryService,
-    private readonly authService: AuthService,
+    public readonly authService: AuthService,
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef
   ) {}
