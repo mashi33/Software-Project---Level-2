@@ -49,7 +49,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // Subscriptions
+    // Name subscription
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {
         this.userName = name || 'User';
@@ -58,13 +58,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Navbar subscription error:', err)
     });
 
+    // ★ NEW: Profile picture live update
+    this.authService.profilePicSubject$.subscribe(pic => {
+      this.profilePic = pic || '/profilePic.jpg';
+    });
+
     this.refreshUserSession();
 
-    // Subscribe to real-time notifications via SignalR
+    // SignalR notifications (keep your existing code)
     this.notificationSub = this.signalrService.notificationReceived.subscribe({
       next: (notif: any) => {
         if (notif) {
-          // Add the new notification to the beginning of the list with relative time
           const mappedNotif = {
             ...notif,
             time: this.getRelativeTime(notif.createdAt)

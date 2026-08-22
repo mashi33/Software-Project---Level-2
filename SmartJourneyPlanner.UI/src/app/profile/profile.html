@@ -256,21 +256,25 @@
       <div class="text-center mb-4">
         <div class="modal-avatar-wrap">
           <div class="modal-avatar">
-            <img *ngIf="editData.profilePictureUrl || user?.profilePictureUrl"
-              [src]="editData.profilePictureUrl || user?.profilePictureUrl" alt="Preview" />
-            <span *ngIf="!editData.profilePictureUrl && !user?.profilePictureUrl">
-              {{ (user?.fullName || 'T').charAt(0).toUpperCase() }}
+            <!-- Only show image if editData still has a picture -->
+            <img *ngIf="editData.profilePictureUrl" [src]="editData.profilePictureUrl" alt="Preview" />
+
+            <!-- Show initial letter when no picture -->
+            <span *ngIf="!editData.profilePictureUrl">
+              {{ (editData.fullName || user?.fullName || 'T').charAt(0).toUpperCase() }}
             </span>
           </div>
+
           <button type="button" class="avatar-edit-icon" (click)="triggerFileInput()">
             <i class="bi bi-pencil-fill"></i>
           </button>
+
           <input type="file" #fileInput style="display:none" accept="image/*" (change)="onFileSelected($event)" />
         </div>
 
         <div class="mt-2">
-
-          <div *ngIf="editData.profilePictureUrl || user?.profilePictureUrl" class="mt-1">
+          <!-- Show Remove button only when there is a picture in editData -->
+          <div *ngIf="editData.profilePictureUrl" class="mt-1">
             <button type="button" class="btn-remove-photo text-danger bg-transparent border-0 small fw-semibold"
               (click)="onRemovePhoto()">
               <i class="bi bi-trash3-fill"></i> Remove Photo
@@ -388,11 +392,29 @@
           {{ isProvider() ? 'Vehicles & Fleet Services' : 'My Travel Styles' }}
         </div>
 
-        <div class="chips-container d-flex flex-wrap gap-2">
+        <div class="chips-container d-flex flex-wrap gap-2 align-items-center">
           <button type="button" *ngFor="let interest of availableInterests" class="popup-chip"
             [class.active-chip]="editData.interests.includes(interest)" (click)="toggleInterest(interest)">
             {{ editData.interests.includes(interest) ? '✓ ' : '+ ' }}{{ interest }}
           </button>
+
+          <!-- Other / Custom Add Button -->
+          <button type="button" class="popup-chip border-dashed" *ngIf="!showCustomInput"
+            (click)="showCustomInput = true"
+            style="border: 1px dashed #0d6efd; color: #0d6efd; background: transparent;">
+            + Other
+          </button>
+        </div>
+
+        <!-- Custom Input Field Box -->
+        <div class="custom-input-wrapper" *ngIf="showCustomInput">
+          <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="newCustomInterest"
+              name="newCustomInterest" placeholder="Type custom style or fleet...">
+            <button class="btn btn-primary btn-sm px-3" type="button" (click)="addCustomInterest()">Add</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button"
+              (click)="showCustomInput = false">Cancel</button>
+          </div>
         </div>
       </div>
 

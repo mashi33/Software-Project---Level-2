@@ -1131,3 +1131,38 @@ textarea.form-control {
 .email-lock-btn:hover {
   color: #0d6efd;
 }
+
+
+.custom-input-wrapper {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+
+.custom-input-wrapper .form-control {
+  border-radius: 8px;
+  font-size: 0.85rem;
+  border-color: #ced4da;
+}
+
+.custom-input-wrapper .form-control:focus {
+  box-shadow: none;
+  border-color: #0d6efd;
+}
+
+
+.border-dashed {
+  border: 1.5px dashed #0d6efd !important;
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.03);
+  transition: all 0.2s ease-in-out;
+}
+
+.border-dashed:hover {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0b5ed7;
+}
