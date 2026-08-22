@@ -12,10 +12,11 @@
       <div class="footer-col links-col">
         <h5 class="footer-heading">Quick Links</h5>
         <ul class="footer-list">
-          <li><a routerLink="/provider-dashboard">Home</a></li>
-          <li><a routerLink="/provider-dashboard">Dashboard</a></li>
-          <li><a routerLink="/explore">Explore</a></li>
-          <li><a routerLink="/transport">Transport</a></li>
+          <li><a routerLink="/">Home</a></li>
+          <li><a href="javascript:void(0)" (click)="goToDashboard()">Dashboard</a></li>
+          <li *ngIf="isTraveller()"><a routerLink="/explore">Explore</a></li>
+          <li *ngIf="isTraveller()"><a routerLink="/transport">Transport</a></li>
+          <li><a routerLink="/help">Support Center</a></li>
         </ul>
       </div>
 

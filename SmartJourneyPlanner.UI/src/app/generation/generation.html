@@ -4,20 +4,19 @@
     class="btn-download"
     [disabled]="isLoadingMap && transportMode === 'private'">
 
-    <!-- Private transport loading -->
-    <span *ngIf="isLoadingMap && transportMode === 'private'">
-      🚀 Making map ready... (Loading Map)
-    </span>
+    <!-- Private — loading -->
+    <ng-container *ngIf="transportMode === 'private'">
+      <span class="material-icons btn-icon" *ngIf="isLoadingMap">hourglass_top</span>
+      <span class="material-icons btn-icon" *ngIf="!isLoadingMap">picture_as_pdf</span>
+      <span *ngIf="isLoadingMap">Preparing Map...</span>
+      <span *ngIf="!isLoadingMap">Download PDF Report</span>
+    </ng-container>
 
-    <!-- Private transport ready -->
-    <span *ngIf="!isLoadingMap && transportMode === 'private'">
-      📥 Download PDF Report
-    </span>
-
-    <!-- Public transport — no map loading needed -->
-    <span *ngIf="transportMode === 'public'">
-      🚌 Download Bus Report
-    </span>
+    <!-- Public -->
+    <ng-container *ngIf="transportMode === 'public'">
+      <span class="material-icons btn-icon">directions_bus</span>
+      <span>Download Bus Report</span>
+    </ng-container>
 
   </button>
 </div>

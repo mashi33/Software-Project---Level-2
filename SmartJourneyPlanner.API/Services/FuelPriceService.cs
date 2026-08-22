@@ -46,13 +46,6 @@ namespace SmartJourneyPlanner.Services
 
                 Console.WriteLine($"✅ Page fetched successfully — HTML length: {html.Length} chars");
 
-                // ✅ Fixed regex — [\s\S]*? matches across newlines
-                // CPC page structure:
-                //   ### Lanka Petrol 92 Octane
-                //   White Oil
-                //   Rs. 434.00 per Ltr
-                // .*? with Singleline misses \r\n combinations — [\s\S]*? is reliable
-
                 // Petrol 92 Octane
                 var petrolMatch = Regex.Match(html,
                     @"Lanka Petrol 92 Octane[\s\S]*?class=""price-value""[\s\S]*?Rs\.</span>\s*([\d.]+)",

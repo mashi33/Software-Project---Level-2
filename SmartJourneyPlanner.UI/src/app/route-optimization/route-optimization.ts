@@ -47,7 +47,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   scenicPinElement!: HTMLElement;
 
   // ✅ Transport mode
-  transportMode: 'private' | 'public' = 'private';
+  transportMode: string = 'private';
   busResult: any = null;
   isBusLoading = false;
 
@@ -500,7 +500,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
   }
 
   /** Switches transport mode and resets results. */
-  selectTransportMode(mode: 'private' | 'public') {
+  selectTransportMode(mode: string) {
     this.transportMode = mode;
     this.results       = null;
     this.busResult     = null;

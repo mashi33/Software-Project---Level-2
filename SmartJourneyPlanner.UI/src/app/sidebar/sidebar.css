@@ -517,6 +517,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -529,16 +530,16 @@
   transition: var(--transition);
 }
 
-.sidebar-open ~ .layout-container .content-area {
+.sidebar-open~.layout-container .content-area {
   margin-left: var(--sidebar-width);
 }
 
-.sidebar-collapsed ~ .layout-container .content-area {
+.sidebar-collapsed~.layout-container .content-area {
   margin-left: var(--sidebar-collapsed-width);
 }
 
 @media (max-width: 768px) {
-  .sidebar-open ~ .layout-container .content-area {
+  .sidebar-open~.layout-container .content-area {
     margin-left: 0;
   }
 }

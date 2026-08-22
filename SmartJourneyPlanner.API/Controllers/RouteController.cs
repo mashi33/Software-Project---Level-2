@@ -22,6 +22,7 @@ namespace SmartJourneyPlanner.Controllers
         public RouteController(IRouteService routeService, BusFareService busFareService)
         {
             _routeService = routeService;
+            _busFareService = busFareService;
         }
 
         /// <summary>

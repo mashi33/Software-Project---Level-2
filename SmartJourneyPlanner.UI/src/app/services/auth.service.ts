@@ -154,12 +154,10 @@ export class AuthService {
 
   // Method to clear all authentication-related data from localStorage, effectively logging the user out of the application
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('email');
-    localStorage.removeItem('userType');
-    localStorage.removeItem('userRole');
-    this.userNameSubject.next('User');
+    // Clear everything stored in localStorage completely
+    localStorage.clear();
+
+    // Reset the username subject
+    this.userNameSubject.next('');
   }
 }

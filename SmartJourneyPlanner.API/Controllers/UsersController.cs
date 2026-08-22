@@ -32,6 +32,14 @@ public class UserUpdateDto
     public string? ProfilePictureUrl { get; set; }
 } 
 
+public class FeedbackDto
+{
+    public string Comment { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
+    public string UserRole { get; set; } = string.Empty;
+    public string ProfilePictureUrl { get; set; } = string.Empty;
+}
+
 public class ChangePasswordDto
 {
     public string CurrentPassword { get; set; } = string.Empty;
@@ -43,10 +51,12 @@ public class ChangePasswordDto
 public class UsersController : ControllerBase
 {
     private readonly IMongoCollection<User> _usersCollection;
+    private readonly IMongoCollection<Feedback> _feedbackCollection;
 
     public UsersController(IMongoDatabase database)
     {
         _usersCollection = database.GetCollection<User>("Users");
+        _feedbackCollection = database.GetCollection<Feedback>("Feedbacks");
     }
 
     // 1. GET: api/users/{id} - Fetch user profile details without password exposure
@@ -140,5 +150,46 @@ public class UsersController : ControllerBase
 
         await _usersCollection.ReplaceOneAsync(u => u.Id == id, user);
         return Ok(new { message = "Password changed successfully!" });
+    }
+    
+    // 4. POST: api/users/add-comment - Add user feedback for the landing page
+    // 4. POST: api/users/add-comment - Add user feedback for the landing page
+    [HttpPost("add-comment")]
+    public async Task<IActionResult> AddComment([FromBody] FeedbackDto dto)
+    {
+    if (string.IsNullOrWhiteSpace(dto.Comment))
+    {
+        return BadRequest(new { message = "Comment cannot be empty!" });
+    }
+
+    var feedback = new Feedback
+    {
+        Comment = dto.Comment.Trim(),
+        UserName = string.IsNullOrWhiteSpace(dto.UserName) ? "Anonymous" : dto.UserName.Trim(),
+        UserRole = string.IsNullOrWhiteSpace(dto.UserRole) ? "Traveller" : dto.UserRole.Trim(),
+        ProfilePictureUrl = dto.ProfilePictureUrl ?? string.Empty,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    // ★ This was missing – actually save to MongoDB
+    await _feedbackCollection.InsertOneAsync(feedback);
+
+    return Ok(new { 
+        message = "Feedback added successfully!",
+        id = feedback.Id
+    });
+    }
+
+// 5. GET: api/users/feedbacks - Fetch feedbacks to display on the landing page
+    [HttpGet("feedbacks")]
+    public async Task<ActionResult<List<Feedback>>> GetFeedbacks()
+    {
+    var feedbacks = await _feedbackCollection
+        .Find(_ => true)
+        .SortByDescending(f => f.CreatedAt)
+        .Limit(6)   // show latest 6 on landing page
+        .ToListAsync();
+
+    return Ok(feedbacks);
     }
 }

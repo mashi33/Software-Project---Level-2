@@ -45,8 +45,10 @@ import { ResetPasswordComponent } from './reset-password/reset-password';
 
 import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
+import { GettingStartedComponent } from './help/getting-started/getting-started';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { BudgetHelpComponent } from './help/budget-help/budget-help';
+import { TripPlanningHelpComponent } from './help/trip-planning-help/trip-planning-help';
 
 import { SlideshowComponent } from './slideshow/slideshow';
 import { TripHistoryComponent } from './trip-history/trip-history';
@@ -71,8 +73,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/login',
-    pathMatch: 'full'
+    component: LandingPageComponent
   },
 
   {
@@ -103,6 +104,21 @@ export const routes: Routes = [
   {
     path: 'landing-page',
     component: LandingPageComponent
+  },
+
+  {
+    path: 'help',
+    component: HelpComponent
+  },
+
+  {
+    path: 'help/getting-started',
+    component: GettingStartedComponent
+  },
+
+  {
+    path: 'help/trip-planning',
+    component: TripPlanningHelpComponent
   },
 
   // =====================================================

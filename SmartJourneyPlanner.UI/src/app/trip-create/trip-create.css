@@ -3,6 +3,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
+
 }
 
 .dashboard-wrapper {
@@ -11,6 +12,7 @@
   /* Soft Premium Light Slate Gray */
   padding: 30px;
   box-sizing: border-box;
+  margin-top: 90px !important;
 }
 
 /* ==========================================================================

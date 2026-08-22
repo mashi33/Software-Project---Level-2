@@ -18,6 +18,11 @@
 
   <div class="split-container">
     <div class="column-half left-column">
+
+      <div class="suggestions-title">
+        <span class="material-icons section-icon">bar_chart</span>
+        Suggestions & voting
+      </div>
       
       <div class="card glass-card creation-box">
 
@@ -111,7 +116,12 @@
                *ngIf="item && item.title">
             
             <div class="user-info">
-              👤 <strong>{{ item.user === currentUser ? 'You' : (item.user || 'Guest') }}</strong> suggested this
+              <span class="avatar-circle" 
+                    [ngStyle]="{'background': 'linear-gradient(135deg, ' + getAvatarColor(item.user || 'Guest') + ' 0%, ' + getAvatarColor(item.user || 'Guest') + 'cc 100%)'}">
+                {{ (item.user === currentUser ? 'Y' : (item.user || 'G')).charAt(0).toUpperCase() }}
+              </span>
+              <strong>{{ item.user === currentUser ? 'You' : (item.user || 'Guest') }}</strong>
+              <span class="suggested-text">suggested this</span>
             </div>
 
             <div class="card-header">

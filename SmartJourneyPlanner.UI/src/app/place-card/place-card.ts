@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { PlacesService, PlacesResult } from '../services/places.service';
 import { AuthService } from '../services/auth.service';
 import { HttpClient } from '@angular/common/http';
@@ -49,12 +49,22 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   }
 
   scrollToCard(placeId: string) {
-  setTimeout(() => {
-    // NOTE: card id = "card-" + place.id (MongoDB _id)
-    const element = document.getElementById('card-' + placeId);
-    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
-}
+    setTimeout(() => {
+      // NOTE: card id = "card-" + place.id (MongoDB _id)
+      const element = document.getElementById('card-' + placeId);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  // Quick-city buttons in the "nothing searched yet" empty state.
+  // fetchPlacesByCity() needs filters + an auth token, which live in
+  // filter.component.ts, so this just emits the chosen city upward
+  // instead of calling PlacesService directly.
+  @Output() quickCitySelected = new EventEmitter<string>();
+
+  quickSearch(city: string) {
+    this.quickCitySelected.emit(city);
+  }
 
   // ✅ BUG 1 FIX — placeId + tripId combination check
   isAlreadyAddedToTrip(placeId: string, tripId: string): boolean {
