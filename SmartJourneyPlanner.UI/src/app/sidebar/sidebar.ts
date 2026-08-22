@@ -83,7 +83,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   loadUserProfile() {
-    // Live update for user name
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {
         this.userName = name || 'User';
@@ -91,16 +90,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Sidebar subscription error:', err)
     });
 
-    // ★ Live update for profile picture
     this.authService.profilePicSubject$.subscribe(pic => {
-      this.profilePic = pic || '/profilePic.jpg';
+      this.profilePic = pic || '';
     });
 
-    // Initial load (fallback)
     const savedPic = localStorage.getItem('profilePic');
-    if (savedPic) {
-      this.profilePic = savedPic;
+    this.profilePic = savedPic || '';
+  }
+
+
+  get hasProfilePic(): boolean {
+    const pic = (this.profilePic || '').trim();
+    if (!pic) return false;
+    const lower = pic.toLowerCase();
+    if (lower.includes('default-avatar') || lower.includes('profilepic.jpg') || lower === '/profilepic.jpg') {
+      return false;
     }
+    return true;
+  }
+
+  get userInitial(): string {
+    return (this.userName || 'U').charAt(0).toUpperCase();
   }
 
   setupMenuItems() {

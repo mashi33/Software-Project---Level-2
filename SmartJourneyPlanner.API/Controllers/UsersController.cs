@@ -30,6 +30,9 @@ public class UserUpdateDto
 
     [FromForm(Name = "profilePictureUrl")]
     public string? ProfilePictureUrl { get; set; }
+
+    [FromForm(Name = "removeProfilePicture")]
+    public string? RemoveProfilePicture { get; set; }
 } 
 
 public class FeedbackDto
@@ -113,6 +116,12 @@ public class UsersController : ControllerBase
             }
 
             user.ProfilePictureUrl = $"http://localhost:5233/uploads/{uniqueFileName}";
+        }
+        else if (dto.RemoveProfilePicture == "true" || 
+         dto.ProfilePictureUrl == "" || 
+         dto.ProfilePictureUrl == null)
+{
+            user.ProfilePictureUrl = "";
         }
         else 
         {
