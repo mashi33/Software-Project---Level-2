@@ -38,6 +38,7 @@ namespace SmartJourneyPlanner.Models
         public bool? HasBeenRated { get; set; }                 // True if the user has already left a review
 
         public string? StatusChangedDate { get; set; }
+        public string? CancelledBy { get; set; }
 
         // Specific Trip Requirements
         public string? PickupAddress { get; set; }              // Where the driver picks up the traveler

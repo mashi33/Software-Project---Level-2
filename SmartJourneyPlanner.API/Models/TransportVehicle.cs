@@ -1,8 +1,3 @@
-/**
- * This class represents a Vehicle that a provider lists on our platform.
- * It contains everything from the car model to the rental price per day.
- */
-
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
@@ -21,47 +16,46 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("ProviderId")]
         public string ProviderId { get; set; } = string.Empty; 
 
-        // Public information about the owner (Name, Phone, etc.)
         [BsonElement("ProviderProfile")]
         public TransportProviderProfile ProviderProfile { get; set; } = new(); 
 
         // Vehicle Basic Info
         [BsonElement("Type")]
-        public string Type { get; set; } = string.Empty;           // e.g. "Budget", "Luxury", "Standard"
+        public string Type { get; set; } = string.Empty;           
         [BsonElement("VehicleClass")]
-        public string VehicleClass { get; set; } = string.Empty;   // e.g. "Car", "Van", "Bus"
+        public string VehicleClass { get; set; } = string.Empty;   
         [BsonElement("YearOfManufacture")]
         public int YearOfManufacture { get; set; }
         [BsonElement("SeatCount")]
-        public int SeatCount { get; set; }                         // Maximum passengers allowed
+        public int SeatCount { get; set; }                         
         [BsonElement("IsAc")]
-        public bool IsAc { get; set; }                             // Has Air Conditioning?
+        public bool IsAc { get; set; }                            
         [BsonElement("Transmission")]
-        public string Transmission { get; set; } = string.Empty;   // "Automatic" or "Manual"
+        public string Transmission { get; set; } = string.Empty;   
         [BsonElement("FuelType")]
-        public string FuelType { get; set; } = string.Empty;       // "Petrol", "Diesel", etc.
+        public string FuelType { get; set; } = string.Empty;       
         [BsonElement("ModelName")]
-        public string ModelName { get; set; } = string.Empty;      // e.g. "Toyota Corolla"
+        public string ModelName { get; set; } = string.Empty;      
         [BsonElement("Description")]
-        public string Description { get; set; } = string.Empty;    // Extra text to attract customers
+        public string Description { get; set; } = string.Empty;    
 
-        // --- Pricing Settings ---
+        // Pricing Settings 
         [BsonElement("StandardDailyRate")]
-        public decimal StandardDailyRate { get; set; }             // Cost per 1 day of hire
+        public decimal StandardDailyRate { get; set; }             
         [BsonElement("FreeKMLimit")]
-        public int FreeKMLimit { get; set; }                       // KM allowed per day for free
+        public int FreeKMLimit { get; set; }                       
         [BsonElement("ExtraKMRate")]
-        public decimal ExtraKMRate { get; set; }                   // Cost per 1 extra KM
+        public decimal ExtraKMRate { get; set; }                   
         [BsonElement("DriverNightOutFee")]
-        public decimal DriverNightOutFee { get; set; }             // Extra fee if driver stays overnight away from home
+        public decimal DriverNightOutFee { get; set; }             
 
-        // --- Visuals (Images) ---
+
         [BsonElement("InteriorPhoto")]
-        public string? InteriorPhoto { get; set; }                 // Photo of the seats/inside
+        public string? InteriorPhoto { get; set; }                 
         [BsonElement("ExteriorPhoto")]
-        public string? ExteriorPhoto { get; set; }                 // Photo of the outside of the vehicle
+        public string? ExteriorPhoto { get; set; }                
 
-        // --- Legal Documents (URLs to files) ---
+        
         [BsonElement("DriverNicUrl")]
         public string? DriverNicUrl { get; set; }
         [BsonElement("DriverLicenseUrl")]
@@ -79,86 +73,113 @@ namespace SmartJourneyPlanner.Models
 
         // Verification & Availability Status
         [BsonElement("AdminVerificationStatus")]
-        public string AdminVerificationStatus { get; set; } = "Pending"; // "Pending", "Approved", or "Rejected"
+        public string AdminVerificationStatus { get; set; } = "Pending"; 
 
         [BsonElement("IsAvailableForBooking")]
-        public bool IsAvailableForBooking { get; set; } = false; // True if they want to accept bookings
+        public bool IsAvailableForBooking { get; set; } = false; 
         
         [BsonElement("CreatedAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Extra Amenities
+        
         [BsonElement("Features")]
         public TransportVehicleFeatures Features { get; set; } = new(); 
         [BsonElement("Languages")]
-        public List<string> Languages { get; set; } = new();       // Languages the driver speaks
+        public List<string> Languages { get; set; } = new();       
 
-        // Availability Calendar
+        
         [BsonElement("AvailableDates")]
         public List<string> AvailableDates { get; set; } = new();
         [BsonElement("BookedDates")]
-        public List<string> BookedDates { get; set; } = new();     // Dates when the vehicle is busy
+        public List<string> BookedDates { get; set; } = new();     
         [BsonElement("MaintenanceDates")]
-        public List<string> MaintenanceDates { get; set; } = new(); // Dates blocked for maintenance/personal use
+        public List<string> MaintenanceDates { get; set; } = new(); 
         [BsonElement("BlockedDateRanges")]
-        public List<BlockedDateRange> BlockedDateRanges { get; set; } = new(); // Structured blocked date ranges with reason
+        public List<BlockedDateRange> BlockedDateRanges { get; set; } = new(); 
 
-        // Customer Feedback
+        
         [BsonElement("Reviews")]
         public List<TransportReview> Reviews { get; set; } = new(); 
     }
 
-    /**
-     * Information about the person or company that owns the vehicle.
-     */
+    //Information about the person or company that owns the vehicle.
+    [BsonIgnoreExtraElements] // preserve from crashes because of extra fields 
     public class TransportProviderProfile
     {
-        [BsonElement("Name")]
+        [BsonElement("name")] 
         public string Name { get; set; } = string.Empty;
-        [BsonElement("Phone")]
+        
+        [BsonElement("phone")]
         public string Phone { get; set; } = string.Empty;
-        [BsonElement("Email")]
+        
+        [BsonElement("email")]
         public string Email { get; set; } = string.Empty;
-        [BsonElement("Location")]
+        
+        [BsonElement("location")]
         public string Location { get; set; } = string.Empty;
     }
 
-    /**
-     * Special features/facilities inside the vehicle.
-     */
+    [BsonIgnoreExtraElements] 
     public class TransportVehicleFeatures
     {
+        [BsonElement("wifi")]
         public bool? Wifi { get; set; }
+        
+        [BsonElement("bluetooth")]
         public bool? Bluetooth { get; set; }
+        
+        [BsonElement("airbags")]
         public bool? Airbags { get; set; }
+        
+        [BsonElement("usbCharging")]
         public bool? UsbCharging { get; set; }
-        public int Luggage { get; set; }        // Max luggage bags allowed
-        public bool Safety { get; set; }        // General safety equipment present
+        
+        [BsonElement("luggage")]
+        public int Luggage { get; set; }          
+        
+        [BsonElement("safety")]
+        public bool Safety { get; set; }        
+        
+        [BsonElement("childSeats")]
         public bool? ChildSeats { get; set; }
-        public bool Entertainment { get; set; } // Music/Video system
+        
+        [BsonElement("entertainment")]
+        public bool Entertainment { get; set; } 
+        
+        [BsonElement("tv")]
         public bool? Tv { get; set; }
     }
 
-    /**
-     * Customer review details.
-     */
+    [BsonIgnoreExtraElements] 
     public class TransportReview
     {
+        [BsonElement("id")] 
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [BsonElement("userName")]
         public string UserName { get; set; } = string.Empty;
+        
+        [BsonElement("userAvatar")]
         public string? UserAvatar { get; set; }
-        public int Rating { get; set; }         // 1 to 5 stars
+        
+        [BsonElement("rating")]
+        public int Rating { get; set; }         
+        
+        [BsonElement("comment")]
         public string Comment { get; set; } = string.Empty;
+        
+        [BsonElement("date")]
         public string Date { get; set; } = string.Empty;
     }
 
     /**
      * Blocked date range with optional reason for maintenance/personal use
      */
+    [BsonIgnoreExtraElements]
     public class BlockedDateRange
     {
-        [BsonElement("Id")]
+        [BsonElement("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
         
         [BsonElement("StartDate")]

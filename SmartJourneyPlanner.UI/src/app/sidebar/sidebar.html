@@ -32,19 +32,9 @@
   <div class="sidebar-search" *ngIf="isSidebarOpen && !isCollapsed">
     <div class="search-wrapper">
       <i class="bi bi-search search-icon"></i>
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Search menu..."
-        [value]="searchQuery"
-        (input)="onSearch($event)"
-      />
-      <button
-        class="btn-clear-search"
-        *ngIf="searchQuery"
-        (click)="clearSearch()"
-        title="Clear search"
-      >
+      <input type="text" class="search-input" placeholder="Search menu..." [value]="searchQuery"
+        (input)="onSearch($event)" />
+      <button class="btn-clear-search" *ngIf="searchQuery" (click)="clearSearch()" title="Clear search">
         <i class="bi bi-x"></i>
       </button>
     </div>
@@ -60,16 +50,8 @@
         </div>
 
         <ul class="nav-list">
-          <li
-            *ngFor="let item of getCategoryItems(category)"
-            class="nav-item"
-            [class.active]="isActive(item.route)"
-          >
-            <a
-              class="nav-link"
-              (click)="navigateTo(item.route)"
-              [attr.title]="isCollapsed ? item.label : ''"
-            >
+          <li *ngFor="let item of getCategoryItems(category)" class="nav-item" [class.active]="isActive(item.route)">
+            <a class="nav-link" (click)="navigateTo(item.route)" [attr.title]="isCollapsed ? item.label : ''">
               <span class="nav-icon">
                 <i class="bi" [class]="item.icon"></i>
               </span>
@@ -109,29 +91,7 @@
   </div>
 </aside>
 
-<!-- Desktop Toggle Button (visible when sidebar is closed on desktop) -->
-<button
-  class="desktop-sidebar-toggle"
-  *ngIf="!isSidebarOpen && !isMobile"
-  (click)="toggleSidebar()"
-  title="Open Sidebar"
->
-  <i class="bi bi-list"></i>
-</button>
 
-<!-- Mobile Toggle Button (visible when sidebar is closed on mobile) -->
-<button
-  class="mobile-sidebar-toggle"
-  *ngIf="!isSidebarOpen && isMobile"
-  (click)="toggleSidebar()"
-  title="Open Sidebar"
->
-  <i class="bi bi-list"></i>
-</button>
 
 <!-- Overlay for mobile -->
-<div
-  class="sidebar-overlay"
-  *ngIf="isSidebarOpen && isMobile"
-  (click)="toggleSidebar()"
-></div>
+<div class="sidebar-overlay" *ngIf="isSidebarOpen && isMobile" (click)="toggleSidebar()"></div>

@@ -45,7 +45,10 @@ import { ResetPasswordComponent } from './reset-password/reset-password';
 
 import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
+import { GettingStartedComponent } from './help/getting-started/getting-started';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+import { BudgetHelpComponent } from './help/budget-help/budget-help';
+import { TripPlanningHelpComponent } from './help/trip-planning-help/trip-planning-help';
 
 import { SlideshowComponent } from './slideshow/slideshow';
 import { TripHistoryComponent } from './trip-history/trip-history';
@@ -70,8 +73,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/login',
-    pathMatch: 'full'
+    component: LandingPageComponent
   },
 
   {
@@ -99,6 +101,25 @@ export const routes: Routes = [
     component: ResetPasswordComponent
   },
 
+  {
+    path: 'landing-page',
+    component: LandingPageComponent
+  },
+
+  {
+    path: 'help',
+    component: HelpComponent
+  },
+
+  {
+    path: 'help/getting-started',
+    component: GettingStartedComponent
+  },
+
+  {
+    path: 'help/trip-planning',
+    component: TripPlanningHelpComponent
+  },
 
   // =====================================================
   // COMMON PROTECTED ROUTES
@@ -228,6 +249,15 @@ export const routes: Routes = [
     path: 'memories-map-help',
     component: MemoriesMapHelpComponent,
     canActivate: [authGuard, roleGuard],
+    data: {
+      expectedRoles: ['Traveller', 'Traveler']
+    }
+  },
+
+  {
+    path: 'budget-help',
+    component: BudgetHelpComponent, 
+    canActivate: [authGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']
     }
@@ -372,7 +402,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['TransportProvider', 'Provider']
+      expectedRoles: ['TransportProvider', 'Provider', 'Traveller', 'Traveler']
     },
 
     loadComponent: () =>
@@ -440,7 +470,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['Admin']
+      expectedRoles: ['Admin', 'admin']
     }
   },
 
