@@ -1,5 +1,5 @@
 <div class="verify-container">
-  
+
   <div *ngIf="loading" class="loading-box">
     <h2>⏳ Verifying Your Email...</h2>
     <p>Please wait a moment while we validate your secure token with Smart Journey Planner.</p>
@@ -8,7 +8,8 @@
   <div *ngIf="success" class="success-box">
     <h2>🎉 Email Verified Successfully!</h2>
     <p>Your account is now fully active. Get ready for your next big adventure!</p>
-    <p class="redirect-text">Redirecting you to Login page in a moment...</p>
+    <p class="redirect-text">You can now proceed to login.</p>
+    <button (click)="goToLogin()" class="btn-login" style="margin-top: 15px;">Go to Login</button>
   </div>
 
   <div *ngIf="error" class="error-box">
