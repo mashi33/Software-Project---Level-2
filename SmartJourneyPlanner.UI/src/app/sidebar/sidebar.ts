@@ -12,9 +12,9 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  isSidebarOpen: boolean = true;
+  isSidebarOpen: boolean = false;
   isCollapsed: boolean = false;
-  isIconOpen: boolean = true;
+  isIconOpen: boolean = false;
   isMobile: boolean = false;
   searchQuery: string = '';
   userRole: string = 'Traveler';
@@ -53,13 +53,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   checkScreenSize() {
     this.isMobile = window.innerWidth < 768;
-    if (this.isMobile) {
-      this.isSidebarOpen = false;
-      this.isCollapsed = false;
-    } else {
-      this.isSidebarOpen = true;
-      this.isCollapsed = false;
-    }
+    this.isSidebarOpen = false;
+    this.isCollapsed = false;
+    this.isIconOpen = false;
   }
 
   loadUserRole() {
