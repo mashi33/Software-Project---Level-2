@@ -332,7 +332,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['Traveller', 'Traveler']
+      expectedRoles: ['Traveller', 'Traveler', 'TransportProvider', 'Provider']
     },
 
     children: [
@@ -363,7 +363,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
 
     data: {
-      expectedRoles: ['Traveller', 'Traveler']
+      expectedRoles: ['Traveller', 'Traveler', 'TransportProvider', 'Provider']
     }
   },
 

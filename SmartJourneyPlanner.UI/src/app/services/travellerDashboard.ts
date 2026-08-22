@@ -26,6 +26,6 @@ export class TravellerDashboardService {
   }
 
   cancelBooking(bookingId: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/trips/cancel-booking/${bookingId}`, {});
+    return this.http.patch(`${environment.apiUrl}/TransportBookings/${bookingId}/status`, { status: 'Cancelled' });
   }
 }
