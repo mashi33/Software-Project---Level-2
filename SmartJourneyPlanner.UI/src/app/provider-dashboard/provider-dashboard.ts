@@ -50,6 +50,15 @@ export class ProviderDashboardComponent implements OnInit {
   editingBlockedRange: any = null;
   todayDate: string = '';
 
+  // Cancel Booking Modal properties
+  showCancelBookingModal: boolean = false;
+  cancelBookingData: any = null;
+  cancelReason: string = '';
+  cancelBlockStartDate: string = '';
+  cancelBlockEndDate: string = '';
+  cancelWarningHtml: string = '';
+  cancelStep: 'reason' | 'dates' = 'reason';
+
   private providerCancelledIds = new Set<string>();
   private tempCancelReason: string = '';
 
@@ -505,137 +514,193 @@ export class ProviderDashboardComponent implements OnInit {
     });
   }
 
-    viewBookingDetails(id: string | undefined) {
-  const b = this.bookings.find(x => x.id === id);
-  if (!b) return;
+  viewBookingDetails(id: string | undefined) {
+    const b = this.bookings.find(x => x.id === id);
+    if (!b) return;
 
-  const status = (b.status || (b as any).Status || '').toString();
-  const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'canceled';
+    const status = (b.status || (b as any).Status || '').toString();
+    const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'canceled';
 
-  // Who cancelled?
-  const cancelledByRaw = (
-    (b as any).cancelledBy ||
-    (b as any).CancelledBy ||
-    (b as any).cancellationSource ||
-    (b as any).CancellationSource ||
-    ''
-  ).toString().toLowerCase();
+    // Who cancelled?
+    const cancelledByRaw = (
+      (b as any).cancelledBy ||
+      (b as any).CancelledBy ||
+      (b as any).cancellationSource ||
+      (b as any).CancellationSource ||
+      ''
+    ).toString().toLowerCase();
 
-  //  also checks the current session
-  const cancelledByProvider = isCancelled && (
-    this.providerCancelledIds.has(b.id!) ||          // provider cancelled in this session
-    cancelledByRaw === 'provider' ||
-    cancelledByRaw === 'you' ||
-    cancelledByRaw === 'owner' ||
-    (b as any).cancelledByProvider === true
-  );
+    //  also checks the current session
+    const cancelledByProvider = isCancelled && (
+      this.providerCancelledIds.has(b.id!) ||          // provider cancelled in this session
+      cancelledByRaw === 'provider' ||
+      cancelledByRaw === 'you' ||
+      cancelledByRaw === 'owner' ||
+      (b as any).cancelledByProvider === true
+    );
 
-  const formattedStatusDate = b.statusChangedDate
-    ? new Date(b.statusChangedDate).toLocaleDateString() + ' ' +
-      new Date(b.statusChangedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : 'Not Updated Yet';
+    const formattedStatusDate = b.statusChangedDate
+      ? new Date(b.statusChangedDate).toLocaleDateString() + ' ' +
+        new Date(b.statusChangedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : 'Not Updated Yet';
 
-  const s = b.startDate ? new Date(b.startDate).setHours(0, 0, 0, 0) : 0;
-  const e = b.endDate ? new Date(b.endDate).setHours(0, 0, 0, 0) : 0;
-  const days = (s && e) ? Math.ceil(Math.abs(e - s) / 86400000) + 1 : ((b as any).days || 1);
-  const nights = (b as any).nights || (days > 1 ? days - 1 : 0);
+    const s = b.startDate ? new Date(b.startDate).setHours(0, 0, 0, 0) : 0;
+    const e = b.endDate ? new Date(b.endDate).setHours(0, 0, 0, 0) : 0;
+    const days = (s && e) ? Math.ceil(Math.abs(e - s) / 86400000) + 1 : ((b as any).days || 1);
+    const nights = (b as any).nights || (days > 1 ? days - 1 : 0);
 
-  const pr = (b as any).pricingSummary;
-  const rate = pr?.dailyRate || 0;
-  const rental = pr?.dailyRental || (rate * days);
-  const nRate = pr?.nightlyRate || 0;
-  const nightFee = pr?.driverNightOut || (nRate * nights);
-  const total = b.totalAmount || (rental + nightFee);
+    const pr = (b as any).pricingSummary;
+    const rate = pr?.dailyRate || 0;
+    const rental = pr?.dailyRental || (rate * days);
+    const nRate = pr?.nightlyRate || 0;
+    const nightFee = pr?.driverNightOut || (nRate * nights);
+    const total = b.totalAmount || (rental + nightFee);
 
-  // Status badge text
-  let statusDisplay = status;
-  let statusBadgeClass = 'bg-warning text-dark';
+    // Status badge text
+    let statusDisplay = status;
+    let statusBadgeClass = 'bg-warning';
 
-  if (isCancelled) {
-    statusDisplay = cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller';
-    statusBadgeClass = 'bg-danger text-white';
-  } else if (status === 'Confirmed') {
-    statusBadgeClass = 'bg-success text-white';
-  } else if (status === 'Completed') {
-    statusBadgeClass = 'bg-primary text-white';
-  } else if (status === 'Rejected') {
-    statusBadgeClass = 'bg-danger text-white';
+    if (isCancelled) {
+      statusDisplay = cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller';
+      statusBadgeClass = 'bg-danger';
+    } else if (status === 'Confirmed') {
+      statusBadgeClass = 'bg-success';
+    } else if (status === 'Completed') {
+      statusBadgeClass = 'bg-primary';
+    } else if (status === 'Rejected') {
+      statusBadgeClass = 'bg-danger';
+    }
+
+    // Optional notice for cancelled bookings
+    const cancelledNotice = isCancelled
+      ? `
+        <div class="premium-cancelled-notice ${cancelledByProvider ? 'cancelled-by-provider' : 'cancelled-by-traveller'}">
+          <div class="notice-badge">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+            </svg>
+          </div>
+          <div class="notice-text">
+            <div class="notice-title">${cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller'}</div>
+            ${formattedStatusDate !== 'Not Updated Yet' ? `<div class="notice-subtitle">On ${formattedStatusDate}</div>` : ''}
+          </div>
+        </div>
+      `
+      : '';
+
+    Swal.fire({
+      title: 'Booking Request Details',
+      width: '480px',
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'swal2-custom-popup',
+        title: 'swal2-custom-title',
+        htmlContainer: 'swal2-custom-html',
+        confirmButton: 'swal2-confirm'
+      },
+      html: `
+        <div class="premium-details-container">
+          ${cancelledNotice}
+
+          <!-- Customer Details -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon customer-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              Customer Details
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Name</span>
+                <span class="list-value">${b.userName || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Phone</span>
+                <span class="list-value">${(b as any).contactNumber || 'Not Provided'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Status</span>
+                <span class="list-value">
+                  <span class="premium-status-badge ${statusBadgeClass}">${statusDisplay}</span>
+                </span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Last Update</span>
+                <span class="list-value">${formattedStatusDate}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Itinerary -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon itinerary-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+              </div>
+              Trip Itinerary
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Vehicle</span>
+                <span class="list-value">${b.vehicleName || 'Standard Car'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Travel Dates</span>
+                <span class="list-value">${new Date(b.startDate).toLocaleDateString()} → ${new Date(b.endDate).toLocaleDateString()} (${days} Days)</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Pickup</span>
+                <span class="list-value">${(b as any).pickupAddress || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Destination</span>
+                <span class="list-value">${(b as any).destinationAddress || (b as any).pickupAddress || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing Breakdown -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon pricing-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Pricing Breakdown
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Daily Rental</span>
+                <span class="list-value">LKR ${rate.toLocaleString()} × ${days} Days = LKR ${rental.toLocaleString()}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Driver Night Fee</span>
+                <span class="list-value">LKR ${nRate.toLocaleString()} × ${nights} Nights = LKR ${nightFee.toLocaleString()}</span>
+              </div>
+              <div class="list-item total-item">
+                <span class="list-label">Total Earnings</span>
+                <span class="list-value">LKR ${total.toLocaleString()}</span>
+              </div>
+            </div>
+            <div class="premium-pricing-note">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Extra KM charges are collected separately based on usage.
+            </div>
+          </div>
+        </div>
+      `
+    });
   }
-
-  // Optional notice for cancelled bookings
-  const cancelledNotice = isCancelled
-    ? `
-      <div class="alert ${cancelledByProvider ? 'alert-danger' : 'alert-secondary'} py-2 px-3 mb-3" style="font-size: 0.9rem;">
-        <strong>${cancelledByProvider ? 'Cancelled by You' : 'Cancelled by Traveller'}</strong>
-        ${formattedStatusDate !== 'Not Updated Yet' ? `<br><small>On ${formattedStatusDate}</small>` : ''}
-      </div>
-    `
-    : '';
-
-  Swal.fire({
-    title: 'Booking Request Details',
-    width: '620px',
-    confirmButtonText: 'Close',
-    confirmButtonColor: '#0c92f4',
-    html: `
-      <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-        ${cancelledNotice}
-
-        <h6 class="text-primary fw-bold mb-1">Customer Details</h6>
-        <div class="bg-light p-2 rounded border mb-3">
-          <p class="m-0"><strong>Name:</strong> ${b.userName || 'N/A'}</p>
-          <p class="m-1 0"><strong>Phone:</strong> ${(b as any).contactNumber || 'Not Provided'}</p>
-          <p class="m-0">
-            <strong>Status:</strong>
-            <span class="badge ${statusBadgeClass}">${statusDisplay}</span>
-          </p>
-          <p class="m-0 mt-1">
-            <small class="text-muted"><strong>Last Status Update:</strong> ${formattedStatusDate}</small>
-          </p>
-        </div>
-
-        <h6 class="text-primary fw-bold mb-1">Trip Itinerary</h6>
-        <div class="bg-light p-2 rounded border mb-3">
-          <p class="m-0"><strong>Vehicle:</strong> ${b.vehicleName || 'Standard Car'}</p>
-          <p class="m-1 0">
-            <strong>Travel Dates:</strong>
-            ${new Date(b.startDate).toLocaleDateString()} to ${new Date(b.endDate).toLocaleDateString()}
-            (${days} Days)
-          </p>
-          <p class="m-1 0"><strong>Pickup:</strong> ${(b as any).pickupAddress || 'N/A'}</p>
-          <p class="m-0"><strong>Destination:</strong> ${(b as any).destinationAddress || (b as any).pickupAddress || 'N/A'}</p>
-        </div>
-
-        <h6 class="text-primary fw-bold mb-1">Pricing Breakdown</h6>
-        <table class="table table-sm table-bordered m-0 fs-6">
-          <thead class="table-light">
-            <tr>
-              <th>Item</th>
-              <th class="text-end">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Daily Rental (LKR ${rate.toLocaleString()} × ${days} Days)</td>
-              <td class="text-end">LKR ${rental.toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td>Driver Night Fee (LKR ${nRate.toLocaleString()} × ${nights} Nights)</td>
-              <td class="text-end">LKR ${nightFee.toLocaleString()}</td>
-            </tr>
-            <tr class="table-primary fw-bold text-primary">
-              <td>Total Earnings (Estimated)</td>
-              <td class="text-end fs-5">LKR ${total.toLocaleString()}</td>
-            </tr>
-          </tbody>
-        </table>
-        <small class="text-muted d-block mt-2">
-          <i>* Extra KM charges are collected separately based on usage.</i>
-        </small>
-      </div>
-    `
-  });
-}
 
   // Blocked Date Ranges Methods
 
@@ -793,32 +858,101 @@ export class ProviderDashboardComponent implements OnInit {
     
     Swal.fire({
       title: vehicle.ModelName || vehicle.modelName || 'Vehicle Details',
-      width: '620px',
+      width: '460px',
       confirmButtonText: 'Close',
-      confirmButtonColor: '#0c92f4',
+      confirmButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'swal2-custom-popup',
+        title: 'swal2-custom-title',
+        htmlContainer: 'swal2-custom-html',
+        confirmButton: 'swal2-confirm'
+      },
       html: `
-        <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-          <h6 class="text-primary fw-bold mb-1">Basic Information</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Model:</strong> ${vehicle.ModelName || vehicle.modelName || 'N/A'}</p>
-            <p class="m-0"><strong>Class:</strong> ${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</p>
-            <p class="m-0"><strong>Year:</strong> ${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</p>
-            <p class="m-0"><strong>Registration:</strong> ${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</p>
+        <div class="premium-details-container">
+
+          <!-- Basic Information -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon basic-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Basic Information
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Model</span>
+                <span class="list-value">${vehicle.ModelName || vehicle.modelName || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Class</span>
+                <span class="list-value">${vehicle.VehicleClass || vehicle.vehicleClass || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Year</span>
+                <span class="list-value">${vehicle.YearOfManufacture || vehicle.yearOfManufacture || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Registration</span>
+                <span class="list-value">${vehicle.RegistrationNumber || vehicle.registrationNumber || 'N/A'}</span>
+              </div>
+            </div>
           </div>
 
-          <h6 class="text-primary fw-bold mb-1">Specifications</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Capacity:</strong> ${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</p>
-            <p class="m-0"><strong>Fuel Type:</strong> ${vehicle.FuelType || vehicle.fuelType || 'N/A'}</p>
-            <p class="m-0"><strong>Transmission:</strong> ${vehicle.Transmission || vehicle.transmission || 'N/A'}</p>
-            <p class="m-0"><strong>Air Conditioning:</strong> ${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</p>
+          <!-- Specifications -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon spec-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              Specifications
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Capacity</span>
+                <span class="list-value">${vehicle.HighestCapacity || vehicle.highestCapacity || vehicle.SeatCount || vehicle.seatCount || 'N/A'} Seats</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Fuel Type</span>
+                <span class="list-value">${vehicle.FuelType || vehicle.fuelType || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Transmission</span>
+                <span class="list-value">${vehicle.Transmission || vehicle.transmission || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Air Conditioning</span>
+                <span class="list-value">${vehicle.HasAC || vehicle.hasAC || vehicle.isAc ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
           </div>
 
-          <h6 class="text-primary fw-bold mb-1">Pricing & Rating</h6>
-          <div class="bg-light p-2 rounded border mb-3">
-            <p class="m-0"><strong>Daily Rate:</strong> LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</p>
-            <p class="m-0"><strong>Rating:</strong> ${ratingDisplay}</p>
+          <!-- Pricing & Rating -->
+          <div class="premium-section">
+            <div class="premium-section-title">
+              <div class="section-icon pricing-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              Pricing & Rating
+            </div>
+            <div class="premium-list">
+              <div class="list-item">
+                <span class="list-label">Daily Rate</span>
+                <span class="list-value">LKR ${vehicle.StandardDailyRate || vehicle.standardDailyRate || 'N/A'}</span>
+              </div>
+              <div class="list-item">
+                <span class="list-label">Rating</span>
+                <span class="list-value">${ratingDisplay}</span>
+              </div>
+            </div>
           </div>
+
         </div>
       `
     });
@@ -912,250 +1046,171 @@ export class ProviderDashboardComponent implements OnInit {
     }).length;
 
     let warningHtml = '';
-    if (isShortNotice) {
-      warningHtml = `
-        <div style="background:#FFF8E6;border-left:4px solid #F59E0B;border-radius:6px;padding:12px 14px;margin:14px 0;text-align:left;">
-          <div style="font-weight:600;color:#B45309;margin-bottom:4px;">Short-notice cancellation</div>
-          <div style="font-size:13px;color:#78350F;line-height:1.45;">
-            This booking starts within 24 hours. Cancelling now will significantly inconvenience the customer.
-          </div>
-        </div>`;
+if (isShortNotice) {
+  warningHtml = `
+    <div class="warning-box short-notice">
+      <div class="title">Short-notice cancellation</div>
+      <div class="text">
+        This booking starts within 24 hours. Cancelling now will significantly inconvenience the customer.
+      </div>
+    </div>`;
 
-      if (shortNoticeCancelsThisMonth >= 3) {
-        warningHtml += `
-          <div style="background:#FEF2F2;border-left:4px solid #EF4444;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-weight:600;color:#B91C1C;margin-bottom:4px;">Monthly limit reached</div>
-            <div style="font-size:13px;color:#7F1D1D;line-height:1.45;">
-              You have already made <strong>${shortNoticeCancelsThisMonth}</strong> short-notice cancellation(s) this month.
-              Further short-notice cancellations may result in temporary restrictions or forced blocked date ranges.
-            </div>
-          </div>`;
-      } else if (shortNoticeCancelsThisMonth === 2) {
-        warningHtml += `
-          <div style="background:#FFF8E6;border-left:4px solid #F59E0B;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-size:13px;color:#78350F;line-height:1.45;">
-              This will be your <strong>3rd</strong> short-notice cancellation this month.
-              Exceeding 3 may lead to temporary account restrictions.
-            </div>
-          </div>`;
-      } else {
-        warningHtml += `
-          <div style="background:#EFF6FF;border-left:4px solid #3B82F6;border-radius:6px;padding:12px 14px;margin:10px 0;text-align:left;">
-            <div style="font-size:13px;color:#1E40AF;line-height:1.45;">
-              Short-notice cancellations this month: <strong>${shortNoticeCancelsThisMonth}</strong> / 3 allowed
-            </div>
-          </div>`;
-      }
+  if (shortNoticeCancelsThisMonth >= 3) {
+    warningHtml += `
+      <div class="warning-box limit-reached">
+        <div class="title">Monthly limit reached</div>
+        <div class="text">
+          You have already made <strong>${shortNoticeCancelsThisMonth}</strong> short-notice cancellation(s) this month.
+          Further short-notice cancellations may result in temporary restrictions or forced blocked date ranges.
+        </div>
+      </div>`;
+  } else if (shortNoticeCancelsThisMonth === 2) {
+    warningHtml += `
+      <div class="warning-box short-notice">
+        <div class="text">
+          This will be your <strong>3rd</strong> short-notice cancellation this month.
+          Exceeding 3 may lead to temporary account restrictions.
+        </div>
+      </div>`;
+  } else {
+    warningHtml += `
+      <div class="warning-box warning-info">
+        <div class="text">
+          Short-notice cancellations this month: <strong>${shortNoticeCancelsThisMonth}</strong> / 3 allowed
+        </div>
+      </div>`;
+  }
+}
+
+    // Initialize cancel booking modal
+    this.cancelBookingData = booking;
+    this.cancelReason = this.tempCancelReason || '';
+    this.cancelBlockStartDate = new Date(booking.startDate).toISOString().split('T')[0];
+    this.cancelBlockEndDate = new Date(booking.endDate).toISOString().split('T')[0];
+    this.cancelWarningHtml = warningHtml;
+    this.cancelStep = 'reason';
+    this.showCancelBookingModal = true;
+  }
+
+  closeCancelBookingModal() {
+    this.showCancelBookingModal = false;
+    this.cancelBookingData = null;
+    this.cancelReason = '';
+    this.cancelBlockStartDate = '';
+    this.cancelBlockEndDate = '';
+    this.cancelWarningHtml = '';
+    this.cancelStep = 'reason';
+  }
+
+  onCancelReasonNext() {
+    if (!this.cancelReason || !this.cancelReason.trim()) {
+      Swal.fire('Error', 'Please provide a reason for cancellation', 'error');
+      return;
+    }
+    this.cancelStep = 'dates';
+  }
+
+  onCancelDatesBack() {
+    this.cancelStep = 'reason';
+  }
+
+  onCancelDatesConfirm() {
+    if (!this.cancelBookingData) return;
+
+    const booking = this.cancelBookingData;
+    const cancelReason = this.cancelReason.trim();
+    const blockStart = this.cancelBlockStartDate;
+    const blockEnd = this.cancelBlockEndDate;
+
+    // Validate dates
+    const defaultStart = new Date(booking.startDate).toISOString().split('T')[0];
+    const defaultEnd = new Date(booking.endDate).toISOString().split('T')[0];
+
+    if (!blockStart || !blockEnd) {
+      Swal.fire('Error', 'Both start and end dates are required', 'error');
+      return;
+    }
+    if (blockEnd < blockStart) {
+      Swal.fire('Error', 'End date must be on or after the start date', 'error');
+      return;
+    }
+    if (blockStart < defaultStart || blockEnd > defaultEnd) {
+      Swal.fire('Error', 'Dates must be within the original booking period', 'error');
+      return;
     }
 
-        // Confirm + Reason 
-    Swal.fire({
-      title: 'Cancel Booking',
-      width: '520px',
-      confirmButtonText: 'Continue',
-      cancelButtonText: 'Keep Booking',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6c757d',
-      showCancelButton: true,
-      reverseButtons: true,
-      focusConfirm: false,
-      html: `
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-    <!-- Booking summary card -->
-    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
-      <p style="margin:0 0 6px 0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Customer:</strong> ${booking.userName || 'Customer'}
-      </p>
-      <p style="margin:0 0 6px 0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Vehicle:</strong> ${booking.vehicleName || 'Vehicle'}
-      </p>
-      <p style="margin:0; font-size:14px; color:#334155;">
-        <strong style="color:#0f172a;">Dates:</strong>
-        ${new Date(booking.startDate).toLocaleDateString()} – ${new Date(booking.endDate).toLocaleDateString()}
-      </p>
-    </div>
+    // Close modal and proceed with cancellation
+    this.closeCancelBookingModal();
+    this.tempCancelReason = cancelReason;
 
-    ${warningHtml}
-
-    <!-- Reason label -->
-    <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-      Reason for cancellation <span style="color:#ef4444;">*</span>
-    </label>
-  </div>
-`,
-      input: 'textarea',
-      inputValue: this.tempCancelReason || '',          //  pre-fill previous reason
-      inputPlaceholder: 'e.g. Vehicle breakdown, personal emergency, scheduled maintenance…',
-      inputAttributes: {
-        rows: '3',
-        maxlength: '250',
-        class: 'form-control'
-      },
-      inputValidator: (value) => {
-        if (!value || !value.trim()) {
-          return 'Please provide a reason for cancellation';
-        }
-        return null;
-      }
-       }).then((result) => {
-      if (!result.isConfirmed) {
-        // Provider clicked "Keep Booking" → clear temporary reason
+    // Cancel the booking
+    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+      next: () => {
+        booking.status = 'Cancelled';
+        booking.statusChangedDate = new Date().toISOString();
+        this.providerCancelledIds.add(booking.id!);
         this.tempCancelReason = '';
-        return;
-      }
 
-      const cancelReason = (result.value || '').trim();
-      this.tempCancelReason = cancelReason;   // save reason
-
-      const defaultStart = new Date(booking.startDate).toISOString().split('T')[0];
-      const defaultEnd = new Date(booking.endDate).toISOString().split('T')[0];
-      const todayStr = this.todayDate || new Date().toISOString().split('T')[0];
-
-            // Ask unavailable dates 
-      Swal.fire({
-        title: 'Unavailable Dates',
-        width: '480px',
-        confirmButtonText: 'Cancel Booking & Block Dates',
-        cancelButtonText: 'Back',
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        showCancelButton: true,
-        reverseButtons: true,
-        focusConfirm: false,
-        allowOutsideClick: false,
-        html: `
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-    <p style="margin:0 0 18px 0; font-size:14px; color:#475569; line-height:1.5;">
-      Select the date range when this vehicle should <strong style="color:#0f172a;">not be available</strong> to customers.
-      You can only select dates within the original booking period.
-    </p>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-      <div>
-        <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-          From
-        </label>
-        <input type="date" id="swal-start" 
-               value="${defaultStart}"
-               min="${defaultStart}"
-               max="${defaultEnd}"
-               style="width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; color:#0f172a; background:#fff; box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">
-          To
-        </label>
-        <input type="date" id="swal-end" 
-               value="${defaultEnd}"
-               min="${defaultStart}"
-               max="${defaultEnd}"
-               style="width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; color:#0f172a; background:#fff; box-sizing:border-box;">
-      </div>
-    </div>
-  </div>
-`,
-        preConfirm: () => {
-          const startInput = (document.getElementById('swal-start') as HTMLInputElement)?.value;
-          const endInput = (document.getElementById('swal-end') as HTMLInputElement)?.value;
-
-          if (!startInput || !endInput) {
-            Swal.showValidationMessage('Both start and end dates are required');
-            return false;
-          }
-          if (endInput < startInput) {
-            Swal.showValidationMessage('End date must be on or after the start date');
-            return false;
-          }
-          //  stay inside original booking range
-          if (startInput < defaultStart || endInput > defaultEnd) {
-            Swal.showValidationMessage('Dates must be within the original booking period');
-            return false;
-          }
-          return { startDate: startInput, endDate: endInput };
-        }
-      }).then((dateResult) => {
-        //  Back button clicked → return to Reason popup 
-        if (dateResult.dismiss === Swal.DismissReason.cancel) {
-          // Re-open the reason step 
-          this.cancelBooking(booking);   
+        // Add blocked range
+        const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
+        if (!vehicleId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Booking Cancelled',
+            text: 'The booking was cancelled, but the vehicle could not be identified. Please block the dates manually from Fleet Management.',
+            confirmButtonColor: '#0c92f4'
+          });
+          this.loadAll();
           return;
         }
 
-        if (!dateResult.isConfirmed || !dateResult.value) return;
+        const blockReason = cancelReason
+          ? `Cancelled booking: ${cancelReason}`
+          : 'Cancelled booking – provider unavailable';
 
-        const { startDate: blockStart, endDate: blockEnd } = dateResult.value;
-        //  Cancel the booking
-        this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+        this.vehicleService.addBlockedDateRange(vehicleId, blockStart, blockEnd, blockReason).subscribe({
           next: () => {
-            booking.status = 'Cancelled';
-            booking.statusChangedDate = new Date().toISOString();
-
-            this.providerCancelledIds.add(booking.id!);
-
-            this.tempCancelReason = '';
-
-            //  Add blocked range
-            const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
-            if (!vehicleId) {
-              Swal.fire({
-                icon: 'warning',
-                title: 'Booking Cancelled',
-                text: 'The booking was cancelled, but the vehicle could not be identified. Please block the dates manually from Fleet Management.',
-                confirmButtonColor: '#0c92f4'
-              });
-              this.loadAll();
-              return;
-            }
-
-            const blockReason = cancelReason
-              ? `Cancelled booking: ${cancelReason}`
-              : 'Cancelled booking – provider unavailable';
-
-            this.vehicleService.addBlockedDateRange(vehicleId, blockStart, blockEnd, blockReason).subscribe({
-              next: () => {
-                               Swal.fire({
-                  icon: 'success',
-                  title: 'Booking Cancelled',
-                  width: '480px',
-                  confirmButtonText: 'Done',
-                  confirmButtonColor: '#0c92f4',
-                  html: `
-                    <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
-                      <p class="mb-2">The booking has been successfully cancelled.</p>
-                      <div class="bg-light p-2 rounded border">
-                        <p class="m-0"><strong>Vehicle blocked</strong></p>
-                        <p class="m-0">Unavailable from <strong>${blockStart}</strong> to <strong>${blockEnd}</strong>.</p>
-                        <p class="m-0 text-muted">All other dates remain available.</p>
-                      </div>
-                    </div>
-                  `
-                });
-                this.loadAll();
-              },
-              error: (err) => {
-                console.error('Failed to add blocked range:', err);
-                const msg = err.error?.message || 'Booking was cancelled, but the dates could not be blocked automatically. You can still block them manually.';
-                Swal.fire({
-                  icon: 'warning',
-                  title: 'Partial Success',
-                  text: msg,
-                  confirmButtonColor: '#0c92f4'
-                });
-                this.loadAll();
-              }
+            Swal.fire({
+              icon: 'success',
+              title: 'Booking Cancelled',
+              width: '480px',
+              confirmButtonText: 'Done',
+              confirmButtonColor: '#0c92f4',
+              html: `
+                <div class="text-start fs-6 lh-base" style="font-family: sans-serif;">
+                  <p class="mb-2">The booking has been successfully cancelled.</p>
+                  <div class="bg-light p-2 rounded border">
+                    <p class="m-0"><strong>Vehicle blocked</strong></p>
+                    <p class="m-0">Unavailable from <strong>${blockStart}</strong> to <strong>${blockEnd}</strong>.</p>
+                    <p class="m-0 text-muted">All other dates remain available.</p>
+                  </div>
+                </div>
+              `
             });
+            this.loadAll();
           },
           error: (err) => {
-            console.error('Cancel booking failed:', err);
+            console.error('Failed to add blocked range:', err);
+            const msg = err.error?.message || 'Booking was cancelled, but the dates could not be blocked automatically. You can still block them manually.';
             Swal.fire({
-              icon: 'error',
-              title: 'Unable to Cancel',
-              text: 'Something went wrong while cancelling the booking. Please try again.',
+              icon: 'warning',
+              title: 'Partial Success',
+              text: msg,
               confirmButtonColor: '#0c92f4'
             });
+            this.loadAll();
           }
         });
-      });
+      },
+      error: (err) => {
+        console.error('Cancel booking failed:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Unable to Cancel',
+          text: 'Something went wrong while cancelling the booking. Please try again.',
+          confirmButtonColor: '#0c92f4'
+        });
+      }
     });
   }
 

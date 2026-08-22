@@ -493,3 +493,85 @@
     </div>
   </div>
 </div>
+
+<!-- Cancel Booking Modal -->
+<div *ngIf="showCancelBookingModal" class="modal-overlay" (click)="closeCancelBookingModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Cancel Booking</h3>
+      <button class="modal-close" (click)="closeCancelBookingModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Booking Summary Card -->
+      <div class="booking-summary-card">
+        <div class="summary-item">
+          <span class="summary-label">Customer:</span>
+          <span class="summary-value">{{ cancelBookingData?.userName || 'Customer' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Vehicle:</span>
+          <span class="summary-value">{{ cancelBookingData?.vehicleName || 'Vehicle' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Dates:</span>
+          <span class="summary-value">
+            {{ cancelBookingData?.startDate | date:'mediumDate' }} – {{ cancelBookingData?.endDate | date:'mediumDate' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Warning Messages -->
+      <div [innerHTML]="cancelWarningHtml" class="warning-messages"></div>
+
+      <!-- Reason -->
+      <div *ngIf="cancelStep === 'reason'" class="cancel-step">
+        <div class="form-group">
+          <label>Reason for cancellation <span class="required">*</span></label>
+          <textarea 
+            [(ngModel)]="cancelReason" 
+            placeholder="e.g. Vehicle breakdown, personal emergency, scheduled maintenance…"
+            rows="3"
+            maxlength="250"
+            class="form-control"></textarea>
+          <small class="char-count">{{ cancelReason.length || 0 }} / 250</small>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeCancelBookingModal()">Keep Booking</button>
+          <button class="btn-primary btn-danger" (click)="onCancelReasonNext()">Continue</button>
+        </div>
+      </div>
+
+      <!-- Date Range -->
+      <div *ngIf="cancelStep === 'dates'" class="cancel-step">
+        <p class="step-description">
+          Select the date range when this vehicle should <strong>not be available</strong> to customers.
+          You can only select dates within the original booking period.
+        </p>
+        <div class="date-range-group">
+          <div class="form-group">
+            <label>From</label>
+            <input 
+              type="date" 
+              [(ngModel)]="cancelBlockStartDate"
+              [min]="cancelBookingData?.startDate | date:'yyyy-MM-dd'"
+              [max]="cancelBookingData?.endDate | date:'yyyy-MM-dd'"
+              class="form-control">
+          </div>
+          <div class="form-group">
+            <label>To</label>
+            <input 
+              type="date" 
+              [(ngModel)]="cancelBlockEndDate"
+              [min]="cancelBookingData?.startDate | date:'yyyy-MM-dd'"
+              [max]="cancelBookingData?.endDate | date:'yyyy-MM-dd'"
+              class="form-control">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="onCancelDatesBack()">Back</button>
+          <button class="btn-primary btn-danger" (click)="onCancelDatesConfirm()">Cancel Booking & Block Dates</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
