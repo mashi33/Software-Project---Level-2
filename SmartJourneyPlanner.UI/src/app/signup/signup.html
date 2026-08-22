@@ -81,9 +81,10 @@
         </div>
       </div>
 
-      <button class="btn-login" type="submit" [disabled]="pwd.invalid">
-        <span>Let's start</span>
-        <i class="bi bi-arrow-right btn-icon"></i>
+      <button class="btn-login" type="submit" [disabled]="pwd.invalid || isLoading">
+        <span>{{ isLoading ? 'Creating Account...' : "Let's start" }}</span>
+        <i *ngIf="!isLoading" class="bi bi-arrow-right btn-icon"></i>
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
       </button>
 
       <p class="signup-prompt">

@@ -3,16 +3,18 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, CommonModule],
   templateUrl: './signup.html',
   styleUrl: './signup.css'
 })
 export class Signup {
   showPassword: boolean = false;
+  isLoading: boolean = false;
   //Model for signup form data
   signupData = {
     FullName: '',
@@ -35,6 +37,9 @@ export class Signup {
   */
 
   onSignup() {
+    if (this.isLoading) {
+      return;
+    }
     if (!this.signupData.UserType) {
       alert('Please select your role!');
       return;
@@ -63,10 +68,14 @@ export class Signup {
 
     console.log('Signup Attempt with Invitation Data:', this.signupData);
 
+    this.isLoading = true;
+
     // call the signup method from AuthService to register the user, and handle the response accordingly
     this.authService.signup(this.signupData).subscribe({
       next: (response: any) => {
         console.log('Signup Success!', response);
+
+        this.isLoading = false;
 
         Swal.fire({
           icon: 'success',
@@ -86,6 +95,7 @@ export class Signup {
         });
       },
       error: (err) => {
+        this.isLoading = false;
         console.error('Signup Failed', err);
         Swal.fire({
           icon: 'error',

@@ -59,12 +59,29 @@ export class ProfileComponent implements OnInit {
     confirmPassword: ''
   };
 
+  showCurrentPassword: boolean = false;
+  showNewPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+
+  toggleCurrentPassword() {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
+  toggleNewPassword() {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
   availableInterests: string[] = [];
 
   feedbackData = {
     comment: ''
   };
   isSubmitting: boolean = false;
+  isEmailEditable = false;
 
   constructor(
     private userService: UserService,
@@ -348,6 +365,10 @@ export class ProfileComponent implements OnInit {
   onRemovePhoto() {
     this.editData.profilePictureUrl = '';
     this.editData.profileImageFile = null;
+  }
+
+  toggleEmailEdit() {
+    this.isEmailEditable = !this.isEmailEditable;
   }
 
   submitFeedback() {

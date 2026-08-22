@@ -5,6 +5,7 @@ import { TripService } from '../services/trip.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
 
+
 @Component({
   selector: 'app-trip-create',
   standalone: true,
@@ -20,6 +21,9 @@ export class TripCreateComponent implements OnInit {
   isEditMode: boolean = false;
   tripId: string | null = null;
   todayDate: string = '';
+
+  isLoading: boolean = false;
+
   // Owner of the trip being edited; kept so an update never re-assigns ownership
   ownerEmail: string = '';
   ownerId: string = '';
@@ -291,6 +295,9 @@ export class TripCreateComponent implements OnInit {
 
   // Processes form submission (Create or Update)
   onSubmit() {
+    if (this.isLoading) {
+      return;
+    }
     this.submitted = true;
 
     if (this.tripForm.invalid) {
@@ -306,6 +313,7 @@ export class TripCreateComponent implements OnInit {
       );
       return;
     }
+    this.isLoading = true;
 
     {
       const currentUser = this.getCurrentUser();
@@ -335,6 +343,7 @@ export class TripCreateComponent implements OnInit {
         // Update existing trip
         this.tripService.updateTrip(this.tripId, tripData).subscribe({
           next: () => {
+            this.isLoading = false;
             this.invitedMembers = this.invitedMembers.map(m => ({ ...m, isNew: false }));
             this.tripService.setTempTripData({ ...tripData, Id: this.tripId });
             this.showSuccessAlert(newCount > 0
@@ -342,12 +351,16 @@ export class TripCreateComponent implements OnInit {
               : "Trip updated successfully!");
             this.router.navigate(['/trip-summary', this.tripId]);
           },
-          error: () => this.showErrorAlert("Error updating trip.")
+          error: () => {
+            this.isLoading = false;
+            this.showErrorAlert("Error updating trip.");
+          }
         });
       } else {
         // Create new trip
         this.tripService.createTrip(tripData).subscribe({
           next: (res: any) => {
+            this.isLoading = false;
             const newId = res.tripId || res.id;
             if (newId) {
               this.tripService.setTempTripData({ ...tripData, Id: newId });
