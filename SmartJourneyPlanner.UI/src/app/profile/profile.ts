@@ -62,6 +62,24 @@ export class ProfileComponent implements OnInit {
   showCurrentPassword: boolean = false;
   showNewPassword: boolean = false;
   showConfirmPassword: boolean = false;
+  showCustomInput: boolean = false;
+  newCustomInterest: string = '';
+
+  addCustomInterest() {
+    if (this.newCustomInterest && this.newCustomInterest.trim() !== '') {
+      const val = this.newCustomInterest.trim();
+
+      if (!this.editData.interests.includes(val)) {
+        this.editData.interests.push(val);
+      }
+      if (!this.availableInterests.includes(val)) {
+        this.availableInterests.push(val);
+      }
+
+      this.newCustomInterest = '';
+      this.showCustomInput = false;
+    }
+  }
 
   toggleCurrentPassword() {
     this.showCurrentPassword = !this.showCurrentPassword;
@@ -279,6 +297,14 @@ export class ProfileComponent implements OnInit {
       profilePictureUrl: this.user?.profilePictureUrl || '',
       interests: [...(this.user?.interests || [])]
     };
+
+    if (this.user?.interests) {
+      this.user.interests.forEach((item: string) => {
+        if (!this.availableInterests.includes(item)) {
+          this.availableInterests.push(item);
+        }
+      });
+    }
     this.passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
   }
 
@@ -291,9 +317,21 @@ export class ProfileComponent implements OnInit {
 
   onSaveProfile() {
     if (!this.userId) return;
-    const oldEmail = this.user?.email;
-    const formData = new FormData();
 
+    const oldEmail = this.user?.email;
+    const defaultList = this.isProvider()
+      ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
+      : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture', 'Adventure', 'Nature'];
+
+    this.availableInterests = this.availableInterests.filter(interest => {
+      const isDefault = defaultList.includes(interest);
+      return isDefault || this.editData.interests.includes(interest);
+    });
+
+    // Remember if the user intentionally removed the photo
+    const userRemovedPhoto = !this.editData.profilePictureUrl && !this.editData.profileImageFile;
+
+    const formData = new FormData();
     formData.append('fullName', this.editData.fullName || '');
     formData.append('email', this.editData.email || '');
     formData.append('bio', this.editData.bio || '');
@@ -301,15 +339,38 @@ export class ProfileComponent implements OnInit {
     formData.append('interests', JSON.stringify(this.editData.interests || []));
 
     if (this.editData.profileImageFile instanceof File) {
+      // New photo selected
       formData.append('profileImage', this.editData.profileImageFile);
+    } else if (userRemovedPhoto) {
+      // User clicked Remove Photo
+      formData.append('profilePictureUrl', '');
+      formData.append('removeProfilePicture', 'true');
     } else {
+      // Keep existing
       formData.append('profilePictureUrl', this.editData.profilePictureUrl || '');
     }
 
     this.userService.updateProfile(this.userId, formData).subscribe({
       next: (updatedUser: any) => {
         this.user = { ...this.user, ...this.editData };
-        if (updatedUser?.profilePictureUrl) this.user.profilePictureUrl = updatedUser.profilePictureUrl;
+
+        let finalPic = '';
+
+        if (userRemovedPhoto) {
+          // Force default avatar
+          finalPic = '/profilePic.jpg';
+        } else if (updatedUser?.profilePictureUrl) {
+          finalPic = updatedUser.profilePictureUrl;
+        } else if (this.editData.profilePictureUrl) {
+          finalPic = this.editData.profilePictureUrl;
+        } else {
+          finalPic = '/profilePic.jpg';
+        }
+
+        this.user.profilePictureUrl = finalPic;
+
+        // Update everywhere immediately (Navbar + Sidebar + Achievements)
+        this.authService.updateProfilePic(finalPic);
 
         if (this.editData.email !== oldEmail) {
           Swal.fire('Email Updated', 'Please login again with your new email.', 'info').then(() => {

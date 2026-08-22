@@ -6,12 +6,31 @@
   padding-top: 90px;
 }
 
+/* Match the navbar avatar exactly */
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #64B5F6;
+  /* same blue border as navbar */
+  display: inline-block;
+  background-color: #e2e8f0;
+  /* soft background while loading */
+}
+
+/* Nice circular placeholder when no image is available */
+.user-avatar-placeholder {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
 }
 
 .level-block {

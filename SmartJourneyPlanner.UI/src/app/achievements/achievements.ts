@@ -32,8 +32,16 @@ export class AchievementsComponent implements OnInit {
     }
 
     this.userName = this.authService.getUserName() || 'Traveller';
-    this.profilePic = this.authService.getProfilePic();
+    this.loadProfilePic();
     this.loadAchievements();
+  }
+
+  private loadProfilePic(): void {
+    const savedPic = localStorage.getItem('profilePic');
+    // Prefer the saved one, otherwise fall back to the same default the navbar uses
+    this.profilePic = savedPic && savedPic.trim() !== ''
+      ? savedPic
+      : '/profilePic.jpg';
   }
 
   loadAchievements(): void {
