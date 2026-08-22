@@ -306,7 +306,7 @@
                   </div>
                 </div>
                 <h5 class="weather-condition-text">
-                  {{ summaryWeather?.condition || 'No Data Available' }} {{ summaryWeather?.emoji }}
+                  {{ summaryWeather?.condition || 'No Data Available. Please verify the location name.' }} {{ summaryWeather?.emoji }}
                 </h5>
                 <p class="feels-like-text" *ngIf="summaryWeather?.avgTemp">
                   Feels like {{ summaryWeather.avgTemp | number:'1.1-1' }}°C
