@@ -210,7 +210,7 @@
 
           <div class="d-grid mt-4">
             <button class="btn btn-view-details" [routerLink]="['/vehicle', v.id]"
-              [queryParams]="{ start: startDate, end: endDate }">View Details</button>
+              [queryParams]="{ start: startDate, end: endDate, tripId: tripId, pickup: pickupArea, dest: tripDestination }">View Details</button>
           </div>
         </div>
       </div>

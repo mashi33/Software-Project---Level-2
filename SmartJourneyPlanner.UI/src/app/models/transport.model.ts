@@ -96,6 +96,7 @@ export interface Review {
  */
 export interface Booking {
   id?: string;
+  tripId?: string;
   vehicleId: string;
   userId: string; // ID of the traveler
   startDate: Date | string; // Trip start date
