@@ -26,5 +26,7 @@ namespace SmartJourneyPlanner.Models
 
         //  — soft-delete flag. When true, the message content is cleared
         public bool IsDeleted { get; set; } = false;
+        //  — marks a message as edited, so the UI can show an "(edited)" label
+        public bool IsEdited { get; set; } = false;
     }
 }

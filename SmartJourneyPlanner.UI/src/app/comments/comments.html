@@ -88,7 +88,10 @@
             </div>
 
             <div class="chat-footer-row">
-              <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
+               <small class="chat-time">
+                {{ comment.createdAt | date:'shortTime' }}
+                <span *ngIf="comment.isEdited && !comment.isDeleted" class="edited-label">(edited)</span>
+              </small>
               <div class="chat-actions" *ngIf="!comment.isDeleted && comment.user === currentUser">
                 <button *ngIf="comment.messageType !== 'pdf'"
                         (click)="startEditing(comment)"

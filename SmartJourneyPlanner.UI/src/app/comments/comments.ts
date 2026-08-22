@@ -179,6 +179,7 @@ getAvatarColor(username: string): string {
               ...this.allComments[index],
               text:        updatedComment.text        ?? updatedComment.Text        ?? '',
               isDeleted:   updatedComment.isDeleted    ?? updatedComment.IsDeleted   ?? false,
+              isEdited:    updatedComment.isEdited     ?? updatedComment.IsEdited    ?? false, 
               messageType: updatedComment.messageType  ?? updatedComment.MessageType ?? this.allComments[index].messageType,
               fileId:      updatedComment.fileId       ?? updatedComment.FileId,
               fileName:    updatedComment.fileName     ?? updatedComment.FileName,

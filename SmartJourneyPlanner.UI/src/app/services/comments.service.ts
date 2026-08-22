@@ -15,6 +15,7 @@ export interface CommentItem {
   fileName?:    string;
   fileSize?:    number;
   isDeleted?:   boolean;
+  isEdited?:    boolean;
 }
 
 @Injectable({ providedIn: 'root' })

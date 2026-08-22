@@ -115,6 +115,7 @@ namespace SmartJourneyPlanner.Controllers
 
             existingComment.Text = updatedComment.Text;
             existingComment.UpdatedAt = DateTime.UtcNow;
+            existingComment.IsEdited = true; // Mark the comment as edited
 
             await _commentsService.UpdateAsync(id, existingComment);
 

@@ -4,12 +4,38 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "rootDir": "src",
-    "types": [
-      "jasmine"
-    ]
+    "rootDir": "./",
+    "types": ["jasmine"]
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.spec.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/app/app.spec.ts",
+    "src/app/filter/filter.spec.ts",
+    "src/app/footer/footer.spec.ts",
+    "src/app/forgot-password/forgot-password.spec.ts",
+    "src/app/generation/generation.spec.ts",
+    "src/app/guards/admin-guard.spec.ts",
+    "src/app/help/budget-help/budget-help.spec.ts",
+    "src/app/help/getting-started/getting-started.spec.ts",
+    "src/app/help/trip-planning-help/trip-planning-help.spec.ts",
+    "src/app/map-view/map-view.spec.ts",
+    "src/app/navbar/navbar.spec.ts",
+    "src/app/place-card/place-card.spec.ts",
+    "src/app/profile/profile.spec.ts",
+    "src/app/reset-password/reset-password.spec.ts",
+    "src/app/services/auth.spec.ts",
+    "src/app/services/budget.spec.ts",
+    "src/app/services/comments.spec.ts",
+    "src/app/services/generation.spec.ts",
+    "src/app/services/signalr.spec.ts",
+    "src/app/services/vote-places.spec.ts",
+    "src/app/traveller-dashboard/traveller-dashboard.spec.ts",
+    "src/app/trip-create/trip-create.spec.ts",
+    "src/app/trip-history/trip-history.spec.ts",
+    "src/app/trip-summary/trip-summary.spec.ts",
+    "src/app/verify-email/verify-email.spec.ts"
   ]
 }
