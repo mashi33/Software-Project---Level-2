@@ -419,7 +419,7 @@ public async Task<IActionResult> GetVehicleById(string id)
                 return BadRequest(new { message = ex.Message });
             }
         }
-        // MANAGE PROVIDERS         
+        // MANAGE PROVIDERS        
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
         {
@@ -460,26 +460,34 @@ public async Task<IActionResult> GetVehicleById(string id)
                 // Find any booking associated with this vehicle ID
                 var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
                 var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
-                var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
+                var activeBookings = await bookingCollection.Find(bookingFilter).ToListAsync();
 
-                if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
+                var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+                var vehicleName = !string.IsNullOrWhiteSpace(targetVehicle.ModelName) ? targetVehicle.ModelName : (targetVehicle.VehicleClass ?? "Selected Transport");
+
+                foreach (var activeBooking in activeBookings)
                 {
-                    // Get the MongoDB collection for CustomerAlerts
-                    var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
-                    
-                    // Instantiate the alert object with the user and vehicle details
-                    var customerAlert = new CustomerAlert
+                    if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
                     {
-                        UserId = activeBooking.UserId,
-                        Title = "Vehicle Service / Booking Notice",
-                        Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
-                        VehicleInfo = targetVehicle.VehicleClass ?? "Selected Transport",
-                        Timestamp = DateTime.UtcNow,
-                        Dismissed = false
-                    };
+                        activeBooking.Status = "Cancelled";
+                        activeBooking.StatusChangedDate = DateTime.UtcNow.ToString("o");
+                        var bookingUpdateFilter = Builders<TransportBooking>.Filter.Eq(b => b.Id, activeBooking.Id);
+                        await bookingCollection.ReplaceOneAsync(bookingUpdateFilter, activeBooking);
 
-                    // Insert the object asynchronously into the database
-                    await alertCollection.InsertOneAsync(customerAlert);
+                        var customerAlert = new CustomerAlert
+                        {
+                            UserId = activeBooking.UserId,
+                            BookingId = activeBooking.Id, 
+                            VehicleId = id,
+                            Title = "Vehicle Service / Booking Notice",
+                            Message = $"The vehicle \"{vehicleName}\" you booked has been declined by the admin. Please choose a new vehicle.",
+                            VehicleInfo = vehicleName,
+                            Timestamp = DateTime.UtcNow,
+                            Dismissed = false
+                        };
+
+                        await alertCollection.InsertOneAsync(customerAlert);
+                    }
                 }
             }
 
@@ -493,7 +501,6 @@ public async Task<IActionResult> GetVehicleById(string id)
                 var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
                 var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
 
-                // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
                 var notification = new Notification
                 {
                     UserId = targetVehicle.ProviderId,
@@ -550,6 +557,8 @@ public async Task<IActionResult> GetVehicleById(string id)
         public string? Id { get; set; }
 
         public string UserId { get; set; } = string.Empty;
+        public string? BookingId { get; set; }
+        public string? VehicleId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string VehicleInfo { get; set; } = string.Empty;
