@@ -38,6 +38,7 @@
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--page-bg);
     overflow: hidden;
+    padding-top: 90px;
 }
 
 .header-content {

@@ -4,6 +4,7 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-sizing: border-box;
   overflow: hidden;
+  padding-top: 90px;
 }
 
 /* ---------- Main layout: sidebar + map, full height ---------- */
