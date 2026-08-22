@@ -1,9 +1,11 @@
 <div class="main-layout">
-  <div class="header-content">
-    <h1>WELCOME</h1>
-    <p>Smart Journey Group Chat</p>
+    <div class="header-content">
+    <div class="header-row">
+      <div class="header-title-block">
+        <h1>Smart Journey Group Chat</h1>
+        <p><span class="material-icons subtitle-icon">forum</span> Your trip, your team, one decision.</p>
+      </div>
 
-    <div class="trip-selection-wrapper">
       <div class="trip-selector">
         <label for="tripSelect">Select Trip:</label>
         <select id="tripSelect" [(ngModel)]="selectedTripId" (change)="onTripChange()" class="minimal-dropdown">
@@ -198,8 +200,8 @@
               <div class="footer-center">
                 <span class="anonymous-label"><i class="fas fa-lock"></i> ANONYMOUS SELECTION</span>
               </div>
-              <div class="footer-right">
-                <button class="btn-delete-box-bottom" (click)="deleteDiscussion(item)" title="Remove Vote Box">
+                <div class="footer-right">
+                <button *ngIf="item.user === currentUser" class="btn-delete-box-bottom" (click)="deleteDiscussion(item)" title="Remove Vote Box">
                   <i class="material-icons">delete</i>
                 </button>
               </div>

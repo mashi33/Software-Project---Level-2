@@ -7,15 +7,54 @@ import { Subject } from 'rxjs';
 })
 export class SignalrService {
   public hubConnection!: signalR.HubConnection;
-  
+  private retryInterval: any = null;
+  private isManuallyReconnecting: boolean = false;
   public messageReceived = new Subject<any>();
   public voteUpdated = new Subject<any>();
   public discussionDeleted = new Subject<string>();
   public newDiscussion = new Subject<any>();
   public notificationReceived = new Subject<any>();
+  public memberLimitChanged = new Subject<any>(); 
+  public connectionFailed = new Subject<string>(); 
+  public connectionRestored = new Subject<void>(); 
 
   constructor() {
     this.startConnection();
+  }
+
+  // Background retry loop — tries to restart the SignalR connection every 5 seconds
+  // until it succeeds. Runs silently; only notifies the UI once when reconnected.
+  private startManualReconnectLoop() {
+    if (this.isManuallyReconnecting) return; // already retrying, don't start a second loop
+    this.isManuallyReconnecting = true;
+
+    this.retryInterval = setInterval(async () => {
+      if (this.hubConnection.state === signalR.HubConnectionState.Connected) {
+        clearInterval(this.retryInterval);
+        this.isManuallyReconnecting = false;
+        return;
+      }
+
+      try {
+        console.log('[SignalR] Attempting manual reconnect...');
+        await this.hubConnection.start();
+
+        console.log('[SignalR] Manual reconnect successful ✅');
+        clearInterval(this.retryInterval);
+        this.isManuallyReconnecting = false;
+
+        // Re-join the user's personal notification group after reconnecting
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          await this.hubConnection.invoke('JoinUserGroup', userId);
+        }
+
+        this.connectionRestored.next();
+      } catch (err) {
+        console.log('[SignalR] Manual reconnect attempt failed, will retry...');
+        // Swallow the error — the interval will simply try again in 5s
+      }
+    }, 5000);
   }
 
   private startConnection() {
@@ -32,6 +71,14 @@ export class SignalrService {
           .then(() => console.log('[SignalR] Re-joined user group after reconnect:', userId))
           .catch((err: any) => console.warn('[SignalR] Failed to re-join user group on reconnect:', err));
       }
+    });
+
+    // Fires when SignalR gives up automatic reconnection attempts (connection permanently lost).
+    // Instead of asking the user to refresh, we start our own background retry loop.
+    this.hubConnection.onclose((err: any) => {
+      console.warn('[SignalR] Connection closed:', err);
+      this.connectionFailed.next('Live connection lost. Trying to reconnect...');
+      this.startManualReconnectLoop();
     });
 
     this.hubConnection
@@ -68,6 +115,14 @@ export class SignalrService {
           this.newDiscussion.next(data);
         });
 
+
+        // 4.5 Member Limit Changed — fired when a trip's member list changes
+        this.hubConnection.off('MemberLimitChanged');
+        this.hubConnection.on('MemberLimitChanged', (data: any) => {
+          console.log("SignalR: Member Limit Changed", data);
+          this.memberLimitChanged.next(data);
+        });
+
         // 5. New Real-time Notification (user-targeted via Group)
         this.hubConnection.off('ReceiveNotification');
         this.hubConnection.on('ReceiveNotification', (data: any) => {
@@ -83,7 +138,11 @@ export class SignalrService {
             .catch((err: any) => console.warn('[SignalR] Failed to join user group:', err));
         }
       })
-      .catch((err: any) => console.log('SignalR Connection Error: ' + err));
+        .catch((err: any) => {
+        console.log('SignalR Connection Error: ' + err);
+        this.connectionFailed.next('Cannot connect to live chat. Trying to reconnect...');
+        this.startManualReconnectLoop();   
+      });
   }
 
   /**
@@ -139,4 +198,4 @@ export class SignalrService {
       console.error('Error while invoking SendMessage: ', err);
     }
   }
-}
+}

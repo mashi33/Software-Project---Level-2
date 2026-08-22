@@ -9,6 +9,9 @@ using System;
 using System.Linq; 
 using System.Security.Claims; 
 using Microsoft.AspNetCore.Authorization;
+using SmartJourneyPlanner.Services;
+using SmartJourneyPlanner.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -19,14 +22,18 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly IMongoCollection<Trip> _tripsCollection;
         private readonly IMongoCollection<TripHistory> _historyCollection;
         private readonly SmartJourneyPlanner.API.Services.EmailService _emailService;
+        private readonly DiscussionsService _discussionsService;   
+        private readonly IHubContext<ChatHub> _hubContext;   
 
         // Constructor to initialize MongoDB collections
-        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService)
+        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService,DiscussionsService discussionsService,IHubContext<ChatHub> hubContext)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
             _emailService = emailService;
+            _discussionsService = discussionsService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("my-trips")]
@@ -551,6 +558,18 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                         // A failed invite email must not fail the whole update
                         Console.WriteLine($"[Invite Email Error] {member.Email}: {mailEx.Message}");
                     }
+                }
+
+                // ── NEW: keep pending vote boxes in sync with the trip's actual member count.
+                // updatedTrip.Members is owner-excluded (via NormalizeMembers), so +1 for the owner.
+                // Only Pending discussions update — Confirmed/Rejected stay untouched.
+                if (addedMembers.Count > 0 || removedEmails.Count > 0)
+                {
+                    int newLimit = updatedTrip.Members.Count + 1;
+                    await _discussionsService.UpdatePendingMemberLimitsAsync(id, newLimit);
+
+                    // Notify any open Group Chat pages so pending vote boxes update live
+                    await _hubContext.Clients.Group(id).SendAsync("MemberLimitChanged", new { tripId = id, newLimit });
                 }
 
                 return Ok(new

@@ -107,5 +107,20 @@ namespace SmartJourneyPlanner.Services
       var update = Builders<DiscussionItem>.Update.Push(d => d.Comments, comment);
       await _discussionsCollection.UpdateOneAsync(filter, update);
     }
+
+        // 8. Update MemberLimit for all PENDING discussions of a trip (not confirmed/rejected)
+    // Called when a trip's member list changes, so vote boxes stay in sync with actual group size
+    public async Task UpdatePendingMemberLimitsAsync(string tripId, int newLimit)
+    {
+      var filter = Builders<DiscussionItem>.Filter.And(
+          Builders<DiscussionItem>.Filter.Eq(d => d.TripId, tripId),
+          Builders<DiscussionItem>.Filter.Eq(d => d.IsConfirmed, false),
+          Builders<DiscussionItem>.Filter.Eq(d => d.IsRejected, false)
+      );
+
+      var update = Builders<DiscussionItem>.Update.Set(d => d.MemberLimit, newLimit);
+
+      await _discussionsCollection.UpdateManyAsync(filter, update);
+    }
   }
 }
