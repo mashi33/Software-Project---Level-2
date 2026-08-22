@@ -230,13 +230,28 @@
 }
 
 .btn-header-outline {
-  border: 1px solid #ffffff;
-  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(4px);
   color: #334155;
   font-weight: 600;
-  border-radius: 12px;
-  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-header-outline:hover {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.hero-actions .btn-danger {
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.45rem 1.1rem;
 }
 
 
