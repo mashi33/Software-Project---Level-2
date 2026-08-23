@@ -9,9 +9,7 @@ using System.Net;
 namespace SmartJourneyPlanner.Services
 #nullable disable
 {
-
-    /* Handles route optimization by fetching fastest, cheapest, and scenic routes
-     from the Google Routes API, with MongoDB caching to reduce API quota usage.*/
+    // Handles route optimization by fetching fastest, cheapest, and scenic routes
     public class RouteService : IRouteService
     {
         private readonly IMongoCollection<SavedRoute> _routeCollection;
@@ -33,8 +31,7 @@ namespace SmartJourneyPlanner.Services
             _busFareService = busFareService;
         }
 
-        /* Calculates estimated petrol and diesel fuel costs for a given distance.
-        /// Returns null for either if the live price could not be fetched.*/
+        /// Calculates estimated fuel costs for petrol and diesel based on distance in meters.
         private async Task<(double? petrolCost, double? dieselCost)> CalculateFuelCosts(double distanceMeters)
         {
             var (petrolPrice, dieselPrice) = await _fuelPriceService.GetFuelPricesAsync();
@@ -51,12 +48,12 @@ namespace SmartJourneyPlanner.Services
             return (petrolCost, dieselCost);
         }
 
-        /* Find fastest, cheapest, and scenic routes between two locations using Google Routes API.
-         Caches results in MongoDB to reduce API calls and improve response times.*/
+        // Returns optimized routes (fastest, cheapest, scenic) for the given start and end locations.
         public async Task<IActionResult> GetOptimizedRoutesAsync(RouteRequest req)
         {
             if (string.IsNullOrEmpty(_apiKey)) return new BadRequestObjectResult("Google API Key is missing.");
 
+            // Return cached result if this start/end pair was already fetched before
             var existingRoute = await _routeCollection
                 .Find(r => r.StartLocation == req.Start && r.EndLocation == req.End)
                 .FirstOrDefaultAsync();
@@ -71,7 +68,7 @@ namespace SmartJourneyPlanner.Services
                 // HttpClient handles TLS automatically
                 using var handler = new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
                 using var client = new HttpClient(handler);
-                client.Timeout = TimeSpan.FromSeconds(30);
+                client.Timeout = TimeSpan.FromSeconds(20);
 
                 // Attach API key and limit response fields to only what we need
                 client.DefaultRequestHeaders.Add("X-Goog-Api-Key", _apiKey);
@@ -102,21 +99,21 @@ namespace SmartJourneyPlanner.Services
                 using var cheapestDoc = JsonDocument.Parse(cheapestRaw);
                 using var scenicDoc = JsonDocument.Parse(scenicRaw);
 
-                // Fallback if not found fastest route, which is critical for the rest of the logic
+                // If fastest route failed, there's nothing to fall back on
                 if (!fastestDoc.RootElement.TryGetProperty("routes", out JsonElement fRoutes) || fRoutes.GetArrayLength() == 0)
                 {
                     return new NotFoundObjectResult(new { message = "Routes not found.", debug = fastestRaw });
                 }
 
                 var fRoute = fRoutes[0];
+
                 // Fall back to fastest route if cheapest returned no results
                 JsonElement cRoute = (cheapestDoc.RootElement.TryGetProperty("routes", out JsonElement cRoutes) && cRoutes.GetArrayLength() > 0) ? cRoutes[0] : fRoute;
 
                 // Prefer the second alternative for scenic; fall back to first or fastest
                 JsonElement sRoute = (scenicDoc.RootElement.TryGetProperty("routes", out JsonElement sRoutes) && sRoutes.GetArrayLength() > 1) ? sRoutes[1] : (sRoutes.GetArrayLength() > 0 ? sRoutes[0] : fRoute);
 
-                /* Find interesting nearby places along the scenic route (Scenic Algorithm: sample up to 4 waypoints spaced at least 30km apart, 
-                 starting after 20km, then search for parks, landmarks, and cultural spots within 10km of each waypoint)*/
+                // Find interesting nearby places along the scenic route
                 var scenicViewpoints = new List<ViewpointDetail>();
 
                 try
@@ -128,6 +125,7 @@ namespace SmartJourneyPlanner.Services
                         double lastSearchDistance = 0;
                         var pointsToSearch = new List<JsonElement>();
 
+                        // Sample up to 4 waypoints spaced at least 30km apart, starting after 20km
                         foreach (var step in steps)
                         {
                             currentDistance += step.GetProperty("distanceMeters").GetDouble();
@@ -224,9 +222,31 @@ namespace SmartJourneyPlanner.Services
                 await _routeCollection.InsertOneAsync(newRoute);
                 return new OkObjectResult(newRoute);
             }
+            catch (TaskCanceledException)
+            {
+                // HttpClient.Timeout triggers this — distinguishes a slow/unresponsive
+                return new ObjectResult(new
+                {
+                    message = "Request timed out. The route service is taking too long to respond — please try again.",
+                    errorType = "timeout"
+                })
+                { StatusCode = 504 };
+            }
+            catch (HttpRequestException ex)
+            {
+                // Thrown when the request can't reach the server at all — no internet,
+                // DNS failure, or the API endpoint is unreachable.
+                return new ObjectResult(new
+                {
+                    message = "Unable to reach the route service. Please check your internet connection and try again.",
+                    errorType = "network",
+                    details = ex.Message
+                })
+                { StatusCode = 503 };
+            }
             catch (Exception ex)
             {
-                return new ObjectResult(new { message = "Error", details = ex.Message }) { StatusCode = 500 };
+                return new ObjectResult(new { message = "Error", errorType = "unknown", details = ex.Message }) { StatusCode = 500 };
             }
         }
 

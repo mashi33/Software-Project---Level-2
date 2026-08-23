@@ -88,6 +88,12 @@ namespace SmartJourneyPlanner.Services
                     _cacheLock.Release();
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // The 60s CancellationTokenSource above tripped — MongoDB Atlas
+                // didn't respond in time (slow/no internet connection, cold-start cluster).
+                Console.WriteLine("⚠️ Bus route cache load timed out — MongoDB did not respond within 60s.");
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"⚠️ Cache initialization failed: {ex.Message}");
@@ -119,10 +125,7 @@ namespace SmartJourneyPlanner.Services
             return parts[0];
         }
 
-        /* Calculates fare between two cities on a given route.
-         Priority 1 (accurate): both cities exist in the Stops array -> use section-diff + fare lookup table.
-         Priority 2 (fallback / approximate): city missing from Stops but present in Via/From/To text ->
-         return the route's TotalFare and mark the result as an approximation via the out parameter.*/
+        // Calculates fare between two cities on a given route.
         private double? GetFare(BusRoute route, string fromCity, string toCity, Dictionary<int, double> fareLookup, out bool isApproximate)
         {
             isApproximate = false;
@@ -177,7 +180,7 @@ namespace SmartJourneyPlanner.Services
                 };
             }
 
-            //Direct Routes — up to 5, Principal-first, cheapest, accurate fare priority ──
+            // Direct Routes — up to 5, Principal-first, cheapest, accurate fare priority ──
             var allDirectMatches = _cachedRoutes
                 .Select(r =>
                 {
@@ -227,7 +230,7 @@ namespace SmartJourneyPlanner.Services
                 return bestDirectResult;
             }
 
-            //2-Leg Interchange (only runs if no direct route matched) ──
+            //2-Leg Interchange (only runs if no direct route matched)
             var leg1Candidates = _cachedRoutes
                 .Where(r => r.Stops.Any(s => s.City.Equals(from, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
