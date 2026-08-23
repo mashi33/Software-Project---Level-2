@@ -62,7 +62,7 @@
   justify-content: flex-start;
 }
 
-.outer-dashboard-back-btn {
+.outer-summary-back-btn {
   background-color: #f8fafc; 
   color: #334155;            
   border: 1px solid #cbd5e1; 
@@ -79,20 +79,20 @@
   white-space: nowrap;
 }
 
-.outer-dashboard-back-btn i {
+.outer-summary-back-btn i {
   font-size: 16px;
   color: #475569; 
   transition: transform 0.2s ease;
 }
 
-.outer-dashboard-back-btn:hover {
+.outer-summary-back-btn:hover {
   background-color: #e2e8f0; 
   border-color: #94a3b8;
   color: #0f172a;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-.outer-dashboard-back-btn:hover i {
+.outer-summary-back-btn:hover i {
   transform: translateX(-3px);
 }
 

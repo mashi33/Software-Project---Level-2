@@ -330,12 +330,20 @@ export class BudgetDashboard implements OnInit {
     return fallbackPrefix.charAt(0).toUpperCase() + fallbackPrefix.slice(1) || 'Teammate';
   }
 
-  goToDashboard() {
-    this.router.navigate(['/traveller-dashboard']);
+  navigateToSummary() {
+    if (this.tripId) { 
+      this.router.navigate(['/trip-summary', this.tripId]); 
+    } else {
+      Swal.fire('Error', 'No trip selected to view summary.', 'error');
+    }
   }
 
-  goToChat() {
-    this.router.navigate(['/groupChat']); 
+  navigateToChat() {
+    if (this.tripId) {
+      this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+    } else {
+      Swal.fire('Error', 'No trip selected to view chat.', 'error');
+    }
   }
 
   exportToPDF() {
