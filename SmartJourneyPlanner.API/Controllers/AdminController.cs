@@ -191,16 +191,16 @@ namespace SmartJourneyPlanner.API.Controllers
             if (missingNameUserIds != null && missingNameUserIds.Count > 0)
             {
                 var users = await _userCollection
-                    .Find(u => missingNameUserIds.Contains(u.Id))
+                    .Find(u => missingNameUserIds.Contains(u.Id!))
                     .ToListAsync();
 
                 var nameById = users.ToDictionary(u => u.Id!, u => u.FullName);
 
                 foreach (var m in memories)
                 {
-                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId, out var name))
+                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId!, out var name))
                     {
-                        m.FullName = name;
+                        m.FullName = name!;
                     }
                 }
             }
