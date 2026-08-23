@@ -50,14 +50,14 @@ export class RouteOptimization implements OnInit, OnDestroy {
   busResult: any = null;
   isBusLoading = false;
 
-  /* Pre-computed distance cache — avoids O(n) recalculation on every render cycle
-   Key: "lat_lng", Value: formatted distance string*/
+  // Pre-computed distance cache — avoids O(n) recalculation on every render cycle
   private distanceCache = new Map<string, string>();
 
   private searchSubject = new Subject<{ input: string, type: 'start' | 'end' }>();
   private searchSubscription?: Subscription;
 
-   //Sets up a debounced search stream to avoid firing API calls on every keystroke.
+  
+  //Sets up a debounced search stream to avoid firing API calls on every keystroke.
   constructor(private routeService: RouteService, private router: Router, private route: ActivatedRoute) {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
@@ -100,20 +100,20 @@ export class RouteOptimization implements OnInit, OnDestroy {
     }
   }
 
-  //Cleans up the search subscription when the component is destroyed.
+  // Cleans up the search subscription when the component is destroyed.
   ngOnDestroy() {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
     }
   }
 
-  // Navigates to the explore page.
+  /** Navigates to the explore page. */
   goToExplore() {
     this.router.navigate(['/explore']);
   }
 
-    /*Dynamically injects the Google Maps script if it hasn't been loaded yet.
-    Includes the Places and Geometry libraries needed for autocomplete and distance calculations. */
+   /* Dynamically injects the Google Maps script if it hasn't been loaded yet.
+   * Includes the Places and Geometry libraries needed for autocomplete and distance calculations.*/
   loadGoogleApi() {
     if (!(window as any).google) {
       const script = document.createElement('script');
@@ -184,9 +184,8 @@ export class RouteOptimization implements OnInit, OnDestroy {
     this.showTraffic = !this.showTraffic;
   }
 
-  /* Pushes the user's input into the debounced search stream.
+   /* Pushes the user's input into the debounced search stream.
     Clears suggestions if input is too short.*/
-
   search(type: 'start' | 'end') {
     const input = type === 'start' ? this.start : this.end;
     if (input && input.length > 2) {
@@ -218,7 +217,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
     this.routeService.refreshSessionToken();
   }
 
-  // Geocodes a plain address string into lat/lng coordinates and updates the map bounds.
+  // Geocodes a plain address string into lat/lng coordinates and updates the map bounds. 
   getCoords(address: string, type: 'start' | 'end') {
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode({ address: address }, (results, status) => {
@@ -231,7 +230,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
     });
   }
 
-  /*Calls the backend to fetch optimized routes, draws the fastest route by default,
+   /* Calls the backend to fetch optimized routes, draws the fastest route by default,
    * and pre-computes viewpoint distances once both the path and viewpoints are ready.*/
   calculate() {
     if (this.transportMode === 'public') {
@@ -251,9 +250,9 @@ export class RouteOptimization implements OnInit, OnDestroy {
           this.isLoading = false;
         }
 
-        /* Pre-compute distances only after both the path and viewpoints are loaded —
-         drawPath() alone may run before results arrive on first load, so this
-         guarantees viewpoints exist when pre-computation runs.*/
+        // Pre-compute distances only after both the path and viewpoints are loaded —
+        // drawPath() alone may run before results arrive on first load, so this
+        // guarantees viewpoints exist when pre-computation runs.
         if (res.scenicViewpoints?.length > 0
           && this.currentPath.length > 0
           && this.apiLoaded) {
@@ -262,6 +261,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isLoading = false;
+
         if (err.status === 404) {
           Swal.fire({
             icon: 'info',
@@ -270,7 +270,34 @@ export class RouteOptimization implements OnInit, OnDestroy {
             confirmButtonColor: '#3085d6',
             confirmButtonText: 'Close'
           });
+        } else if (err.errorType === 'timeout') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Request timed out',
+            text: err.message || 'The route service is taking too long to respond. Please try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Retry'
+          }).then((result) => {
+            if (result.isConfirmed) this.calculate();
+          });
+        } else if (err.errorType === 'network') {
+          Swal.fire({
+            icon: 'error',
+            title: 'No internet connection',
+            text: err.message || 'Please check your internet connection and try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Retry'
+          }).then((result) => {
+            if (result.isConfirmed) this.calculate();
+          });
         } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Something went wrong',
+            text: err.message || 'An unexpected error occurred. Please try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Close'
+          });
           console.error("Error fetching routes", err);
         }
       }
@@ -288,8 +315,8 @@ export class RouteOptimization implements OnInit, OnDestroy {
       // Clear stale distances from previous route
       this.distanceCache.clear();
 
-      /* Pre-compute distances if viewpoints already loaded
-       (handles route switching after initial load)*/
+      // Pre-compute distances if viewpoints already loaded
+      // (handles route switching after initial load)
       if (this.results?.scenicViewpoints?.length > 0 && this.apiLoaded) {
         this.preComputeDistances(this.results.scenicViewpoints);
       }
@@ -298,8 +325,8 @@ export class RouteOptimization implements OnInit, OnDestroy {
     }
   }
 
-  /* Pre-compute all POI distances once — results cached in distanceCache map
-  // Called from both calculate() and drawPath() to cover all timing scenarios*/
+  // Pre-compute all POI distances once — results cached in distanceCache map
+  // Called from both calculate() and drawPath() to cover all timing scenarios
   private preComputeDistances(viewpoints: any[]): void {
     if (!this.apiLoaded || !(window as any).google) return;
 
@@ -376,7 +403,7 @@ export class RouteOptimization implements OnInit, OnDestroy {
     }
   }
 
-  // Redraws the map path and updates route details when the user switches route types. 
+  /** Redraws the map path and updates route details when the user switches route types. */
   onRouteSelect(routeType: string, route: any) {
     this.selectedRouteType = routeType;
     this.drawPath(route.polyline);
@@ -426,14 +453,14 @@ export class RouteOptimization implements OnInit, OnDestroy {
     };
   }
 
-  // Converts a distance string in metres to a readable km string.
+  // Converts a distance string in metres to a readable km string. 
   formatDistance(meters: string): string {
     if (!meters) return '0 km';
     const m = parseFloat(meters.replace('m', ''));
     return (m / 1000).toFixed(1) + ' km';
   }
 
-  // Converts a duration string in seconds to a readable hours and minutes format.
+  // Converts a duration string in seconds to a readable hours and minutes format. 
   formatDuration(duration: string): string {
     if (!duration) return 'N/A';
     const seconds = parseInt(duration.replace('s', ''));
@@ -489,14 +516,44 @@ export class RouteOptimization implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isBusLoading = false;
-        console.error('Bus fare error', err);
+
+        if (err.errorType === 'timeout') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Request timed out',
+            text: err.message || 'The bus fare service is taking too long to respond. Please try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Retry'
+          }).then((result) => {
+            if (result.isConfirmed) this.calculateBus();
+          });
+        } else if (err.errorType === 'network') {
+          Swal.fire({
+            icon: 'error',
+            title: 'No internet connection',
+            text: err.message || 'Please check your internet connection and try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Retry'
+          }).then((result) => {
+            if (result.isConfirmed) this.calculateBus();
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Something went wrong',
+            text: err.message || 'Could not fetch bus fare details. Please try again.',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Close'
+          });
+          console.error('Bus fare error', err);
+        }
       }
     });
   }
 
-  /* Merges start/end into busResult for the PDF component.
-   Angular templates don't support the spread operator, so this is done
-   in a getter instead of inline in the template.*/
+  // Merges start/end into busResult for the PDF component.
+  // Angular templates don't support the spread operator, so this is done
+  // in a getter instead of inline in the template.
   get busDataForPdf(): any {
     if (!this.busResult) return null;
     return { ...this.busResult, from: this.start, to: this.end };

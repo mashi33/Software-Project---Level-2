@@ -243,7 +243,7 @@ button:hover, .btn-primary:hover {
    ========================================================================== */
 .map-actions-container {
   position: absolute;
-  bottom: 30px; 
+  bottom: 100px; 
   left: 20px;
   display: flex;
   flex-direction: row; 
