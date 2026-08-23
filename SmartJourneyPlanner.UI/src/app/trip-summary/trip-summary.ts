@@ -229,7 +229,7 @@ export class TripSummaryComponent implements OnInit {
 
     const today = new Date();
     const maxForecastDate = new Date();
-    maxForecastDate.setDate(today.getDate() + 14);
+    maxForecastDate.setDate(today.getDate() + 16); 
 
     const targetTripDate = new Date(startDateStr);
 
@@ -245,13 +245,27 @@ export class TripSummaryComponent implements OnInit {
 
     this.weatherService.getCoordinates(destination).subscribe({
       next: (geoRes) => {
-        if (!geoRes?.length) {
+        if (!geoRes || !geoRes.results || !geoRes.results.length) {
           this.loadingWeather = false;
+          this.summaryWeather = null;
           return;
         }
 
-        const latStr = geoRes[0].lat.toString();
-        const lonStr = geoRes[0].lon.toString();
+        // Filter for Sri Lanka cities only 
+        const sriLankaResults = geoRes.results.filter((r: any) => {
+          const country = (r.country || '').toLowerCase();
+          const countryCode = (r.country_code || '').toLowerCase();
+          return country === 'sri lanka' || countryCode === 'lk';
+        });
+
+        if (sriLankaResults.length === 0) {
+          this.loadingWeather = false;
+          this.summaryWeather = null;
+          return;
+        }
+
+        const latStr = sriLankaResults[0].latitude.toString();
+        const lonStr = sriLankaResults[0].longitude.toString();
 
         this.weatherService.getProcessedWeather(latStr, lonStr, startDateStr).subscribe({
           next: (weather) => {
@@ -271,7 +285,10 @@ export class TripSummaryComponent implements OnInit {
           error: () => { this.loadingWeather = false; }
         });
       },
-      error: () => { this.loadingWeather = false; }
+      error: () => {
+        this.loadingWeather = false;
+        this.summaryWeather = null;
+      }
     });
   }
 

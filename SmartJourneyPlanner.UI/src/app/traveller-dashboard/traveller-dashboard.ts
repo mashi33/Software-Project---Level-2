@@ -464,38 +464,48 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
     this.calculateCountdown(this.nextTrip.startDate);
 
     let startDateStr = this.nextTrip.startDate.split('T')[0];
-    
+
     const today = new Date();
     const maxForecastDate = new Date();
-    maxForecastDate.setDate(today.getDate() + 14); // 14 date limit
+    maxForecastDate.setDate(today.getDate() + 16); 
 
     const targetTripDate = new Date(startDateStr);
 
-    // set last year weather if date is after more than 14 days
+    // set last year weather if date is after more than 16 days
     if (targetTripDate > maxForecastDate) {
       const lastYear = targetTripDate.getFullYear() - 1;
       const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
       const day = String(targetTripDate.getDate()).padStart(2, '0');
       startDateStr = `${lastYear}-${month}-${day}`;
-      
+
     }
 
     this.weatherService
       .getCoordinates(this.nextTrip.destination)
       .subscribe({
         next: (res: any) => {
-          if (!res || !res.length) return;
-          const lat = res[0].lat;
-          const lon = res[0].lon;
+          if (!res || !res.results || !res.results.length) {
+            this.weather = null;
+            return;
+          }
+          // Filter for Sri Lanka cities only 
+          const sriLankaResults = res.results.filter((r: any) => {
+            const country = (r.country || '').toLowerCase();
+            const countryCode = (r.country_code || '').toLowerCase();
+            return country === 'sri lanka' || countryCode === 'lk';
+          });
+
+          if (sriLankaResults.length === 0) {
+            this.weather = null;
+            return;
+          }
+
+          const lat = sriLankaResults[0].latitude;
+          const lon = sriLankaResults[0].longitude;
           this.loadWeather(lat, lon, startDateStr);
         },
         error: () => {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Weather Unavailable',
-            text: 'Could not fetch weather data for this destination.',
-            confirmButtonColor: '#3b82f6'
-          });
+          this.weather = null;
         }
       });
   }
