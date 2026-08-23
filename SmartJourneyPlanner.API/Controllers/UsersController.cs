@@ -59,12 +59,14 @@ public class UsersController : ControllerBase
 {
     private readonly IMongoCollection<User> _usersCollection;
     private readonly IMongoCollection<Feedback> _feedbackCollection;
+    private readonly IMongoCollection<Trip> _tripsCollection;   // ★ NEW
     private readonly EmailService _emailService;
 
     public UsersController(IMongoDatabase database, EmailService emailService)
     {
         _usersCollection = database.GetCollection<User>("Users");
         _feedbackCollection = database.GetCollection<Feedback>("Feedbacks");
+        _tripsCollection = database.GetCollection<Trip>("Trips");   // ★ NEW
         _emailService = emailService;
     }
 
@@ -79,14 +81,13 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    // 2. PUT: api/users/{id} - Profile update + safe email change (pending verification)
+    // 2. PUT: api/users/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProfile(string id, [FromForm] UserUpdateDto dto)
     {
         var user = await _usersCollection.Find(u => u.Id == id).FirstOrDefaultAsync();
         if (user == null) return NotFound();
 
-        // ----- Other profile fields -----
         if (!string.IsNullOrEmpty(dto.FullName))
             user.FullName = dto.FullName.Trim();
 
@@ -107,7 +108,7 @@ public class UsersController : ControllerBase
             }
         }
 
-        // ----- Profile picture -----
+        // Profile picture
         if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
         {
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
@@ -130,7 +131,7 @@ public class UsersController : ControllerBase
             user.ProfilePictureUrl = "";
         }
 
-        // ----- Email change (DO NOT apply immediately) -----
+        // Email change (pending verification)
         bool emailChangePending = false;
         string? pendingEmail = null;
 
@@ -158,7 +159,6 @@ public class UsersController : ControllerBase
             user.PendingEmail = incomingEmail;
             user.EmailChangeToken = changeToken;
             user.EmailChangeTokenExpiry = DateTime.UtcNow.AddHours(24);
-            // user.Email stays the SAME until verified
 
             emailChangePending = true;
             pendingEmail = incomingEmail;
@@ -176,7 +176,6 @@ public class UsersController : ControllerBase
             catch (Exception ex)
             {
                 Console.WriteLine($"[Email Change] Send failed: {ex.Message}");
-                // Profile other fields still saved; user can retry email change
             }
         }
 
@@ -190,7 +189,7 @@ public class UsersController : ControllerBase
                 emailChangePending = true,
                 pendingEmail = pendingEmail,
                 fullName = user.FullName,
-                email = user.Email, // still old email
+                email = user.Email,
                 profilePictureUrl = user.ProfilePictureUrl,
                 bio = user.Bio,
                 location = user.Location,
@@ -212,6 +211,7 @@ public class UsersController : ControllerBase
     }
 
     // 2b. GET: api/users/verify-email-change?token=...
+    // ★ HERE we update the email AND cascade-update all related trips
     [HttpGet("verify-email-change")]
     public async Task<IActionResult> VerifyEmailChange([FromQuery] string token)
     {
@@ -239,7 +239,9 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = "No pending email change found." });
         }
 
+        var oldEmail = (user.Email ?? "").Trim().ToLowerInvariant();
         var pending = user.PendingEmail.Trim().ToLowerInvariant();
+        var userId = user.Id;
 
         var taken = await _usersCollection
             .Find(u => u.Email == pending && u.Id != user.Id)
@@ -247,7 +249,6 @@ public class UsersController : ControllerBase
 
         if (taken != null)
         {
-            // Clear pending so user can try another email
             user.PendingEmail = null;
             user.EmailChangeToken = null;
             user.EmailChangeTokenExpiry = null;
@@ -256,12 +257,58 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = "This email was registered by another account. Change cancelled." });
         }
 
+        // 1. Update user email
         user.Email = pending;
         user.PendingEmail = null;
         user.EmailChangeToken = null;
         user.EmailChangeTokenExpiry = null;
-
         await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+        // 2. ★ CASCADE: Update all trips that reference the old email
+        try
+        {
+            // 2a. Trips where this user is the creator
+            var creatorFilter = Builders<Trip>.Filter.Or(
+                Builders<Trip>.Filter.Eq(t => t.CreatedBy, oldEmail),
+                Builders<Trip>.Filter.Eq(t => t.CreatorEmail, oldEmail),
+                Builders<Trip>.Filter.Eq(t => t.CreatedBy, userId)
+            );
+
+            var creatorUpdate = Builders<Trip>.Update
+                .Set(t => t.CreatorEmail, pending)
+                .Set(t => t.CreatedBy, userId);   // normalize to userId
+
+            await _tripsCollection.UpdateManyAsync(creatorFilter, creatorUpdate);
+
+            // 2b. Trips where this user is a member (update email inside Members array)
+            var memberFilter = Builders<Trip>.Filter.ElemMatch(
+                t => t.Members,
+                m => m.Email == oldEmail
+            );
+
+            var tripsWithOldMember = await _tripsCollection.Find(memberFilter).ToListAsync();
+
+            foreach (var trip in tripsWithOldMember)
+            {
+                if (trip.Members == null) continue;
+
+                foreach (var member in trip.Members)
+                {
+                    if (member.Email != null &&
+                        member.Email.Equals(oldEmail, StringComparison.OrdinalIgnoreCase))
+                    {
+                        member.Email = pending;
+                    }
+                }
+
+                await _tripsCollection.ReplaceOneAsync(t => t.Id == trip.Id, trip);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail the email change
+            Console.WriteLine($"[Email Change Cascade] Trip update failed: {ex.Message}");
+        }
 
         return Ok(new
         {
