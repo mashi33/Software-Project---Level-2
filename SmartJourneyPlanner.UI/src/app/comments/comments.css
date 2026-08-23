@@ -153,6 +153,13 @@
     font-size: 11px;
 }
 
+.edited-label {
+  font-style: italic;
+  opacity: 0.65;
+  margin-left: 4px;
+  font-size: 10px;
+}
+
 .deleted-message-text {
   color: var(--text-hint);
   font-style: italic;

@@ -1,9 +1,10 @@
-/* ── LAYOUT ── */
+/* ==========================================================================
+    LAYOUT CONTAINER
+   ========================================================================== */
 .main-container { 
   display: flex; 
-  height: 100vh; 
+  height: 100%; 
   font-family: sans-serif; 
-  padding-top: 90px;
 }
 
 .sidebar-header {
@@ -53,7 +54,9 @@
   margin: 0 0 8px 0;
 }
 
-/* ── SIDEBAR ── */
+/* ==========================================================================
+    SIDEBAR
+   ========================================================================== */
 .sidebar { 
  width: 360px;
   padding: 20px 18px;
@@ -62,10 +65,12 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background: #f9fafb;  /* ✅ slight grey background */
+  background: #f9fafb;  
 }
 
-/* ── HEADING ── */
+/* ==========================================================================
+    HEADER
+   ========================================================================== */
 .sidebar h2 {
   font-size: 18px;
   font-weight: 700;
@@ -73,7 +78,9 @@
   margin-bottom: 4px;
 }
 
-/* ── SEARCH SECTION ── */
+/* ==========================================================================
+    SEARCH SECTION
+   ========================================================================== */
 .search-section { 
   display: flex; 
   flex-direction: column; 
@@ -128,7 +135,9 @@
   flex-direction: column;
 }
 
-/* ── INPUT FIELDS ── */
+/* ==========================================================================
+    INPUT FIELDS
+   ========================================================================== */
 input { 
   padding: 11px 14px;
   border: 1.5px solid #e5e7eb;
@@ -168,7 +177,9 @@ input:focus {
   background: #f0f0f0; 
 }
 
-/* ── BUTTONS ── */
+/* ==========================================================================
+    BUTTONS
+   ========================================================================== */
 button, .btn-primary { 
   background: #007bff; 
   color: white; 
@@ -227,7 +238,9 @@ button:hover, .btn-primary:hover {
   background: #e8eaed;
 }
 
-/* ── MAP ACTIONS ── */
+/* ==========================================================================
+    MAP ACTIONS
+   ========================================================================== */
 .map-actions-container {
   position: absolute;
   bottom: 100px; 
@@ -265,7 +278,9 @@ button:hover, .btn-primary:hover {
   gap: 10px; 
 }
 
-/* ── ROUTE CARDS ── */
+/* ==========================================================================
+    ROUTE CARDS
+   ========================================================================== */
 .card { 
   padding: 14px 16px;
   background: #ffffff;
@@ -312,7 +327,9 @@ button:hover, .btn-primary:hover {
   display: block;
 }
 
-/* ── CARD HEADER ── */
+/* ==========================================================================
+    CARD HEADER
+   ========================================================================== */
 .card-header {
   display: flex;
   align-items: center;
@@ -337,7 +354,9 @@ button:hover, .btn-primary:hover {
   flex-shrink: 0;
 }
 
-/* ── DETAIL ROWS ── */
+/* ==========================================================================
+    DETAIL ROWS
+   ========================================================================== */
 .details-section {
   display: flex;
   flex-direction: column;
@@ -369,21 +388,27 @@ button:hover, .btn-primary:hover {
   font-size: 13px;
 }
 
-/* ── DIVIDER ── */
+/* ==========================================================================
+    DIVIDER
+   ========================================================================== */
 .detail-divider {
   height: 1px;
   background: #f3f4f6;
   margin: 6px 0;
 }
 
-/* ── COST UNAVAILABLE ── */
+/* ==========================================================================
+    COST UNAVAILABLE
+   ========================================================================== */
 .cost-unavailable {
   font-size: 12px;
   color: #9ca3af;
   font-style: italic;
 }
 
-/* ── TOLL NOTICE ── */
+/* ==========================================================================
+    TOLL NOTICE
+   ========================================================================== */
 .toll-notice {
   font-size: 11px;
   color: #92400e;
@@ -395,7 +420,9 @@ button:hover, .btn-primary:hover {
   display: block;
 }
 
-/* ── DISCLAIMER ── */
+/* ==========================================================================
+    DISCLAIMER
+   ========================================================================== */
 .route-disclaimer {
   display: flex;
   gap: 8px;
@@ -430,7 +457,9 @@ button:hover, .btn-primary:hover {
 .scenic-icon   { color: #16a34a; }
 .cheapest-icon { color: #d97706; }
 
-/* ── MAP CONTAINER ── */
+/* ==========================================================================
+    MAP CONTAINER
+   ========================================================================== */
 .map-container { 
   flex: 1; 
   background: #e5e3df; 
@@ -443,7 +472,9 @@ google-map {
   width: 100%;
 }
 
-/* ── SCENIC BOTTOM PANEL ── */
+/* ==========================================================================
+    SCENIC VIEWPOINTS PANEL
+   ========================================================================== */
 .scenic-bottom-panel {
   position: absolute;
   bottom: 20px;
@@ -519,7 +550,9 @@ google-map {
   margin-top: 2px;
 }
 
-/* ── SKELETON LOADER ── */
+/* ==========================================================================
+    SKELETON LOADING CARDS
+   ========================================================================== */
 .skeleton-card {
   background: #ffffff;
   border-radius: 12px;
@@ -547,7 +580,6 @@ google-map {
   100% { background-position: -200% 0; }
 }
 
-/* ── CARD HEADER ── */
 .skel-card-header {
   display: flex;
   align-items: center;
@@ -577,14 +609,18 @@ google-map {
   border-radius: 6px;
 }
 
-/* ── DIVIDER ── */
+/* ==========================================================================
+    DIVIDER
+   ========================================================================== */
 .skel-divider {
   height: 1px;
   background: #f3f4f6;
   margin: 8px 0;
 }
 
-/* ── DETAIL ROWS ── */
+/* ==========================================================================
+    DETAIL ROWS
+   ========================================================================== */
 .skel-detail-row {
   display: flex;
   justify-content: space-between;
@@ -613,7 +649,9 @@ google-map {
   height: 13px;
 }
 
-/* ── LOADING LABEL ── */
+/* ==========================================================================
+    LOADING LABEL
+   ========================================================================== */
 .loading-label {
   font-size: 13px;
   color: #9ca3af;
@@ -621,14 +659,16 @@ google-map {
   font-style: italic;
 }
 
-/* ── TRANSPORT TOGGLE ── */
+/* ==========================================================================
+    TRANSPORT MODE TOGGLE
+   ========================================================================== */
 .transport-toggle {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
-  background: #f3f4f6;
-  border-radius: 10px;
+  background: #f1f5f9;
   padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
 
 .transport-btn {
@@ -637,16 +677,15 @@ google-map {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 10px 16px;
   border: none;
+  border-radius: 8px;
   background: transparent;
   color: #6b7280;
-  font-size: 13px;
   font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
-  width: auto;
+  transition: all 0.2s ease;
 }
 
 .transport-btn .material-icons {
@@ -654,16 +693,18 @@ google-map {
 }
 
 .transport-btn.active {
-  background: #ffffff;
-  color: #1a56db;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.transport-btn.active .material-icons {
-  color: #1a56db;
+.transport-btn .material-icons {
+  font-size: 18px;
 }
 
-/* ── BUS CARDS ── */
+/* ==========================================================================
+  PUBLIC TRANSPORT CARDS
+   ========================================================================== */
 .bus-card {
   margin-top: 10px;
 }
@@ -686,7 +727,9 @@ google-map {
   color: #1a56db;
 }
 
-/* ── BUS TOTAL ── */
+/* ==========================================================================
+   BUS TOTAL FARE CARD
+   ========================================================================== */
 .bus-total-card {
   display: flex;
   align-items: center;
@@ -711,7 +754,9 @@ google-map {
   font-weight: 700;
 }
 
-/* ── BUS NOT FOUND ── */
+/* ==========================================================================
+  BUS NOT FOUND MESSAGE
+   ========================================================================== */
 .bus-not-found {
   display: flex;
   flex-direction: column;
@@ -748,7 +793,9 @@ google-map {
   color: #9ca3af;
 }
 
-/* ── ROUTE + ROW ICONS ── */
+/* ==========================================================================
+   ROUTE + ROW ICONS
+   ========================================================================== */
 .route-icon {
   font-size: 18px;
   vertical-align: middle;

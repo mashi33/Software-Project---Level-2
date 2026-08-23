@@ -10,15 +10,15 @@ export interface UserVoteRecord { userId: string; optionText: string; }
 
 // Main interface for a discussion or poll item
 export interface DiscussionItem {
-  id?: string; 
+  id?: string;
   tripId?: string;
-  title: string; 
-  description: string; 
+  title: string;
+  description: string;
   user: string;
-  type: 'Trip' | 'Other'; 
-  createdAt: Date; 
+  type: 'Trip' | 'Other';
+  createdAt: Date;
   options: VoteOption[];
-  isConfirmed: boolean; 
+  isConfirmed: boolean;
   isRejected: boolean;
   memberLimit: number;
   votes?: number[];
@@ -36,9 +36,9 @@ export class DiscussionService {
     private signalrService: SignalrService
   ) {}
 
-  // ── UPDATED: passes requestingUser so the backend can return only
-  // this user's own vote (anonymizing everyone else's choices)
-    getDiscussionsByTrip(tripId: string, requestingUser: string): Observable<any[]> {
+  // Fetches discussions for a trip. requestingUser lets the backend return only
+  // this user's own vote, anonymizing everyone else's choices.
+  getDiscussionsByTrip(tripId: string, requestingUser: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/trip/${tripId}?requestingUser=${encodeURIComponent(requestingUser)}`)
       .pipe(
         timeout(this.REQUEST_TIMEOUT),
@@ -65,7 +65,7 @@ export class DiscussionService {
   }
 
   // Save a new discussion proposal to the server
-    createDiscussion(item: DiscussionItem): Observable<DiscussionItem> {
+  createDiscussion(item: DiscussionItem): Observable<DiscussionItem> {
     return this.http.post<DiscussionItem>(this.apiUrl, item)
       .pipe(
         timeout(this.REQUEST_TIMEOUT),
@@ -73,11 +73,9 @@ export class DiscussionService {
       );
   }
 
-  // ── UPDATED: now also sends userEmail so the backend can verify the
-  // voter is an actual trip member (creator or invited), not just any name.
-  // `user` stays as the display name (unchanged UI behavior); `userEmail`
-  // is the value used purely for server-side membership validation.
-   vote(id: string, option: string, user: string, userEmail: string): Observable<any> {
+  // Casts a vote. `user` is the display name shown in the UI; `userEmail` is used
+  // purely by the backend to verify the voter is an actual trip member.
+  vote(id: string, option: string, user: string, userEmail: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/${id}/vote`, {
       optionText: option,
       userName: user,
@@ -106,7 +104,7 @@ export class DiscussionService {
       );
   }
 
-    // Normalizes network/timeout/server errors into a consistent shape
+  // Normalizes network/timeout/server errors into a consistent shape
   // so components can show one friendly message regardless of failure type.
   private normalizeError(err: any): any {
     if (err.name === 'TimeoutError') {
@@ -115,6 +113,6 @@ export class DiscussionService {
     if (err.status === 0) {
       return { status: 0, error: { message: 'Cannot reach the server. Please check your internet connection.' } };
     }
-    return err; // Keep original (e.g. 400, 403, 503 with backend message) as-is
+    return err; 
   }
 }

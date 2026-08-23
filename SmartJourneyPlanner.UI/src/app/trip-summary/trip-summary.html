@@ -18,6 +18,9 @@
             <span class="route-badge" *ngIf="departFrom && destination">
               {{ departFrom }} → {{ destination }}
             </span>
+            <span class="completed-badge" *ngIf="isCompleted">
+              <i class="bi bi-check-circle-fill me-1"></i> Completed
+            </span>
           </div>
           <h1 class="hero-title">{{ tripName }}</h1>
           <p class="hero-subtitle" *ngIf="startDate && endDate">
@@ -110,6 +113,11 @@
       <div *ngIf="isViewer" class="alert alert-info border-0 shadow-sm mb-4 rounded-4 py-3">
         <i class="bi bi-info-circle-fill me-2"></i>
         You are viewing this trip in <strong>Read-Only</strong> mode.
+      </div>
+
+      <div *ngIf="isCompleted" class="alert alert-secondary border-0 shadow-sm mb-4 rounded-4 py-3">
+        <i class="bi bi-check-circle-fill me-2 text-success"></i>
+        This trip has been <strong>completed</strong>. Editing and adding members is no longer allowed.
       </div>
 
       <div class="row g-4">
@@ -408,7 +416,7 @@
                   </div>
                 </div>
                 <h5 class="weather-condition-text">
-                  {{ summaryWeather?.condition || 'No Data Available' }} {{ summaryWeather?.emoji }}
+                  {{ summaryWeather?.condition || 'No Data Available. Please verify the location name.' }} {{ summaryWeather?.emoji }}
                 </h5>
                 <p class="feels-like-text" *ngIf="summaryWeather?.avgTemp">
                   Feels like {{ summaryWeather.avgTemp | number:'1.1-1' }}°C

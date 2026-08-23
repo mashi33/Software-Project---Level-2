@@ -1,0 +1,20 @@
+<div class="verify-container">
+    <div class="loading-box" *ngIf="loading">
+        <h2>Confirming your new email...</h2>
+        <p>Please wait a moment.</p>
+    </div>
+
+    <div class="success-box" *ngIf="success">
+        <h2>Email Updated!</h2>
+        <p *ngIf="newEmail">Your email is now <strong>{{ newEmail }}</strong>.</p>
+        <p>Please login with your new email.</p>
+        <p class="redirect-text">Redirecting to login...</p>
+        <button class="btn-login" type="button" (click)="goToLogin()">Go to Login</button>
+    </div>
+
+    <div class="error-box" *ngIf="error">
+        <h2>Verification Failed</h2>
+        <p class="error-message">{{ errorMessage }}</p>
+        <button class="btn-login" type="button" (click)="goToLogin()">Go to Login</button>
+    </div>
+</div>

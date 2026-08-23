@@ -14,9 +14,9 @@ namespace SmartJourneyPlanner.Controllers
   // DTO used to receive file upload data from the client (fixes Swagger multipart form issue)
   public class FileUploadDto
   {
-    public IFormFile File { get; set; } = null!;               
-    public string User { get; set; } = "Guest User";           
-    public string TripId { get; set; } = string.Empty;         
+    public IFormFile File { get; set; } = null!;
+    public string User { get; set; } = "Guest User";
+    public string TripId { get; set; } = string.Empty;
   }
 
   // Handles all API requests related to file uploads and downloads (PDF files only)
@@ -24,13 +24,12 @@ namespace SmartJourneyPlanner.Controllers
   [ApiController]
   public class FileController : ControllerBase
   {
-    private readonly FileStorageService _fileStorage;      
-    private readonly CommentsService _commentsService;     
-    private readonly IHubContext<ChatHub> _hubContext;    
+    private readonly FileStorageService _fileStorage;
+    private readonly CommentsService _commentsService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    private const long MaxFileSize = 20 * 1024 * 1024;    // Maximum allowed file size: 20 MB
+    private const long MaxFileSize = 20 * 1024 * 1024; // 20 MB
 
-    // Injects the required services via dependency injection
     public FileController(
         FileStorageService fileStorage,
         CommentsService commentsService,
@@ -47,29 +46,23 @@ namespace SmartJourneyPlanner.Controllers
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] FileUploadDto dto)
     {
-      // Reject the request if no file was provided
       if (dto.File == null || dto.File.Length == 0)
         return BadRequest("No file provided.");
 
-      // Only PDF files are accepted
       if (dto.File.ContentType != "application/pdf")
         return BadRequest("Only PDF files are allowed.");
 
-      // Reject files larger than 20 MB
       if (dto.File.Length > MaxFileSize)
         return BadRequest("File size must not exceed 20 MB.");
 
-      // Trip ID is required to route the file message to the correct group
       if (string.IsNullOrEmpty(dto.TripId))
         return BadRequest("Trip ID is required.");
 
       try
       {
-        // 1. Store file in GridFS
         using var stream = dto.File.OpenReadStream();
         var fileId = await _fileStorage.UploadAsync(stream, dto.File.FileName);
 
-        // 2. Save message record to MongoDB
         var comment = new CommentItem
         {
           TripId = dto.TripId,
@@ -84,7 +77,7 @@ namespace SmartJourneyPlanner.Controllers
 
         await _commentsService.CreateAsync(comment);
 
-        // 3. Broadcast to specific Trip Group via SignalR (not to all clients)
+        // Broadcast to the specific trip group only, not all connected clients
         await _hubContext.Clients.Group(dto.TripId).SendAsync("ReceiveComment", comment);
 
         return Ok(new { fileId, messageId = comment.Id });
@@ -103,18 +96,12 @@ namespace SmartJourneyPlanner.Controllers
     {
       try
       {
-        // Validate that the provided ID is a valid MongoDB ObjectId
         if (!ObjectId.TryParse(fileId, out var objectId))
-        {
           return BadRequest("Invalid file ID format.");
-        }
 
         var stream = await _fileStorage.DownloadAsync(fileId);
-
         if (stream == null)
-        {
           return NotFound("File stream is null.");
-        }
 
         // Try to get the original filename from the GridFS stream metadata
         string fileName = "download.pdf";
@@ -142,15 +129,19 @@ namespace SmartJourneyPlanner.Controllers
     {
       try
       {
-        // Validate the file ID format before attempting to fetch
-        if (!ObjectId.TryParse(fileId, out _)) return BadRequest("Invalid ID");
+        if (!ObjectId.TryParse(fileId, out _))
+          return BadRequest("Invalid ID");
 
         var stream = await _fileStorage.DownloadAsync(fileId);
-        if (stream == null) return NotFound();
+        if (stream == null)
+          return NotFound();
 
         return File(stream, "application/pdf");
       }
-      catch (Exception) { return NotFound(); }
+      catch (Exception)
+      {
+        return NotFound();
+      }
     }
   }
 }

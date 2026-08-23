@@ -158,8 +158,18 @@ export class TripSummaryComponent implements OnInit {
     return this.userRole === 'viewer' || this.userRole === 'viewonly';
   }
 
+  get isCompleted(): boolean {
+    if (!this.endDate) return false;
+    const end = new Date(this.endDate);
+    const today = new Date();
+    // Compare date only (ignore time)
+    end.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return end < today;
+  }
+
   get canEdit(): boolean {
-    return this.userRole === 'owner' || this.userRole === 'editor';
+    return !this.isCompleted && (this.userRole === 'owner' || this.userRole === 'editor');
   }
 
   get isMember(): boolean {
@@ -227,7 +237,7 @@ export class TripSummaryComponent implements OnInit {
 
     const today = new Date();
     const maxForecastDate = new Date();
-    maxForecastDate.setDate(today.getDate() + 14);
+    maxForecastDate.setDate(today.getDate() + 16); 
 
     const targetTripDate = new Date(startDateStr);
 
@@ -243,13 +253,27 @@ export class TripSummaryComponent implements OnInit {
 
     this.weatherService.getCoordinates(destination).subscribe({
       next: (geoRes) => {
-        if (!geoRes?.length) {
+        if (!geoRes || !geoRes.results || !geoRes.results.length) {
           this.loadingWeather = false;
+          this.summaryWeather = null;
           return;
         }
 
-        const latStr = geoRes[0].lat.toString();
-        const lonStr = geoRes[0].lon.toString();
+        // Filter for Sri Lanka cities only 
+        const sriLankaResults = geoRes.results.filter((r: any) => {
+          const country = (r.country || '').toLowerCase();
+          const countryCode = (r.country_code || '').toLowerCase();
+          return country === 'sri lanka' || countryCode === 'lk';
+        });
+
+        if (sriLankaResults.length === 0) {
+          this.loadingWeather = false;
+          this.summaryWeather = null;
+          return;
+        }
+
+        const latStr = sriLankaResults[0].latitude.toString();
+        const lonStr = sriLankaResults[0].longitude.toString();
 
         this.weatherService.getProcessedWeather(latStr, lonStr, startDateStr).subscribe({
           next: (weather) => {
@@ -269,7 +293,10 @@ export class TripSummaryComponent implements OnInit {
           error: () => { this.loadingWeather = false; }
         });
       },
-      error: () => { this.loadingWeather = false; }
+      error: () => {
+        this.loadingWeather = false;
+        this.summaryWeather = null;
+      }
     });
   }
 

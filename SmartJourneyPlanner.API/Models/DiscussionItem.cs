@@ -8,7 +8,6 @@ namespace SmartJourneyPlanner.Models
 {
     
     // Represents a discussion or voting thread within a specific trip.
-    
     [BsonIgnoreExtraElements]
     public class DiscussionItem
     {
@@ -67,8 +66,8 @@ namespace SmartJourneyPlanner.Models
         [JsonPropertyName("comments")]
         public List<CommentItem>? Comments { get; set; } = new List<CommentItem>();
 
-        //Google Places info for "Trip" type discussions only.
-        // Used to push the place into Trip.SavedPlaces once the vote is confirmed.
+        /*Google Places info for "Trip" type discussions only.
+         Used to push the place into Trip.SavedPlaces once the vote is confirmed.*/
         [BsonElement("placeId")]
         [JsonPropertyName("placeId")]
         public string? PlaceId { get; set; }
@@ -79,7 +78,7 @@ namespace SmartJourneyPlanner.Models
     }
 
 
-    /// Represents an individual choice in a vote and its current tally.
+    // Represents an individual choice in a vote and its current tally.
     public class VoteOption
     {
         [JsonPropertyName("optionText")]
@@ -89,7 +88,7 @@ namespace SmartJourneyPlanner.Models
         public int VoteCount { get; set; } = 0;
     }
 
-    /// Tracks which specific option a user has selected.
+    // Tracks which specific option a user has selected.
     public class UserVoteRecord
     {
         [JsonPropertyName("userId")]

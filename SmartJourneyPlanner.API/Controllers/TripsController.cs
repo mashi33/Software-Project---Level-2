@@ -393,6 +393,11 @@ public async Task<IActionResult> GetDashboardData()
         {
             try
             {
+                var validationError = ValidateTripData(newTrip, isUpdate: false);
+        if (validationError != null)
+        {
+            return BadRequest(new { message = validationError });
+        }
                 newTrip.Members = NormalizeMembers(newTrip.Members, newTrip.CreatorEmail ?? newTrip.CreatedBy ?? "");
                 await _tripsCollection.InsertOneAsync(newTrip);
                 if (newTrip.Members != null)
@@ -410,7 +415,7 @@ public async Task<IActionResult> GetDashboardData()
             }
         }
 
-        // =========================================================================================
+// =========================================================================================
 // === ADD THIS NEW ENDPOINT TO YOUR TRIPSCONTROLLER ===
 // =========================================================================================
 [Authorize]
@@ -479,6 +484,27 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
             {
                 var oldTrip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
                 if (oldTrip == null) return NotFound(new { message = "Trip not found!" });
+
+                // Completed trip block
+        var today = DateTime.UtcNow.Date;
+        if (oldTrip.EndDate.Date < today)
+        {
+            return BadRequest(new { message = "This trip has already been completed. Editing is not allowed." });
+        }
+
+        // Field validations
+        var validationError = ValidateTripData(updatedTrip, isUpdate: true);
+        if (validationError != null)
+        {
+            return BadRequest(new { message = validationError });
+        }
+
+                // Prevent updating completed trips
+                var todayDate = DateTime.UtcNow.Date;
+                if (oldTrip.EndDate.Date < todayDate)
+                {
+                     return BadRequest(new { message = "This trip has already been completed. Editing is not allowed." });
+                 }
 
                 // Ownership and data that the edit form never sends stay as they are
                 updatedTrip.CreatedBy = string.IsNullOrEmpty(oldTrip.CreatedBy) ? updatedTrip.CreatedBy : oldTrip.CreatedBy;
@@ -586,6 +612,67 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 return BadRequest(new { message = "Update error: " + ex.Message });
             }
         }
+
+        private static string? ValidateTripData(Trip trip, bool isUpdate)
+{
+    if (trip == null)
+        return "Invalid trip data.";
+
+    if (string.IsNullOrWhiteSpace(trip.TripName))
+        return "Trip name is required.";
+
+    if (trip.TripName.Trim().Length < 3)
+        return "Trip name must be at least 3 characters.";
+
+    if (trip.TripName.Trim().Length > 60)
+        return "Trip name cannot exceed 60 characters.";
+
+    if (string.IsNullOrWhiteSpace(trip.DepartFrom))
+        return "Departure location is required.";
+
+    if (trip.DepartFrom.Trim().Length < 2 || trip.DepartFrom.Trim().Length > 60)
+        return "Departure location must be between 2 and 60 characters.";
+
+    if (string.IsNullOrWhiteSpace(trip.Destination))
+        return "Destination is required.";
+
+    if (trip.Destination.Trim().Length < 2 || trip.Destination.Trim().Length > 60)
+        return "Destination must be between 2 and 60 characters.";
+
+    // Same location
+    if (trip.DepartFrom.Trim().Equals(trip.Destination.Trim(), StringComparison.OrdinalIgnoreCase))
+        return "Departure and destination cannot be the same place.";
+
+    // Dates
+    if (trip.StartDate == default)
+        return "Start date is required.";
+
+    if (trip.EndDate == default)
+        return "End date is required.";
+
+    if (trip.EndDate.Date < trip.StartDate.Date)
+        return "End date cannot be earlier than the start date.";
+
+    // Start not in past (only on create)
+    if (!isUpdate && trip.StartDate.Date < DateTime.UtcNow.Date)
+        return "Start date cannot be in the past.";
+
+    // Optional: max duration 60 days
+    var duration = (trip.EndDate.Date - trip.StartDate.Date).TotalDays + 1;
+    if (duration > 60)
+        return "Trip duration cannot exceed 60 days.";
+
+    if (string.IsNullOrWhiteSpace(trip.BudgetLimit))
+        return "Budget limit is required.";
+
+    if (string.IsNullOrWhiteSpace(trip.TransportMode))
+        return "Transport type is required.";
+
+    if (!string.IsNullOrEmpty(trip.Description) && trip.Description.Length > 500)
+        return "Description cannot exceed 500 characters.";
+
+    return null; // valid
+}
 
         // Cleans a member list: trims and lowercases emails, drops blanks, the owner and duplicates
         private static List<TripMember> NormalizeMembers(List<TripMember>? members, string ownerEmail)
