@@ -33,56 +33,93 @@ namespace SmartJourneyPlanner.API.Controllers
             _userBlockService = userBlockService;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(UserRegisterDto model)
-        {   
-            // Validate password strength
-            var passwordRegex = new System.Text.RegularExpressions.Regex(
-                 @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-            );
+       [HttpPost("register")]
+public async Task<IActionResult> Register(UserRegisterDto model)
+{
+    // ===== REQUIRED FIELD VALIDATIONS =====
+    if (model == null)
+    {
+        return BadRequest(new { message = "Invalid request data." });
+    }
 
-            if (string.IsNullOrWhiteSpace(model.Password) || !passwordRegex.IsMatch(model.Password))
-             {
-            return BadRequest(new
-             {
-                  message = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
-            });
-            }
-            // 1. Check if the email is already registered
-            var existingUser = await _users.Find(u => u.Email == model.Email).FirstOrDefaultAsync();
-            if (existingUser != null)
-            {
-                return BadRequest(new { message = "This email is already registered." });
-            }
+    if (string.IsNullOrWhiteSpace(model.FullName) || model.FullName.Trim().Length < 2)
+    {
+        return BadRequest(new { message = "Full name is required and must be at least 2 characters." });
+    }
 
-            // 2. Create a unique verification token for email verification
-            var token = Guid.NewGuid().ToString();
+    if (model.FullName.Trim().Length > 50)
+    {
+        return BadRequest(new { message = "Full name cannot exceed 50 characters." });
+    }
 
-            // 3. Hash the password before saving to the database
-            string passwordHash = BCryptNet.HashPassword(model.Password);
+    if (string.IsNullOrWhiteSpace(model.Email))
+    {
+        return BadRequest(new { message = "Email is required." });
+    }
 
-            // 4. Create a new user object with the provided details and the generated token
-            var newUser = new User
-            {
-                FullName = model.FullName,
-                Email = model.Email,
-                PasswordHash = passwordHash,
-                UserType = model.UserType ?? "Traveller",
-                Bio = "Hey there! I am using Smart Journey Planner.",
-                ProfilePictureUrl = "",
-                Location = "",
-                Status = "Approved",
-                IsBlocked = false,
-                CreatedAt = DateTime.UtcNow,
-                
-                // Fields handling account status and email verification
-                IsVerified = false, 
-                VerificationToken = token,
-                TokenExpiry = DateTime.UtcNow.AddHours(24) // Token will expire in 24 hours
-            };
+    // Basic email format
+    var emailRegex = new System.Text.RegularExpressions.Regex(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+    );
+    if (!emailRegex.IsMatch(model.Email.Trim()))
+    {
+        return BadRequest(new { message = "Please enter a valid email address." });
+    }
 
-            // 5. Persist the record to MongoDB
-            await _users.InsertOneAsync(newUser);
+    if (string.IsNullOrWhiteSpace(model.UserType))
+    {
+        return BadRequest(new { message = "User type is required. Select Traveller or Transport Provider." });
+    }
+
+    var allowedTypes = new[] { "Traveller", "TransportProvider", "Traveler" };
+    if (!allowedTypes.Any(t => t.Equals(model.UserType.Trim(), StringComparison.OrdinalIgnoreCase)))
+    {
+        return BadRequest(new { message = "Invalid user type. Allowed: Traveller, TransportProvider." });
+    }
+
+    // ===== PASSWORD STRENGTH (existing) =====
+    var passwordRegex = new System.Text.RegularExpressions.Regex(
+        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    );
+
+    if (string.IsNullOrWhiteSpace(model.Password) || !passwordRegex.IsMatch(model.Password))
+    {
+        return BadRequest(new
+        {
+            message = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        });
+    }
+
+    // ===== EMAIL ALREADY EXISTS (existing) =====
+    var existingUser = await _users.Find(u => u.Email == model.Email.Trim().ToLower()).FirstOrDefaultAsync();
+    if (existingUser != null)
+    {
+        return BadRequest(new { message = "This email is already registered." });
+    }
+
+    // ===== CREATE USER (existing logic – email lowercase + trim) =====
+    var token = Guid.NewGuid().ToString();
+    string passwordHash = BCryptNet.HashPassword(model.Password);
+
+    var newUser = new User
+    {
+        FullName = model.FullName.Trim(),
+        Email = model.Email.Trim().ToLower(),
+        PasswordHash = passwordHash,
+        UserType = model.UserType.Trim(),
+        Bio = "Hey there! I am using Smart Journey Planner.",
+        ProfilePictureUrl = "",
+        Location = "",
+        Status = "Approved",
+        IsBlocked = false,
+        CreatedAt = DateTime.UtcNow,
+        IsVerified = false,
+        VerificationToken = token,
+        TokenExpiry = DateTime.UtcNow.AddHours(24)
+    };
+
+    await _users.InsertOneAsync(newUser);
+
 
             // 6. Asynchronously send verification email using the EmailService
             Console.WriteLine($"--- 📧 EMAIL PROCESS STARTED FOR: {newUser.Email} ---");
@@ -120,6 +157,10 @@ namespace SmartJourneyPlanner.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto request)
         {
+            if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+    {
+        return BadRequest(new { message = "Email and password are required." });
+    }
             var user = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
 
             if (user == null)

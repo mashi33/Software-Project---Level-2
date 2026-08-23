@@ -526,6 +526,19 @@
   animation: floatCard 6s ease-in-out infinite alternate;
 }
 
+.completed-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+}
+
 @keyframes floatCard {
   0% {
     transform: translateY(0px);
