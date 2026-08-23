@@ -58,23 +58,16 @@ export class Signup {
       return;
     }
 
-    // when the signup form is submitted, we first check if there are any invitation parameters in the URL (like tripId and role)
     const tripId = this.route.snapshot.queryParamMap.get('tripId');
     const role = this.route.snapshot.queryParamMap.get('role');
 
-    // Then we attach these parameters to the signupData object, so that the backend can process the invitation context during registration
     this.signupData.TripId = tripId;
     this.signupData.Role = role;
 
-    console.log('Signup Attempt with Invitation Data:', this.signupData);
-
     this.isLoading = true;
 
-    // call the signup method from AuthService to register the user, and handle the response accordingly
     this.authService.signup(this.signupData).subscribe({
       next: (response: any) => {
-        console.log('Signup Success!', response);
-
         this.isLoading = false;
 
         Swal.fire({
@@ -83,9 +76,7 @@ export class Signup {
           text: 'Please check your email inbox to verify your account before logging in.',
           confirmButtonColor: '#1a73e8'
         }).then(() => {
-          // Redirect to login page after successful registration
           if (tripId) {
-            console.log('Forwarding trip details to login page:', tripId);
             this.router.navigate(['/login'], {
               queryParams: { tripId: tripId, role: role }
             });
@@ -96,7 +87,7 @@ export class Signup {
       },
       error: (err) => {
         this.isLoading = false;
-        console.error('Signup Failed', err);
+
         Swal.fire({
           icon: 'error',
           title: 'Registration Failed',

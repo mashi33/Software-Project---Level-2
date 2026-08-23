@@ -428,7 +428,12 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   updateStatus(provider: any, status: string) {
-    const id = provider._id || provider.id;
+    const id = this.getVehicleId(provider);
+    if (!id) {
+      Swal.fire('Error', 'Could not identify the vehicle. Please refresh and try again.', 'error');
+      return;
+    }
+
     const currentStatus = (provider.adminVerificationStatus || provider.AdminVerificationStatus || '').toLowerCase();
 
     this.adminService.updateProviderStatus(id, status).subscribe(() => {
@@ -440,36 +445,6 @@ export class AdminDashboardComponent implements OnInit {
       } else if (status === 'Rejected' && currentStatus !== 'rejected') {
         this.rejectedSessionCount++;
         localStorage.setItem('rejectedToday', this.rejectedSessionCount.toString());
-
-        const vehicleBookings = this.getVehicleBookings(id);
-        const activeBookings = vehicleBookings.filter((booking: any) => {
-          const bookingDate = new Date(booking.bookingDate || booking.date);
-          const today = new Date();
-          return bookingDate > today && (booking.status === 'Confirmed' || booking.status === 'confirmed');
-        });
-
-        if (activeBookings.length > 0) {
-          const vehicleName = provider.vehicleName || provider.vehicle?.name || provider.model || 'Vehicle';
-          const message = `The vehicle "${vehicleName}" you booked is currently in a service period. Your booking has been automatically cancelled.`;
-
-          activeBookings.forEach((booking: any) => {
-            const customerId = booking.customerId || booking.userId || booking.user?._id;
-            const bookingId = booking._id || booking.id;
-            if (customerId) {
-              this.adminService.sendCustomerAlert(customerId, message, vehicleName, bookingId).subscribe({
-                next: () => console.log('Alert sent to customer:', customerId),
-                error: (err) => console.error('Failed to send alert:', err)
-              });
-            }
-
-            if (bookingId) {
-              this.adminService.cancelBooking(bookingId).subscribe({
-                next: () => console.log('Booking cancelled:', bookingId),
-                error: (err) => console.error('Failed to cancel booking:', err)
-              });
-            }
-          });
-        }
       }
 
       this.refreshDashboard();
@@ -859,24 +834,20 @@ export class AdminDashboardComponent implements OnInit {
   isLoadingDetails = false;
 
   viewVehicleDetails(vehicle: any) {
-    if (this.selectedProvider || this.isLoadingDetails) {
-      return;
-    }
-
     const vehicleId = vehicle.id || vehicle._id || vehicle.Id;
     if (!vehicleId) {
       this.selectedProvider = vehicle;
       return;
     }
 
-    this.selectedProvider = vehicle; 
+    this.selectedProvider = vehicle;
     this.isLoadingDetails = true;
 
     this.adminService.getVehicleById(vehicleId).subscribe({
       next: (fullVehicleDetails: any) => {
         this.isLoadingDetails = false;
         if (fullVehicleDetails) {
-          this.selectedProvider = fullVehicleDetails; 
+          this.selectedProvider = fullVehicleDetails;
         }
         this.cd.detectChanges();
       },
@@ -889,11 +860,9 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   closeReview() {
-    this.selectedProvider = null; 
+    this.selectedProvider = null;
     this.isLoadingDetails = false;
-    setTimeout(() => {
-      this.cd.detectChanges();
-    }, 50);
+    this.cd.detectChanges();
   }
 
   viewMemoryDetails(m: any) {
@@ -1128,7 +1097,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  compareDocuments(url1: string, url2: string, title1: string, title2: string) {
+  compareDocuments(url1: string, url2: string, title1: string, title2: string, checkboxRef?: any) {
     const safeUrl1 = url1 || 'assets/placeholder-document.jpg';
     const safeUrl2 = url2 || 'assets/placeholder-document.jpg';
 
@@ -1152,6 +1121,10 @@ export class AdminDashboardComponent implements OnInit {
       focusConfirm: false,
       confirmButtonText: 'Done Comparing',
       confirmButtonColor: '#3b82f6'
+    }).then((result) => {
+      if (result.isConfirmed && checkboxRef) {
+        checkboxRef.checked = true;
+      }
     });
   }
 
