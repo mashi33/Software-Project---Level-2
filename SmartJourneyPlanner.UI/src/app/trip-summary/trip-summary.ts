@@ -162,16 +162,11 @@ export class TripSummaryComponent implements OnInit {
     return this.userRole === 'owner' || this.userRole === 'editor';
   }
 
-  /**
-   * SECURITY-CRITICAL: this is the ONLY place userRole is ever assigned.
-   * It strictly cross-references the authenticated user's identity
-   * (from the JWT, via AuthService) against the DB-sourced tripDetails
-   * (createdBy + members[].role). The URL is never consulted.
-   *
-   * This still only gates the UI (buttons/links). The API itself must
-   * independently enforce the same rule server-side on every mutating
-   * endpoint — see note in the chat response.
-   */
+  get isMember(): boolean {
+    return !this.isOwner && (this.userRole === 'editor' || this.userRole === 'viewer' || this.userRole === 'viewonly');
+  }
+
+  // Determine the user's role based on the trip details and the authenticated user.
   determineUserRole(): void {
     const userId = this.authService.getUserId();
     const userEmail = this.authService.getUserEmail()?.toLowerCase();
@@ -422,6 +417,39 @@ export class TripSummaryComponent implements OnInit {
       confirmButtonColor: '#0284c7'
     }).then(() => {
       this.router.navigate(['/traveller-dashboard']);
+    });
+  }
+
+  leaveTrip() {
+    if (!this.tripId) return;
+
+    Swal.fire({
+      title: 'Leave this trip?',
+      text: 'You will no longer have access to this trip. This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, leave trip'
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.tripService.leaveTrip(this.tripId).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Left successfully',
+              text: 'You have left the trip.',
+              confirmButtonColor: '#0284c7'
+            }).then(() => {
+              this.router.navigate(['/traveller-dashboard']);
+            });
+          },
+          error: (err) => {
+            const msg = err?.error?.message || 'Could not leave the trip. Please try again.';
+            Swal.fire('Error', msg, 'error');
+          }
+        });
+      }
     });
   }
 
