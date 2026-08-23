@@ -294,55 +294,59 @@
         </div>
       </div>
 
-      <h4 class="section-title">Trip Notes & Highlights</h4>
+            <h4 class="section-title">Trip Notes & Highlights</h4>
       <p class="description-text" *ngIf="selectedMemory?.description">
         {{ selectedMemory?.description }}
       </p>
 
-      <div class="lightbox-like-row">
-        <button class="btn-like-memory"
-                [class.liked]="selectedMemory && hasUserLiked(selectedMemory)"
-                [title]="selectedMemory && hasUserLiked(selectedMemory) ? 'Unlike this memory' : 'Like this memory'"
-                (click)="toggleLike(selectedMemory?.id, $event)" type="button">
-          <i class="bi" [class.bi-heart-fill]="selectedMemory && hasUserLiked(selectedMemory)" [class.bi-heart]="!(selectedMemory && hasUserLiked(selectedMemory))"></i>
-          {{ selectedMemory && hasUserLiked(selectedMemory) ? 'Liked' : 'Like this memory' }}
-          ({{ selectedMemory?.likeCount || 0 }})
-        </button>
-
-        <button class="btn-like-album" *ngIf="selectedAlbum"
-                [class.liked]="isAlbumFullyLiked(selectedAlbum)"
-                [disabled]="albumLikeInProgress"
-                [title]="isAlbumFullyLiked(selectedAlbum) ? 'Unlike entire album' : 'Like entire album'"
-                (click)="toggleAlbumLike(selectedAlbum, $event)" type="button">
-          <i class="bi" [class.bi-heart-fill]="isAlbumFullyLiked(selectedAlbum)" [class.bi-heart]="!isAlbumFullyLiked(selectedAlbum)"></i>
-          {{ isAlbumFullyLiked(selectedAlbum) ? 'Album liked' : 'Like entire album' }}
+      <!-- LIKED BAR -->
+      <div class="liked-by-bar" *ngIf="selectedMemory">
+        <div class="liked-by-left">
+          <div class="liked-by-icon" [class.is-liked]="selectedMemory && hasUserLiked(selectedMemory)">
+  <i class="bi"
+     [class.bi-heart-fill]="selectedMemory && hasUserLiked(selectedMemory)"
+     [class.bi-heart]="!(selectedMemory && hasUserLiked(selectedMemory))"></i>
+</div>
+          <div class="liked-by-text">
+            <span class="liked-by-title" *ngIf="selectedMemory && hasUserLiked(selectedMemory)">
+              Liked by you
+            </span>
+            <span class="liked-by-title" *ngIf="!(selectedMemory && hasUserLiked(selectedMemory))">
+              Be the first to like
+            </span>
+            <span class="liked-by-sub" *ngIf="(selectedMemory.likeCount || 0) > 0">
+              {{ selectedMemory.likeCount || 0 }} like{{ (selectedMemory.likeCount || 0) === 1 ? '' : 's' }}
+            </span>
+          </div>
+        </div>
+        <div class="liked-by-actions">
+          <button class="btn-liked-pill"
+                  [class.is-liked]="selectedMemory && hasUserLiked(selectedMemory)"
+                  [title]="selectedMemory && hasUserLiked(selectedMemory) ? 'Unlike this memory' : 'Like this memory'"
+                  (click)="toggleLike(selectedMemory.id, $event)"
+                  type="button">
+            <i class="bi" [class.bi-heart-fill]="selectedMemory && hasUserLiked(selectedMemory)" [class.bi-heart]="!(selectedMemory && hasUserLiked(selectedMemory))"></i>
+            {{ selectedMemory && hasUserLiked(selectedMemory) ? 'Liked' : 'Like' }}
+          </button>
+          <button class="btn-liked-pill album-pill" *ngIf="selectedAlbum"
+                  [class.is-liked]="isAlbumFullyLiked(selectedAlbum)"
+                  [disabled]="albumLikeInProgress"
+                  [title]="isAlbumFullyLiked(selectedAlbum) ? 'Unlike entire album' : 'Like entire album'"
+                  (click)="toggleAlbumLike(selectedAlbum, $event)"
+                  type="button">
+            <i class="bi" [class.bi-heart-fill]="isAlbumFullyLiked(selectedAlbum)" [class.bi-heart]="!isAlbumFullyLiked(selectedAlbum)"></i>
+            {{ isAlbumFullyLiked(selectedAlbum) ? 'Album liked' : 'Album' }}
           ({{ getTotalLikes(selectedAlbum) }})
-        </button>
+          </button>
+        </div>
       </div>
 
       <!-- COMMENTS SECTION -->
       <div class="comments-section" *ngIf="selectedMemory">
         <div class="comments-header">
-          <i class="bi bi-chat-left-text-fill"></i>
-          <span>Comments ({{ selectedMemory.commentCount || comments.length || 0 }})</span>
-        </div>
-
-        <div class="comment-form" *ngIf="isLoggedIn">
-          <textarea
-            [(ngModel)]="newCommentText"
-            class="comment-input"
-            rows="2"
-            placeholder="Write a comment..."
-            [disabled]="isSubmittingComment"
-            maxlength="500" (keydown.enter)="onEnterPress($event)"></textarea>
-          <button
-            class="btn-submit-comment"
-            type="button"
-            [disabled]="!newCommentText.trim() || isSubmittingComment"
-            (click)="submitComment()">
-            <i class="bi bi-send-fill"></i>
-            {{ isSubmittingComment ? 'Posting...' : 'Post' }}
-          </button>
+          <i class="bi bi-chat-left-text"></i>
+          <span>Comments</span>
+          <span class="comments-count-badge">{{ selectedMemory.commentCount || comments.length || 0 }}</span>
         </div>
 
         <div class="comments-list">
@@ -357,7 +361,7 @@
 
           <div class="comment-item" *ngFor="let comment of comments">
             <div class="comment-avatar">
-              {{ comment.fullName.charAt(0) || '?' }}
+              {{ (comment.fullName || '?').charAt(0).toUpperCase() }}
             </div>
             <div class="comment-body">
               <div class="comment-meta">
@@ -365,18 +369,43 @@
                 <span class="comment-time">{{ comment.createdAt | date:'medium' }}</span>
               </div>
               <p class="comment-text">{{ comment.text }}</p>
-              <button
-                *ngIf="canDeleteComment(comment)"
-                class="btn-delete-comment"
-                type="button"
-                (click)="deleteComment(comment)"
-                title="Delete comment">
-                <i class="bi bi-trash3"></i>
-              </button>
             </div>
+            <button
+              *ngIf="canDeleteComment(comment)"
+              class="btn-delete-comment"
+              type="button"
+              (click)="deleteComment(comment)"
+              title="Delete comment">
+              <i class="bi bi-trash3"></i>
+            </button>
           </div>
         </div>
+
+        <!-- Comment input at bottom -->
+        <div class="comment-compose" *ngIf="isLoggedIn">
+          <div class="compose-avatar">
+            {{ (authService.getUserName() || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <div class="compose-input-wrap">
+            <textarea
+              [(ngModel)]="newCommentText"
+              class="comment-input"
+              rows="1"
+              placeholder="Share your thoughts..."
+              [disabled]="isSubmittingComment"
+              maxlength="500"
+              (keydown.enter)="onEnterPress($event)"></textarea>
+          </div>
+          <button
+            class="btn-post-comment"
+            type="button"
+            [disabled]="!newCommentText.trim() || isSubmittingComment"
+            (click)="submitComment()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+      </div>
       </div>
     </div>
-  </div>
-</div>
+  

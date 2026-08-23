@@ -215,8 +215,6 @@
   transition: all 0.3s ease;
 }
 
-
-
 .card.warning-card {
   background: linear-gradient(135deg, #fffdf5 0%, #fef3c7 100%);
   border-left: 5px solid #f59e0b;
@@ -262,7 +260,7 @@
   box-shadow: 0 4px 15px rgba(99, 102, 241, 0.12);
 }
 
-/* --- Action Buttons Styling & Hover Effects --- */
+/* Action Buttons Styling & Hover Effects */
 .btn-action1 {
   background-color: #f59e0b;
   color: #ffffff;
@@ -364,7 +362,6 @@
 .admin-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
 .table-row:hover { background: #f8fafc; }
 .font-bold { font-weight: 700; color: #0f172a; }
-
 .badge-pending { background: #fef3c7; color: #d97706; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
 
 .btn-icon {
@@ -380,6 +377,7 @@
   align-items: center;
   justify-content: center;
 }
+
 .btn-icon:hover { background: #e2e8f0; transform: scale(1.05); }
 .btn-icon.approve:hover { background: #d1fae5; }
 .btn-icon.reject:hover { background: #fee2e2; }
@@ -396,7 +394,7 @@
   border-radius: 16px;
   padding: 16px 24px;
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) 140px minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1.2fr) 140px minmax(180px, 1fr) 500px;
   align-items: center;
   gap: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
@@ -642,9 +640,7 @@
 }
 
 .status-dot-pill.status-blocked-temporary .pulse-dot,
-.status-dot-pill.status-blocked-permanent .pulse-dot {
-  animation: none;
-}
+.status-dot-pill.status-blocked-permanent .pulse-dot {animation: none;}
 
 /* MODAL BOX SPECIFICATIONS OVERLAY */
 .modal-overlay { 
@@ -714,6 +710,7 @@
   color: #94a3b8;
   transition: all 0.2s ease;
 }
+
 .close-pill:hover { background: #e2e8f0; color: #0f172a; }
 
 .modal-body { 
@@ -965,8 +962,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.btn-cancel:hover { background: #f1f5f9; color: #0f172a; }
 
+.btn-cancel:hover { background: #f1f5f9; color: #0f172a; }
 .action-group { display: flex; gap: 12px; }
 
 .btn-modal-action {
@@ -996,8 +993,9 @@
 /* Fleet Verification Action Buttons */
 .action-btn-group {
   display: flex;
-  gap: 8px; 
+  gap: 8px;
   justify-content: center;
+  width: 200px;
 }
 
 .btn-ctrl-action {
@@ -2586,6 +2584,7 @@
 
 .provider-actions-header {
   text-align: center;
+  width: 200px;
 }
 
 .provider-empty-box {

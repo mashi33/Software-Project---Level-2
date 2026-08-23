@@ -19,42 +19,43 @@ namespace SmartJourneyPlanner.Services
       _discussionsCollection = mongoDatabase.GetCollection<DiscussionItem>(databaseSettings.Value.CollectionName);
     }
 
-    // 1. Fetch all discussion
-    public async Task<List<DiscussionItem>> GetAsync() =>
+    // Fetch all discussions
+    public virtual async Task<List<DiscussionItem>> GetAsync() =>
         await _discussionsCollection.Find(_ => true).ToListAsync();
 
     // Fetch discussions by TripId
-    public async Task<List<DiscussionItem>> GetByTripAsync(string tripId) =>
+    public virtual async Task<List<DiscussionItem>> GetByTripAsync(string tripId) =>
         await _discussionsCollection.Find(x => x.TripId == tripId).ToListAsync();
 
-    // 2. Get discussion according to ID
-    public async Task<DiscussionItem?> GetAsync(string id) =>
+    // Get a single discussion by ID
+    public virtual async Task<DiscussionItem?> GetAsync(string id) =>
         await _discussionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    // 3. Begin new discussion (CreatedAt with date)
-    public async Task CreateAsync(DiscussionItem newDiscussion)
+    // Create a new discussion
+    public virtual async Task CreateAsync(DiscussionItem newDiscussion)
     {
       newDiscussion.CreatedAt = DateTime.UtcNow;
       await _discussionsCollection.InsertOneAsync(newDiscussion);
     }
 
-    // 4. update data
-    public async Task UpdateAsync(string id, DiscussionItem updatedDiscussion)
+    // Update an existing discussion
+    public virtual async Task UpdateAsync(string id, DiscussionItem updatedDiscussion)
     {
       await _discussionsCollection.ReplaceOneAsync(x => x.Id == id, updatedDiscussion);
     }
 
-    // 5. manual deletion of vote box
-    public async Task RemoveAsync(string id) =>
+    // Delete a discussion (vote box)
+    public virtual async Task RemoveAsync(string id) =>
         await _discussionsCollection.DeleteOneAsync(x => x.Id == id);
 
-    // 6. vote casting Logic for trip (Updated with Limit & Status Check)
+    // Casts a vote for a Trip-type discussion, enforcing the member limit and
+    // blocking new votes once confirmed/rejected. Existing voters can always
+    // change their choice, even mid-tie.
     public async Task<bool> VoteAsync(string id, int optionIndex, string userId)
     {
       var discussion = await GetAsync(id);
       if (discussion == null) return false;
 
-      // Only block if confirmed or rejected — a tie (both false) keeps voting open
       if (discussion.IsConfirmed || discussion.IsRejected) return false;
 
       discussion.VotedUsers ??= new List<string>();
@@ -62,14 +63,12 @@ namespace SmartJourneyPlanner.Services
 
       int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 1;
 
-      // Check if this user has voted before (case-insensitive)
       var existingVote = discussion.UserVotes.Find(v =>
           v.UserId.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase));
 
       if (existingVote == null)
       {
         // New voter — only allow if under the member limit
-        // Existing voters (existingVote != null) can always change their vote even during a tie
         if (discussion.UserVotes.Count >= limit) return false;
       }
 
@@ -77,7 +76,6 @@ namespace SmartJourneyPlanner.Services
       {
         if (existingVote != null)
         {
-          // Remove the old vote count before switching
           var oldOption = discussion.Options.Find(o => o.OptionText == existingVote.OptionText);
           if (oldOption != null && oldOption.VoteCount > 0) oldOption.VoteCount--;
           existingVote.OptionText = discussion.Options[optionIndex].OptionText;
@@ -86,7 +84,6 @@ namespace SmartJourneyPlanner.Services
         {
           discussion.UserVotes.Add(new UserVoteRecord { UserId = userId.Trim(), OptionText = discussion.Options[optionIndex].OptionText });
 
-          // Sync VotedUsers consistently using the same trim + case-insensitive check
           if (!discussion.VotedUsers.Exists(u => u.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase)))
             discussion.VotedUsers.Add(userId.Trim());
         }
@@ -99,13 +96,28 @@ namespace SmartJourneyPlanner.Services
       return false;
     }
 
-    // 7. commenting (messaging)
+    // Adds a comment to a discussion's embedded comment list
     public async Task AddCommentAsync(string id, CommentItem comment)
     {
       comment.CreatedAt = DateTime.UtcNow;
       var filter = Builders<DiscussionItem>.Filter.Eq(x => x.Id, id);
       var update = Builders<DiscussionItem>.Update.Push(d => d.Comments, comment);
       await _discussionsCollection.UpdateOneAsync(filter, update);
+    }
+
+    // Updates MemberLimit for all PENDING discussions of a trip (not confirmed/rejected),
+    // called when a trip's member list changes so vote boxes stay in sync with the actual group size
+    public async Task UpdatePendingMemberLimitsAsync(string tripId, int newLimit)
+    {
+      var filter = Builders<DiscussionItem>.Filter.And(
+          Builders<DiscussionItem>.Filter.Eq(d => d.TripId, tripId),
+          Builders<DiscussionItem>.Filter.Eq(d => d.IsConfirmed, false),
+          Builders<DiscussionItem>.Filter.Eq(d => d.IsRejected, false)
+      );
+
+      var update = Builders<DiscussionItem>.Update.Set(d => d.MemberLimit, newLimit);
+
+      await _discussionsCollection.UpdateManyAsync(filter, update);
     }
   }
 }

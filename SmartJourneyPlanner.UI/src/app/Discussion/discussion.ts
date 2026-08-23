@@ -1,10 +1,10 @@
 import { Component, ViewEncapsulation, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DiscussionService, DiscussionItem } from '../services/discussion.service';
 import { SignalrService } from '../services/signalr.service';
-import { TripService } from '../services/trip.service'; 
+import { TripService } from '../services/trip.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs'; 
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import { CommentsComponent } from '../comments/comments';
 import { VotePlacesService, VotePlacePrediction } from '../services/vote-places';
@@ -12,36 +12,44 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
     selector: 'app-discussion',
-    standalone: true, 
+    standalone: true,
     imports: [FormsModule, CommonModule, CommentsComponent],
     templateUrl: './discussion.html',
     styleUrls: ['./discussion.css'],
     encapsulation: ViewEncapsulation.None
 })
-export class DiscussionComponent implements OnInit, OnDestroy { 
-  // State variables for discussions and subscriptions
+export class DiscussionComponent implements OnInit, OnDestroy {
   discussions: DiscussionItem[] = [];
-  private voteSub!: Subscription;
-  private deleteSub!: Subscription;
-  private newDiscussionSub!: Subscription;
-  private avatarColors: string[] = [
-  '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
-  '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
-  '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
-  '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
-];
 
-getAvatarColor(username: string): string {
-  const name = (username || 'Guest').trim().toLowerCase();
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  private voteSub!:               Subscription;
+  private deleteSub!:              Subscription;
+  private newDiscussionSub!:       Subscription;
+  private memberLimitSub!:         Subscription;
+  private connectionFailedSub!:    Subscription;
+  private connectionRestoredSub!:  Subscription;
+
+  private tripsRetryTimeout: any = null;
+  private discussionsRetryTimeout: any = null;
+  private hasShownLoadErrorPopup: boolean = false;
+
+  private avatarColors: string[] = [
+    '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
+    '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
+    '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
+    '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
+  ];
+
+  getAvatarColor(username: string): string {
+    const name = (username || 'Guest').trim().toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    }
+    const index = hash % this.avatarColors.length;
+    return this.avatarColors[index];
   }
-  const index = hash % this.avatarColors.length;
-  return this.avatarColors[index];
-}
-  
-  userTrips: any[] = []; 
+
+  userTrips: any[] = [];
   selectedTripId: string = '';
 
   // Places autocomplete state
@@ -49,7 +57,7 @@ getAvatarColor(username: string): string {
   isPlaceValid: boolean = false;
   selectedPlaceId: string = '';
   showSuggestions: boolean = false;
-  
+
   currentUser: string = 'Guest User';
   newTrip: any = {
     title: '',
@@ -62,7 +70,7 @@ getAvatarColor(username: string): string {
     private route: ActivatedRoute,
     private discussionService: DiscussionService,
     private signalrService: SignalrService,
-    private tripService: TripService, 
+    private tripService: TripService,
     private votePlacesService: VotePlacesService,
     private cdr: ChangeDetectorRef,
     private zone: NgZone,
@@ -73,7 +81,7 @@ getAvatarColor(username: string): string {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       const tripIdFromUrl = params['tripId'];
-      
+
       if (tripIdFromUrl) {
         this.selectedTripId = tripIdFromUrl;
       }
@@ -85,16 +93,20 @@ getAvatarColor(username: string): string {
 
   // Get current user name from local storage
   setUserData() {
-    const storedUser = localStorage.getItem('userName'); 
+    const storedUser = localStorage.getItem('userName');
     this.currentUser = storedUser ? storedUser : 'Guest User';
-    console.log('Current User set to:', this.currentUser);
   }
 
-  // Cleanup: unsubscribe from SignalR events when leaving the page
+  // Cleanup: unsubscribe from SignalR events and clear pending retry timers
   ngOnDestroy() {
-    if (this.voteSub) this.voteSub.unsubscribe();
-    if (this.deleteSub) this.deleteSub.unsubscribe();
-    if (this.newDiscussionSub) this.newDiscussionSub.unsubscribe();
+    if (this.voteSub)               this.voteSub.unsubscribe();
+    if (this.deleteSub)             this.deleteSub.unsubscribe();
+    if (this.newDiscussionSub)      this.newDiscussionSub.unsubscribe();
+    if (this.memberLimitSub)        this.memberLimitSub.unsubscribe();
+    if (this.connectionFailedSub)   this.connectionFailedSub.unsubscribe();
+    if (this.connectionRestoredSub) this.connectionRestoredSub.unsubscribe();
+    if (this.tripsRetryTimeout)       clearTimeout(this.tripsRetryTimeout);
+    if (this.discussionsRetryTimeout) clearTimeout(this.discussionsRetryTimeout);
   }
 
   // Load trips associated with the user — filters by the logged-in user's email
@@ -107,19 +119,42 @@ getAvatarColor(username: string): string {
       return;
     }
 
-    this.tripService.getTripsByEmail(email).subscribe({ 
+    this.tripService.getTripsByEmail(email).subscribe({
       next: (data) => {
-        this.userTrips = Array.isArray(data) ? data : [data]; 
-        
+        this.userTrips = Array.isArray(data) ? data : [data];
+
         if (this.userTrips.length > 0) {
           if (!this.selectedTripId) {
             this.selectedTripId = this.userTrips[0].id || this.userTrips[0].Id;
           }
           this.joinSignalRGroup();
-          this.loadInitialData(); 
+          this.loadInitialData();
         }
+
+        if (this.tripsRetryTimeout) clearTimeout(this.tripsRetryTimeout);
+        this.hasShownLoadErrorPopup = false;
       },
-      error: (err) => console.error('Error loading user trips:', err)
+      error: (err) => {
+        console.error('Error loading user trips:', err);
+
+        // Only network/server-down errors get silently retried — auth/permission
+        // errors would just fail the same way again, so those aren't looped
+        if (err?.status === 0 || err?.status === 503) {
+          if (!this.hasShownLoadErrorPopup) {
+            this.hasShownLoadErrorPopup = true;
+            Swal.fire({
+              icon: 'warning',
+              title: 'Connection Problem',
+              text: 'Could not load your trips. Retrying automatically...',
+              timer: 2500,
+              showConfirmButton: false
+            });
+          }
+          this.tripsRetryTimeout = setTimeout(() => this.loadUserTrips(), 5000);
+        } else {
+          this.showNetworkError(err, 'Could not load your trips.');
+        }
+      }
     });
   }
 
@@ -127,17 +162,15 @@ getAvatarColor(username: string): string {
   joinSignalRGroup() {
     if (this.selectedTripId) {
       this.signalrService.hubConnection.invoke('JoinTripGroup', this.selectedTripId)
-        .then(() => console.log(`Joined group: ${this.selectedTripId}`))
         .catch(err => console.error('Error joining group:', err));
     }
   }
 
   // Refresh data when a user selects a different trip from the dropdown
   onTripChange() {
-    console.log('Trip changed to:', this.selectedTripId);
-    this.discussions = []; 
-    this.joinSignalRGroup(); 
-    this.loadInitialData(); 
+    this.discussions = [];
+    this.joinSignalRGroup();
+    this.loadInitialData();
   }
 
   // Fetch discussions for the currently selected trip
@@ -150,8 +183,19 @@ getAvatarColor(username: string): string {
           this.discussions = data;
           this.cdr.detectChanges();
         });
+        if (this.discussionsRetryTimeout) clearTimeout(this.discussionsRetryTimeout);
       },
-      error: (err) => console.error('Error loading discussions:', err)
+      error: (err) => {
+        console.error('Error loading discussions:', err);
+
+        if (err?.status === 0 || err?.status === 503) {
+          // Silently retry — loadUserTrips() already shows a popup for the
+          // whole page's initial-load sequence
+          this.discussionsRetryTimeout = setTimeout(() => this.loadInitialData(), 5000);
+        } else {
+          this.showNetworkError(err, 'Could not load discussions.');
+        }
+      }
     });
   }
 
@@ -161,12 +205,12 @@ getAvatarColor(username: string): string {
     if (item.type === 'Trip') {
       return !!(item.isConfirmed || item.isRejected);
     }
-    return false; // Other type — no confirmed/rejected 
+    return false;
   }
 
-  // ── NEW — finds the CURRENT logged-in user's own vote in the userVotes array.
-  // Used by the template instead of userVotes?.[0], which always read the
-  // first voter in the array regardless of who is actually viewing the page.
+  // Finds the current logged-in user's own vote in the userVotes array.
+  // Used instead of userVotes?.[0], which would always read the first voter
+  // in the array regardless of who is actually viewing the page.
   getMyVote(item: any): string | null {
     if (!item?.userVotes) return null;
     const myVote = item.userVotes.find((v: any) => {
@@ -176,15 +220,14 @@ getAvatarColor(username: string): string {
     return myVote ? myVote.optionText : null;
   }
 
-  // Listen for real-time events from SignalR (votes, deletions, new posts)
+  // Listen for real-time events from SignalR (votes, deletions, new posts, connection state)
   setupSignalRListeners() {
-    // When someone votes, update the specific discussion in the list
     this.voteSub = this.signalrService.voteUpdated.subscribe((updatedItem: any) => {
       this.zone.run(() => {
         const uId = updatedItem.id || updatedItem.Id;
         const index = this.discussions.findIndex(d => d.id === uId);
         if (index !== -1) {
-          // Replace entire item so all fields (userVotes, options, status) are always in sync
+          // Replace the entire item so all fields (userVotes, options, status) stay in sync
           this.discussions[index] = {
             ...this.discussions[index],
             options:     updatedItem.options     || updatedItem.Options     || this.discussions[index].options,
@@ -202,7 +245,6 @@ getAvatarColor(username: string): string {
       });
     });
 
-    // When a discussion is deleted, remove it from the local list
     this.deleteSub = this.signalrService.discussionDeleted.subscribe((id: string) => {
       this.zone.run(() => {
         this.discussions = this.discussions.filter(d => d.id !== id);
@@ -210,7 +252,6 @@ getAvatarColor(username: string): string {
       });
     });
 
-    // When a new discussion is created, add it to the list if it belongs to this trip
     this.newDiscussionSub = this.signalrService.newDiscussion.subscribe((newItem: any) => {
       this.zone.run(() => {
         const nId = newItem.id || newItem.Id;
@@ -220,6 +261,48 @@ getAvatarColor(username: string): string {
           this.discussions = [...this.discussions, newItem];
           this.cdr.detectChanges();
         }
+      });
+    });
+
+    // When trip members change, update memberLimit on pending discussions only —
+    // confirmed/rejected discussions stay untouched since their vote is already final
+    this.memberLimitSub = this.signalrService.memberLimitChanged.subscribe((data: any) => {
+      this.zone.run(() => {
+        if (data.tripId !== this.selectedTripId) return;
+
+        this.discussions = this.discussions.map(d =>
+          (d.type === 'Trip' && !d.isConfirmed && !d.isRejected)
+            ? { ...d, memberLimit: data.newLimit }
+            : d
+        );
+
+        this.cdr.detectChanges();
+      });
+    });
+
+    this.connectionFailedSub = this.signalrService.connectionFailed.subscribe((msg: string) => {
+      this.zone.run(() => {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Connection Problem',
+          text: msg,
+        });
+      });
+    });
+
+    // Silently re-join the trip group and refresh data once the connection is restored
+    this.connectionRestoredSub = this.signalrService.connectionRestored.subscribe(() => {
+      this.zone.run(() => {
+        this.joinSignalRGroup();
+        this.loadInitialData();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Reconnected',
+          text: 'Your connection is back.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       });
     });
   }
@@ -280,13 +363,10 @@ getAvatarColor(username: string): string {
 
     const limit = item.memberLimit || 1;
 
-    // Normalize both sides to lowercase for safe comparison regardless of casing
-    const hasAlreadyVoted = item.userVotes?.some(
-      (v: any) => {
-        const id = v.userId ?? v.UserId ?? v.user ?? v.User ?? '';
-        return id.trim().toLowerCase() === this.currentUser.trim().toLowerCase();
-      }
-    );
+    const hasAlreadyVoted = item.userVotes?.some((v: any) => {
+      const id = v.userId ?? v.UserId ?? v.user ?? v.User ?? '';
+      return id.trim().toLowerCase() === this.currentUser.trim().toLowerCase();
+    });
 
     // Only block NEW voters when all slots are filled; existing voters can always change their vote
     if (!hasAlreadyVoted && (item.userVotes?.length || 0) >= limit) {
@@ -294,15 +374,12 @@ getAvatarColor(username: string): string {
       return;
     }
 
-    // userEmail is read separately from userName — userName stays the display
-    // name shown in the UI, userEmail is only used by the backend to verify
-    // this person is actually a member of the trip (security check).
+    // userEmail is used only by the backend to verify trip membership (security check);
+    // userName stays the display name shown in the UI
     const userEmail = localStorage.getItem('email') ?? '';
 
     this.discussionService.vote(discussionId, optionText, this.currentUser, userEmail).subscribe({
-      next: (updatedItem: any) => {
-        console.log('Vote processed');
-      },
+      next: () => {},
       error: (err) => {
         console.error('Voting failed:', err);
         if (err.status === 403) {
@@ -310,19 +387,18 @@ getAvatarColor(username: string): string {
         } else if (err.status === 400) {
           Swal.fire('Info', err.error?.message || 'Voting is closed.', 'info');
         } else {
-          Swal.fire('Error', 'Vote cast failed.', 'error');
+          this.showNetworkError(err, 'Vote cast failed.');
         }
       }
     });
   }
 
-  // ── FIXED: validate title — skip consonant check if Google Places selected
-  // Google Places API already validated the place name, no need for consonant rules
+  // Validates a title — length, letter count, vowel presence, and no excessive consonant runs.
+  // Skipped entirely when a valid place was selected from Google Places, since that's already validated.
   validateTitle(title: string): boolean {
     if (!title) return false;
     const t = title.trim();
 
-    // If a valid place was selected from Google Places, skip all regex checks
     if (this.isPlaceValid) return true;
 
     if (t.length < 3 || t.length > 50) return false;
@@ -330,17 +406,17 @@ getAvatarColor(username: string): string {
     if (letterCount < 3) return false;
     const hasVowel = /[aeiouy]/i;
     if (!hasVowel.test(t)) return false;
-    const excessiveConsonants = /[^aeiouy\s\d]{5,}/i; 
+    const excessiveConsonants = /[^aeiouy\s\d]{5,}/i;
     if (excessiveConsonants.test(t)) return false;
     return true;
   }
 
   private searchTimeout: any = null;
-  // Places autocomplete — when user types in the title for a Trip proposal, show place suggestions based on input
+
+  // Places autocomplete — shows place suggestions as the user types a Trip proposal title
   onTitleInput() {
     const input = this.newTrip.title.trim();
 
-    // validate title first — only search if it looks like a real place name, not just random text
     if (this.newTrip.type !== 'Trip' || input.length < 2) {
       this.placeSuggestions = [];
       this.showSuggestions = false;
@@ -360,7 +436,7 @@ getAvatarColor(username: string): string {
     }, 350);
   }
 
-  // when user clicks on a place suggestion, fill the title with the place name and store the place ID for validation on post
+  // Fills the title with the selected place and stores its ID for validation on post
   selectPlace(prediction: VotePlacePrediction) {
     this.newTrip.title    = prediction.description;
     this.selectedPlaceId  = prediction.place_id;
@@ -371,19 +447,16 @@ getAvatarColor(username: string): string {
     this.cdr.detectChanges();
   }
 
-  // ── FIXED: Post button enable/disable logic
-  // Trip type: valid place must be selected from Google Places
-  // Other type: only title validation needed, no place required
+  // Trip type requires a valid place selected via Google Places;
+  // Other type only needs a valid title
   isReadyToPost(): boolean {
-    // Trip type — place selected via Google Places bypasses title consonant rules
     if (this.newTrip.type === 'Trip') {
       return this.isPlaceValid;
     }
-    // Other type — normal title validation
     return this.validateTitle(this.newTrip.title);
   }
 
-  // when user changes the proposal type (Trip vs Other), reset place-related state since only Trip type requires a valid place
+  // Resets place-related state when switching between Trip/Other proposal types
   onTypeChange() {
     this.isPlaceValid     = false;
     this.selectedPlaceId  = '';
@@ -391,11 +464,9 @@ getAvatarColor(username: string): string {
     this.showSuggestions  = false;
   }
 
-  // ── FIXED: Submit — skip validateTitle() check for Trip type if place already validated
   addNewTrip() {
     const title = this.newTrip.title.trim();
 
-    // For Other type, still validate the title normally
     if (this.newTrip.type !== 'Trip' && !this.validateTitle(title)) {
       Swal.fire('Invalid Title', 'Please provide a meaningful title (at least 3 letters and 1 vowel).', 'warning');
       return;
@@ -404,12 +475,9 @@ getAvatarColor(username: string): string {
     this.tripService.getTripById(this.selectedTripId).subscribe({
       next: (actualTripData) => {
         const members = actualTripData.members || actualTripData.Members || [];
-        const memberCount = members.length;
 
-        // memberCount = invited members, + 1 for creator (stored separately in CreatedBy)
-        const dynamicLimit = memberCount + 1;
-
-        console.log('Calculated dynamic limit:', dynamicLimit);
+        // GetTrip() already includes the owner in this list, so no extra +1 is needed
+        const dynamicLimit = members.length;
 
         let options = [];
         if (this.newTrip.type === 'Other') {
@@ -438,9 +506,9 @@ getAvatarColor(username: string): string {
           isRejected: false,
           options: options,
           comments: [],
-          memberLimit: dynamicLimit, 
+          memberLimit: dynamicLimit,
           tripId: this.selectedTripId,
-          // NEW — place info so backend can push it into Trip.SavedPlaces once confirmed
+          // Place info so the backend can push it into Trip.SavedPlaces once confirmed
           placeId: this.newTrip.type === 'Trip' ? this.selectedPlaceId : null,
           placeName: this.newTrip.type === 'Trip' ? title : null
         };
@@ -450,10 +518,13 @@ getAvatarColor(username: string): string {
             this.resetForm();
             Swal.fire({ icon: 'success', title: 'Posted', showConfirmButton: false, timer: 1500 });
           },
-          error: (err) => console.error('Creation error:', err)
+          error: (err) => {
+            console.error('Creation error:', err);
+            this.showNetworkError(err, 'Could not post your suggestion.');
+          }
         });
       },
-      error: (err) => Swal.fire('Error', 'Could not verify trip members.', 'error')
+      error: (err) => this.showNetworkError(err, 'Could not verify trip members.')
     });
   }
 
@@ -478,32 +549,29 @@ getAvatarColor(username: string): string {
           next: () => {
             Swal.fire({ icon: 'success', title: 'Deleted!', text: 'The vote box has been deleted.', showConfirmButton: false, timer: 1500 });
           },
-          error: (err) => Swal.fire('Error', 'Could not delete the discussion.', 'error')
+          error: (err) => this.showNetworkError(err, 'Could not delete the discussion.')
         });
       }
     });
   }
 
-  // NEW — returns discussions sorted by status priority: Pending first, then Confirmed, then Rejected.
-  // Within each status group, newest first (by createdAt).
-  // 'Other' type polls (no confirm/reject state) are treated as Pending.
+  // Returns discussions sorted by status priority: Pending first, then Confirmed, then Rejected.
+  // Within each status group, newest first. 'Other' type polls are treated as Pending.
   get sortedDiscussions(): DiscussionItem[] {
     const statusRank = (item: any): number => {
-      if (item.type !== 'Trip') return 0;       // polls — treat like Pending
-      if (!item.isConfirmed && !item.isRejected) return 0; // Pending
-      if (item.isConfirmed) return 1;            // Confirmed
-      return 2;                                  // Rejected
+      if (item.type !== 'Trip') return 0;
+      if (!item.isConfirmed && !item.isRejected) return 0;
+      if (item.isConfirmed) return 1;
+      return 2;
     };
 
     return [...this.discussions].sort((a: any, b: any) => {
       const rankDiff = statusRank(a) - statusRank(b);
       if (rankDiff !== 0) return rankDiff;
-      // Same status group — newest first
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }
 
-  // UI Helpers: reset form, manage dynamic poll options, and calculate percentages
   resetForm() {
     this.newTrip = { title: '', description: '', type: 'Trip', customOptions: ['', ''] };
     this.isPlaceValid     = false;
@@ -515,14 +583,13 @@ getAvatarColor(username: string): string {
   addOptionField() { this.newTrip.customOptions.push(''); }
   removeOptionField(index: number) { if (this.newTrip.customOptions.length > 2) this.newTrip.customOptions.splice(index, 1); }
   trackByIndex(index: number) { return index; }
-  
+
   getVotePercentage(item: any, index: number): number {
     if (!item || !item.options) return 0;
     const total = item.options.reduce((acc: number, curr: any) => acc + (curr.voteCount || 0), 0);
     return total === 0 ? 0 : Math.round(((item.options[index].voteCount || 0) / total) * 100);
   }
 
-  // Navigate back to the traveller dashboard
   navigateToDashboard() {
     this.router.navigate(['/traveller-dashboard']);
   }
@@ -532,6 +599,26 @@ getAvatarColor(username: string): string {
       this.router.navigate(['/trip-summary', this.selectedTripId]);
     } else {
       Swal.fire('Error', 'No trip selected to view summary.', 'error');
+    }
+  }
+
+  // Shows a friendly popup for network/timeout/server errors.
+  // status === 0 means the request never reached the server (offline, timeout, unreachable).
+  private showNetworkError(err: any, fallbackMsg: string = 'Something went wrong. Please try again.') {
+    if (err?.status === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Connection Problem',
+        text: err.error?.message || 'Cannot reach the server. Please check your internet connection.',
+      });
+    } else if (err?.status === 503) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Server Unavailable',
+        text: err.error?.message || 'The server is temporarily unavailable. Please try again shortly.',
+      });
+    } else {
+      Swal.fire('Error', err?.error?.message || fallbackMsg, 'error');
     }
   }
 }

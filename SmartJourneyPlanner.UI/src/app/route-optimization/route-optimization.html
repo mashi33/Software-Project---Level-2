@@ -54,7 +54,7 @@
       </button>
     </div>
 
-        <!-- ✅ Empty state — before any search -->
+        <!--  Empty state — before any search -->
     <div class="route-empty-state" 
          *ngIf="!results && !busResult && !isLoading && !isBusLoading">
       <span class="material-icons empty-icon">route</span>
@@ -240,7 +240,7 @@
     </div>
   </div>
 
-      <!-- ✅ PUBLIC TRANSPORT RESULTS -->
+      <!--  PUBLIC TRANSPORT RESULTS -->
     <div class="results" *ngIf="transportMode === 'public'">
 
       <!-- Bus Loading skeleton -->
@@ -280,7 +280,7 @@
         </div>
       </div>
 
-      <!-- ✅ Multiple direct bus options -->
+      <!--  Multiple direct bus options -->
       <ng-container *ngIf="busResult?.found && !busResult?.isMultiLeg && !isBusLoading">
 
         <!-- Single option -->
@@ -466,7 +466,7 @@
         <p class="empty-subtext">No bus route found for this journey. Try a nearby city.</p>
       </div>
 
-      <!-- ✅ ADD THIS — PDF download button -->
+      <!-- — PDF download button -->
       <div class="generation-wrapper"
            *ngIf="busResult?.found && !isBusLoading">
         <app-generation
@@ -534,6 +534,7 @@
       </div>
     </div>
 
+    <!-- Navigation buttons -->
     <div class="map-actions-container">
       <button class="btn-action back-btn" (click)="goToExplore()">
         <span class="material-icons">arrow_back</span>

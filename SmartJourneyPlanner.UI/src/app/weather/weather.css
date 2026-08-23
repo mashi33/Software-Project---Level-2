@@ -701,3 +701,65 @@
   .feature-grid { grid-template-columns: 1fr; }
   .hero-stats { flex-wrap: wrap; gap: 16px; }
 }
+
+/* Location dropdown (Sri Lanka results) */
+.location-dropdown {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-top: 14px;
+  box-shadow: var(--shadow-md);
+}
+
+.dropdown-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--brand-dark);
+}
+
+.location-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.location-option {
+  padding: 11px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.location-option:last-child {
+  border-bottom: none;
+}
+
+.location-option:hover {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
+.cancel-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  transition: background 0.15s ease;
+}
+
+.cancel-btn:hover {
+  background: #f0f0f0;
+}

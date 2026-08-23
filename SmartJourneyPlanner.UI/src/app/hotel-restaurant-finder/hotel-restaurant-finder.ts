@@ -25,16 +25,15 @@ export class HotelRestaurantFinder implements OnInit {
     private placesService: PlacesService
   ) {}
 
-  // ✅ NEW — when arrive the page previous data cleared
+  // when arrive the page previous data cleared
   ngOnInit() {
     this.placesService.clearPlaces();
   }
 
   onQuickCitySearch(city: string) {
-  // TODO: wire this to match performSearch() in filter.component.ts
-  console.log('Quick search for city:', city);
-}
-
+  }
+ 
+  //navigate back to explore page
   goBack() {
     this.router.navigate(['/explore']);
   }

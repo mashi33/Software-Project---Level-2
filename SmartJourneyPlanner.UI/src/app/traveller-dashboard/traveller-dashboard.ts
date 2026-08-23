@@ -156,60 +156,40 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           <div style="background: #fef2f2; border-left: 5px solid #ef4444; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
             <strong style="color: #b91c1c; font-size: 15px; display: block; margin-bottom: 4px;">Attention Required</strong>
             <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">
-              ${latestAlert.message || 'The vehicle you booked is currently in a service period or has been restricted. Please try another vehicle.'}
+              ${latestAlert.message || 'The vehicle you booked has been declined by the admin. Please choose a new vehicle.'}
             </p>
           </div>
           <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; font-size: 13px; color: #64748b;">
             <div><strong>Vehicle:</strong> ${latestAlert.vehicleInfo || latestAlert.vehicleName || 'Selected Transport'}</div>
-            <div style="margin-top: 4px;"><strong>Recommendation:</strong> Please navigate to your bookings and select an alternative vehicle.</div>
+            <div style="margin-top: 4px;"><strong>Action:</strong> Click below to find a new vehicle.</div>
           </div>
         </div>
       `,
       showConfirmButton: true,
-      confirmButtonText: 'Find New Vehicle',
+      confirmButtonText: 'Find New Vehicle', 
       confirmButtonColor: '#ef4444',
-      showCancelButton: true,
-      cancelButtonText: 'Dismiss',
-      cancelButtonColor: '#64748b'
+      showCancelButton: false, 
+      allowOutsideClick: false
     }).then((result) => {
-      // Cancel the booking regardless of which button was clicked
-      if (bookingId) {
-        this.dashboardService.cancelBooking(bookingId).subscribe({
-          next: () => {
-            console.log('Booking cancelled successfully:', bookingId);
-            // Show cancellation confirmation
-            Swal.fire({
-              title: '✅ Booking Cancelled',
-              text: 'Your booking has been automatically cancelled due to the vehicle being in service period.',
-              icon: 'success',
-              confirmButtonColor: '#10b981',
-              confirmButtonText: 'OK'
-            }).then(() => {
-              if (result.isConfirmed) {
-                this.router.navigate(['/transport']);
-              }
-            });
-          },
-          error: (err) => {
-            console.error('Failed to cancel booking:', err);
-            Swal.fire({
-              title: 'Error',
-              text: 'Failed to cancel booking. Please contact support.',
-              icon: 'error',
-              confirmButtonColor: '#ef4444'
-            });
-          }
-        });
-      } else {
-        // No booking ID, just dismiss the alert
-        this.dismissAlert(latestAlert._id || latestAlert.id);
-        if (result.isConfirmed) {
+      if (result.isConfirmed) {
+        if (bookingId) {
+          this.dashboardService.cancelBooking(bookingId).subscribe({
+            next: () => {
+              console.log('Booking cancelled successfully:', bookingId);
+              this.dismissAlert(latestAlert._id || latestAlert.id);
+              this.router.navigate(['/transport']);
+            },
+            error: (err) => {
+              console.error('Failed to cancel booking:', err);
+              this.dismissAlert(latestAlert._id || latestAlert.id);
+              this.router.navigate(['/transport']);
+            }
+          });
+        } else {
+          this.dismissAlert(latestAlert._id || latestAlert.id);
           this.router.navigate(['/transport']);
         }
       }
-
-      // Dismiss the alert
-      this.dismissAlert(latestAlert._id || latestAlert.id);
     });
   }
 
@@ -251,7 +231,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadDashboardData() {
+    loadDashboardData() {
     this.dashboardService.getDashboardData()
       .subscribe({
         next: (data) => {
@@ -267,11 +247,12 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           this.visibleOngoingTrips = this.ongoingTrips.slice(0, 2);
           this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 2);
           this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
-          
+
           this.setNextTrip(this.upcomingTrips);
           this.loadMemoriesCount();
         },
-        error: () => {
+        error: (err) => {
+          console.error('Dashboard error:', err);
           Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -373,36 +354,38 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     let containerHtml = `<div class="premium-swal-container" style="max-height: 420px; overflow-y: auto; padding: 10px 5px; scrollbar-width: thin;">`;
 
-    tripsList.forEach(trip => {
+        tripsList.forEach(trip => {
       const startDayName = this.datePipe.transform(trip.startDate, 'EEEE');
       const startDateFormatted = this.datePipe.transform(trip.startDate, 'MMM d, yyyy');
       const endDateFormatted = this.datePipe.transform(trip.endDate, 'MMM d, yyyy');
-      
+      const roleLabel = trip.role || trip.Role || '';
+
       containerHtml += `
-        <div class="premium-trip-card" data-id="${trip.id || trip.Id}" 
-             style="display: flex; align-items: center; justify-content: space-between; 
+        <div class="premium-trip-card" data-id="${trip.id || trip.Id}"
+             style="display: flex; align-items: center; justify-content: space-between;
                     background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid ${accentColor};
                     padding: 16px; margin-bottom: 14px; border-radius: 16px; cursor: pointer;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
                     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;"
              onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)'; this.style.background='#f8fafc';"
              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)'; this.style.background='#ffffff';">
-          
+         
           <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
             <div style="background: ${bgGradient}; color: ${accentColor}; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
               ${iconHtml}
             </div>
-            
+           
             <div style="text-align: left; flex: 1; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px; flex-wrap: wrap;">
                 <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${trip.tripName}</h4>
                 <span style="background: ${accentColor}15; color: ${accentColor}; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">${badgeText}</span>
+                ${roleLabel ? `<span style="background: #e2e8f0; color: #334155; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; flex-shrink: 0;">${roleLabel}</span>` : ''}
               </div>
-              
+             
               <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 4px;">
                 <i class="fas fa-map-marker-alt" style="color: #94a3b8;"></i> ${trip.destination}
               </p>
-              
+             
               <span style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px; margin-top: 6px; font-weight: 400;">
                 <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
                 <span>${startDateFormatted}</span>
@@ -464,38 +447,48 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
     this.calculateCountdown(this.nextTrip.startDate);
 
     let startDateStr = this.nextTrip.startDate.split('T')[0];
-    
+
     const today = new Date();
     const maxForecastDate = new Date();
-    maxForecastDate.setDate(today.getDate() + 14); // 14 date limit
+    maxForecastDate.setDate(today.getDate() + 16); 
 
     const targetTripDate = new Date(startDateStr);
 
-    // set last year weather if date is after more than 14 days
+    // set last year weather if date is after more than 16 days
     if (targetTripDate > maxForecastDate) {
       const lastYear = targetTripDate.getFullYear() - 1;
       const month = String(targetTripDate.getMonth() + 1).padStart(2, '0');
       const day = String(targetTripDate.getDate()).padStart(2, '0');
       startDateStr = `${lastYear}-${month}-${day}`;
-      
+
     }
 
     this.weatherService
       .getCoordinates(this.nextTrip.destination)
       .subscribe({
         next: (res: any) => {
-          if (!res || !res.length) return;
-          const lat = res[0].lat;
-          const lon = res[0].lon;
+          if (!res || !res.results || !res.results.length) {
+            this.weather = null;
+            return;
+          }
+          // Filter for Sri Lanka cities only 
+          const sriLankaResults = res.results.filter((r: any) => {
+            const country = (r.country || '').toLowerCase();
+            const countryCode = (r.country_code || '').toLowerCase();
+            return country === 'sri lanka' || countryCode === 'lk';
+          });
+
+          if (sriLankaResults.length === 0) {
+            this.weather = null;
+            return;
+          }
+
+          const lat = sriLankaResults[0].latitude;
+          const lon = sriLankaResults[0].longitude;
           this.loadWeather(lat, lon, startDateStr);
         },
         error: () => {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Weather Unavailable',
-            text: 'Could not fetch weather data for this destination.',
-            confirmButtonColor: '#3b82f6'
-          });
+          this.weather = null;
         }
       });
   }

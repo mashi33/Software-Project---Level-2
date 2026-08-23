@@ -229,34 +229,57 @@ export class SlideshowComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (data: TripMemory[]) => {
           this.allMemories = data;
 
-          this.filteredMemories = this.allMemories
-            .map((m) => ({
-              ...m,
-              visibility: m.visibility ?? 'private'
-            }))
-            .filter((m) => m.visibility === 'public' || m.visibility === 'tripMembers');
+this.filteredMemories = this.allMemories
+  .map((m) => ({
+    ...m,
+    // both camelCase and possible PascalCase support
+    visibility: (m.visibility ?? (m as any).Visibility ?? 'private')
+  }))
+  .filter((m) => {
+    const vis = (m.visibility || '').toString().trim().toLowerCase();
+    // Case-insensitive matching to handle variations like Public, PUBLIC, TripMembers, TRIPMEMBERS, etc.
+    return vis === 'public' || vis === 'tripmembers';
+  });
 
-          const sortedDefault = [...this.filteredMemories].sort((a, b) => {
-            const dateA = new Date(a.createdAt || a.startDate || '').getTime();
-            const dateB = new Date(b.createdAt || b.startDate || '').getTime();
-            return dateA - dateB;
-          });
+const sortedDefault = [...this.filteredMemories].sort((a, b) => {
+  const dateA = new Date(a.createdAt || a.startDate || '').getTime();
+  const dateB = new Date(b.createdAt || b.startDate || '').getTime();
+  return dateA - dateB;
+});
 
-          const savedOrderIds = localStorage.getItem(`trip_order_${this.tripId || this.selectedTripName}`);
+const savedOrderIds = localStorage.getItem(`trip_order_${this.tripId || this.selectedTripName}`);
 
-          if (savedOrderIds) {
-            const idArray: string[] = JSON.parse(savedOrderIds);
-            this.filteredMemories = idArray
-              .map((id) => sortedDefault.find((m) => m.id === id || (m as any)._id === id))
-              .filter((m) => m !== undefined) as any[];
+if (savedOrderIds) {
+  const idArray: string[] = JSON.parse(savedOrderIds);
+  this.filteredMemories = idArray
+    .map((id) =>
+      sortedDefault.find(
+        (m) =>
+          m.id === id ||
+          (m as any)._id === id ||
+          String(m.id) === String(id) ||
+          String((m as any)._id) === String(id)
+      )
+    )
+    .filter((m) => m !== undefined) as any[];
 
-            const missingMemories = sortedDefault.filter(
-              (orig) => !this.filteredMemories.some((m) => m.id === orig.id || (m as any)._id === (orig as any)._id)
-            );
-            this.filteredMemories = [...this.filteredMemories, ...missingMemories];
-          } else {
-            this.filteredMemories = sortedDefault;
-          }
+  // missing ones safely append - check against sortedDefault (all memories)
+  const missingMemories = sortedDefault.filter(
+    (orig) => {
+      const origId = String(orig.id || (orig as any)._id);
+      const isFound = this.filteredMemories.some(
+        (m) => {
+          const memId = String(m.id || (m as any)._id);
+          return memId === origId;
+        }
+      );
+      return !isFound;
+    }
+  );
+  this.filteredMemories = [...this.filteredMemories, ...missingMemories];
+} else {
+  this.filteredMemories = sortedDefault;
+}
 
           if (this.tripDetails) {
             this.buildTripMembers();

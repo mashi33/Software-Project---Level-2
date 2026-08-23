@@ -124,12 +124,12 @@
             </div>
           </div>
 
-          <!-- Card 2: Approved Today -->
+          <!-- Card 2: Approved This Session -->
           <div class="col-xl-4 col-md-6 px-1">
             <div class="card border-0 shadow-sm px-3 py-2 rounded-4 bg-white border-start border-success border-4 h-100">
               <div class="d-flex align-items-center justify-content-between">
                 <div>
-                  <span class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Approved Today</span>
+                  <span class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Approved This Session</span>
                   <h3 class="fw-bold mb-0 text-success mt-1">{{ approvedSessionCount }}</h3>
                   <span class="text-muted" style="font-size: 9px;">Successfully verified</span>
                 </div>
@@ -140,12 +140,12 @@
             </div>
           </div>
 
-          <!-- Card 3: Rejected Today -->
+          <!-- Card 3: Rejected This Session -->
           <div class="col-xl-4 col-md-6 px-1">
             <div class="card border-0 shadow-sm px-3 py-2 rounded-4 bg-white border-start border-danger border-4 h-100">
               <div class="d-flex align-items-center justify-content-between">
                 <div>
-                  <span class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Rejected Today</span>
+                  <span class="text-muted fw-bold text-uppercase" style="font-size: 9px;">Rejected This Session</span>
                   <h3 class="fw-bold mb-0 text-danger mt-1">{{ rejectedSessionCount }}</h3>
                   <span class="text-muted" style="font-size: 9px;">Failed validation</span>
                 </div>
@@ -520,11 +520,11 @@
             <div class="provider-info">
               <div class="provider-info-row mb-1">
                 <i class="bi bi-person"></i>
-                <strong>{{ v.providerProfile?.name || v.ProviderProfile?.Name || 'Unknown Provider' }}</strong>
+                <strong>{{ v.providerProfile?.name || v.ProviderProfile?.Name || v.providerId || v.ProviderId || 'Unknown Provider' }}</strong>
               </div>
               <div class="provider-info-row">
                 <i class="bi bi-telephone"></i>
-                <span>{{ v.providerProfile?.phone || v.ProviderProfile?.Phone || 'No contact' }}</span>
+                <span>{{ v.providerProfile?.phone || v.ProviderProfile?.Phone || v.phone || 'No contact' }}</span>
               </div>
             </div>
 
@@ -995,8 +995,8 @@
                     <p>Verified that the Full Name, ID Numbers, and Date of Birth match exactly across both documents.</p>
                   </div>
                   <!-- The Compare Button -->
-                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini" 
-                          (click)="$event.preventDefault(); compareDocuments(selectedProvider.driverNicUrl, selectedProvider.driverLicenseUrl, 'NIC / Identity', 'Driver\'s License')">
+                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini"
+                          (click)="$event.preventDefault(); compareDocuments(selectedProvider.driverNicUrl, selectedProvider.driverLicenseUrl, 'NIC / Identity', 'Driver\'s License', check1)">
                     <i class="bi bi-layout-split"></i> Compare
                   </button>
                 </div>
@@ -1013,8 +1013,8 @@
                     <p>Verified that the vehicle owner's name/details on the Revenue License align with the identity documents.</p>
                   </div>
                   <!-- The Compare Button -->
-                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini" 
-                          (click)="$event.preventDefault(); compareDocuments(selectedProvider.revenueLicenseUrl, selectedProvider.driverNicUrl, 'Revenue License', 'NIC / Identity')">
+                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini"
+                          (click)="$event.preventDefault(); compareDocuments(selectedProvider.revenueLicenseUrl, selectedProvider.driverNicUrl, 'Revenue License', 'NIC / Identity', check2)">
                     <i class="bi bi-layout-split"></i> Compare
                   </button>
                 </div>
@@ -1030,18 +1030,19 @@
                     <p>Verified that the Certificate of Registration is valid and matches vehicle details.</p>
                   </div>
                   <!-- The Compare Button -->
-                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini" 
+                  <button class="btn-action-smart btn-doc-view-smart btn-compare-mini"
                           [disabled]="!hasDocument(selectedProvider, 'registration') || !hasDocument(selectedProvider, 'revenue')"
                           (click)="$event.preventDefault(); compareDocuments(
-                            selectedProvider.certificateOfRegistrationUrl || 
-                            selectedProvider.CertificateOfRegistrationUrl || 
-                            selectedProvider.registrationCertificateUrl || 
+                            selectedProvider.certificateOfRegistrationUrl ||
+                            selectedProvider.CertificateOfRegistrationUrl ||
+                            selectedProvider.registrationCertificateUrl ||
                             selectedProvider.RegistrationCertificateUrl ||
                             selectedProvider.registrationUrl ||
                             selectedProvider.RegistrationUrl,
                             selectedProvider.revenueLicenseUrl || selectedProvider.RevenueLicenseUrl,
                             'Certificate of Registration',
-                            'Revenue License'
+                            'Revenue License',
+                            check3
                           )">
                     <i class="bi bi-layout-split"></i> Compare
                   </button>
