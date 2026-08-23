@@ -21,23 +21,36 @@ namespace SmartJourneyPlanner.API.Controllers
             _logger = logger;
         }
 
-        // GEOCODING + LOCATION VALIDATION 
+        // GEOCODING + LOCATION VALIDATION (Nominatim – Sri Lanka only)
 [HttpGet("geocode")]
 public async Task<IActionResult> Geocode([FromQuery] string city)
 {
     if (string.IsNullOrWhiteSpace(city))
-        return BadRequest(new { message = "City name is required." });
+        return BadRequest(new { message = "Location name is required." });
+
+    var trimmed = city.Trim();
 
     // Basic validation (letters, spaces, hyphen, apostrophe only)
-    if (!System.Text.RegularExpressions.Regex.IsMatch(city.Trim(), @"^[a-zA-Z\s\-'.]+$"))
-        return BadRequest(new { message = "Invalid city name." });
+    if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z\s\-'.]+$"))
+        return BadRequest(new { message = "Invalid location name." });
+
+    if (trimmed.Length < 2)
+        return BadRequest(new { message = "Location name is too short." });
 
     var client = _httpClientFactory.CreateClient();
-    // countryCode=LK + count=5
-    var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city.Trim())}&count=5&language=en&format=json&countryCode=LK";
+
+    // Nominatim – Sri Lanka only
+    var url = "https://nominatim.openstreetmap.org/search" +
+              $"?q={Uri.EscapeDataString(trimmed)}" +
+              "&countrycodes=lk" +
+              "&format=json" +
+              "&limit=8" +
+              "&addressdetails=1";
 
     try
     {
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("SmartJourneyPlanner/1.0 (weather app)");
+
         var response = await client.GetAsync(url);
         if (!response.IsSuccessStatusCode)
         {
@@ -46,7 +59,41 @@ public async Task<IActionResult> Geocode([FromQuery] string city)
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        return Content(json, "application/json");
+
+        // Convert Nominatim → Open-Meteo-like shape (frontend compatibility)
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var results = new List<object>();
+
+        foreach (var item in doc.RootElement.EnumerateArray())
+        {
+            var latStr = item.GetProperty("lat").GetString();
+            var lonStr = item.GetProperty("lon").GetString();
+            var displayName = item.TryGetProperty("display_name", out var dn) ? dn.GetString() ?? "" : "";
+            var name = displayName.Split(',')[0].Trim();
+            if (string.IsNullOrEmpty(name)) name = trimmed;
+
+            string admin1 = "";
+            if (item.TryGetProperty("address", out var address))
+            {
+                if (address.TryGetProperty("state", out var state))
+                    admin1 = state.GetString() ?? "";
+                else if (address.TryGetProperty("province", out var province))
+                    admin1 = province.GetString() ?? "";
+            }
+
+            results.Add(new
+            {
+                name,
+                latitude = double.Parse(latStr ?? "0", System.Globalization.CultureInfo.InvariantCulture),
+                longitude = double.Parse(lonStr ?? "0", System.Globalization.CultureInfo.InvariantCulture),
+                country = "Sri Lanka",
+                country_code = "LK",
+                admin1,
+                display_name = displayName
+            });
+        }
+
+        return Ok(new { results });
     }
     catch (Exception ex)
     {

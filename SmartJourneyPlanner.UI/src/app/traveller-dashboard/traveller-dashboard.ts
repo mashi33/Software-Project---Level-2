@@ -231,7 +231,7 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadDashboardData() {
+    loadDashboardData() {
     this.dashboardService.getDashboardData()
       .subscribe({
         next: (data) => {
@@ -247,11 +247,12 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
           this.visibleOngoingTrips = this.ongoingTrips.slice(0, 2);
           this.visibleUpcomingTrips = this.upcomingTrips.slice(0, 2);
           this.visibleCompletedTrips = this.completedTrips.slice(0, 2);
-          
+
           this.setNextTrip(this.upcomingTrips);
           this.loadMemoriesCount();
         },
-        error: () => {
+        error: (err) => {
+          console.error('Dashboard error:', err);
           Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -353,36 +354,38 @@ export class TravelerDashboardComponent implements OnInit, OnDestroy {
 
     let containerHtml = `<div class="premium-swal-container" style="max-height: 420px; overflow-y: auto; padding: 10px 5px; scrollbar-width: thin;">`;
 
-    tripsList.forEach(trip => {
+        tripsList.forEach(trip => {
       const startDayName = this.datePipe.transform(trip.startDate, 'EEEE');
       const startDateFormatted = this.datePipe.transform(trip.startDate, 'MMM d, yyyy');
       const endDateFormatted = this.datePipe.transform(trip.endDate, 'MMM d, yyyy');
-      
+      const roleLabel = trip.role || trip.Role || '';
+
       containerHtml += `
-        <div class="premium-trip-card" data-id="${trip.id || trip.Id}" 
-             style="display: flex; align-items: center; justify-content: space-between; 
+        <div class="premium-trip-card" data-id="${trip.id || trip.Id}"
+             style="display: flex; align-items: center; justify-content: space-between;
                     background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid ${accentColor};
                     padding: 16px; margin-bottom: 14px; border-radius: 16px; cursor: pointer;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
                     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;"
              onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)'; this.style.background='#f8fafc';"
              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)'; this.style.background='#ffffff';">
-          
+         
           <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
             <div style="background: ${bgGradient}; color: ${accentColor}; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
               ${iconHtml}
             </div>
-            
+           
             <div style="text-align: left; flex: 1; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px; flex-wrap: wrap;">
                 <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${trip.tripName}</h4>
                 <span style="background: ${accentColor}15; color: ${accentColor}; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">${badgeText}</span>
+                ${roleLabel ? `<span style="background: #e2e8f0; color: #334155; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; flex-shrink: 0;">${roleLabel}</span>` : ''}
               </div>
-              
+             
               <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500; display: flex; align-items: center; gap: 4px;">
                 <i class="fas fa-map-marker-alt" style="color: #94a3b8;"></i> ${trip.destination}
               </p>
-              
+             
               <span style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px; margin-top: 6px; font-weight: 400;">
                 <i class="far fa-calendar-alt" style="color: #94a3b8;"></i>
                 <span>${startDateFormatted}</span>
