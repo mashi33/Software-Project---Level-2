@@ -20,8 +20,8 @@
 }
 
 .traveller-theme .profile-cover {
-  background-image: linear-gradient(135deg, rgba(0, 74, 153, 0.1), rgba(2, 132, 199, 0.6)),
-    url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200');
+  background-image: linear-gradient(135deg, rgba(2, 33, 68, 0.1), rgba(181, 205, 217, 0.6)),
+    url('/traveller-cover.png');
 }
 
 .provider-theme .profile-cover {
@@ -886,7 +886,7 @@ textarea.form-control {
 }
 
 .traveller-theme .btn-done {
-  background: linear-gradient(135deg, #ff6b6b, #ff5a5f);
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
 }
 
 .btn-done:hover {

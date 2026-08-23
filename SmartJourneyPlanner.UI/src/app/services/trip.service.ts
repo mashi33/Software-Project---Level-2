@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 })
 export class TripService {
   // API base URL for trip-related endpoints, constructed from environment configuration
-  private apiUrl = `${environment.apiUrl}/trips`; 
+  private apiUrl = `${environment.apiUrl}/trips`;
 
   // Temporary storage for trip data during the creation process
   private currentTripData: any = null;
@@ -25,15 +25,15 @@ export class TripService {
   createTrip(tripData: any): Observable<any> {
     return this.http.post<any>(this.apiUrl, tripData);
   }
-  
+
   // Sends a PUT request to update an existing trip identified by ID with the new data.
   updateTrip(id: string, tripData: any): Observable<any> {
-  return this.http.put(`${this.apiUrl}/${id}`, tripData);
+    return this.http.put(`${this.apiUrl}/${id}`, tripData);
   }
-  
+
   // Sends a GET request to retrieve trip details by ID.
   getTripById(id: string): Observable<any> {
-  return this.http.get(`${this.apiUrl}/${id}`);
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
 
   // fetch only trips where the user is creator or member (filters by email)
@@ -41,20 +41,20 @@ export class TripService {
   getTripsByEmail(email: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/by-email/${email}`);
   }
-  
+
   // Stores the current trip data in a temporary variable for use across components during the creation/editing process.
   setTempTripData(data: any) {
     this.currentTripData = data;
   }
-  
+
   // Retrieves the temporarily stored trip data, which can be used to pre-fill forms or display unsaved changes.
   getTempTripData() {
     return this.currentTripData;
   }
-  
+
   // Sends a GET request to retrieve the edit history of a trip by ID, which can be used to display past changes and versions.
   getTripHistory(id: string): Observable<any[]> {
-  return this.http.get<any[]>(`${this.apiUrl}/${id}/history`);
+    return this.http.get<any[]>(`${this.apiUrl}/${id}/history`);
   }
 
   deleteTrip(id: string): Observable<any> {
@@ -63,5 +63,9 @@ export class TripService {
 
   getUserTrips(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/my-trips`);
+  }
+
+  leaveTrip(tripId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${tripId}/leave`, {});
   }
 }
