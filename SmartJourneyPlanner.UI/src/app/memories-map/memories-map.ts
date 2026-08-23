@@ -419,62 +419,102 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // SEARCH & SAVE 
-
   searchLocation() {
-    if (!this.searchQuery) {
-      this.showInfo('Enter a location', 'Please enter a city name (e.g., Kandy).');
-      return;
-    }
-
-    const query = encodeURIComponent(this.searchQuery + ', Sri Lanka');
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
-
-    Swal.fire({
-      title: 'Searching...',
-      text: 'Looking up your location',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
-
-    this.http.get<any[]>(url).subscribe({
-      next: (res) => {
-        Swal.close();
-
-        if (res?.length) {
-          const lat = parseFloat(res[0].lat);
-          const lon = parseFloat(res[0].lon);
-
-          if (this.sriLankaBounds.contains([lat, lon])) {
-            this.newMemory.latitude = lat;
-            this.newMemory.longitude = lon;
-            this.newMemory.locationName = res[0].display_name;
-            this.map.flyTo([lat, lon], 14);
-
-            Swal.fire({
-              toast: true,
-              position: 'top-end',
-              icon: 'success',
-              title: 'Location found!',
-              showConfirmButton: false,
-              timer: 2000,
-              timerProgressBar: true
-            });
-          } else {
-            this.showWarning(
-              'Outside Sri Lanka',
-              'This location is outside of Sri Lanka. Please search within Sri Lanka.'
-            );
-          }
-        } else {
-          this.showWarning('Location not found', 'Try another city name.');
-        }
-      },
-      error: () => {
-        Swal.close();
-        this.showError('Search failed', 'Could not search for your location. Please try again.');
-      }
-    });
+  if (!this.searchQuery) {
+    this.showInfo('Enter a location', 'Please enter a city name (e.g., Kandy).');
+    return;
   }
+
+  const cleaned = this.searchQuery.trim();
+
+  // Reject pure numbers or extremely short nonsense
+  if (/^\d+$/.test(cleaned) || cleaned.length < 2) {
+    this.showWarning('Invalid location', 'Please enter a real place name in Sri Lanka (e.g. Kandy, Galle, Ella).');
+    return;
+  }
+
+  // Do NOT force countrycodes=lk so we can detect foreign places
+  const query = encodeURIComponent(cleaned);
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5`;
+
+  Swal.fire({
+    title: 'Searching...',
+    text: 'Looking up your location',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  this.http.get<any[]>(url).subscribe({
+    next: (res) => {
+      Swal.close();
+
+      if (!res?.length) {
+        this.showWarning('Location not found', 'Try another city name.');
+        return;
+      }
+
+      // Prefer a result that is inside Sri Lanka
+      const sriLankaResult = res.find(r => {
+        const countryCode = (r.address?.country_code || '').toLowerCase();
+        const cls = (r.class || '').toLowerCase();
+        const type = (r.type || '').toLowerCase();
+        const imp = parseFloat(r.importance || '0');
+
+        // Skip low-quality road/building matches
+        if (cls === 'highway' && (type === 'residential' || type === 'unclassified' || type === 'service')) {
+          return false;
+        }
+        if (imp < 0.05) {
+          return false;
+        }
+
+        return countryCode === 'lk';
+      });
+
+      if (sriLankaResult) {
+        const lat = parseFloat(sriLankaResult.lat);
+        const lon = parseFloat(sriLankaResult.lon);
+
+        if (this.sriLankaBounds.contains([lat, lon])) {
+          this.newMemory.latitude = lat;
+          this.newMemory.longitude = lon;
+          this.newMemory.locationName = sriLankaResult.display_name;
+          this.map.flyTo([lat, lon], 14);
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Location found!',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+          });
+          return;
+        }
+      }
+
+      // There are results, but none are in Sri Lanka → foreign place
+      const topResult = res[0];
+      const topCountry = (topResult.address?.country_code || '').toLowerCase();
+
+      if (topCountry && topCountry !== 'lk') {
+        this.showWarning(
+          'Outside Sri Lanka',
+          'This location is outside of Sri Lanka. Please search within Sri Lanka.'
+        );
+        return;
+      }
+
+      // Fallback – nothing useful found
+      this.showWarning('Location not found', 'Try another city name.');
+    },
+    error: () => {
+      Swal.close();
+      this.showError('Search failed', 'Could not search for your location. Please try again.');
+    }
+  });
+}
 
   // SAVE MEMORY for Cloudinary
   saveMemory() {
