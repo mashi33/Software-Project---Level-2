@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BudgetService } from '../services/budget';
-import Swal from 'sweetalert2'; //Import SweetAlert2
+import Swal from 'sweetalert2'; 
 
 @Component({
     selector: 'app-expense-form',
@@ -135,7 +135,7 @@ export class ExpenseForm implements OnInit {
     } else {
       this.budgetService.addExpense(this.tripId, payload).subscribe({
         next: () => {
-          // POPUP: Frictionless self-closing top corner toast notification
+          // Frictionless self-closing top corner toast notification
           Swal.fire({
             toast: true,
             position: 'top-end',

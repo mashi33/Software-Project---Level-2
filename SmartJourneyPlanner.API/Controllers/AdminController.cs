@@ -111,54 +111,54 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpGet("all-vehicles-detailed")]
-public async Task<IActionResult> GetAllVehiclesDetailed()
-{
-    try
-    {
-        // speeding (weighted materials are excluded in here)
-        var projection = Builders<TransportVehicle>.Projection
-            .Exclude(v => v.InteriorPhoto)
-            .Exclude(v => v.DriverNicUrl)
-            .Exclude(v => v.DriverLicenseUrl)
-            .Exclude(v => v.InsuranceDocUrl)
-            .Exclude(v => v.RevenueLicenseUrl)
-            .Exclude(v => v.RegistrationCertificateUrl);
+        public async Task<IActionResult> GetAllVehiclesDetailed()
+        {
+            try
+            {
+                // speeding (weighted materials are excluded in here)
+                var projection = Builders<TransportVehicle>.Projection
+                    .Exclude(v => v.InteriorPhoto)
+                    .Exclude(v => v.DriverNicUrl)
+                    .Exclude(v => v.DriverLicenseUrl)
+                    .Exclude(v => v.InsuranceDocUrl)
+                    .Exclude(v => v.RevenueLicenseUrl)
+                    .Exclude(v => v.RegistrationCertificateUrl);
 
-        var vehicles = await _vehicleCollection
-            .Find(_ => true)
-            .Project<TransportVehicle>(projection)
-            .ToListAsync();
+                var vehicles = await _vehicleCollection
+                    .Find(_ => true)
+                    .Project<TransportVehicle>(projection)
+                    .ToListAsync();
 
-        var totalCount = await _vehicleCollection.CountDocumentsAsync(_ => true);
-        var approvedCount = await _vehicleCollection.CountDocumentsAsync(v => v.AdminVerificationStatus != null && v.AdminVerificationStatus.ToLower() == "approved");
+                var totalCount = await _vehicleCollection.CountDocumentsAsync(_ => true);
+                var approvedCount = await _vehicleCollection.CountDocumentsAsync(v => v.AdminVerificationStatus != null && v.AdminVerificationStatus.ToLower() == "approved");
 
-        return Ok(new {
-            totalCount = totalCount,
-            approvedCount = approvedCount,
-            vehicles = vehicles
-        });
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = "Error fetching fleet records", error = ex.Message });
-    }
-}
+                return Ok(new {
+                    totalCount = totalCount,
+                    approvedCount = approvedCount,
+                    vehicles = vehicles
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching fleet records", error = ex.Message });
+            }
+        }
 
-[HttpGet("vehicle-details/{id}")]
-public async Task<IActionResult> GetVehicleById(string id)
-{
-    try
-    {
-        var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
-        if (vehicle == null) return NotFound(new { message = "Vehicle not found" });
-        
-        return Ok(vehicle);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = "Error fetching vehicle details", error = ex.Message });
-    }
-}
+        [HttpGet("vehicle-details/{id}")]
+        public async Task<IActionResult> GetVehicleById(string id)
+        {
+            try
+            {
+                var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
+                if (vehicle == null) return NotFound(new { message = "Vehicle not found" });
+                
+                return Ok(vehicle);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching vehicle details", error = ex.Message });
+            }
+        }
 
         [HttpGet("all-bookings")]
         public async Task<IActionResult> GetAllBookings()
@@ -177,6 +177,7 @@ public async Task<IActionResult> GetVehicleById(string id)
                 .ToListAsync();
             return Ok(bookings);
         }
+
         [HttpGet("all-memories")]
         public async Task<IActionResult> GetAllMemories()
         {
@@ -190,16 +191,16 @@ public async Task<IActionResult> GetVehicleById(string id)
             if (missingNameUserIds != null && missingNameUserIds.Count > 0)
             {
                 var users = await _userCollection
-                    .Find(u => missingNameUserIds.Contains(u.Id))
+                    .Find(u => missingNameUserIds.Contains(u.Id!))
                     .ToListAsync();
 
                 var nameById = users.ToDictionary(u => u.Id!, u => u.FullName);
 
                 foreach (var m in memories)
                 {
-                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId, out var name))
+                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId!, out var name))
                     {
-                        m.FullName = name;
+                        m.FullName = name!;
                     }
                 }
             }
@@ -420,6 +421,7 @@ public async Task<IActionResult> GetVehicleById(string id)
                 return BadRequest(new { message = ex.Message });
             }
         }
+
         // MANAGE PROVIDERS        
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
@@ -525,7 +527,6 @@ public async Task<IActionResult> GetVehicleById(string id)
         }
 
         // CUSTOMER ALERT ENDPOINTS 
-
         [HttpGet("customer-alerts/{userId}")]
         public async Task<IActionResult> GetCustomerAlerts(string userId)
         {

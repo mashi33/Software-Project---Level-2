@@ -1,58 +1,41 @@
 import { Routes } from '@angular/router';
-
 import { BudgetDashboard } from './budget-dashboard/budget-dashboard';
 import { ExpenseForm } from './expense-form/expense-form';
-
 import { MemoriesWelcomeComponent } from './memory-welcome/welcome';
 import { MemoriesMapComponent } from './memories-map/memories-map';
 import { CommunityMapComponent } from './community-map/community-map';
 import { WeatherSuggestionComponent } from './weather/weather';
-
 import { LoginComponent } from './login/login';
 import { Signup } from './signup/signup';
-
 import { RouteOptimization } from './route-optimization/route-optimization';
 import { DiscussionComponent } from './Discussion/discussion';
 import { TripTimelineComponent } from './trip-timeline/trip-timeline';
-
 import { ProviderDashboardComponent } from './provider-dashboard/provider-dashboard';
 import { TripCreateComponent } from './trip-create/trip-create';
-
 import { HotelRestaurantFinder } from './hotel-restaurant-finder/hotel-restaurant-finder';
 import { TripSummaryComponent } from './trip-summary/trip-summary';
-
 import { ExploreWelcome } from './explore-welcome/explore-welcome';
-
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard';
-
 import { TransportProvider } from './transport-provider/transport-provider';
 import { RegisterVehicleComponent } from './register-vehicle/register-vehicle';
-
 import { ProfileComponent } from './profile/profile';
 import { MyBookings } from './transport-provider/my-bookings/my-bookings';
-
 import { TravelerDashboardComponent } from './traveller-dashboard/traveller-dashboard';
-
 import { VerifyEmailComponent } from './verify-email/verify-email';
 import { SettingsComponent } from './settings/settings';
 import { NotificationsComponent } from './notifications/notifications';
-
 import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
-
 import { ForgotPasswordComponent } from './forgot-password/forgot-password';
 import { ResetPasswordComponent } from './reset-password/reset-password';
-
 import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { GettingStartedComponent } from './help/getting-started/getting-started';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
 import { BudgetHelpComponent } from './help/budget-help/budget-help';
 import { TripPlanningHelpComponent } from './help/trip-planning-help/trip-planning-help';
-
 import { SlideshowComponent } from './slideshow/slideshow';
 import { TripHistoryComponent } from './trip-history/trip-history';
-
 import { PrivacyPolicy } from './privacy-policy/privacy-policy';
 import { TermsOfService } from './terms-of-service/terms-of-service';
 import { LandingPageComponent } from './landing page/landing-page';
@@ -60,17 +43,17 @@ import { LandingPageComponent } from './landing page/landing-page';
 
 export const routes: Routes = [
 
-  // =====================================================
   // PUBLIC ROUTES
-  // =====================================================
   {
     path: 'privacy-policy',
     component: PrivacyPolicy
   },
+
   {
     path: 'terms-of-service',
     component: TermsOfService
   },
+
   {
     path: '',
     component: LandingPageComponent
@@ -121,11 +104,7 @@ export const routes: Routes = [
     component: TripPlanningHelpComponent
   },
 
-  // =====================================================
-  // COMMON PROTECTED ROUTES
-  // Accessible by authenticated users
-  // =====================================================
-
+  // COMMON PROTECTED ROUTES-Accessible by authenticated users
   {
     path: 'profile',
     component: ProfileComponent,
@@ -150,11 +129,7 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-
-  // =====================================================
   // TRAVELLER ONLY ROUTES
-  // =====================================================
-
   {
     path: 'budget',
     component: BudgetDashboard,
@@ -321,22 +296,15 @@ export const routes: Routes = [
     }
   },
 
-
-  // =====================================================
-  // EXPLORE - TRAVELLER ONLY
-  // =====================================================
-
+  // EXPLORE
   {
     path: 'explore',
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['Traveller', 'Traveler', 'TransportProvider', 'Provider']
     },
 
     children: [
-
       {
         path: '',
         component: ExploreWelcome
@@ -351,7 +319,6 @@ export const routes: Routes = [
         path: 'hotel-restaurant-finder',
         component: HotelRestaurantFinder
       }
-
     ]
   },
 
@@ -367,18 +334,11 @@ export const routes: Routes = [
     }
   },
 
-  // =====================================================
   // TRANSPORT PROVIDER ROUTES
-  // =====================================================
-
-
   {
     path: 'register-vehicle',
-
     component: RegisterVehicleComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['TransportProvider', 'Provider']
     }
@@ -386,11 +346,8 @@ export const routes: Routes = [
 
   {
     path: 'edit-vehicle/:id',
-
     component: RegisterVehicleComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['TransportProvider', 'Provider']
     }
@@ -398,9 +355,7 @@ export const routes: Routes = [
 
   {
     path: 'vehicle/:id',
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['TransportProvider', 'Provider', 'Traveller', 'Traveler']
     },
@@ -410,18 +365,11 @@ export const routes: Routes = [
         .then(m => m.VehicleDetailComponent)
   },
 
-
-  // =====================================================
   // PROVIDER DASHBOARD
-  // =====================================================
-
   {
     path: 'provider-dashboard',
-
     component: ProviderDashboardComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['Provider', 'TransportProvider']
     }
@@ -430,45 +378,28 @@ export const routes: Routes = [
   // Alias
   {
     path: 'transport-provider-dashboard',
-
     component: ProviderDashboardComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['Provider', 'TransportProvider']
     }
   },
 
-
-  // =====================================================
   // TRAVELLER DASHBOARD
-  // =====================================================
-
   {
     path: 'traveller-dashboard',
-
     component: TravelerDashboardComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['Traveller', 'Traveler']
     }
   },
 
-
-  // =====================================================
   // ADMIN ROUTES
-  // =====================================================
-
   {
     path: 'admin-dashboard',
-
     component: AdminDashboardComponent,
-
     canActivate: [authGuard, roleGuard],
-
     data: {
       expectedRoles: ['Admin', 'admin']
     }
@@ -476,17 +407,11 @@ export const routes: Routes = [
 
   {
     path: 'admin-panel',
-
     redirectTo: 'admin-dashboard',
-
     pathMatch: 'full'
   },
 
-
-  // =====================================================
   // UNKNOWN ROUTES
-  // =====================================================
-
   {
     path: '**',
     redirectTo: '/profile'

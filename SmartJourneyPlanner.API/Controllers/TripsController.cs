@@ -23,10 +23,11 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly IMongoCollection<TripHistory> _historyCollection;
         private readonly SmartJourneyPlanner.API.Services.EmailService _emailService;
         private readonly DiscussionsService _discussionsService;   
-        private readonly IHubContext<ChatHub> _hubContext;   
+        private readonly IHubContext<ChatHub> _hubContext;  
+        private readonly SmartJourneyPlanner.API.Services.BudgetService _budgetService;
 
         // Constructor to initialize MongoDB collections
-        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService,DiscussionsService discussionsService,IHubContext<ChatHub> hubContext)
+        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService, DiscussionsService discussionsService, IHubContext<ChatHub> hubContext, SmartJourneyPlanner.API.Services.BudgetService budgetService)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
@@ -34,6 +35,7 @@ namespace SmartJourneyPlanner.API.Controllers
             _emailService = emailService;
             _discussionsService = discussionsService;
             _hubContext = hubContext;
+            _budgetService = budgetService;
         }
 
         [HttpGet("my-trips")]
@@ -637,6 +639,20 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
 
                 await _tripsCollection.DeleteOneAsync(t => t.Id == id);
                 await _historyCollection.DeleteManyAsync(h => h.TripId == id);
+
+                var db = _tripsCollection.Database;
+                var budgetCollection = db.GetCollection<MongoDB.Bson.BsonDocument>("Budgets");
+
+                var objectIdVal = MongoDB.Bson.ObjectId.TryParse(id, out var parsedObjId) ? parsedObjId : (object)id;
+                
+                var budgetFilter = Builders<MongoDB.Bson.BsonDocument>.Filter.Or(
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("TripId", objectIdVal),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("TripId", id),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("tripId", objectIdVal),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("tripId", id)
+                );
+
+                await budgetCollection.DeleteManyAsync(budgetFilter);
 
                 return Ok(new { message = "Trip deleted successfully!" });
             }
