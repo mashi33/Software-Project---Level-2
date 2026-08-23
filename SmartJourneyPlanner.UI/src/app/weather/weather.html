@@ -23,7 +23,7 @@
       <h3 class="card-title">Search Location</h3>
       <div class="search-row">
         <span class="search-ico">⌕</span>
-        <input type="text" [(ngModel)]="city" placeholder="Enter a city..."
+        <input type="text" [(ngModel)]="city" (input)="onCityInput()" placeholder="Enter city in Sri Lanka..."
                (keyup.enter)="searchWeather()" />
       </div>
       <label class="field-label">Select Date</label>
@@ -45,6 +45,21 @@
       <button class="primary-btn" (click)="searchWeather()" [disabled]="loading">
         {{ loading ? 'Loading...' : 'Fetch Weather' }}
       </button>
+      <!-- Location selection dropdown (Sri Lanka only) -->
+      <div *ngIf="showLocationDropdown && locationOptions.length > 0" class="location-dropdown">
+        <p class="dropdown-title">Select a location in Sri Lanka:</p>
+        <ul class="location-list">
+          <li *ngFor="let loc of locationOptions"
+              (click)="selectLocation(loc)"
+              class="location-option">
+            {{ loc.displayName }}
+          </li>
+        </ul>
+        <button type="button" class="cancel-btn"
+                (click)="showLocationDropdown = false; showSearchHero = true; loading = false">
+          Cancel
+        </button>
+      </div>
     </div>
 
     <!-- CALENDAR -->
