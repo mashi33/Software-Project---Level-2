@@ -39,7 +39,7 @@ import { TripHistoryComponent } from './trip-history/trip-history';
 import { PrivacyPolicy } from './privacy-policy/privacy-policy';
 import { TermsOfService } from './terms-of-service/terms-of-service';
 import { LandingPageComponent } from './landing page/landing-page';
-
+import { VerifyEmailChangeComponent } from './verify-email-change/verify-email-change';
 
 export const routes: Routes = [
 
@@ -72,6 +72,11 @@ export const routes: Routes = [
   {
     path: 'verify-email',
     component: VerifyEmailComponent
+  },
+
+  {
+    path: 'verify-email-change',
+    component: VerifyEmailChangeComponent
   },
 
   {
@@ -231,7 +236,7 @@ export const routes: Routes = [
 
   {
     path: 'budget-help',
-    component: BudgetHelpComponent, 
+    component: BudgetHelpComponent,
     canActivate: [authGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']

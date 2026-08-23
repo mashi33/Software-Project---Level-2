@@ -35,9 +35,9 @@ export class VerifyEmailComponent implements OnInit {
       this.http.get(`${environment.apiUrl}/Auth/verify-email?token=${token}`).subscribe({
         next: (res: any) => {
           this.loading = false;
-          this.success = true; // මේකෙන් HTML එකේ success-box එක පෙන්වයි
+          this.success = true;
 
-          // තත්පර 3 කින් Login පේජ් එකට යැවීම
+
           setTimeout(() => {
             this.goToLogin();
           }, 3000);

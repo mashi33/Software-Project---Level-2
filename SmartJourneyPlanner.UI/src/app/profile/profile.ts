@@ -368,6 +368,7 @@ export class ProfileComponent implements OnInit {
         }
 
         this.user.profilePictureUrl = finalPic;
+        this.user.email = updatedUser?.email || this.user.email;
 
         // Force Angular change detection
         this.user = { ...this.user };
@@ -375,10 +376,19 @@ export class ProfileComponent implements OnInit {
         // Update Navbar + Sidebar + Achievements immediately
         this.authService.updateProfilePic(finalPic);
 
-        if (this.editData.email !== oldEmail) {
-          Swal.fire('Email Updated', 'Please login again with your new email.', 'info').then(() => {
-            localStorage.clear();
-            this.router.navigate(['/login']);
+        // Email change pending — do NOT logout with new email
+        if (updatedUser?.emailChangePending) {
+          this.isEditMode = false;
+          Swal.fire({
+            icon: 'info',
+            title: 'Confirm Your New Email',
+            html: `
+          <p>We sent a confirmation link to:</p>
+          <p><strong>${updatedUser.pendingEmail}</strong></p>
+          <p>Your current email stays active until you confirm.</p>
+          <p>Check the <strong>new</strong> inbox (and spam folder).</p>
+        `,
+            confirmButtonColor: '#0284c7'
           });
           return;
         }
