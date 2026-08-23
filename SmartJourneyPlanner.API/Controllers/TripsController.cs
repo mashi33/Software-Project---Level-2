@@ -255,31 +255,44 @@ public async Task<IActionResult> GetDashboardData()
             return "Member"; // fallback
         }
 
-        // 3. Build filter
-        var builder = Builders<Trip>.Filter;
-        var userFilter = builder.Or(
-            builder.Eq(t => t.CreatedBy, userId),
-            builder.Eq(t => t.CreatorEmail, userEmail),
-            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
-        );
+        // 3. Build filter – supports both creator + member, old email + userId
+var builder = Builders<Trip>.Filter;
+var conditions = new List<FilterDefinition<Trip>>();
 
-        var userTrips = await _tripsCollection
-            .Find(userFilter)
-            .ToListAsync();
+if (!string.IsNullOrEmpty(userId))
+{
+    conditions.Add(builder.Eq(t => t.CreatedBy, userId));
+}
 
-        var today = DateTime.Today;
+if (!string.IsNullOrEmpty(userEmail))
+{
+    conditions.Add(builder.Eq(t => t.CreatorEmail, userEmail));
+    conditions.Add(builder.Eq(t => t.CreatedBy, userEmail)); // old data that stored email in CreatedBy
+    conditions.Add(builder.ElemMatch(t => t.Members, m => m.Email == userEmail));
+}
 
-        var upcomingTrips = userTrips
-            .Where(t => t.StartDate.Date > today)
-            .ToList();
+if (conditions.Count == 0)
+    return Unauthorized(new { message = "Invalid user identity." });
 
-        var completedTrips = userTrips
-            .Where(t => t.EndDate.Date < today)
-            .ToList();
+var userFilter = builder.Or(conditions);
 
-        var ongoingTrips = userTrips
-            .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
-            .ToList();
+var userTrips = await _tripsCollection
+    .Find(userFilter)
+    .ToListAsync();
+
+var today = DateTime.Today;
+
+var upcomingTrips = userTrips
+    .Where(t => t.StartDate.Date > today)
+    .ToList();
+
+var completedTrips = userTrips
+    .Where(t => t.EndDate.Date < today)
+    .ToList();
+
+var ongoingTrips = userTrips
+    .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
+    .ToList();
 
         // 4. Return data with role included
         return Ok(new
