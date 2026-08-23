@@ -4,7 +4,6 @@ import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 
-// Tell TypeScript that the global `google` variable will be injected at runtime
 declare var google: any;
 
 @Component({
@@ -59,11 +58,13 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const existingScript = document.getElementById('google-maps-script');
     if (existingScript) {
-      // ✅ BUG 5 FIX — check if the script is already loaded or still loading
+      //check if the script is already loaded or still loading
       if (typeof google !== 'undefined' && google.maps) {
-        resolve(); // already loaded — don't wait for event
+        // already loaded — don't wait for event
+        resolve(); 
       } else {
-        existingScript.addEventListener('load', () => resolve()); // still loading — wait
+        // still loading — wait for the load event to fire
+        existingScript.addEventListener('load', () => resolve()); 
       }
       return;
     }
@@ -86,7 +87,8 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
     // Guard against re-initialization if the map was already created
     if (mapElement && !this.map) {
       const mapOptions = {
-        center: { lat: 7.8731, lng: 80.7718 }, // Default center: Sri Lanka
+        // Default center: Sri Lanka
+        center: { lat: 7.8731, lng: 80.7718 },
         zoom: 8,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
 
@@ -115,7 +117,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
           position: { lat: p.latitude, lng: p.longitude },
           map: this.map,
           title: p.name,
-          animation: google.maps.Animation.DROP // Animate markers in for visual feedback
+          animation: google.maps.Animation.DROP 
         });
 
         // Build the popup HTML; skip the photo if no reference is available
@@ -135,10 +137,10 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const infoWindow = new google.maps.InfoWindow({ content });
 
-        // ✅ BUG 6 FIX — use the service to select the place when a marker is clicked, handling both camelCase and PascalCase IDs
+        // use the service to select the place when a marker is clicked, handling both camelCase and PascalCase IDs
         marker.addListener('click', () => {
           infoWindow.open(this.map, marker);
-          this.placesService.selectPlace(p.id ?? p.Id ?? null); // ✅ camelCase + PascalCase handle
+          this.placesService.selectPlace(p.id ?? p.Id ?? null); 
           this.animateMarker(marker);
         });
 
@@ -150,7 +152,7 @@ export class MapViewComponent implements OnInit, AfterViewInit, OnDestroy {
   // Bounce the marker briefly to confirm the user's click visually
   animateMarker(marker: any) {
     marker.setAnimation(google.maps.Animation.BOUNCE);
-    setTimeout(() => marker.setAnimation(null), 1500); // Stop after 1.5s to avoid distraction
+    setTimeout(() => marker.setAnimation(null), 1500); 
   }
 
   ngOnDestroy() {

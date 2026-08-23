@@ -1,3 +1,6 @@
+/* ==========================================================================
+   MAIN CONTENT STYLES
+   ========================================================================== */
 .timeline-container {
   position: relative;
   width: 100%;
@@ -36,7 +39,9 @@
   min-height: calc(100vh - 70px);
 }
 
-/* Material Icons */
+/* ==========================================================================
+   MATERIAL ICONS
+   ========================================================================== */
 .material-icons {
   font-family: 'Material Icons' !important;
   display: flex;
@@ -44,7 +49,9 @@
   justify-content: center;
 }
 
-/* Explore Card Icons */
+/* ==========================================================================
+   CARD ICONS
+   ========================================================================== */
 .category-box {
   width: 50px;
   height: 50px;
@@ -55,7 +62,9 @@
   flex-shrink: 0;
 }
 
-/* Cards Layout  */
+/* ==========================================================================
+   CARD GRID STYLES
+   ========================================================================== */
 .feature-grid {
   display: flex;
   flex-direction: column;
@@ -66,7 +75,9 @@
   z-index: 10;
 }
 
-/* Explore Card Styles */
+/* ==========================================================================
+   EXPLORE CARD STYLES
+   ========================================================================== */
 .explore-card {
   display: flex;
   align-items: center;
@@ -118,11 +129,22 @@
   color: #3b82f6;
 }
 
-/* Category Icons colors */
-.cat-sightseeing { background: #f0fdf4; color: #16a34a; }
-.cat-hotel { background: #f0f7ff; color: #2563eb; }
+/* ==========================================================================
+   CATOGORY STYLES
+   ========================================================================== */
+.cat-sightseeing { 
+  background: #f0fdf4; 
+  color: #16a34a;
+ }
 
-/* Hero Section  */
+.cat-hotel { 
+  background: #f0f7ff; 
+  color: #2563eb; 
+}
+
+/* ==========================================================================
+   HERO STYLES
+   ========================================================================== */
 .hero-content {
   text-align: center;
   margin-bottom: 2rem;

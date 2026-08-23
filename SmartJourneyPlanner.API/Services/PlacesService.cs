@@ -10,7 +10,7 @@ namespace SmartJourneyPlanner.Services
     private readonly HttpClient _httpClient = httpClient;
     private readonly string _apiKey = configuration.GetSection("GoogleApi")["ApiKey"] ?? "";
 
-    // ✅ NEW — check if API key is missing in controller
+    // check if API key is missing in controller
     public virtual string ApiKey => _apiKey;
 
     public virtual bool LastGeocodeNetworkError { get; protected set; } = false;
@@ -19,7 +19,7 @@ namespace SmartJourneyPlanner.Services
     public virtual async Task<(double Lat, double Lon)?> GeocodeCity(string cityName)
     {
 
-          // ✅ Reset flag on every call
+          //Reset flag on every call
           LastGeocodeNetworkError = false;
 
           if (string.IsNullOrWhiteSpace(cityName))
@@ -35,7 +35,7 @@ namespace SmartJourneyPlanner.Services
           {
               var response = await _httpClient.GetFromJsonAsync<GeocodeResponse>(url);
 
-               // ✅ API key invalid check
+               //API key invalid check
               if (response?.Status == "REQUEST_DENIED")
               {
                   Console.WriteLine($"[Geocode] Request denied — Invalid API key.");
@@ -49,33 +49,32 @@ namespace SmartJourneyPlanner.Services
               }
 
               var location = response.Results[0].Geometry.Location;
-              Console.WriteLine($"[Geocode] '{cityName}' → lat:{location.Lat}, lon:{location.Lng}");
 
               return (location.Lat, location.Lng);
           }
           catch (HttpRequestException ex)
           {
               Console.WriteLine($"[Geocode Network Error]: {ex.Message}");
-              LastGeocodeNetworkError = true; // ✅ network error flag set
+              LastGeocodeNetworkError = true; 
               return null;
           }
           catch (ArgumentOutOfRangeException ex)
           {
               Console.WriteLine($"[Geocode DNS Error — No Internet]: {ex.Message}");
-              LastGeocodeNetworkError = true; // ✅ network error flag set
+              LastGeocodeNetworkError = true; 
               return null;
           }
-          // ✅ NEW — catch timeout exception catch 
+          // catch timeout exception catch 
           catch (TaskCanceledException ex)
           {
               Console.WriteLine($"[Geocode Timeout — No Internet]: {ex.Message}");
-              LastGeocodeNetworkError = true; // ✅ network error flag set
+              LastGeocodeNetworkError = true;
               return null;
           }
           catch (Exception ex)
           {
               Console.WriteLine($"[Geocode Error]: {ex.Message}");
-              LastGeocodeNetworkError = true; // ✅ network error flag set
+              LastGeocodeNetworkError = true; 
               return null;
           }
       }
@@ -115,16 +114,12 @@ namespace SmartJourneyPlanner.Services
                    $"&key={_apiKey}" +
                    sessionTokenParam;
 
-      Console.WriteLine($"[Nearby Search Request]: {url}");
-
       try
       {
         var raw = await _httpClient.GetStringAsync(url);
-        Console.WriteLine($"[Google Raw Response]: {raw}");
-
         var response = System.Text.Json.JsonSerializer.Deserialize<GoogleResponse>(raw);
 
-        // ✅ API key invalid or quota exceeded check
+        // API key invalid or quota exceeded check
         if (response?.Status == "REQUEST_DENIED")
         {
             Console.WriteLine($"[Google API] Request denied — Invalid API key or billing issue.");

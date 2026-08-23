@@ -7,9 +7,10 @@ namespace SmartJourneyPlanner.Models
     [BsonIgnoreExtraElements]
     public class CommentItem
     {
+        //ID from MongoDB
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; } //ID from MongoDB
+        public string? Id { get; set; } 
 
         public string TripId { get; set; } = string.Empty;
 
@@ -18,15 +19,14 @@ namespace SmartJourneyPlanner.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
-        // ── PDF attachment fields (null for normal text messages) ──
+        // PDF attachment fields (null for normal text messages) ──
         public string MessageType { get; set; } = "text";   // "text" | "pdf"
         public string? FileId { get; set; }
         public string? FileName { get; set; }
         public long? FileSize { get; set; }
 
-        //  — soft-delete flag. When true, the message content is cleared
+        // soft-delete and edit tracking
         public bool IsDeleted { get; set; } = false;
-        //  — marks a message as edited, so the UI can show an "(edited)" label
         public bool IsEdited { get; set; } = false;
     }
 }

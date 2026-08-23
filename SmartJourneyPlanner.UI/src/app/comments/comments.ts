@@ -17,8 +17,8 @@ import Swal from 'sweetalert2';
 export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   @ViewChild('chatWrapper') chatWrapperRef!: ElementRef;
-  
-  // Trip Id from parent component (Discussion) to load comments for the selected trip
+
+  // Trip ID from the parent (Discussion) component, used to load comments for the selected trip
   @Input() selectedTripId: string = '';
 
   allComments:       CommentItem[]    = [];
@@ -33,32 +33,33 @@ export class CommentsComponent implements OnInit, OnDestroy, OnChanges {
 
   viewingFileIds: Set<string> = new Set();
 
-  // ── SEARCH ──
+  // Search state
   searchQuery:        string        = '';
   searchResults:      CommentItem[] = [];
   currentMatchIndex:  number        = -1;
   isSearchOpen:       boolean       = false;
 
-  private commentSub!:       Subscription;
-  private commentDeleteSub!: Subscription;
+  private commentSub!:            Subscription;
+  private commentDeleteSub!:      Subscription;
   private connectionRestoredSub!: Subscription;
-    private loadRetryTimeout: any = null; 
-  private avatarColors: string[] = [
-  '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
-  '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
-  '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
-  '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
-];
+  private loadRetryTimeout: any = null;
 
-getAvatarColor(username: string): string {
-  const name = (username || 'Guest').trim().toLowerCase();
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  private avatarColors: string[] = [
+    '#4facfe', '#ff5a5f', '#4cd964', '#ffb84c',
+    '#a66cff', '#ff6ec7', '#00d2ff', '#ffd54f',
+    '#ff8a5c', '#5ce1e6', '#c77dff', '#7ee787',
+    '#f472b6', '#38bdf8', '#fb923c', '#818cf8'
+  ];
+
+  getAvatarColor(username: string): string {
+    const name = (username || 'Guest').trim().toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    }
+    const index = hash % this.avatarColors.length;
+    return this.avatarColors[index];
   }
-  const index = hash % this.avatarColors.length;
-  return this.avatarColors[index];
-}
 
   constructor(
     private commentsService: CommentsService,
@@ -69,27 +70,23 @@ getAvatarColor(username: string): string {
 
   ngOnInit(): void {
     this.setupSignalRListeners();
-    // NEW — load the logged-in user's name so chat bubbles align correctly
-  const storedUser = localStorage.getItem('userName');
-  this.currentUser = storedUser ? storedUser : 'Guest User';
 
-    
+    const storedUser = localStorage.getItem('userName');
+    this.currentUser = storedUser ? storedUser : 'Guest User';
   }
 
-  // Identify when switched to a different trip in the parent component and load comments for that trip
+  // Reloads comments whenever the selected trip changes (including the first load)
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['selectedTripId'] && !changes['selectedTripId'].firstChange) {
-      this.loadInitialData();
-    } else if (changes['selectedTripId'] && changes['selectedTripId'].firstChange) {
+    if (changes['selectedTripId']) {
       this.loadInitialData();
     }
   }
 
   ngOnDestroy(): void {
-    if (this.commentSub)       this.commentSub.unsubscribe();
-    if (this.commentDeleteSub) this.commentDeleteSub.unsubscribe();
-    if (this.connectionRestoredSub) this.connectionRestoredSub.unsubscribe(); 
-    if (this.loadRetryTimeout) clearTimeout(this.loadRetryTimeout); 
+    if (this.commentSub)            this.commentSub.unsubscribe();
+    if (this.commentDeleteSub)      this.commentDeleteSub.unsubscribe();
+    if (this.connectionRestoredSub) this.connectionRestoredSub.unsubscribe();
+    if (this.loadRetryTimeout)      clearTimeout(this.loadRetryTimeout);
 
     if (this.signalrService.hubConnection) {
       this.signalrService.hubConnection.off('CommentDeleted');
@@ -97,7 +94,7 @@ getAvatarColor(username: string): string {
     }
   }
 
-    loadInitialData(): void {
+  loadInitialData(): void {
     if (!this.selectedTripId) return;
 
     this.isLoading = true;
@@ -118,8 +115,8 @@ getAvatarColor(username: string): string {
         this.isLoading = false;
 
         if (err?.status === 0 || err?.status === 503) {
-          // Silently retry — discussion.component.ts already shows the
-          // "reconnecting" popup for the whole page's initial-load sequence.
+          // Silently retry — discussion.component.ts already shows a
+          // "reconnecting" popup for the whole page's initial-load sequence
           this.loadRetryTimeout = setTimeout(() => this.loadInitialData(), 5000);
         } else {
           this.showNetworkError(err, 'Could not load messages for this trip.');
@@ -133,8 +130,7 @@ getAvatarColor(username: string): string {
       this.zone.run(() => {
         const nTripId = comment.tripId || comment.TripId;
 
-        // Filter incoming comments to only add those that belong to the currently selected trip.
-        //  This ensures that users only see real-time updates relevant to the trip they are viewing.
+        // Only add comments belonging to the currently selected trip
         if (nTripId === this.selectedTripId) {
           const newMsg: CommentItem = {
             id:          comment.id          || comment.Id,
@@ -159,7 +155,6 @@ getAvatarColor(username: string): string {
     });
 
     if (this.signalrService.hubConnection) {
-
       this.signalrService.hubConnection.on('CommentDeleted', (commentId: string) => {
         this.zone.run(() => {
           this.allComments = this.allComments.filter(c => c.id !== commentId);
@@ -168,18 +163,18 @@ getAvatarColor(username: string): string {
         });
       });
 
-        this.signalrService.hubConnection.on('CommentUpdated', (updatedComment: any) => {
+      this.signalrService.hubConnection.on('CommentUpdated', (updatedComment: any) => {
         this.zone.run(() => {
           const cId   = updatedComment.id || updatedComment.Id;
           const index = this.allComments.findIndex(c => c.id === cId);
           if (index !== -1) {
-            // Replace the whole comment so isDeleted, messageType, fileId etc.
-            // all stay in sync — not just the text (needed for the delete-placeholder flow)
+            // Replace the whole comment so isDeleted, isEdited, messageType, fileId etc.
+            // all stay in sync — not just the text (needed for edit/delete-placeholder flows)
             this.allComments[index] = {
               ...this.allComments[index],
               text:        updatedComment.text        ?? updatedComment.Text        ?? '',
               isDeleted:   updatedComment.isDeleted    ?? updatedComment.IsDeleted   ?? false,
-              isEdited:    updatedComment.isEdited     ?? updatedComment.IsEdited    ?? false, 
+              isEdited:    updatedComment.isEdited     ?? updatedComment.IsEdited    ?? false,
               messageType: updatedComment.messageType  ?? updatedComment.MessageType ?? this.allComments[index].messageType,
               fileId:      updatedComment.fileId       ?? updatedComment.FileId,
               fileName:    updatedComment.fileName     ?? updatedComment.FileName,
@@ -192,8 +187,8 @@ getAvatarColor(username: string): string {
       });
     }
 
-    //— reload comments once connection is restored, to catch any messages
-    // sent by others while this client was disconnected
+    // Reload comments once the connection is restored, to catch anything sent
+    // by others while this client was disconnected
     this.connectionRestoredSub = this.signalrService.connectionRestored.subscribe(() => {
       this.zone.run(() => {
         this.loadInitialData();
@@ -239,7 +234,6 @@ getAvatarColor(username: string): string {
     this.isUploading    = true;
     this.uploadProgress = 0;
 
-    // Upload the PDF using trip id
     this.commentsService.uploadPdf(file, this.currentUser, this.selectedTripId).subscribe({
       next: (httpEvent) => {
         if (httpEvent.type === HttpEventType.UploadProgress && httpEvent.total) {
@@ -284,7 +278,7 @@ getAvatarColor(username: string): string {
   }
 
   formatFileSize(bytes: number = 0): string {
-    if (bytes < 1024)          return `${bytes} B`;
+    if (bytes < 1024)        return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
@@ -304,13 +298,13 @@ getAvatarColor(username: string): string {
   deleteComment(commentId: string): void {
     if (!commentId) return;
     Swal.fire({
-      title:               'Are you sure?',
-      text:                'Do you want to delete this message?',
-      icon:                'warning',
-      showCancelButton:    true,
-      confirmButtonColor:  '#d33',
-      cancelButtonColor:   '#3085d6',
-      confirmButtonText:   'Yes, delete it!'
+      title:              'Are you sure?',
+      text:               'Do you want to delete this message?',
+      icon:               'warning',
+      showCancelButton:   true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor:  '#3085d6',
+      confirmButtonText:  'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
         this.commentsService.deleteComment(commentId).subscribe({
@@ -336,7 +330,7 @@ getAvatarColor(username: string): string {
     return new Date(prevDate).toDateString() !== new Date(currDate).toDateString();
   }
 
-  // ── SEARCH METHODS ──
+  // ── Search ──
   toggleSearch(): void {
     this.isSearchOpen = !this.isSearchOpen;
     if (!this.isSearchOpen) {

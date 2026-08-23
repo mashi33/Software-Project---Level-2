@@ -2,28 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
-/**
- * Handles Google Places autocomplete and route optimization API calls.
- */
+ //Handles Google Places autocomplete and route optimization API calls.
 @Injectable({ providedIn: 'root' })
 export class RouteService {
   private sessionToken?: google.maps.places.AutocompleteSessionToken;
 
   constructor(private http: HttpClient) {}
-
-  /**
-   * Creates a new session token for Google Places API.
-   * Should be called at the start of each new search to reduce billing costs.
-   */
+   //Creates a new session token for Google Places API.
   refreshSessionToken() {
     this.sessionToken = new google.maps.places.AutocompleteSessionToken();
     console.log("New Session Token Generated");
   }
 
-  /**
-   * Returns place predictions from Google Autocomplete based on user input.
-   * Reuses the existing session token, or creates one if none exists.
-   */
+   /*Returns place predictions from Google Autocomplete based on user input.
+   Reuses the existing session token, or creates one if none exists.*/
   getPredictions(input: string): Promise<google.maps.places.AutocompletePrediction[]> {
     // Create a session token if one doesn't exist yet
     if (!this.sessionToken) {
@@ -40,19 +32,15 @@ export class RouteService {
     });
   }
 
-  /**
-   * Sends start and end locations to the backend and returns optimized route options.
-   */
+   // Sends start and end locations to the backend and returns optimized route options.
   getOptimizedRoutes(start: string, end: string) {
     const apiUrl = 'http://localhost:5233/api/routes/optimize'; // Local backend port
     console.log("Calling API at:", apiUrl);
     return this.http.post<any>(apiUrl, { start, end });
   }
 
-  /**
-   * Sends start and end locations to the backend and returns NTC bus fare details.
-   * Used when user selects Public Transport mode.
-   */
+   /* Sends start and end locations to the backend and returns NTC bus fare details.
+   Used when user selects Public Transport mode.*/
   getBusFare(start: string, end: string) {
     const apiUrl = 'http://localhost:5233/api/routes/bus-fare';
     console.log("Calling Bus Fare API at:", apiUrl);

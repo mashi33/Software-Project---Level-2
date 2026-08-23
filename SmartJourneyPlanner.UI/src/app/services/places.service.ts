@@ -63,7 +63,7 @@ export class PlacesService {
           console.error('[PlacesService] Failed to fetch places:', err);
           this.isLoadingSource.next(false);
 
-          // ✅ Messages show according to the error status code
+          //Messages show according to the error status code
           if (err.status === 400) {
             // Empty city name
             Swal.fire({
