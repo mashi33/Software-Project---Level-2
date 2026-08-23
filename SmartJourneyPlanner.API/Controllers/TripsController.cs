@@ -662,5 +662,82 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
             }
         }
 
+        [Authorize]
+[HttpPost("{id}/leave")]
+public async Task<IActionResult> LeaveTrip(string id)
+{
+    try
+    {
+        // 1. Get current user identity from JWT
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                        ?? User.FindFirst("email")?.Value;
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("userId")?.Value;
+        var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown User";
+
+        if (string.IsNullOrEmpty(userEmail) && string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        // 2. Load the trip
+        var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+        if (trip == null)
+        {
+            return NotFound(new { message = "Trip not found." });
+        }
+
+        // 3. Prevent Owner from using Leave (Owner should Delete the trip instead)
+        var isOwner = (!string.IsNullOrEmpty(userId) && trip.CreatedBy == userId) ||
+                      (!string.IsNullOrEmpty(userEmail) &&
+                       (string.Equals(trip.CreatorEmail, userEmail, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(trip.CreatedBy, userEmail, StringComparison.OrdinalIgnoreCase)));
+
+        if (isOwner)
+        {
+            return BadRequest(new { message = "Owner cannot leave the trip. Please delete the trip or transfer ownership first." });
+        }
+
+        // 4. Check if the user is actually a member
+        var memberToRemove = trip.Members?.FirstOrDefault(m =>
+            m.Email != null &&
+            m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase));
+
+        if (memberToRemove == null)
+        {
+            return BadRequest(new { message = "You are not a member of this trip." });
+        }
+
+        // 5. Remove the member from the list
+        var updatedMembers = trip.Members
+            .Where(m => m.Email == null || !m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var update = Builders<Trip>.Update.Set(t => t.Members, updatedMembers);
+        await _tripsCollection.UpdateOneAsync(t => t.Id == id, update);
+
+        // 6. Log into Edit History
+        var historyEntry = new TripHistory
+        {
+            TripId = id,
+            EditedAt = DateTime.Now,
+            EditedBy = userName,
+            Changes = $"Member left the trip: {userEmail} (was {memberToRemove.Role})."
+        };
+        await _historyCollection.InsertOneAsync(historyEntry);
+
+        // Optional: update pending vote member limits if you use DiscussionsService
+        // int newLimit = updatedMembers.Count + 1; // +1 for owner
+        // await _discussionsService.UpdatePendingMemberLimitsAsync(id, newLimit);
+        // await _hubContext.Clients.Group(id).SendAsync("MemberLimitChanged", new { tripId = id, newLimit });
+
+        return Ok(new { message = "You have successfully left the trip." });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error leaving trip: " + ex.Message });
+    }
+}
+
     }
 }
