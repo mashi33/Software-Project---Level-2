@@ -158,8 +158,18 @@ export class TripSummaryComponent implements OnInit {
     return this.userRole === 'viewer' || this.userRole === 'viewonly';
   }
 
+  get isCompleted(): boolean {
+    if (!this.endDate) return false;
+    const end = new Date(this.endDate);
+    const today = new Date();
+    // Compare date only (ignore time)
+    end.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return end < today;
+  }
+
   get canEdit(): boolean {
-    return this.userRole === 'owner' || this.userRole === 'editor';
+    return !this.isCompleted && (this.userRole === 'owner' || this.userRole === 'editor');
   }
 
   get isMember(): boolean {

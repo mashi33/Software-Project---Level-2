@@ -207,6 +207,27 @@ export class TripCreateComponent implements OnInit {
 
   // Maps backend data to the reactive form
   fillForm(data: any) {
+
+    const endDateRaw = data.endDate || data.EndDate;
+    if (endDateRaw) {
+      const end = new Date(endDateRaw);
+      const today = new Date();
+      end.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      if (end < today) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Trip Completed',
+          text: 'This trip has already been completed. You cannot edit it or add members.',
+          confirmButtonColor: '#0284c7'
+        }).then(() => {
+          this.router.navigate(['/trip-summary', this.tripId]);
+        });
+        return;
+      }
+    }
+
     this.tripForm.patchValue({
       tripName: data.tripName || data.TripName,
       departFrom: data.departFrom || data.DepartFrom,
