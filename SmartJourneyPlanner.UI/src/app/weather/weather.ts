@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { WeatherService } from '../services/weather.service';
 import * as L from 'leaflet';
+import Swal from 'sweetalert2';
 
 export interface WeatherRule {
   condition: string;
@@ -217,19 +218,34 @@ searchWeather() {
   const cityToRecord = this.city.trim();
 
   if (!/^[a-zA-Z\s\-'.]+$/.test(cityToRecord)) {
-    alert('Enter a valid city name');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Invalid City Name',
+      text: 'Enter a valid city name',
+      confirmButtonColor: '#3b82f6'
+    });
     return;
   }
 
   if (cityToRecord.length < 3) {
-    alert('Please enter at least 3 characters');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Too Short',
+      text: 'Please enter at least 3 characters',
+      confirmButtonColor: '#3b82f6'
+    });
     return;
   }
 
   // Reject pure garbage (ddd, aaa, xxx ...)
   const cleaned = cityToRecord.replace(/[\s\-'.]/g, '').toLowerCase();
   if (cleaned.length < 3 || /^(.)\1+$/.test(cleaned)) {
-    alert('Enter a valid city name');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Invalid City Name',
+      text: 'Enter a valid city name',
+      confirmButtonColor: '#3b82f6'
+    });
     return;
   }
 
@@ -287,7 +303,12 @@ searchWeather() {
 
     if (results.length === 0) {
       this.clearWeatherData();
-      alert('City not found in Sri Lanka. Please enter a valid Sri Lankan city name.');
+      Swal.fire({
+        icon: 'error',
+        title: 'City Not Found',
+        text: 'City not found in Sri Lanka. Please enter a valid Sri Lankan city name.',
+        confirmButtonColor: '#3b82f6'
+      });
       this.loading = false;
       this.showSearchHero = true;
       return;
@@ -320,7 +341,12 @@ searchWeather() {
 
   error: () => {
     this.clearWeatherData();
-    alert('Geo API failed.');
+    Swal.fire({
+      icon: 'error',
+      title: 'API Error',
+      text: 'Geo API failed.',
+      confirmButtonColor: '#3b82f6'
+    });
     this.loading = false;
     this.showSearchHero = true;
   }
@@ -444,7 +470,12 @@ selectLocation(loc: {
       this.clearWeatherData();
       this.loading = false;
       this.showSearchHero = false;
-      alert(dateError);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Date Error',
+        text: dateError,
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
 
@@ -499,9 +530,12 @@ this.weatherService
       this.clearWeatherData();
       this.loading = false;
       this.showSearchHero = false;
-      alert(
-        'Weather data is not available for this date. Please try another date.'
-      );
+      Swal.fire({
+        icon: 'error',
+        title: 'Weather Unavailable',
+        text: 'Weather data is not available for this date. Please try another date.',
+        confirmButtonColor: '#3b82f6'
+      });
     }
   });
 
