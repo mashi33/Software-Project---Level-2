@@ -13,14 +13,14 @@ describe('AdminDashboardComponent', () => {
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
 
-    //use this to check the state of variables like 'pendingProviders' or 'allUsers'
+    // to check the state of variables like 'pendingProviders' or 'allUsers'
     component = fixture.componentInstance;
 
-    //It's like a "manual refresh" for the test so the HTML matches the TS data
+    // like a "manual refresh" for the test so the HTML matches the TS data
     fixture.detectChanges();
   });
 
-  //It simply checks if the component can load without crashing.
+  // checks if the component can load without crashing.
   it('should create', () => {
     expect(component).toBeTruthy();
   });

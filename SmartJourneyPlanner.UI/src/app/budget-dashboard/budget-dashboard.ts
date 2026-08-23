@@ -330,6 +330,22 @@ export class BudgetDashboard implements OnInit {
     return fallbackPrefix.charAt(0).toUpperCase() + fallbackPrefix.slice(1) || 'Teammate';
   }
 
+  navigateToSummary() {
+    if (this.tripId) { 
+      this.router.navigate(['/trip-summary', this.tripId]); 
+    } else {
+      Swal.fire('Error', 'No trip selected to view summary.', 'error');
+    }
+  }
+
+  navigateToChat() {
+    if (this.tripId) {
+      this.router.navigate(['/groupChat'], { queryParams: { tripId: this.tripId } });
+    } else {
+      Swal.fire('Error', 'No trip selected to view chat.', 'error');
+    }
+  }
+
   exportToPDF() {
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -353,69 +369,69 @@ export class BudgetDashboard implements OnInit {
     doc.setTextColor(71, 85, 105);
     doc.text('Expense Allocation & Budget Report', 14, 26);
 
-  doc.setDrawColor(226, 232, 240); 
-  doc.setLineWidth(0.4);
-  doc.line(14, 29, 196, 29);
+    doc.setDrawColor(226, 232, 240); 
+    doc.setLineWidth(0.4);
+    doc.line(14, 29, 196, 29);
 
-  // Extended Metadata Info Box
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
+    // Extended Metadata Info Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, 33, 182, 24, 2, 2, 'FD');
 
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139); 
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139); 
 
-  // Trip & Date Generated
-  doc.text('Target Trip Name :', 20, 40);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(tripName, 52, 40);
+    // Trip & Date Generated
+    doc.text('Target Trip Name :', 20, 40);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(tripName, 52, 40);
 
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Report Generated:', 115, 40);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 146, 40);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Report Generated:', 115, 40);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 146, 40);
 
-  // Members Count & Cost Per Person
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Cost Shared Among:', 20, 50);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`${this.membersCount || 1} People`, 52, 50);
+    // Members Count & Cost Per Person
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Cost Shared Among:', 20, 50);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${this.membersCount || 1} People`, 52, 50);
 
-  const dynamicSum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const calculatedCostPerPerson = this.membersCount > 0 ? dynamicSum / this.membersCount : dynamicSum;
-  const formattedCpp = 'Rs. ' + calculatedCostPerPerson.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dynamicSum = this.expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+    const calculatedCostPerPerson = this.membersCount > 0 ? dynamicSum / this.membersCount : dynamicSum;
+    const formattedCpp = 'Rs. ' + calculatedCostPerPerson.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Cost Per Person:', 115, 50);
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(2, 132, 199); 
-  doc.text(formattedCpp, 146, 50);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Cost Per Person:', 115, 50);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(2, 132, 199); 
+    doc.text(formattedCpp, 146, 50);
 
-  // Expenses Table Data Mapping
-  const tableBodyRows = this.expenses.map(e => [
-    e.category,                                                                                          
-    new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),     
-    e.description || '-',                                                                                
-    'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-  ]);
+    // Expenses Table Data Mapping
+    const tableBodyRows = this.expenses.map(e => [
+      e.category,                                                                                          
+      new Date(e.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),     
+      e.description || '-',                                                                                
+      'Rs. ' + Number(e.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+    ]);
 
   // Professional AutoTable Configuration
   autoTable(doc, {
     startY: 62,
-    head: [['Category', 'Date Logged', 'Description' , 'Amount']],
+    head: [['Category', 'Date Logged', 'Description', 'Amount']],
     body: tableBodyRows,
     theme: 'striped',
     headStyles: { 

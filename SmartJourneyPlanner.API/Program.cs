@@ -10,11 +10,11 @@ using SmartJourneyPlanner.Models;
 using SmartJourneyPlanner.Services;
 using System.Text;
 using System.Text.Json;
-using Tomlyn.Extensions.Configuration;// TOML Support
+using Tomlyn.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. CONFIGURATION LOADING (The .toml Integration) ---
+// CONFIGURATION LOADING (The .toml Integration) 
 // This tells .NET to prioritize your appsettings.toml file
 builder.Configuration.AddTomlFile("appsettings.toml", optional: true, reloadOnChange: true);
 
@@ -24,13 +24,13 @@ var connectionString = mongoSettingsSection["ConnectionString"] ?? "mongodb://lo
 var databaseName = mongoSettingsSection["DatabaseName"] ?? "SmartJourneyDb";
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsMySuperSecretKeyForSmartJourneyPlanner2026!";
 
-// --- 2. SERVICE CONFIGURATION (Options Pattern) ---
+// SERVICE CONFIGURATION (Options Pattern)
 // These lines map the TOML sections to your C# Model classes
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings"));
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
-// --- 3. DATABASE REGISTRATION ---
+// DATABASE REGISTRATION
 builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
@@ -38,7 +38,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase(databaseName);
 });
 
-// --- 4. JWT AUTHENTICATION ---
+// JWT AUTHENTICATION 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// --- 5. SIGNALR & CONTROLLERS ---
+// SIGNALR & CONTROLLERS 
 builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; })
 .AddJsonProtocol(options => { options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; });
 
@@ -62,7 +62,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-// --- 6. CORS ---
+// CORS 
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowAngularApp", policy => {
         policy.WithOrigins("http://localhost:4200") 
@@ -72,7 +72,7 @@ builder.Services.AddCors(options => {
     });
 });
 
-// --- 7. SERVICES REGISTRATION ---
+// SERVICES REGISTRATION
 builder.Services.AddSingleton<UserBlockService>();
 builder.Services.AddSingleton<AdminService>(); 
 builder.Services.AddSingleton<NotificationService>();
@@ -103,7 +103,7 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// --- DATABASE INDEXES for Group Chat & Voting feature (Discussions + Comments) ---
+// DATABASE INDEXES for Group Chat & Voting feature (Discussions + Comments)
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -128,7 +128,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// --- 8. HTTP REQUEST PIPELINE ---
+// HTTP REQUEST PIPELINE 
 if (app.Environment.IsDevelopment()) {
   app.UseSwagger();
   app.UseSwaggerUI(); 
@@ -137,7 +137,7 @@ if (app.Environment.IsDevelopment()) {
 // This allows browser to access 'http://localhost:5233/uploads/...' without 404/401 errors
 app.UseStaticFiles();
 
-// ✅ Global Exception Middleware — network/crash handle
+// Global Exception Middleware — network/crash handle
 app.Use(async (context, next) =>
 {
     try

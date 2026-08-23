@@ -19,11 +19,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
   userName: string = 'User';
   profilePic: string = '/profilePic.jpg';
 
-  // 🔑 THE FIX: Declare the missing variable so the HTML template can find it!
   userRole: string = 'Traveler';
   @Output() onToggleSidebar = new EventEmitter<void>();
 
-  // 💡 Subscription
+  // Subscription
   private userSub!: Subscription;
   private notificationSub!: Subscription;
 
@@ -81,7 +80,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  // 💡 Component destruction
+  // Component destruction
   ngOnDestroy(): void {
     if (this.userSub) {
       this.userSub.unsubscribe();

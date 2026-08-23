@@ -3,6 +3,12 @@
 <div class="bp-root fade-in">
 
   <div class="summary-spacing" *ngIf="expenses && expenses.length > 0">
+    <!-- Back to Summary Button -->
+    <div class="page-top-back-container">
+      <button class="outer-summary-back-btn" (click)="navigateToSummary()" title="Back to Trip Summary">
+        <i class="bi bi-arrow-left"></i> Back to Summary
+      </button>
+    </div>
     <div *ngIf="budgetPercentage >= 100" class="alert-box creative-danger-alert fade-in">
       <div class="alert-left">
         <div class="alert-icon-circle bg-danger-solid"><i class="bi bi-exclamation-triangle-fill"></i></div>
@@ -37,6 +43,10 @@
     </div>
 
     <div class="bp-belt-right" *ngIf="expenses && expenses.length > 0">
+      <!-- Chat Button -->
+    <button class="bp-belt-chat-btn" (click)="navigateToChat()" title="Share budget report via chat">
+      <i class="bi bi-chat-heart-fill"></i> Share via Chat
+    </button>
       <button class="bp-belt-export-btn" (click)="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Export
         Report</button>
     </div>
