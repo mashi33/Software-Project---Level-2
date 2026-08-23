@@ -106,17 +106,26 @@ var app = builder.Build();
 // DATABASE INDEXES for Group Chat & Voting feature (Discussions + Comments)
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
 
-    var discussionsIndexes = db.GetCollection<DiscussionItem>("Discussions").Indexes;
-    await discussionsIndexes.CreateOneAsync(new CreateIndexModel<DiscussionItem>(
-        Builders<DiscussionItem>.IndexKeys.Ascending(d => d.TripId)));
+        var discussionsIndexes = db.GetCollection<DiscussionItem>("Discussions").Indexes;
+        await discussionsIndexes.CreateOneAsync(new CreateIndexModel<DiscussionItem>(
+            Builders<DiscussionItem>.IndexKeys.Ascending(d => d.TripId)));
 
-    var commentsIndexes = db.GetCollection<CommentItem>("Comments").Indexes;
-    await commentsIndexes.CreateOneAsync(new CreateIndexModel<CommentItem>(
-        Builders<CommentItem>.IndexKeys.Ascending(c => c.TripId)));
+        var commentsIndexes = db.GetCollection<CommentItem>("Comments").Indexes;
+        await commentsIndexes.CreateOneAsync(new CreateIndexModel<CommentItem>(
+            Builders<CommentItem>.IndexKeys.Ascending(c => c.TripId)));
 
-    Console.WriteLine("[Startup] Discussions & Comments indexes ensured.");
+        Console.WriteLine("[Startup] Discussions & Comments indexes ensured.");
+    }
+    catch (Exception ex)
+    {
+        /* Non-fatal — the app can run without the index (just slightly slower
+        queries until it's created on a later successful startup)*/
+        Console.WriteLine($"[Startup] Index creation skipped (will retry on next restart): {ex.Message}");
+    }
 }
 
 // HTTP REQUEST PIPELINE 

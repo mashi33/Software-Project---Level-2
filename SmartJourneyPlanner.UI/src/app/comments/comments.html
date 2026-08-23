@@ -1,9 +1,10 @@
 <div class="right-column glass-chat-panel full-width-component">
-    <div class="suggestions-title">
-      <span class="material-icons section-icon">chat_bubble_outline</span>
-      Group chat
-    </div>
-  <!-- ── SEARCH BAR ── -->
+  <div class="suggestions-title">
+    <span class="material-icons section-icon">chat_bubble_outline</span>
+    Group chat
+  </div>
+
+  <!-- Search bar -->
   <div class="search-bar-wrapper" *ngIf="isSearchOpen">
     <div class="search-input-row">
       <i class="material-icons search-icon">search</i>
@@ -53,7 +54,7 @@
             {{ comment.user === currentUser ? 'You' : comment.user }}
           </span>
 
-            <div class="chat-content">
+          <div class="chat-content">
 
             <!-- Deleted placeholder — shown for both deleted text AND deleted PDF messages -->
             <p *ngIf="comment.isDeleted" class="deleted-message-text">
@@ -88,7 +89,10 @@
             </div>
 
             <div class="chat-footer-row">
-              <small class="chat-time">{{ comment.createdAt | date:'shortTime' }}</small>
+              <small class="chat-time">
+                {{ comment.createdAt | date:'shortTime' }}
+                <span *ngIf="comment.isEdited && !comment.isDeleted" class="edited-label">(edited)</span>
+              </small>
               <div class="chat-actions" *ngIf="!comment.isDeleted && comment.user === currentUser">
                 <button *ngIf="comment.messageType !== 'pdf'"
                         (click)="startEditing(comment)"
@@ -126,7 +130,6 @@
         <i class="material-icons">close</i>
       </button>
 
-      <!-- PDF attach button -->
       <label *ngIf="!isEditing" class="pdf-attach-btn" title="Share PDF">
         <i class="material-icons">attach_file</i>
         <input type="file"
@@ -135,7 +138,6 @@
                hidden />
       </label>
 
-      <!-- Search toggle button -->
       <button *ngIf="!isEditing"
               class="search-toggle-btn"
               (click)="toggleSearch()"

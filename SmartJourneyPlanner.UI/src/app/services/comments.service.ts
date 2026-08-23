@@ -15,6 +15,7 @@ export interface CommentItem {
   fileName?:    string;
   fileSize?:    number;
   isDeleted?:   boolean;
+  isEdited?:    boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -72,8 +73,9 @@ export class CommentsService {
       );
   }
 
-  // Upload a PDF file with user and trip information
-   uploadPdf(file: File, user: string, tripId: string): Observable<HttpEvent<any>> {
+  // Upload a PDF file with user and trip information.
+  // Uses a longer 30s timeout since file uploads take longer than normal requests.
+  uploadPdf(file: File, user: string, tripId: string): Observable<HttpEvent<any>> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('user', user);
@@ -99,7 +101,7 @@ export class CommentsService {
     return `${this.fileUrl}/view/${fileId}`;
   }
 
-    // Normalizes network/timeout/server errors into a consistent shape
+  // Normalizes network/timeout/server errors into a consistent shape
   // so components can show one friendly message regardless of failure type.
   private normalizeError(err: any): any {
     if (err.name === 'TimeoutError') {
