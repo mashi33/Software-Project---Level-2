@@ -97,7 +97,8 @@ namespace SmartJourneyPlanner.API.Controllers
                 platformUsers = totalUsers,
                 totalTrips = totalTrips,
                 overBudgetTrips = overBudgetTrips,
-                totalVehicles = totalVehicles 
+                totalVehicles = totalVehicles,
+                totalUsers = totalUsers
             });
         }
 
@@ -110,54 +111,54 @@ namespace SmartJourneyPlanner.API.Controllers
         }
 
         [HttpGet("all-vehicles-detailed")]
-public async Task<IActionResult> GetAllVehiclesDetailed()
-{
-    try
-    {
-        // speeding (weighted materials are excluded in here)
-        var projection = Builders<TransportVehicle>.Projection
-            .Exclude(v => v.InteriorPhoto)
-            .Exclude(v => v.DriverNicUrl)
-            .Exclude(v => v.DriverLicenseUrl)
-            .Exclude(v => v.InsuranceDocUrl)
-            .Exclude(v => v.RevenueLicenseUrl)
-            .Exclude(v => v.RegistrationCertificateUrl);
+        public async Task<IActionResult> GetAllVehiclesDetailed()
+        {
+            try
+            {
+                // speeding (weighted materials are excluded in here)
+                var projection = Builders<TransportVehicle>.Projection
+                    .Exclude(v => v.InteriorPhoto)
+                    .Exclude(v => v.DriverNicUrl)
+                    .Exclude(v => v.DriverLicenseUrl)
+                    .Exclude(v => v.InsuranceDocUrl)
+                    .Exclude(v => v.RevenueLicenseUrl)
+                    .Exclude(v => v.RegistrationCertificateUrl);
 
-        var vehicles = await _vehicleCollection
-            .Find(_ => true)
-            .Project<TransportVehicle>(projection)
-            .ToListAsync();
+                var vehicles = await _vehicleCollection
+                    .Find(_ => true)
+                    .Project<TransportVehicle>(projection)
+                    .ToListAsync();
 
-        var totalCount = await _vehicleCollection.CountDocumentsAsync(_ => true);
-        var approvedCount = await _vehicleCollection.CountDocumentsAsync(v => v.AdminVerificationStatus != null && v.AdminVerificationStatus.ToLower() == "approved");
+                var totalCount = await _vehicleCollection.CountDocumentsAsync(_ => true);
+                var approvedCount = await _vehicleCollection.CountDocumentsAsync(v => v.AdminVerificationStatus != null && v.AdminVerificationStatus.ToLower() == "approved");
 
-        return Ok(new {
-            totalCount = totalCount,
-            approvedCount = approvedCount,
-            vehicles = vehicles
-        });
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = "Error fetching fleet records", error = ex.Message });
-    }
-}
+                return Ok(new {
+                    totalCount = totalCount,
+                    approvedCount = approvedCount,
+                    vehicles = vehicles
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching fleet records", error = ex.Message });
+            }
+        }
 
-[HttpGet("vehicle-details/{id}")]
-public async Task<IActionResult> GetVehicleById(string id)
-{
-    try
-    {
-        var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
-        if (vehicle == null) return NotFound(new { message = "Vehicle not found" });
-        
-        return Ok(vehicle);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { message = "Error fetching vehicle details", error = ex.Message });
-    }
-}
+        [HttpGet("vehicle-details/{id}")]
+        public async Task<IActionResult> GetVehicleById(string id)
+        {
+            try
+            {
+                var vehicle = await _vehicleCollection.Find(v => v.Id == id).FirstOrDefaultAsync();
+                if (vehicle == null) return NotFound(new { message = "Vehicle not found" });
+                
+                return Ok(vehicle);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error fetching vehicle details", error = ex.Message });
+            }
+        }
 
         [HttpGet("all-bookings")]
         public async Task<IActionResult> GetAllBookings()
@@ -176,6 +177,7 @@ public async Task<IActionResult> GetVehicleById(string id)
                 .ToListAsync();
             return Ok(bookings);
         }
+
         [HttpGet("all-memories")]
         public async Task<IActionResult> GetAllMemories()
         {
@@ -189,16 +191,16 @@ public async Task<IActionResult> GetVehicleById(string id)
             if (missingNameUserIds != null && missingNameUserIds.Count > 0)
             {
                 var users = await _userCollection
-                    .Find(u => missingNameUserIds.Contains(u.Id))
+                    .Find(u => missingNameUserIds.Contains(u.Id!))
                     .ToListAsync();
 
                 var nameById = users.ToDictionary(u => u.Id!, u => u.FullName);
 
                 foreach (var m in memories)
                 {
-                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId, out var name))
+                    if (string.IsNullOrWhiteSpace(m.FullName) && nameById.TryGetValue(m.UserId!, out var name))
                     {
-                        m.FullName = name;
+                        m.FullName = name!;
                     }
                 }
             }
@@ -419,7 +421,8 @@ public async Task<IActionResult> GetVehicleById(string id)
                 return BadRequest(new { message = ex.Message });
             }
         }
-        // MANAGE PROVIDERS         
+
+        // MANAGE PROVIDERS        
         [HttpGet("pending-providers")]
         public async Task<IActionResult> GetPendingProviders()
         {
@@ -460,26 +463,34 @@ public async Task<IActionResult> GetVehicleById(string id)
                 // Find any booking associated with this vehicle ID
                 var bookingCollection = _database.GetCollection<TransportBooking>("TransportBookings");
                 var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.VehicleId, id);
-                var activeBooking = await bookingCollection.Find(bookingFilter).FirstOrDefaultAsync();
+                var activeBookings = await bookingCollection.Find(bookingFilter).ToListAsync();
 
-                if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
+                var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
+                var vehicleName = !string.IsNullOrWhiteSpace(targetVehicle.ModelName) ? targetVehicle.ModelName : (targetVehicle.VehicleClass ?? "Selected Transport");
+
+                foreach (var activeBooking in activeBookings)
                 {
-                    // Get the MongoDB collection for CustomerAlerts
-                    var alertCollection = _database.GetCollection<CustomerAlert>("CustomerAlerts");
-                    
-                    // Instantiate the alert object with the user and vehicle details
-                    var customerAlert = new CustomerAlert
+                    if (activeBooking != null && !string.IsNullOrEmpty(activeBooking.UserId))
                     {
-                        UserId = activeBooking.UserId,
-                        Title = "Vehicle Service / Booking Notice",
-                        Message = "The vehicle you booked has been placed in a service period or restricted by administration. Please try another vehicle.",
-                        VehicleInfo = targetVehicle.VehicleClass ?? "Selected Transport",
-                        Timestamp = DateTime.UtcNow,
-                        Dismissed = false
-                    };
+                        activeBooking.Status = "Cancelled";
+                        activeBooking.StatusChangedDate = DateTime.UtcNow.ToString("o");
+                        var bookingUpdateFilter = Builders<TransportBooking>.Filter.Eq(b => b.Id, activeBooking.Id);
+                        await bookingCollection.ReplaceOneAsync(bookingUpdateFilter, activeBooking);
 
-                    // Insert the object asynchronously into the database
-                    await alertCollection.InsertOneAsync(customerAlert);
+                        var customerAlert = new CustomerAlert
+                        {
+                            UserId = activeBooking.UserId,
+                            BookingId = activeBooking.Id, 
+                            VehicleId = id,
+                            Title = "Vehicle Service / Booking Notice",
+                            Message = $"The vehicle \"{vehicleName}\" you booked has been declined by the admin. Please choose a new vehicle.",
+                            VehicleInfo = vehicleName,
+                            Timestamp = DateTime.UtcNow,
+                            Dismissed = false
+                        };
+
+                        await alertCollection.InsertOneAsync(customerAlert);
+                    }
                 }
             }
 
@@ -493,7 +504,6 @@ public async Task<IActionResult> GetVehicleById(string id)
                 var icon = newStatus == "Approved" ? "bi-patch-check-fill" : "bi-exclamation-octagon-fill";
                 var colorClass = newStatus == "Approved" ? "icon-green" : "icon-red";
 
-                // Note: Time field is intentionally omitted — the frontend calculates relative time from createdAt
                 var notification = new Notification
                 {
                     UserId = targetVehicle.ProviderId,
@@ -517,7 +527,6 @@ public async Task<IActionResult> GetVehicleById(string id)
         }
 
         // CUSTOMER ALERT ENDPOINTS 
-
         [HttpGet("customer-alerts/{userId}")]
         public async Task<IActionResult> GetCustomerAlerts(string userId)
         {
@@ -550,6 +559,8 @@ public async Task<IActionResult> GetVehicleById(string id)
         public string? Id { get; set; }
 
         public string UserId { get; set; } = string.Empty;
+        public string? BookingId { get; set; }
+        public string? VehicleId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string VehicleInfo { get; set; } = string.Empty;

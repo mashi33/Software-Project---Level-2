@@ -6,6 +6,8 @@ import { WeatherService } from '../services/weather.service';
 import { AuthService } from '../services/auth.service';
 import Swal from 'sweetalert2';
 import { BudgetService } from '../services/budget';
+import { TransportBookingService } from '../services/transport-booking.service';
+import { Booking } from '../models/transport.model';
 
 @Component({
   selector: 'app-trip-summary',
@@ -19,11 +21,6 @@ export class TripSummaryComponent implements OnInit {
   editHistory: any[] = [];
   isDropdownOpen = false;
 
-  // SECURITY: default to the least-privileged role. This is only ever
-  // overwritten by determineUserRole(), which compares the JWT-derived
-  // email against tripDetails.createdBy / tripDetails.members from the DB.
-  // It is NEVER set from the URL. If role resolution fails for any reason,
-  // the user stays a viewer (fail-closed) instead of defaulting to 'owner'.
   userRole: string = 'viewer';
 
   tripId: string = '';
@@ -38,6 +35,10 @@ export class TripSummaryComponent implements OnInit {
 
   liveTotalSpent: number = 0;
 
+  // Transport Booking Details
+  transportBooking: Booking | null = null;
+  loadingTransportBooking = false;
+
   summaryWeather: any = null;
   summarySuggestion: any = null;
   forecastDays: any[] = [];
@@ -48,6 +49,7 @@ export class TripSummaryComponent implements OnInit {
   constructor(
     private tripService: TripService,
     private budgetService: BudgetService,
+    private transportBookingService: TransportBookingService,
     private route: ActivatedRoute,
     private router: Router,
     private weatherService: WeatherService,
@@ -87,6 +89,7 @@ export class TripSummaryComponent implements OnInit {
 
           this.filterSavedPlaces();
           this.loadTripWeather();
+          this.loadTransportBooking();
           this.loading = false;
         },
         error: (err: any) => {
@@ -155,20 +158,25 @@ export class TripSummaryComponent implements OnInit {
     return this.userRole === 'viewer' || this.userRole === 'viewonly';
   }
 
-  get canEdit(): boolean {
-    return this.userRole === 'owner' || this.userRole === 'editor';
+  get isCompleted(): boolean {
+    if (!this.endDate) return false;
+    const end = new Date(this.endDate);
+    const today = new Date();
+    // Compare date only (ignore time)
+    end.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return end < today;
   }
 
-  /**
-   * SECURITY-CRITICAL: this is the ONLY place userRole is ever assigned.
-   * It strictly cross-references the authenticated user's identity
-   * (from the JWT, via AuthService) against the DB-sourced tripDetails
-   * (createdBy + members[].role). The URL is never consulted.
-   *
-   * This still only gates the UI (buttons/links). The API itself must
-   * independently enforce the same rule server-side on every mutating
-   * endpoint — see note in the chat response.
-   */
+  get canEdit(): boolean {
+    return !this.isCompleted && (this.userRole === 'owner' || this.userRole === 'editor');
+  }
+
+  get isMember(): boolean {
+    return !this.isOwner && (this.userRole === 'editor' || this.userRole === 'viewer' || this.userRole === 'viewonly');
+  }
+
+  // Determine the user's role based on the trip details and the authenticated user.
   determineUserRole(): void {
     const userId = this.authService.getUserId();
     const userEmail = this.authService.getUserEmail()?.toLowerCase();
@@ -229,7 +237,7 @@ export class TripSummaryComponent implements OnInit {
 
     const today = new Date();
     const maxForecastDate = new Date();
-    maxForecastDate.setDate(today.getDate() + 14);
+    maxForecastDate.setDate(today.getDate() + 16); 
 
     const targetTripDate = new Date(startDateStr);
 
@@ -245,13 +253,27 @@ export class TripSummaryComponent implements OnInit {
 
     this.weatherService.getCoordinates(destination).subscribe({
       next: (geoRes) => {
-        if (!geoRes?.length) {
+        if (!geoRes || !geoRes.results || !geoRes.results.length) {
           this.loadingWeather = false;
+          this.summaryWeather = null;
           return;
         }
 
-        const latStr = geoRes[0].lat.toString();
-        const lonStr = geoRes[0].lon.toString();
+        // Filter for Sri Lanka cities only 
+        const sriLankaResults = geoRes.results.filter((r: any) => {
+          const country = (r.country || '').toLowerCase();
+          const countryCode = (r.country_code || '').toLowerCase();
+          return country === 'sri lanka' || countryCode === 'lk';
+        });
+
+        if (sriLankaResults.length === 0) {
+          this.loadingWeather = false;
+          this.summaryWeather = null;
+          return;
+        }
+
+        const latStr = sriLankaResults[0].latitude.toString();
+        const lonStr = sriLankaResults[0].longitude.toString();
 
         this.weatherService.getProcessedWeather(latStr, lonStr, startDateStr).subscribe({
           next: (weather) => {
@@ -271,7 +293,10 @@ export class TripSummaryComponent implements OnInit {
           error: () => { this.loadingWeather = false; }
         });
       },
-      error: () => { this.loadingWeather = false; }
+      error: () => {
+        this.loadingWeather = false;
+        this.summaryWeather = null;
+      }
     });
   }
 
@@ -288,6 +313,46 @@ export class TripSummaryComponent implements OnInit {
       next: (data) => { this.editHistory = data; },
       error: (err) => console.error('History load error:', err)
     });
+  }
+
+  loadTransportBooking(): void {
+    if (!this.tripId) return;
+    this.loadingTransportBooking = true;
+    this.transportBookingService.getBookingsByTrip(this.tripId).subscribe({
+      next: (bookings: Booking[]) => {
+        if (bookings && bookings.length > 0) {
+          // Grab the latest booking for this trip
+          this.transportBooking = bookings[bookings.length - 1];
+        } else {
+          this.transportBooking = null;
+        }
+        this.loadingTransportBooking = false;
+      },
+      error: (err) => {
+        console.warn('Could not fetch transport booking for trip:', err);
+        this.transportBooking = null;
+        this.loadingTransportBooking = false;
+      }
+    });
+  }
+
+  navigateToTransport(): void {
+    this.router.navigate(['/transport'], {
+      queryParams: {
+        tripId: this.tripId,
+        start: this.formatDateStr(this.startDate),
+        end: this.formatDateStr(this.endDate),
+        pickup: this.departFrom,
+        destination: this.destination
+      }
+    });
+  }
+
+  formatDateStr(date: any): string {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return [d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
   }
 
   toggleDropdown(): void {
@@ -379,6 +444,39 @@ export class TripSummaryComponent implements OnInit {
       confirmButtonColor: '#0284c7'
     }).then(() => {
       this.router.navigate(['/traveller-dashboard']);
+    });
+  }
+
+  leaveTrip() {
+    if (!this.tripId) return;
+
+    Swal.fire({
+      title: 'Leave this trip?',
+      text: 'You will no longer have access to this trip. This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, leave trip'
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.tripService.leaveTrip(this.tripId).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Left successfully',
+              text: 'You have left the trip.',
+              confirmButtonColor: '#0284c7'
+            }).then(() => {
+              this.router.navigate(['/traveller-dashboard']);
+            });
+          },
+          error: (err) => {
+            const msg = err?.error?.message || 'Could not leave the trip. Please try again.';
+            Swal.fire('Error', msg, 'error');
+          }
+        });
+      }
     });
   }
 

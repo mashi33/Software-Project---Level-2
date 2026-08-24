@@ -153,6 +153,27 @@
     font-size: 11px;
 }
 
+.edited-label {
+  font-style: italic;
+  opacity: 0.65;
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+.deleted-message-text {
+  color: var(--text-hint);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.deleted-icon {
+  font-size: 15px;
+}
+
 .chat-input-container {
     padding: 10px 15px;
     background: rgba(128, 128, 128, 0.10);

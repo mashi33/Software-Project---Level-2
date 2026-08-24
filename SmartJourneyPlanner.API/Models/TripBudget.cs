@@ -12,8 +12,7 @@ namespace SmartJourneyPlanner.API.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
 
-        // THE CONNECTOR-This links this budget to a specific Trip
-        //the foreign key that makes the Budget Dashboard work
+        // This links this budget to a specific Trip
         [BsonRequired]
         [BsonRepresentation(BsonType.ObjectId)]
         public string TripId { get; set; } = null!; 

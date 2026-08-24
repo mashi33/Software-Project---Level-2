@@ -3,20 +3,15 @@ using SmartJourneyPlanner.Models;
 
 namespace SmartJourneyPlanner.Interfaces
 {
-    /// <summary>
+
     /// Defines the contract for the route optimization service.
-    /// </summary>
     public interface IRouteService
     {
-        /// <summary>
-        /// Returns optimized route options (fastest, cheapest, scenic) for the given request.
-        /// </summary>
+        // Returns optimized route options (fastest, cheapest, scenic) for the given request.
         Task<IActionResult> GetOptimizedRoutesAsync(RouteRequest req);
 
-        /// <summary>
-        /// Returns NTC bus fare for the given start and end locations.
-        /// Supports direct and 2-leg interchange routes.
-        /// </summary>
+         /*Returns NTC bus fare for the given start and end locations.
+         Supports direct and 2-leg interchange routes.*/
         Task<IActionResult> GetBusFareAsync(RouteRequest req);
     }
 }

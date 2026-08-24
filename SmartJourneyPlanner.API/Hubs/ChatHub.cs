@@ -16,72 +16,59 @@ namespace SmartJourneyPlanner.Hubs
             _discussionsService = discussionsService;
         }
 
-        
-        /// Adds a user to a specific Trip Group based on the trip ID.
-        /// Should be called from the frontend when a user selects or changes a trip.
-        
+        // Adds a user to a specific trip's group so they receive that trip's
+        // real-time updates. Called from the frontend when a user selects/changes a trip.
         public async Task JoinTripGroup(string tripId)
         {
             if (!string.IsNullOrEmpty(tripId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, tripId);
-                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} joined group: {tripId}");
             }
         }
 
-        /// Adds a user to their personal notification group using their userId.
-        /// Call this from the frontend immediately after SignalR connects.
-        /// This enables Clients.Group(userId) targeted notifications.
+        // Adds a user to their personal notification group using their userId,
+        // enabling Clients.Group(userId) targeted notifications. Called right after SignalR connects.
         public async Task JoinUserGroup(string userId)
         {
             if (!string.IsNullOrEmpty(userId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} joined user group: {userId}");
             }
         }
 
-        /// Removes a user from their personal notification group.
-        /// Call this on logout or disconnect cleanup.
+        // Removes a user from their personal notification group on logout/disconnect
         public async Task LeaveUserGroup(string userId)
         {
             if (!string.IsNullOrEmpty(userId))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
-                Console.WriteLine($"[SignalR Hub] Connection {Context.ConnectionId} left user group: {userId}");
             }
         }
 
-        /// Broadcasts a message to all connected clients.
-        /// Note: While this broadcasts globally, it can be modified to target specific groups.
+        // Broadcasts a chat message to all connected clients
         public async Task SendMessage(object comment)
         {
             try
             {
-                // Currently broadcasts to all users. 
-                // Consider using Clients.Group(tripId) for group-specific messaging.
                 await Clients.All.SendAsync("ReceiveComment", comment);
-
-                Console.WriteLine("[SignalR Hub] Global message broadcasted.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Critical Error] SendMessage: {ex.Message}");
+                Console.WriteLine($"[ChatHub] SendMessage error: {ex.Message}");
                 throw new HubException("Failed to broadcast message.");
             }
         }
 
-        /// Broadcasts vote updates to all connected clients.
+        // Broadcasts a vote update to all connected clients
         public async Task BroadcastVoteUpdate(object updatedDiscussion)
         {
             try
             {
                 await Clients.All.SendAsync("UpdateVotes", updatedDiscussion);
-                Console.WriteLine("[SignalR Hub] Vote update broadcasted.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Critical Error] BroadcastVoteUpdate: {ex.Message}");
+                Console.WriteLine($"[ChatHub] BroadcastVoteUpdate error: {ex.Message}");
             }
         }
     }

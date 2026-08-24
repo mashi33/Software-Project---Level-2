@@ -3,43 +3,63 @@
 
   <div class="login-card signup-card">
     <div class="brand-header">
-
       <h2>Begin Your Adventure</h2>
       <p class="subtitle">Fill in your details to get started</p>
     </div>
 
-    <form class="login-form" (ngSubmit)="onSignup()">
+    <form class="login-form" (ngSubmit)="onSignup()" #signupForm="ngForm">
 
+      <!-- Full Name -->
       <div class="input-group">
-        <label>User Name</label>
+        <label>User Name <span style="color:#ff6b6b">*</span></label>
         <div class="input-field">
           <i class="bi bi-person input-icon"></i>
           <input type="text" name="FullName" [(ngModel)]="signupData.FullName" placeholder="Enter your username"
-            required />
+            required minlength="2" maxlength="50" #fullName="ngModel" />
         </div>
+        @if (fullName.invalid && (fullName.dirty || fullName.touched)) {
+        <div class="error-msg">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          @if (fullName.errors?.['required']) {
+          <span>Full name is required.</span>
+          }
+          @if (fullName.errors?.['minlength']) {
+          <span>Name must be at least 2 characters.</span>
+          }
+        </div>
+        }
       </div>
 
+      <!-- Email -->
       <div class="input-group">
-        <label>Email Address</label>
+        <label>Email Address <span style="color:#ff6b6b">*</span></label>
         <div class="input-field">
           <i class="bi bi-envelope input-icon"></i>
-          <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="Enter your email" required />
+          <input type="email" name="Email" [(ngModel)]="signupData.Email" placeholder="Enter your email" required email
+            #emailCtrl="ngModel" />
         </div>
+        @if (emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)) {
+        <div class="error-msg">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          @if (emailCtrl.errors?.['required']) {
+          <span>Email is required.</span>
+          }
+          @if (emailCtrl.errors?.['email']) {
+          <span>Enter a valid email address.</span>
+          }
+        </div>
+        }
       </div>
 
-      <!-- Password Field -->
+      <!-- Password -->
       <div class="input-group">
-        <label>Password</label>
+        <label>Password <span style="color:#ff6b6b">*</span></label>
         <div class="input-field" style="position: relative;">
           <i class="bi bi-lock input-icon"></i>
-
-          <!-- Dynamic type සහ padding එක එකතු කර ඇත -->
           <input [type]="showPassword ? 'text' : 'password'" name="Password" [(ngModel)]="signupData.Password"
             placeholder="Create a password" required minlength="8"
             pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$" autocomplete="new-password"
             #pwd="ngModel" style="padding-right: 45px;" />
-
-          <!-- Eye Icon for Show/Hide Password -->
           <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"
             (click)="showPassword = !showPassword"
             style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(255, 255, 255, 0.75); font-size: 18px; z-index: 10;"></i>
@@ -48,15 +68,12 @@
         @if (pwd.invalid && (pwd.dirty || pwd.touched)) {
         <div class="error-msg">
           <i class="bi bi-exclamation-circle-fill"></i>
-
           @if (pwd.errors?.['required']) {
           <span>Password is required.</span>
           }
-
           @if (pwd.errors?.['minlength']) {
           <span>Password must be at least 8 characters long.</span>
           }
-
           @if (pwd.errors?.['pattern']) {
           <span>Password must contain at least:
             <br>• One uppercase letter
@@ -69,21 +86,30 @@
         }
       </div>
 
+      <!-- Role -->
       <div class="input-group">
-        <label for="role">Your Role</label>
+        <label for="role">Your Role <span style="color:#ff6b6b">*</span></label>
         <div class="input-field dropdown-field">
           <i class="bi bi-briefcase input-icon"></i>
-          <select name="UserType" [(ngModel)]="signupData.UserType" id="role" required>
+          <select name="UserType" [(ngModel)]="signupData.UserType" id="role" required #roleCtrl="ngModel">
             <option value="" disabled selected hidden>Select your role</option>
             <option value="Traveller">Traveller</option>
             <option value="TransportProvider">Transport Provider</option>
           </select>
         </div>
+        @if (roleCtrl.invalid && (roleCtrl.dirty || roleCtrl.touched)) {
+        <div class="error-msg">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span>Please select your role.</span>
+        </div>
+        }
       </div>
 
-      <button class="btn-login" type="submit" [disabled]="pwd.invalid">
-        <span>Let's start</span>
-        <i class="bi bi-arrow-right btn-icon"></i>
+      <!-- Submit: disabled until ALL fields valid -->
+      <button class="btn-login" type="submit" [disabled]="signupForm.invalid || isLoading">
+        <span>{{ isLoading ? 'Creating Account...' : "Let's start" }}</span>
+        <i *ngIf="!isLoading" class="bi bi-arrow-right btn-icon"></i>
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
       </button>
 
       <p class="signup-prompt">

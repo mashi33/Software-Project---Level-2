@@ -18,7 +18,6 @@ namespace SmartJourneyPlanner.Controllers
     private readonly FileStorageService _fileStorage;   // Handles file uploads (e.g., PDFs)
     private readonly IHubContext<ChatHub> _hubContext;  // Sends real-time updates to connected clients
 
-    // Injects the required services via dependency injection
     public CommentsController(
         CommentsService commentsService,
         FileStorageService fileStorage,
@@ -48,9 +47,20 @@ namespace SmartJourneyPlanner.Controllers
         var comments = await _commentsService.GetByTripAsync(tripId);
         return Ok(comments);
       }
-      catch (Exception)
+      catch (MongoDB.Driver.MongoConnectionException ex)
       {
-        return StatusCode(500, "Can not fetch comments for this trip.");
+        Console.WriteLine($"[CommentsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[CommentsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[CommentsController] GetByTrip Error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
       }
     }
 
@@ -64,7 +74,6 @@ namespace SmartJourneyPlanner.Controllers
         comment.CreatedAt = DateTime.UtcNow;
         await _commentsService.CreateAsync(comment);
 
-        // Send the new comment only to the trip group, or to everyone if no trip is linked
         if (!string.IsNullOrEmpty(comment.TripId))
         {
           await _hubContext.Clients.Group(comment.TripId).SendAsync("ReceiveComment", comment);
@@ -76,10 +85,20 @@ namespace SmartJourneyPlanner.Controllers
 
         return Ok(comment);
       }
+      catch (MongoDB.Driver.MongoConnectionException ex)
+      {
+        Console.WriteLine($"[CommentsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[CommentsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
       catch (Exception ex)
       {
         Console.WriteLine($"[CommentsController] AddComment error: {ex.Message}");
-        return StatusCode(500, "Comment add failed.");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
       }
     }
 
@@ -88,61 +107,105 @@ namespace SmartJourneyPlanner.Controllers
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateComment(string id, [FromBody] CommentItem updatedComment)
     {
-      var existingComment = await _commentsService.GetCommentByIdAsync(id);
-      if (existingComment == null) return NotFound();
-
-      existingComment.Text = updatedComment.Text;
-      existingComment.UpdatedAt = DateTime.UtcNow;
-
-      await _commentsService.UpdateAsync(id, existingComment);
-
-      // Notify only the trip group, or everyone if no trip is linked
-      if (!string.IsNullOrEmpty(existingComment.TripId))
+      try
       {
-        await _hubContext.Clients.Group(existingComment.TripId).SendAsync("CommentUpdated", existingComment);
-      }
-      else
-      {
-        await _hubContext.Clients.All.SendAsync("CommentUpdated", existingComment);
-      }
+        var existingComment = await _commentsService.GetCommentByIdAsync(id);
+        if (existingComment == null) return NotFound();
 
-      return Ok(existingComment);
+        existingComment.Text = updatedComment.Text;
+        existingComment.UpdatedAt = DateTime.UtcNow;
+        existingComment.IsEdited = true;
+
+        await _commentsService.UpdateAsync(id, existingComment);
+
+        if (!string.IsNullOrEmpty(existingComment.TripId))
+        {
+          await _hubContext.Clients.Group(existingComment.TripId).SendAsync("CommentUpdated", existingComment);
+        }
+        else
+        {
+          await _hubContext.Clients.All.SendAsync("CommentUpdated", existingComment);
+        }
+
+        return Ok(existingComment);
+      }
+      catch (MongoDB.Driver.MongoConnectionException ex)
+      {
+        Console.WriteLine($"[CommentsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[CommentsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[CommentsController] UpdateComment error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+      }
     }
 
     // DELETE api/comments/{id}
-    // Deletes a comment by ID, removes any attached PDF from storage, and notifies the trip group
+    // Soft-deletes a comment: clears its content and marks IsDeleted = true so the
+    // record stays in the DB and the UI can show "This message was deleted".
+    // Any attached PDF is still permanently removed from GridFS storage.
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteComment(string id)
     {
-      var comment = await _commentsService.GetCommentByIdAsync(id);
-      if (comment == null) return NotFound();
-
-      // If the comment has a PDF attached, delete it from GridFS file storage
-      if (comment.MessageType == "pdf" && !string.IsNullOrEmpty(comment.FileId))
+      try
       {
-        try
+        var comment = await _commentsService.GetCommentByIdAsync(id);
+        if (comment == null) return NotFound();
+
+        if (comment.MessageType == "pdf" && !string.IsNullOrEmpty(comment.FileId))
         {
-          await _fileStorage.DeleteAsync(comment.FileId);
+          try
+          {
+            await _fileStorage.DeleteAsync(comment.FileId);
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"[CommentsController] GridFS delete warning: {ex.Message}");
+          }
         }
-        catch (Exception ex)
+
+        comment.IsDeleted = true;
+        comment.Text = string.Empty;
+        comment.MessageType = "text";
+        comment.FileId = null;
+        comment.FileName = null;
+        comment.FileSize = null;
+        comment.UpdatedAt = DateTime.UtcNow;
+
+        await _commentsService.UpdateAsync(id, comment);
+
+        if (!string.IsNullOrEmpty(comment.TripId))
         {
-          Console.WriteLine($"[CommentsController] GridFS delete warning: {ex.Message}");
+          await _hubContext.Clients.Group(comment.TripId).SendAsync("CommentUpdated", comment);
         }
+        else
+        {
+          await _hubContext.Clients.All.SendAsync("CommentUpdated", comment);
+        }
+
+        return Ok(comment);
       }
-
-      await _commentsService.DeleteCommentAsync(id);
-
-      // Notify only the trip group, or everyone if no trip is linked
-      if (!string.IsNullOrEmpty(comment.TripId))
+      catch (MongoDB.Driver.MongoConnectionException ex)
       {
-        await _hubContext.Clients.Group(comment.TripId).SendAsync("CommentDeleted", id);
+        Console.WriteLine($"[CommentsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
       }
-      else
+      catch (TimeoutException ex)
       {
-        await _hubContext.Clients.All.SendAsync("CommentDeleted", id);
+        Console.WriteLine($"[CommentsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
       }
-
-      return NoContent();
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[CommentsController] DeleteComment error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+      }
     }
   }
 }

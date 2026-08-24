@@ -9,7 +9,7 @@
 
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
 import { TransportBookingService } from '../../services/transport-booking.service';
@@ -25,6 +25,9 @@ import Swal from 'sweetalert2';
     styleUrl: './vehicle-detail.css'
 })
 export class VehicleDetailComponent implements OnInit {
+  // --- TRIP LINKING ---
+  tripId: string | null = null;
+
   // --- VEHICLE DATA ---
   vehicle: Vehicle | undefined;
   mainImage: string = ''; // The large image currently shown in the center of the gallery
@@ -71,6 +74,7 @@ export class VehicleDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private transportVehicleService: TransportVehicleService,
     private transportBookingService: TransportBookingService,
     public calcService: TransportCalculationService,
@@ -114,6 +118,10 @@ export class VehicleDetailComponent implements OnInit {
 
     // If dates were already picked on the search page, pre-fill the form
     this.route.queryParams.subscribe(params => {
+      if (params['tripId']) this.tripId = params['tripId'];
+      if (params['pickup'] && !this.pickupAddress) this.pickupAddress = params['pickup'];
+      if (params['dest'] && this.destinations.length === 0) this.destinations.push(params['dest']);
+      if (params['destination'] && this.destinations.length === 0) this.destinations.push(params['destination']);
       let start = params['start'];
       let end = params['end'];
       if (start && end) {
@@ -372,6 +380,7 @@ export class VehicleDetailComponent implements OnInit {
         }
         const newBooking: any = {
           vehicleId: this.vehicle?.id,
+          tripId: this.tripId || undefined,
           userId: currentUserId,
           providerId: this.vehicle?.providerId,
           startDate: this.startDate, endDate: this.endDate,
@@ -379,6 +388,7 @@ export class VehicleDetailComponent implements OnInit {
           totalAmount: subtotal, status: 'Pending',
           pickupAddress: this.pickupAddress, destinations: this.destinations,
           vehicleImage: this.vehicle?.exteriorPhoto,
+          vehicleName: this.vehicle?.modelName || this.vehicle?.description || 'Vehicle',
           providerName: this.vehicle?.providerProfile.name,
           providerPhone: this.vehicle?.providerProfile.phone,
           userName: this.customerName, contactNumber: this.customerPhone,
@@ -391,12 +401,28 @@ export class VehicleDetailComponent implements OnInit {
         // 5. Send to Server
         this.transportBookingService.createBooking(newBooking).subscribe({
           next: () => {
-            Swal.fire({
-              title: 'Success!',
-              text: 'Your booking request has been sent to the provider. They will contact you shortly.',
-              icon: 'success',
-              confirmButtonColor: '#000000'
-            });
+            if (this.tripId) {
+              Swal.fire({
+                title: 'Booking Sent!',
+                text: 'Your transport booking request has been sent to the provider. Would you like to view your Trip Summary?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-journal-check me-1"></i> View Trip Summary',
+                cancelButtonText: 'Stay Here',
+                confirmButtonColor: '#0284c7'
+              }).then(navRes => {
+                if (navRes.isConfirmed && this.tripId) {
+                  this.router.navigate(['/trip-summary', this.tripId]);
+                }
+              });
+            } else {
+              Swal.fire({
+                title: 'Success!',
+                text: 'Your booking request has been sent to the provider. They will contact you shortly.',
+                icon: 'success',
+                confirmButtonColor: '#000000'
+              });
+            }
           },
           error: (err) => {
             Swal.fire('Error', 'Failed to send booking request.', 'error');

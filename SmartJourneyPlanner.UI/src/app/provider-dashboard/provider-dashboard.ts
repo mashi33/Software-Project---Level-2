@@ -975,7 +975,7 @@ export class ProviderDashboardComponent implements OnInit {
               <span style="font-size: 16px; color: #212529; font-weight: 700;">${rejectedCount}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
-              <span style="font-size: 14px; color: #495057; font-weight: 500;">🚫Canceled</span>
+              <span style="font-size: 14px; color: #495057; font-weight: 500;">🚫Cancelled</span>
               <span style="font-size: 16px; color: #212529; font-weight: 700;">${canceledCount}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0 0;">
@@ -1143,13 +1143,14 @@ if (isShortNotice) {
     this.closeCancelBookingModal();
     this.tempCancelReason = cancelReason;
 
-    // Cancel the booking
-    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled').subscribe({
+    // Cancel the booking  
+    this.bookingService.updateBookingStatus(booking.id!, 'Cancelled', 'Provider').subscribe({
       next: () => {
-        booking.status = 'Cancelled';
-        booking.statusChangedDate = new Date().toISOString();
-        this.providerCancelledIds.add(booking.id!);
-        this.tempCancelReason = '';
+       booking.status = 'Cancelled';
+       booking.statusChangedDate = new Date().toISOString();
+       (booking as any).CancelledBy = 'Provider';   
+       this.providerCancelledIds.add(booking.id!);
+       this.tempCancelReason = '';
 
         // Add blocked range
         const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;

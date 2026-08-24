@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import { UserService } from '../services/user-profile.service';
+import { AdminService } from '../services/admin.service';
 
 export interface Destination {
   id: number;
@@ -48,6 +49,7 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   constructor(
     private userProfileService: UserService,
+    private adminService: AdminService,
     private router: Router
   ) { }
 
@@ -61,10 +63,10 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   // Stats
   stats = [
-    { value: '120+', label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
-    { value: '500+', label: 'Happy Travelers', icon: 'bi-people-fill', colorClass: 'blue' },
-    { value: '300+', label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
-    { value: '4.8', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
+    { value: '...', label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
+    { value: '...', label: 'Happy Users', icon: 'bi-people-fill', colorClass: 'blue' },
+    { value: '...', label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
+    { value: '...', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
   ];
 
   // Popular Destinations
@@ -202,6 +204,27 @@ export class LandingPageComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadFeedbacks();
+    this.loadPlatformStats();
+  }
+
+  loadPlatformStats() {
+    this.adminService.getDashboardStats().subscribe({
+      next: (res: any) => {
+        const totalTrips = res.totalTrips || 0;
+        const totalUsers = res.platformUsers || res.totalUsers || 0;
+        const totalVehicles = res.totalVehicles || 0;
+
+        this.stats = [
+          { value: `${totalTrips}+`, label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
+          { value: `${totalUsers}+`, label: 'Happy Users', icon: 'bi-people-fill', colorClass: 'blue' },
+          { value: `${totalVehicles}+`, label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
+          { value: '4.8', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
+        ];
+      },
+      error: (err) => {
+        console.error('Failed to load platform stats', err);
+      }
+    });
   }
 
   loadFeedbacks() {

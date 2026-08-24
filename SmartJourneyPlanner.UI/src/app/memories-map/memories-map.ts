@@ -74,6 +74,15 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   comments: any[] = [];
   isLoadingComments = false;
 
+    // Location search dropdown 
+  locationOptions: Array<{
+    name: string;
+    displayName: string;
+    latitude: number;
+    longitude: number;
+  }> = [];
+  showLocationDropdown = false;
+
   constructor(
     private http: HttpClient,
     private location: Location,
@@ -419,15 +428,43 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // SEARCH & SAVE 
-
-  searchLocation() {
-    if (!this.searchQuery) {
-      this.showInfo('Enter a location', 'Please enter a city name (e.g., Kandy).');
+    searchLocation() {
+    if (!this.searchQuery?.trim()) {
+      this.showInfo('Enter a location', 'Please enter a city or place name (e.g. Kandy, Galle Fort).');
       return;
     }
 
-    const query = encodeURIComponent(this.searchQuery + ', Sri Lanka');
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
+    const cleaned = this.searchQuery.trim();
+
+    if (!/^[a-zA-Z\s\-'.]+$/.test(cleaned)) {
+      this.locationOptions = [];
+      this.showLocationDropdown = false;
+      this.showWarning('Invalid location', 'Enter a valid city or place name in Sri Lanka.');
+      return;
+    }
+
+    if (cleaned.length < 3) {
+      this.locationOptions = [];
+      this.showLocationDropdown = false;
+      this.showWarning('Too short', 'Please enter at least 3 characters.');
+      return;
+    }
+
+    const garbageCheck = cleaned.replace(/[\s\-'.]/g, '').toLowerCase();
+    if (garbageCheck.length < 3 || /^(.)\1+$/.test(garbageCheck)) {
+      this.locationOptions = [];
+      this.showLocationDropdown = false;
+      this.showWarning('Invalid location', 'Enter a valid city or place name in Sri Lanka.');
+      return;
+    }
+
+    const query = cleaned.toLowerCase();
+    const url =
+      `https://nominatim.openstreetmap.org/search?format=json` +
+      `&q=${encodeURIComponent(cleaned)}` +
+      `&countrycodes=lk` +
+      `&addressdetails=1` +
+      `&limit=8`;
 
     Swal.fire({
       title: 'Searching...',
@@ -440,40 +477,111 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (res) => {
         Swal.close();
 
-        if (res?.length) {
-          const lat = parseFloat(res[0].lat);
-          const lon = parseFloat(res[0].lon);
+        const results = (res || []).filter((r: any) => {
+          const countryCode = (r.address?.country_code || '').toLowerCase();
+          if (countryCode && countryCode !== 'lk') return false;
 
-          if (this.sriLankaBounds.contains([lat, lon])) {
-            this.newMemory.latitude = lat;
-            this.newMemory.longitude = lon;
-            this.newMemory.locationName = res[0].display_name;
-            this.map.flyTo([lat, lon], 14);
+          const name = (r.display_name || '').split(',')[0].trim().toLowerCase();
+          const display = (r.display_name || '').toLowerCase();
 
-            Swal.fire({
-              toast: true,
-              position: 'top-end',
-              icon: 'success',
-              title: 'Location found!',
-              showConfirmButton: false,
-              timer: 2000,
-              timerProgressBar: true
-            });
-          } else {
-            this.showWarning(
-              'Outside Sri Lanka',
-              'This location is outside of Sri Lanka. Please search within Sri Lanka.'
-            );
-          }
+          if (name.startsWith(query) || display.startsWith(query)) return true;
+          const words = query.split(/\s+/).filter(w => w.length > 0);
+          return words.every(w => name.includes(w) || display.includes(w));
+        });
+
+        if (results.length === 0) {
+          this.locationOptions = [];
+          this.showLocationDropdown = false;
+          this.showWarning(
+            'Location not found',
+            'Location not found in Sri Lanka. Please enter a valid city or place name.'
+          );
+          return;
+        }
+
+        this.locationOptions = results.map((r: any) => {
+          const displayName = r.display_name || '';
+          const name = displayName.split(',')[0].trim() || cleaned;
+          return {
+            name,
+            displayName,
+            latitude: parseFloat(r.lat),
+            longitude: parseFloat(r.lon)
+          };
+        });
+
+        // 1 result → auto-select
+        // exact name + length >= 4 → auto-select best (prefer non-district)
+        // else → dropdown only
+        const exactMatches = this.locationOptions.filter(
+          loc => loc.name.toLowerCase() === query
+        );
+        const bestExact =
+          exactMatches.find(
+            loc =>
+              !/district$/i.test(loc.name) &&
+              !loc.displayName.toLowerCase().includes('district')
+          ) || exactMatches[0];
+
+        if (this.locationOptions.length === 1) {
+          this.selectMapLocation(this.locationOptions[0]);
+        } else if (bestExact && query.length >= 4) {
+          this.selectMapLocation(bestExact);
         } else {
-          this.showWarning('Location not found', 'Try another city name.');
+          this.showLocationDropdown = true;
         }
       },
       error: () => {
         Swal.close();
+        this.locationOptions = [];
+        this.showLocationDropdown = false;
         this.showError('Search failed', 'Could not search for your location. Please try again.');
       }
     });
+  }
+
+  /* Apply selected Nominatim result to form + map */
+  selectMapLocation(loc: {
+    name: string;
+    displayName: string;
+    latitude: number;
+    longitude: number;
+  }) {
+    if (
+      !this.sriLankaBounds.contains([loc.latitude, loc.longitude])
+    ) {
+      this.showWarning(
+        'Outside Sri Lanka',
+        'Please select a location inside Sri Lanka.'
+      );
+      return;
+    }
+
+    this.newMemory.latitude = loc.latitude;
+    this.newMemory.longitude = loc.longitude;
+    this.newMemory.locationName = loc.displayName;
+    this.searchQuery = loc.name;
+    this.showLocationDropdown = false;
+    this.locationOptions = [];
+
+    if (this.map) {
+      this.map.flyTo([loc.latitude, loc.longitude], 14);
+    }
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Location selected',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
+    });
+  }
+
+  clearLocationDropdown() {
+    this.showLocationDropdown = false;
+    this.locationOptions = [];
   }
 
   // SAVE MEMORY for Cloudinary

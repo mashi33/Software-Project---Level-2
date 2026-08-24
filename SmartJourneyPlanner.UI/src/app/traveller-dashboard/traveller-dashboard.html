@@ -46,6 +46,7 @@
       <div class="card combined-card" *ngIf="nextTrip">
         <div class="combined-content">
           
+          <!-- Next Trip Card -->
           <div class="trip-card-modern">
             <div class="trip-card-bg"></div>
             
@@ -76,16 +77,30 @@
             <div class="trip-bottom-row">
               <div class="weather-inline">
                 <div class="weather-emoji-big">
-                  <ng-container [ngSwitch]="weather?.condition?.toLowerCase()">
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('sunny') ? weather.condition.toLowerCase() : ''">☀️</span>
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('rain') ? weather.condition.toLowerCase() : ''">🌧️</span>
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('cloud') ? weather.condition.toLowerCase() : ''">☁️</span>
-                    <span *ngSwitchDefault>☀️</span>
+                  <!-- Fixed weather icon -->
+                  <ng-container *ngIf="weather?.condition; else noWeatherIcon">
+                    <span *ngIf="weather.condition.toLowerCase().includes('sunny')">☀️</span>
+                    <span *ngIf="weather.condition.toLowerCase().includes('rain')">🌧️</span>
+                    <span *ngIf="weather.condition.toLowerCase().includes('cloud')">☁️</span>
+                    <span *ngIf="!weather.condition.toLowerCase().includes('sunny') && 
+                                 !weather.condition.toLowerCase().includes('rain') && 
+                                 !weather.condition.toLowerCase().includes('cloud')">-</span>
                   </ng-container>
+                  <ng-template #noWeatherIcon>-</ng-template>
                 </div>
                 <div>
-                  <div class="weather-label">Mostly {{ weather?.condition || 'Sunny' }}</div>
-                  <div class="weather-temp">{{ weather?.avgTemp || '25' }}°C</div>
+                  <div class="weather-label">
+                    <ng-container *ngIf="weather?.condition; else noConditionLabel">
+                      Mostly {{ weather.condition }}
+                    </ng-container>
+                    <ng-template #noConditionLabel>Weather not available</ng-template>
+                  </div>
+                  <div class="weather-temp">
+                    <ng-container *ngIf="weather?.avgTemp; else noTempInline">
+                      {{ weather.avgTemp }}°C
+                    </ng-container>
+                    <ng-template #noTempInline>-</ng-template>
+                  </div>
                 </div>
               </div>
               <button class="btn-view-trip" (click)="openTripSummary(nextTrip.id || nextTrip.Id)">
@@ -101,6 +116,7 @@
             </div>
           </div>
 
+          <!-- Weather Card -->
           <div class="weather-card-modern">
             <div class="weather-card-header">
               <span class="weather-card-title">Next Trip Weather Overview</span>
@@ -108,36 +124,65 @@
             </div>
 
             <div class="weather-rows">
+
+              <!-- Average Temperature -->
               <div class="weather-data-row">
                 <div class="weather-icon-circle wic-blue">🌡️</div>
                 <div class="weather-data-info">
                   <span class="weather-data-label">Average Temperature</span>
-                  <span class="weather-data-value">{{ weather?.avgTemp || '25.4' }}°C</span>
+                  <span class="weather-data-value" *ngIf="weather?.avgTemp; else noTemp">
+                    {{ weather.avgTemp }}°C
+                  </span>
+                  <ng-template #noTemp>
+                    <span class="weather-data-value no-data">Not available</span>
+                  </ng-template>
                 </div>
               </div>
 
+              <!-- Humidity -->
               <div class="weather-data-row">
                 <div class="weather-icon-circle wic-green">💧</div>
                 <div class="weather-data-info">
                   <span class="weather-data-label">Humidity</span>
-                  <span class="weather-data-value">{{ weather?.humidity || '71' }}%</span>
+                  <span class="weather-data-value" *ngIf="weather?.humidity; else noHumidity">
+                    {{ weather.humidity }}%
+                  </span>
+                  <ng-template #noHumidity>
+                    <span class="weather-data-value no-data">Not available</span>
+                  </ng-template>
                 </div>
               </div>
 
+              <!-- Condition -->
               <div class="weather-data-row">
                 <div class="weather-icon-circle wic-yellow">
-                  <ng-container [ngSwitch]="weather?.condition?.toLowerCase()">
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('sunny') ? weather.condition.toLowerCase() : ''">☀️</span>
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('rain') ? weather.condition.toLowerCase() : ''">🌧️</span>
-                    <span *ngSwitchCase="weather?.condition?.toLowerCase().includes('cloud') ? weather.condition.toLowerCase() : ''">☁️</span>
-                    <span *ngSwitchDefault>☀️</span>
+                  <ng-container *ngIf="weather?.condition; else noConditionIcon">
+                    <span *ngIf="weather.condition.toLowerCase().includes('sunny')">☀️</span>
+                    <span *ngIf="weather.condition.toLowerCase().includes('rain')">🌧️</span>
+                    <span *ngIf="weather.condition.toLowerCase().includes('cloud')">☁️</span>
+                    <span *ngIf="!weather.condition.toLowerCase().includes('sunny') && 
+                                 !weather.condition.toLowerCase().includes('rain') && 
+                                 !weather.condition.toLowerCase().includes('cloud')">-</span>
                   </ng-container>
+                  <ng-template #noConditionIcon>-</ng-template>
                 </div>
                 <div class="weather-data-info">
                   <span class="weather-data-label">Condition</span>
-                  <span class="weather-data-value">{{ weather?.condition || 'Sunny' }}</span>
+                  <span class="weather-data-value" *ngIf="weather?.condition; else noCondition">
+                    {{ weather.condition }}
+                  </span>
+                  <ng-template #noCondition>
+                    <span class="weather-data-value no-data">Not available</span>
+                  </ng-template>
                 </div>
               </div>
+
+              <!-- Small message when weather is missing -->
+              <div class="weather-verify-msg" *ngIf="!weather?.avgTemp && !weather?.condition">
+                 <i class="fas fa-info-circle"></i>
+                  Please verify the location name
+              </div>
+
             </div>
 
             <button class="btn-full-weather-modern" (click)="navigateToWeather()">
@@ -178,6 +223,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge ongoing-badge">On-going</span>
             </div>
           </div>
@@ -194,6 +240,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge upcoming-badge">Upcoming</span>
             </div>
           </div>
@@ -210,6 +257,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge completed-badge">Completed</span>
             </div>
           </div>
@@ -221,7 +269,7 @@
 
       <div class="card quick-links-card">
         <div class="quick-link-header">
-        <h3>Quick Links</h3>
+          <h3>Quick Links</h3>
         </div>
         <div class="quick-links">
           <div class="quick-card" routerLink="/memories">

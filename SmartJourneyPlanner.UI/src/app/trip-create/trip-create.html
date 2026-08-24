@@ -308,11 +308,15 @@
 
     <!-- 🏁 BOTTOM ACTIONS BAR -->
     <div class="form-action-footer-bar">
-      <button type="button" class="footer-cancel-btn">
+      <button type="button" class="footer-cancel-btn" (click)="onCancel()">
         <i class="bi bi-x-circle"></i> Cancel
       </button>
-      <button type="submit" class="footer-save-btn">
-        <i class="bi bi-check-circle-fill"></i> {{ isEditMode ? 'Update Trip' : 'Create Trip' }}
+      <button type="submit" class="footer-save-btn" [disabled]="isLoading">
+        <i *ngIf="!isLoading" class="bi bi-check-circle-fill"></i>
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        <span>{{ isLoading ? (isEditMode ? 'Updating Trip...' : 'Creating Trip...') : (isEditMode ? 'Update Trip' :
+          'Create
+          Trip') }}</span>
       </button>
     </div>
   </form>
