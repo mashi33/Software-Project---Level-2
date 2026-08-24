@@ -45,9 +45,9 @@
         <label class="field-label">Amount (LKR)</label>
         <input type="number" [(ngModel)]="expense.amount" name="amount" placeholder="0.00" min="1" required>
 
-        <div *ngIf="expense.amount !== null && expense.amount !== undefined && expense.amount <= 0" 
-             class="validation-error">
-          <i class="bi bi-exclamation-circle-fill"></i> Amount cannot be zero or negative.
+        <div *ngIf="expense.amount !== null && expense.amount !== undefined && expense.amount === 0" 
+            class="validation-error">
+          <i class="bi bi-exclamation-circle-fill"></i> Amount cannot be zero.
         </div>
       </div>
 
