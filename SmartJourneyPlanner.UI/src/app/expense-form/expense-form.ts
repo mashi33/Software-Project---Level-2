@@ -99,7 +99,7 @@ export class ExpenseForm implements OnInit {
 
     const payload = {
       ...this.expense,
-      amount: Number(this.expense.amount)
+      amount: Math.abs(Number(this.expense.amount))
     };
 
     if (this.isEditMode) {
