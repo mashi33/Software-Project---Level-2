@@ -12,13 +12,10 @@
 }
 
 .brand-logo {
-  width: 60px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   margin-right: 12px;
-  border-radius: 8px;
-  object-fit: cover;
-  /* Prevents the image from stretching */
-  background-color: white;
+  object-fit: contain;
 }
 
 .brand-text {
