@@ -235,6 +235,11 @@ export const routes: Routes = [
       expectedRoles: ['Traveller', 'Traveler']
     }
   },
+  {
+    path: 'trip-timeline',
+    redirectTo: 'timeline',
+    pathMatch: 'full'
+  },
 
   {
     path: 'achievements',
