@@ -117,9 +117,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     const travelerMenu = [
       { icon: 'bi-house-door', label: 'Dashboard', route: '/traveller-dashboard', category: 'Main' },
       { icon: 'bi-map', label: 'Explore Map', route: '/map-view', category: 'Explore' },
-      { icon: 'bi-images', label: 'Memories', route: '/memories-map', category: 'Memories' },
+      { icon: 'bi-images', label: 'Memories', route: '/memories-welcome', category: 'Memories' },
       { icon: 'bi-calendar-plus', label: 'Create Trip', route: '/createTrip', category: 'Trips' },
-      { icon: 'bi-clock-history', label: 'Trip Timeline', route: '/timeline', category: 'Trips' },
+      { icon: 'bi-clock-history', label: 'Trip Timeline', route: '/trip-timeline', category: 'Trips' },
       { icon: 'bi-cash-stack', label: 'Budget', route: '/budget', category: 'Finance' },
       { icon: 'bi-geo-alt', label: 'Route Optimization', route: '/route-optimization', category: 'Explore' },
       { icon: 'bi-chat-dots', label: 'Community', route: '/community-map', category: 'Social' },
