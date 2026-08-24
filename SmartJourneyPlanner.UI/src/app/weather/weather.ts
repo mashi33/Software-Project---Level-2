@@ -218,16 +218,20 @@ searchWeather() {
   const cityToRecord = this.city.trim();
 
   if (!/^[a-zA-Z\s\-'.]+$/.test(cityToRecord)) {
+    this.clearWeatherData();
+    this.showSearchHero = true;
     Swal.fire({
       icon: 'warning',
-      title: 'Invalid City Name',
-      text: 'Enter a valid city name',
+      title: 'Invalid Location Name',
+      text: 'Enter a valid city or place name (e.g. Colombo, Galle Fort)',
       confirmButtonColor: '#3b82f6'
     });
     return;
   }
 
   if (cityToRecord.length < 3) {
+    this.clearWeatherData();
+    this.showSearchHero = true;
     Swal.fire({
       icon: 'warning',
       title: 'Too Short',
@@ -240,16 +244,18 @@ searchWeather() {
   // Reject pure garbage (ddd, aaa, xxx ...)
   const cleaned = cityToRecord.replace(/[\s\-'.]/g, '').toLowerCase();
   if (cleaned.length < 3 || /^(.)\1+$/.test(cleaned)) {
+    this.clearWeatherData();
+    this.showSearchHero = true;
     Swal.fire({
       icon: 'warning',
-      title: 'Invalid City Name',
-      text: 'Enter a valid city name',
+      title: 'Invalid Location Name',
+      text: 'Enter a valid city or place name',
       confirmButtonColor: '#3b82f6'
     });
     return;
   }
 
-  // Same city → reload weather only (compare with last successfully searched city)
+  // Same city → reload weather only
   const sameCity =
     this.lastLat &&
     this.lastLon &&
@@ -273,7 +279,7 @@ searchWeather() {
     return;
   }
 
-  // New city - clear all previous data first
+  // New search - clear previous data
   this.lastLat = null;
   this.lastLon = null;
   this.clearWeatherData();
@@ -289,68 +295,84 @@ searchWeather() {
   this.suggestionResult = null;
 
   this.weatherService.getCoordinates(cityToRecord).subscribe({
-  next: (res) => {
-    const query = cityToRecord.toLowerCase().trim();
+    next: (res) => {
+      const query = cityToRecord.toLowerCase().trim();
 
-    // Filter results for Sri Lanka only and those that START with the typed letters
-    const results = (res?.results || []).filter((r: any) => {
-      const name = (r.name || '').toLowerCase();
-      const country = (r.country || '').toLowerCase();
-      const countryCode = (r.country_code || '').toLowerCase();
-      // Must be in Sri Lanka and start with query
-      return (country === 'sri lanka' || countryCode === 'lk') && name.startsWith(query);
-    });
+      // Nominatim already restricted to LK – keep only relevant matches
+      const results = (res?.results || []).filter((r: any) => {
+        const name = (r.name || '').toLowerCase();
+        const display = (r.display_name || '').toLowerCase();
+        const countryCode = (r.country_code || '').toLowerCase();
 
-    if (results.length === 0) {
+        if (countryCode && countryCode !== 'lk') return false;
+
+        // prefix OR all words appear (supports "Galle Fort")
+        if (name.startsWith(query) || display.startsWith(query)) return true;
+        const words = query.split(/\s+/).filter(w => w.length > 0);
+        return words.every(w => name.includes(w) || display.includes(w));
+      });
+
+            if (results.length === 0) {
+        this.clearWeatherData();
+        Swal.fire({
+          icon: 'error',
+          title: 'Location Not Found',
+          text: 'Location not found in Sri Lanka. Please enter a valid Sri Lankan city or place name.',
+          confirmButtonColor: '#3b82f6'
+        });
+        this.loading = false;
+        this.showSearchHero = true;
+        return;
+      }
+
+      this.locationOptions = results.map((r: any) => ({
+        name: r.name,
+        country: r.country || 'Sri Lanka',
+        admin1: r.admin1 || '',
+        latitude: r.latitude,
+        longitude: r.longitude,
+        country_code: r.country_code,
+        displayName: this.buildDisplayName(r)
+      }));
+
+      // Prefer city over district when exact name matches
+      const exactMatches = this.locationOptions.filter(
+        (loc) => loc.name.toLowerCase() === query
+      );
+      // Skip pure "District" admin entries when a city exists
+      const bestExact =
+        exactMatches.find(
+          (loc) =>
+            !/district$/i.test(loc.name) &&
+            !(loc.displayName || '').toLowerCase().includes('district,')
+        ) || exactMatches[0];
+
+      if (this.locationOptions.length === 1) {
+        // Uniquely identified
+        this.selectLocation(this.locationOptions[0]);
+      } else if (bestExact && query.length >= 4) {
+        // Full clear city name (Matara, Galle, Colombo...) → weather
+        this.selectLocation(bestExact);
+      } else {
+        // Ambiguous / incomplete (abc, Gal...) → dropdown only, NO weather
+        this.clearWeatherData();
+        this.showLocationDropdown = true;
+        this.loading = false;
+      }
+    },
+
+    error: () => {
       this.clearWeatherData();
       Swal.fire({
         icon: 'error',
-        title: 'City Not Found',
-        text: 'City not found in Sri Lanka. Please enter a valid Sri Lankan city name.',
+        title: 'API Error',
+        text: 'Geo API failed.',
         confirmButtonColor: '#3b82f6'
       });
       this.loading = false;
       this.showSearchHero = true;
-      return;
     }
-
-    this.locationOptions = results.map((r: any) => ({
-      name: r.name,
-      country: r.country || 'Sri Lanka',
-      admin1: r.admin1 || '',
-      latitude: r.latitude,
-      longitude: r.longitude,
-      country_code: r.country_code,
-      displayName: this.buildDisplayName(r)
-    }));
-
-    // Exact match only → auto-select
-    const exactMatch = this.locationOptions.find(
-      (loc) => loc.name.toLowerCase() === query
-    );
-
-    if (exactMatch) {
-      this.selectLocation(exactMatch);
-    } else {
-      // incomplete / invalid → NO data
-      this.clearWeatherData();
-      this.showLocationDropdown = true;
-      this.loading = false;
-    }
-  },
-
-  error: () => {
-    this.clearWeatherData();
-    Swal.fire({
-      icon: 'error',
-      title: 'API Error',
-      text: 'Geo API failed.',
-      confirmButtonColor: '#3b82f6'
-    });
-    this.loading = false;
-    this.showSearchHero = true;
-  }
-});
+  });
 }
 
 private inputTimer: any;
@@ -376,12 +398,17 @@ onCityInput() {
     this.weatherService.getCoordinates(q).subscribe({
       next: (res) => {
         const query = q.toLowerCase();
-        // Filter for Sri Lanka cities only
+
         const results = (res?.results || []).filter((r: any) => {
           const name = (r.name || '').toLowerCase();
-          const country = (r.country || '').toLowerCase();
+          const display = (r.display_name || '').toLowerCase();
           const countryCode = (r.country_code || '').toLowerCase();
-          return (country === 'sri lanka' || countryCode === 'lk') && name.startsWith(query);
+
+          if (countryCode && countryCode !== 'lk') return false;
+
+          if (name.startsWith(query) || display.startsWith(query)) return true;
+          const words = query.split(/\s+/).filter(w => w.length > 0);
+          return words.every(w => name.includes(w) || display.includes(w));
         });
 
         this.locationOptions = results.map((r: any) => ({
@@ -405,6 +432,7 @@ onCityInput() {
 }
 
 private buildDisplayName(r: any): string {
+  if (r.display_name) return r.display_name;
   const parts = [r.name];
   if (r.admin1) parts.push(r.admin1);
   if (r.country) parts.push(r.country); // ["Matara", "Southern Province", "Sri Lanka"]

@@ -47,15 +47,30 @@
             <i class="bi bi-geo-alt"></i>
             <span>Location</span>
           </div>
-          <div class="search-group">
-            <input [(ngModel)]="searchQuery"
-                   (keyup.enter)="searchLocation()"
-                   class="search-input"
-                   placeholder="Search city (e.g. Galle, Kandy)...">
-            <button (click)="searchLocation()" class="btn-find">
-              <i class="bi bi-search"></i> Find
-            </button>
-          </div>
+          <div class="location-search-wrap">
+  <input
+    type="text"
+    [(ngModel)]="searchQuery"
+    placeholder="Search city or place in Sri Lanka..."
+    (keyup.enter)="searchLocation()"
+  />
+  <button type="button" (click)="searchLocation()" class="btn-find">
+    <i class="bi bi-search"></i> Find
+  </button>
+
+  <div class="location-dropdown" *ngIf="showLocationDropdown && locationOptions.length">
+    <button
+      type="button"
+      *ngFor="let loc of locationOptions"
+      (click)="selectMapLocation(loc)"
+    >
+      {{ loc.displayName }}
+    </button>
+    <button type="button" (click)="clearLocationDropdown()">
+      Cancel
+    </button>
+  </div>
+</div>
           <div *ngIf="newMemory.latitude !== 0" class="status-msg success">
             <i class="bi bi-check-circle-fill"></i>
             <span>Location pinned and ready to save</span>

@@ -223,6 +223,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge ongoing-badge">On-going</span>
             </div>
           </div>
@@ -239,6 +240,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge upcoming-badge">Upcoming</span>
             </div>
           </div>
@@ -255,6 +257,7 @@
               <p>{{ trip.destination }} • {{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, yyyy' }}</p>
             </div>
             <div class="trip-status">
+              <span class="badge role-badge" *ngIf="trip.role">{{ trip.role }}</span>
               <span class="badge completed-badge">Completed</span>
             </div>
           </div>
