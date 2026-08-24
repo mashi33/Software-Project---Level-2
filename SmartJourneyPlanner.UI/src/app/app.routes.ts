@@ -32,6 +32,7 @@ import { AchievementsComponent } from './achievements/achievements';
 import { HelpComponent } from './help/help';
 import { GettingStartedComponent } from './help/getting-started/getting-started';
 import { MemoriesMapHelpComponent } from './help/memories-map-help/memories-map-help';
+import { WeatherHelpComponent } from './help/weather-help/weather-help';
 import { BudgetHelpComponent } from './help/budget-help/budget-help';
 import { TripPlanningHelpComponent } from './help/trip-planning-help/trip-planning-help';
 import { SlideshowComponent } from './slideshow/slideshow';
@@ -210,7 +211,7 @@ export const routes: Routes = [
   {
     path: 'timeline',
     component: TripTimelineComponent,
-    canActivate: [roleGuard],
+    canActivate: [authGuard, roleGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']
     }
@@ -228,6 +229,15 @@ export const routes: Routes = [
   {
     path: 'memories-map-help',
     component: MemoriesMapHelpComponent,
+    canActivate: [authGuard, roleGuard],
+    data: {
+      expectedRoles: ['Traveller', 'Traveler']
+    }
+  },
+
+  {
+    path: 'weather-help',
+    component: WeatherHelpComponent,
     canActivate: [authGuard, roleGuard],
     data: {
       expectedRoles: ['Traveller', 'Traveler']

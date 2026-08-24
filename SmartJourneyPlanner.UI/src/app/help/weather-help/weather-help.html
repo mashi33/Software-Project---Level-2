@@ -1,0 +1,214 @@
+<div class="budget-help-container">
+  <div class="help-header">
+    <h1>☀️ Weather Search Help</h1>
+    <p>Learn how to check the forecast, get packing tips, and plan your day in Sri Lanka.</p>
+    <button class="back-button" routerLink="/help">← Back to Help Center</button>
+  </div>
+
+  <div class="help-content">
+
+    <!-- Overview -->
+    <section class="help-section">
+      <h2>🌤️ Understanding Weather Search</h2>
+      <p>
+        WeatherWise helps you check the weather for any location in Sri Lanka.
+        Search a city, pick a date, and get current conditions, hourly details,
+        a 7-day outlook, plus smart packing, outfit, and activity suggestions
+        tailored to the forecast.
+      </p>
+    </section>
+
+    <!-- How to Search -->
+    <section class="help-section">
+      <h2>🔍 Searching for Weather</h2>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Enter a Location</h3>
+            <p>Type a city or place name in Sri Lanka (e.g. Colombo, Galle, Ella, Kandy).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Select a Date</h3>
+            <p>Use the date picker or the calendar on the left to choose the day you want to check.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Fetch Weather</h3>
+            <p>Click <strong>Fetch Weather</strong> or press Enter. Results appear on the right.</p>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 16px;">
+        If several places match your search, a dropdown will appear so you can pick the correct one.
+        Only locations inside Sri Lanka are supported.
+      </p>
+    </section>
+
+    <!-- Location & Recent -->
+    <section class="help-section">
+      <h2><i class="bi bi-geo-alt-fill"></i> Location Search Tips</h2>
+      <ol class="numbered-list">
+        <li>Enter at least 3 letters of a valid place name.</li>
+        <li>As you type, matching locations in Sri Lanka may appear in a dropdown.</li>
+        <li>Click a result to load its weather immediately.</li>
+        <li>Your recent searches are saved and shown in the sidebar for quick access.</li>
+        <li>The last city you searched is remembered so it can load automatically next time.</li>
+      </ol>
+    </section>
+
+    <!-- Date & Calendar -->
+    <section class="help-section">
+      <h2>📅 Choosing a Date</h2>
+      <p>You can check weather for today or future dates:</p>
+      <ul class="feature-list">
+        <li><strong>Date picker</strong> — Select any date in the search card.</li>
+        <li><strong>Inline calendar</strong> — Click a day in the calendar to switch the forecast.</li>
+        <li><strong>Month navigation</strong> — Use the ‹ › arrows to change months.</li>
+      </ul>
+      <p>
+        Forecast data is typically available up to about <strong>16 days ahead</strong>.
+        Choosing a date too far in the future will show a warning.
+      </p>
+    </section>
+
+    <!-- Unit Toggle -->
+    <section class="help-section">
+      <h2>🌡️ Temperature Unit</h2>
+      <p>
+        Switch between <strong>°C</strong> and <strong>°F</strong> using the toggle in the search card.
+        Your preference is saved and applied to current temperature, hourly values, and the 7-day forecast.
+      </p>
+    </section>
+
+    <!-- What You See -->
+    <section class="help-section">
+      <h2>📊 Understanding the Results</h2>
+
+      <h3>Current Weather</h3>
+      <p>
+        Shows the selected city’s average temperature, condition (Sunny / Cloudy / Rainy),
+        humidity, wind speed, and precipitation for the chosen date.
+      </p>
+
+      <h3>Advisory Banner</h3>
+      <div class="status-cards">
+        <div class="status-card on-track">
+          <div class="status-icon">😎</div>
+          <h3>Clear & Bright</h3>
+          <p>Great outdoor day — sunscreen and water recommended.</p>
+        </div>
+        <div class="status-card near-limit">
+          <div class="status-icon">⛅</div>
+          <h3>Cloudy Skies</h3>
+          <p>Mostly overcast. Light layers are a good idea.</p>
+        </div>
+        <div class="status-card over-budget">
+          <div class="status-icon">☔</div>
+          <h3>Grab an Umbrella</h3>
+          <p>Rain or storms possible — carry rain protection.</p>
+        </div>
+      </div>
+
+      <h3>Hourly Forecast</h3>
+      <p>
+        See temperature and rain chance across the day (morning to night),
+        plus a temperature trend line.
+      </p>
+
+      <h3>7-Day Outlook</h3>
+      <p>
+        Scroll through the next days to compare temperature, condition, and humidity.
+        Use the left/right arrows to move the cards.
+      </p>
+    </section>
+
+    <!-- Suggestions -->
+    <section class="help-section">
+      <h2>🎒 Smart Suggestions</h2>
+      <p>
+        Based on temperature and weather condition, the app suggests:
+      </p>
+      <ul class="feature-list">
+        <li><strong>Packing List</strong> — What to bring (umbrella, sunscreen, light jacket, etc.)</li>
+        <li><strong>Outfit</strong> — Recommended clothing for the day</li>
+        <li><strong>Activities</strong> — Good things to do in the current conditions</li>
+      </ul>
+      <p>These tips update automatically when you change the city or date.</p>
+    </section>
+
+    <!-- Tips -->
+    <section class="help-section">
+      <h2>💡 Weather Search Tips</h2>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Use the calendar to quickly jump between days instead of retyping the date.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Check the advisory banner first — it gives the most important takeaway for the day.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Switch to °F if you prefer Fahrenheit; the setting is remembered.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Recent searches let you re-check favorite places with one click.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="help-section">
+      <h2>❓ Common Questions</h2>
+
+      <div class="faq-item">
+        <h3>Why does it say “Location not found in Sri Lanka”?</h3>
+        <p>
+          Weather Search only supports places inside Sri Lanka. Make sure the name is spelled correctly
+          and is a real city or landmark on the island.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Why do I see a dropdown instead of weather?</h3>
+        <p>
+          When several places match your text, the app shows a list so you can choose the right one.
+          Select a location to load its weather.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Can I check weather more than 16 days ahead?</h3>
+        <p>
+          No. Forecast data is limited to roughly 16 days into the future.
+          Choose an earlier date if you see a date warning.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Why is there no hourly or 7-day data sometimes?</h3>
+        <p>
+          Some dates or locations may temporarily lack detailed hourly or multi-day data from the weather service.
+          Try today or another nearby date.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Does the app remember my last search?</h3>
+        <p>
+          Yes. Your last searched city and temperature unit preference are saved locally
+          so the next visit can restore them.
+        </p>
+      </div>
+    </section>
+
+  </div>
+</div>
