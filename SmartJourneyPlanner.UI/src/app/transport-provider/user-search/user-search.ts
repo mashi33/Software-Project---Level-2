@@ -273,9 +273,12 @@ export class UserSearch implements OnInit {
         matchLangs = selectedLangs.some((lang: string) => v.languages && v.languages.includes(lang));
       }
 
-      // Check if any date in the user's range is already BOOKED for this vehicle
+      // Check if any date in the user's range is already BOOKED or BLOCKED for this vehicle
       let dateConflict = false;
-      if (this.startDate && this.endDate && v.bookedDates && v.bookedDates.length > 0) {
+      if (this.startDate && this.endDate && (
+        (v.bookedDates && v.bookedDates.length > 0) || 
+        (v.blockedDateRanges && v.blockedDateRanges.length > 0)
+      )) {
         const start = new Date(this.startDate);
         const end = new Date(this.endDate);
         let current = new Date(start);
@@ -452,7 +455,10 @@ export class UserSearch implements OnInit {
        d.setHours(0,0,0,0);
        
        const dateString = d.toISOString().split('T')[0];
-       const isBookedStr = this.targetVehicleForCalendar?.bookedDates?.includes(dateString) || false;
+       const isBlockedByRange = this.targetVehicleForCalendar?.blockedDateRanges?.some(
+         r => dateString >= r.startDate && dateString <= r.endDate
+       ) || false;
+       const isBookedStr = (this.targetVehicleForCalendar?.bookedDates?.includes(dateString) || false) || isBlockedByRange;
        
        let isStart = false;
        let isEnd = false;
@@ -511,7 +517,8 @@ export class UserSearch implements OnInit {
         let checkDate = new Date(this.tempStart);
         while(checkDate <= d.date) {
            const str = checkDate.toISOString().split('T')[0];
-           if (this.targetVehicleForCalendar?.bookedDates?.includes(str)) { valid = false; break; }
+           const isBlocked = this.targetVehicleForCalendar?.blockedDateRanges?.some(r => str >= r.startDate && str <= r.endDate) || false;
+           if (this.targetVehicleForCalendar?.bookedDates?.includes(str) || isBlocked) { valid = false; break; }
            checkDate.setDate(checkDate.getDate() + 1);
         }
         if (valid) {
