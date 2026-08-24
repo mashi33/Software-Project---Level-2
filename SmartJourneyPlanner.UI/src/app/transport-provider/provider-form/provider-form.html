@@ -515,7 +515,7 @@
       <div class="d-flex align-items-center justify-content-center gap-3">
         <input class="form-check-input mt-0" type="checkbox" id="termsCheck" formControlName="termsAccepted" style="width: 22px; height: 22px; cursor: pointer;">
         <label class="form-check-label fw-semibold mb-0" for="termsCheck">
-          I agree to the <a href="javascript:void(0)" class="text-primary text-decoration-none">Terms and Conditions</a> and system rules.
+          I agree to the <a routerLink="/terms-of-service" target="_blank" class="text-primary text-decoration-none fw-semibold">Terms and Conditions</a> and system rules.
         </label>
       </div>
       <div *ngIf="isFieldInvalid('termsAccepted')" class="pf-error-text justify-content-center">
