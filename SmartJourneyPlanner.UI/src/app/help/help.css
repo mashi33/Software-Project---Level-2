@@ -113,3 +113,9 @@ body {
   border-radius: 15px;
   box-shadow: 0 5px 15px rgba(0,0,0,.1);
 }
+
+.bi-geo-alt-fill {
+    color: #e53935;
+    font-size: 22px;
+    vertical-align: middle;
+}

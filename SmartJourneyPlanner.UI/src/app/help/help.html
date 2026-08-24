@@ -3,11 +3,7 @@
   <p>Find answers, guides, and support for your travel planning needs.</p>
 
   <div class="search-box">
-    <input
-      type="text"
-      placeholder="Search help articles..."
-      [(ngModel)]="searchText"
-    />
+    <input type="text" placeholder="Search help articles..." [(ngModel)]="searchText" />
   </div>
 </div>
 
@@ -16,33 +12,34 @@
   <div class="card">
     <h3>🚀 Getting Started</h3>
     <p>Learn how to create an account and begin planning your journeys.</p>
-    <button>View Articles</button>
+    <a routerLink="/help/getting-started" class="btn btn-primary">View Articles</a>
   </div>
 
   <div class="card">
     <h3>🗺️ Trip Planning</h3>
     <p>Create, manage, and optimize your travel itineraries.</p>
-    <button>View Articles</button>
+    <a routerLink="/help/trip-planning" class="btn btn-primary">View Articles</a>
   </div>
 
   <div class="card">
     <h3>💰 My Budget</h3>
     <p>Track expenses, set budgets, and manage trip costs.</p>
-    <button>View Articles</button>
+    <button routerLink="/budget-help">View Articles</button>
   </div>
 
   <div class="card">
     <h3>☀️ Weather & Climate</h3>
     <p>Understand weather forecasts for your destinations.</p>
-    <button>View Articles</button>
+    <button routerLink="/weather-help">
+      View Articles</button>
   </div>
 
   <div class="card">
-    <h3>📍 Memories Map</h3>
+    <h3><i class="bi bi-geo-alt-fill"></i> Memory Maps</h3>
     <p>View and manage your saved travel memories.</p>
     <button routerLink="/memories-map-help">
-  View Articles
-</button>
+      View Articles
+    </button>
   </div>
 
   <div class="card">

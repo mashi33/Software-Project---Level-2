@@ -1,82 +1,211 @@
-<div class="article-container">
-
-  <h1>📍 Memories Map Help</h1>
-
-  <div class="article">
-    <div class="image-gallery">
-      <img src="/memory_map_preview.png"
-           class="article-image"
-           (click)="openLightbox('/memory_map_preview.png')" 
-           alt="Memory Map Preview">
-
-      <img src="/search_city.png"
-           class="article-image"
-           (click)="openLightbox('/search_city.png')" 
-           alt="Search City">
-
-      <img src="/after_zoom.png"
-           class="article-image"
-           (click)="openLightbox('/after_zoom.png')" 
-           alt="After Zoom">
-    </div>
-    <h3>🖼️ Search City</h3>
-    <p>Search for cities and view their locations on the map.</p>
+<div class="budget-help-container">
+  <div class="help-header">
+    <h1>🗺️ Memory Map & Community Map Help</h1>
+    <p>Learn how to pin your travel memories and explore public trip albums shared by the community.</p>
+    <button class="back-button" routerLink="/help">← Back to Help Center</button>
   </div>
 
-  <div class="article">
-    <div class="image-gallery">
-      <img src="/after_fill.png"
-           class="article-image"
-           (click)="openLightbox('/after_fill.png')" 
-           alt="After Fill">
+  <div class="help-content">
 
-      <img src="/success_msg.png"
-           class="article-image"
-           (click)="openLightbox('/success_msg.png')" 
-           alt="Success Message">
+    <!-- Overview -->
+    <section class="help-section">
+      <h2>📌 Understanding the Two Maps</h2>
+      <p>Your travel app has two complementary map experiences:</p>
+      <ul class="feature-list">
+        <li><strong>Memory Map (Travel Memories)</strong> — Your personal map. Pin photos from your trips, choose who can see them, organize them into albums, and manage everything you upload.</li>
+        <li><strong>Community Map</strong> — The public discovery map. Explore memories that travelers have shared publicly, search by city, like and comment, and browse trip albums from the community.</li>
+      </ul>
+      <p>Both maps are focused on Sri Lanka and use interactive pins with clustering so you can easily explore locations.</p>
+    </section>
 
-      <img src="/saved_pin.png"
-           class="article-image"
-           (click)="openLightbox('/saved_pin.png')" 
-           alt="Saved Pin">
+    <!-- MEMORY MAP SECTION -->
+    <section class="help-section">
+      <h2><i class="bi bi-geo-alt-fill"></i> Memory Map – Pin & Relive Your Journeys</h2>
+      <p>Use the Memory Map to capture and organize your own travel memories. Everything you pin here belongs to you and can be set to Private, Trip Members, or Public.</p>
 
-      <img src="/after_save_gallery_view.png"
-           class="article-image"
-           (click)="openLightbox('/after_save_gallery_view.png')" 
-           alt="Gallery View">
-    </div>
-    <h3>📸 Uploading Photos</h3>
-    <p>Upload photos and attach them to specific locations to create lasting travel memories.</p>
+      <h3>🎯 Getting Started</h3>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Open Memory Map</h3>
+            <p>Go to Travel Memories / Memory Map from the main menu. You will see a sidebar and a full map of Sri Lanka.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Choose “Add Memory”</h3>
+            <p>In the sidebar, select the <strong>Add Memory</strong> tab to start creating a new pin.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Select a Trip</h3>
+            <p>Pick an existing trip from the dropdown. Memories are grouped into albums by trip name.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3><i class="bi bi-geo-alt-fill"></i> Setting the Location</h3>
+      <ol class="numbered-list">
+        <li>Type a city or place name in Sri Lanka (e.g. Galle, Kandy, Ella).</li>
+        <li>Click <strong>Find</strong> or press Enter.</li>
+        <li>Select the correct result from the dropdown (or it may auto-select if there is only one match).</li>
+        <li>The map will fly to that location and mark it as ready to save.</li>
+      </ol>
+      <p>Only locations inside Sri Lanka are accepted.</p>
+
+      <h3>📸 Adding Memory Details & Photo</h3>
+      <ol class="numbered-list">
+        <li>Enter a <strong>Memory Title</strong>.</li>
+        <li>Optionally write a short description of the moment.</li>
+        <li>Upload a photo (PNG or JPG, max 2 MB).</li>
+        <li>Choose visibility (see below).</li>
+        <li>Click <strong>Save & Pin to Map</strong>.</li>
+      </ol>
+
+      <h3>🔒 Visibility Options</h3>
+      <div class="status-cards">
+        <div class="status-card on-track">
+          <div class="status-icon">🔒</div>
+          <h3>Private</h3>
+          <p>Only you can see this memory. Perfect for personal keepsakes.</p>
+        </div>
+        <div class="status-card near-limit">
+          <div class="status-icon">👥</div>
+          <h3>Trip Members</h3>
+          <p>Visible only to people who are members of the selected trip.</p>
+        </div>
+        <div class="status-card over-budget">
+          <div class="status-icon">🌐</div>
+          <h3>Public</h3>
+          <p>Anyone can see it on the Community Map. Others can like and comment.</p>
+        </div>
+      </div>
+
+      <h3>📚 My Albums</h3>
+      <p>Switch to the <strong>My Albums</strong> tab to see your memories grouped by trip. Hover over an album to start a slideshow of its photos. Click an album or a map pin to open the full lightbox view.</p>
+      <ul class="feature-list">
+        <li><strong>Delete a single memory</strong> — Use the delete button in the lightbox or on the map popup.</li>
+        <li><strong>Delete an entire album</strong> — Removes all memories in that trip album (confirmation required).</li>
+      </ul>
+    </section>
+
+    <!-- COMMUNITY MAP SECTION -->
+    <section class="help-section">
+      <h2>🌍 Community Map – Explore Public Trip Albums</h2>
+      <p>The Community Map shows only memories that travelers have marked as <strong>Public</strong>. Discover popular spots, browse trip albums, like photos, and leave comments.</p>
+
+      <h3>🎯 Main Features</h3>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Popular Memories</h3>
+            <p>See top-rated public memories ranked by a smart score (likes + recency). Sort by Score, Date, Likes, or Location.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Public Albums</h3>
+            <p>Memories are grouped into trip albums. Hover to preview a slideshow, click to open the full album.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Interactive Map</h3>
+            <p>Click any pin to see a preview popup. Click “Open details” to view the full memory with likes and comments.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>🔍 Searching</h3>
+      <p>Use the search box in the sidebar to filter by city name (e.g. Galle, Kandy). Results update on both the list and the map.</p>
+
+      <h3>❤️ Liking Memories</h3>
+      <ul class="feature-list">
+        <li>Like individual memories from the Popular list, album cards, map popup, or lightbox.</li>
+        <li>Like an entire album at once with the album like button.</li>
+        <li>Your likes help determine the Popular ranking (score combines likes and how recent the memory is).</li>
+      </ul>
+
+      <h3>💬 Comments</h3>
+      <p>Open any public memory to view and add comments. You can delete your own comments. Comments are only available on Public memories.</p>
+    </section>
+
+    <!-- SHARED FEATURES -->
+    <section class="help-section">
+      <h2>🗺️ Shared Map Features</h2>
+      <ul class="feature-list">
+        <li><strong>Custom Photo Pins</strong> — Each memory appears as a photo pin with a location badge.</li>
+        <li><strong>Marker Clustering</strong> — Nearby pins group together. Click a cluster to expand or zoom.</li>
+        <li><strong>Same-location Spiderfy</strong> — Multiple memories at the exact same spot fan out when you click the cluster.</li>
+        <li><strong>Lightbox View</strong> — Full-screen image viewer with previous/next navigation for albums, details, likes, and comments.</li>
+        <li><strong>Sri Lanka Bounds</strong> — The map is limited to Sri Lanka for a focused travel experience.</li>
+      </ul>
+    </section>
+
+    <!-- TIPS -->
+    <section class="help-section">
+      <h2>💡 Tips for Best Experience</h2>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Use clear titles and accurate locations so your public memories are easy to discover.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Keep a mix of Private and Public memories — share the best moments, keep personal ones private.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>On Community Map, try sorting by Score to see trending recent memories, or by Likes for all-time favorites.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <p>Hover over album cards to quickly preview the photos inside without opening them.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="help-section">
+      <h2>❓ Common Questions</h2>
+
+      <div class="faq-item">
+        <h3>Why don’t I see my memory on the Community Map?</h3>
+        <p>Only memories set to <strong>Public</strong> appear on the Community Map. Private and Trip Members memories stay on your personal Memory Map.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Can I change visibility after uploading?</h3>
+        <p>Currently visibility is set when you save the memory. To change it you would need to delete and re-upload with the desired setting (or check if edit functionality is available in your version).</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>What happens if I delete a memory?</h3>
+        <p>Deletion is permanent. It is removed from your albums, the map, and (if it was public) from the Community Map. Album deletion removes every memory in that trip group.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Why is the map limited to Sri Lanka?</h3>
+        <p>The app is designed for travel experiences within Sri Lanka, so the map bounds and location search are restricted to the island.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>How is the “Score” calculated on Popular Memories?</h3>
+        <p>Score combines the number of likes with how recent the memory is. Newer memories with more likes rank higher. The score is fixed on page load and only updates when likes change.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Can I comment on private memories?</h3>
+        <p>No. Comments and public likes are only available on memories set to Public.</p>
+      </div>
+    </section>
+
   </div>
-
-  <div class="article">
-    <div class="image-gallery">
-      <img src="/after_save_gallery_view.png"
-           class="article-image"
-           (click)="openLightbox('/after_save_gallery_view.png')" 
-           alt="Gallery View">
-    </div>
-    <h3>🗺️ Viewing Travel History</h3>
-    <p>Explore all previously visited destinations and view them on an interactive map.</p>
-  </div>
-
-  <div class="article">
-    <div class="image-gallery">
-      <img src="/delete_memory.png"
-           class="article-image"
-           (click)="openLightbox('/delete_memory.png')" 
-           alt="Delete Memory">
-    </div>
-    <h3>📍 Managing Memories</h3>
-    <p>Remove saved memory markers whenever necessary.</p>
-  </div>
-
 </div>
-
-@if (isLightboxOpen) {
-  <div class="lightbox" (click)="closeLightbox()">
-    <span class="close" (click)="closeLightbox($event)">&times;</span>
-    
-    <img class="lightbox-content" [src]="selectedImage" (click)="$event.stopPropagation()" alt="Enlarged view">
-  </div>
-}
