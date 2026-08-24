@@ -61,6 +61,7 @@ export const routes: Routes = [
   { path: 'booking-details/:id', component: MyBookings, canActivate: [authGuard] },
   { path: 'groupChat', component: DiscussionComponent, canActivate: [authGuard] },
   { path: 'timeline', component: TripTimelineComponent, canActivate: [authGuard] },
+  { path: 'trip-timeline', redirectTo: 'timeline', pathMatch: 'full' },
   { path: 'achievements', component: AchievementsComponent, canActivate: [authGuard, roleGuard], data: { expectedRoles: ['Traveller', 'Traveler'] } },
   { path: 'help', component: HelpComponent, canActivate: [authGuard] },
   {path: 'memories-map-help',component: MemoriesMapHelpComponent, canActivate: [authGuard]},
