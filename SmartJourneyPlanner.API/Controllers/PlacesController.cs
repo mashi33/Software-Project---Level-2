@@ -23,31 +23,30 @@ namespace SmartJourneyPlanner.Controllers
             double? rating = null,
             double? maxDistance = null)
         {
-            // ✅ try/catch —no backend crash
             try
             {
 
-                // ✅ NEW — API key missing check
+                // API key missing check
                 if (string.IsNullOrWhiteSpace(_placeService.ApiKey))
                     return StatusCode(503, new { message = "API key is not configured." });
 
                 if (string.IsNullOrWhiteSpace(city))
                     return BadRequest(new { message = "City name cannot be empty." });
-                // ✅ Empty city check
+                //Empty city check
                 if (string.IsNullOrWhiteSpace(city))
                     return BadRequest(new { message = "City name cannot be empty." });
 
-                // ✅ Empty category check
+                //Empty category check
                 if (string.IsNullOrWhiteSpace(category))
                     return BadRequest(new { message = "Category cannot be empty." });
 
                 string searchCategory = category.ToLower();
 
-                // ✅ Geocode — once only
+                //Geocode — once only
                 var coordinates = await _placeService.GeocodeCity(city);
                 if (coordinates == null)
                 {
-                    // ✅ distinguish between network error and no results
+                    //distinguish between network error and no results
                     if (_placeService.LastGeocodeNetworkError)
                         return StatusCode(503, new { message = "Network error. Please check your internet connection." });
 
@@ -57,7 +56,7 @@ namespace SmartJourneyPlanner.Controllers
                 double lat = coordinates.Value.Lat;
                 double lon = coordinates.Value.Lon;
 
-                // Step 2: Check MongoDB cache
+                // Check MongoDB cache
                 string cacheKey = $"{city.ToLower()}_{searchCategory}";
                 var cacheCheckTime = DateTime.UtcNow - CacheTtl;
 
@@ -96,7 +95,7 @@ namespace SmartJourneyPlanner.Controllers
                     Console.WriteLine($"[Controller] Cache hit for '{cacheKey}' — skipping Google API");
                 }
 
-                // Step 3: Query DB with filters
+                // Query DB with filters
                 var filterBuilder = Builders<Place>.Filter;
                 var dbFilter = filterBuilder.Eq(p => p.CacheKey, cacheKey);
 
@@ -108,7 +107,7 @@ namespace SmartJourneyPlanner.Controllers
 
                 var dbPlaces = await _collection.Find(dbFilter).ToListAsync();
 
-                // Step 4: Haversine distance
+                // Haversine distance
                 foreach (var p in dbPlaces)
                 {
                     p.DistanceFromUser = PlacesService.CalculateDistance(
@@ -117,7 +116,7 @@ namespace SmartJourneyPlanner.Controllers
                     );
                 }
 
-                // Step 5: Distance filter
+                //Distance filter
                 if (maxDistance.HasValue)
                 {
                     dbPlaces = dbPlaces
@@ -125,7 +124,7 @@ namespace SmartJourneyPlanner.Controllers
                         .ToList();
                 }
 
-                // Step 6: Sort by distance
+                //Sort by distance
                 dbPlaces = dbPlaces.OrderBy(p => p.DistanceFromUser).ToList();
 
                 Console.WriteLine($"[Controller] Returning {dbPlaces.Count} places after all filters");

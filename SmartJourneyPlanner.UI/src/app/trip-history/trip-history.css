@@ -9,6 +9,7 @@
     min-height: 100vh;
     background-color: #f4f7fc !important;
     padding: 30px;
+    padding-top: 90px;
 }
 
 .loading-state {

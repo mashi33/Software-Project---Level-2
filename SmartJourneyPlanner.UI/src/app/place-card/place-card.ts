@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { PlacesService, PlacesResult } from '../services/places.service';
 import { AuthService } from '../services/auth.service';
 import { HttpClient } from '@angular/common/http';
@@ -48,15 +48,22 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
     });
   }
 
+  //When clicking on a map marker, scroll to the corresponding card in the list
   scrollToCard(placeId: string) {
-  setTimeout(() => {
-    // NOTE: card id = "card-" + place.id (MongoDB _id)
-    const element = document.getElementById('card-' + placeId);
-    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
-}
+    setTimeout(() => {
+      const element = document.getElementById('card-' + placeId);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
 
-  // ✅ BUG 1 FIX — placeId + tripId combination check
+  // Decorative quick-city chips in the empty state — not wired to a real search
+  @Output() quickCitySelected = new EventEmitter<string>();
+
+  quickSearch(city: string) {
+    this.quickCitySelected.emit(city);
+  }
+
+  // placeId + tripId combination check
   isAlreadyAddedToTrip(placeId: string, tripId: string): boolean {
     const stored = localStorage.getItem('tripPlaces');
     if (!stored) return false;
@@ -139,7 +146,7 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             width: 500,
             padding: '32px',
             didOpen: () => {
-              // ✅ BUG 3 FIX — avoid duplicate style injection
+              //avoid duplicate style injection
               if (!document.getElementById('swal-trip-select-style')) {
                 const style = document.createElement('style');
                 style.id = 'swal-trip-select-style';
@@ -218,7 +225,8 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
           });
 
           if (selectedTripId) {
-            // ✅ BUG 1 FIX — block duplicate addition to the same trip
+
+            //  block duplicate addition to the same trip
             const alreadyAdded = this.isAlreadyAddedToTrip(place.placeId, selectedTripId);
             if (alreadyAdded) {
               Swal.fire({
@@ -251,7 +259,7 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
           }
         },
        error: (err) => {
-  // ✅ Network/server error handle
+  //  Network/server error handle
   if (err.status === 0 || err.status === 503) {
     Swal.fire({
       icon: 'error',
@@ -284,8 +292,8 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
   }
 }
       });
-  }
-
+}
+  // Send the selected place to the backend to add it to the trip
   selectTrip(place: any, trip: any) {
     const placeToSave = {
       placeId:        place.placeId ?? '',
@@ -302,7 +310,7 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
           const stored = localStorage.getItem('tripPlaces');
           const tripPlaces: any[] = stored ? JSON.parse(stored) : [];
 
-          // ✅ BUG 4 FIX — now save tripId with place to avoid duplicates across trips
+          //save tripId with place to avoid duplicates across trips
           tripPlaces.push({ ...placeToSave, tripId: trip.id });
           localStorage.setItem('tripPlaces', JSON.stringify(tripPlaces));
 
@@ -322,7 +330,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             padding: '32px',
             customClass: { popup: 'success-popup' },
             didOpen: () => {
-              // ✅ BUG 3 FIX
               if (!document.getElementById('swal-success-style')) {
                 const style = document.createElement('style');
                 style.id = 'swal-success-style';
@@ -355,7 +362,6 @@ export class PlaceCardListComponent implements OnInit, OnDestroy {
             padding: '32px',
             customClass: { popup: 'error-popup' },
             didOpen: () => {
-              // ✅ BUG 3 FIX
               if (!document.getElementById('swal-error-style')) {
                 const style = document.createElement('style');
                 style.id = 'swal-error-style';

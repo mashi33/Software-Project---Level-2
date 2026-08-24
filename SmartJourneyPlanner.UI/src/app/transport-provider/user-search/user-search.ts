@@ -1,7 +1,7 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { VehicleType, Vehicle, VehicleClass } from '../../models/transport.model';
 import { TransportCalculationService } from '../../services/transport-calculation.service';
 import { TransportVehicleService } from '../../services/transport-vehicle.service';
@@ -33,6 +33,9 @@ interface CalendarDay {
  * It also includes a custom calendar for date range selection.
  */
 export class UserSearch implements OnInit {
+  tripId: string | null = null;
+  tripDestination: string | null = null;
+
   // --- SEARCH FILTERS ---
   searchQuery: string = ''; // Text search (e.g. "BMW", "Bus")
   selectedCategory: string = 'All Categories'; // Budget/Luxury/Group filter
@@ -123,7 +126,8 @@ export class UserSearch implements OnInit {
     public calcService: TransportCalculationService,
     private transportVehicleService: TransportVehicleService,
     private transportBookingService: TransportBookingService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) {
     // Initialize languages as unchecked
     this.languagesList.forEach(l => this.selectedLanguages[l.name] = false);
@@ -158,6 +162,16 @@ export class UserSearch implements OnInit {
 
   // Lifecycle hook: loads data when component starts
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['tripId']) this.tripId = params['tripId'];
+      if (params['destination']) this.tripDestination = params['destination'];
+      if (params['start']) this.startDate = params['start'];
+      if (params['end']) this.endDate = params['end'];
+      if (params['pickup']) this.pickupArea = params['pickup'];
+      this.calculateDays();
+      this.applyFilters();
+    });
+
     this.loadAvailableVehicles();
     this.calculateDays();
     this.applyFilters();

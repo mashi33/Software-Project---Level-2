@@ -9,37 +9,29 @@ using System.Net;
 namespace SmartJourneyPlanner.Services
 #nullable disable
 {
-    /// <summary>
-    /// Handles route optimization by fetching fastest, cheapest, and scenic routes
-    /// from the Google Routes API, with MongoDB caching to reduce API quota usage.
-    /// </summary>
+    // Handles route optimization by fetching fastest, cheapest, and scenic routes
     public class RouteService : IRouteService
     {
         private readonly IMongoCollection<SavedRoute> _routeCollection;
         private readonly string _apiKey;
-        private readonly FuelPriceService _fuelPriceService; // ✅ field declare
+        private readonly FuelPriceService _fuelPriceService;
         private readonly BusFareService _busFareService;
 
         // Average fuel consumption per vehicle type (litres per 100km)
         private const double AVG_PETROL_CONSUMPTION = 7.5;
         private const double AVG_DIESEL_CONSUMPTION = 6.5;
 
-        /// <summary>
-        /// Initializes the service with a MongoDB client, app configuration, and fuel price service.
-        /// </summary>
-        public RouteService(IMongoClient client, IConfiguration config, FuelPriceService fuelPriceService, BusFareService busFareService) // ✅ parameter add
+        // Initializes the service with a MongoDB client, app configuration, and fuel price service.
+        public RouteService(IMongoClient client, IConfiguration config, FuelPriceService fuelPriceService, BusFareService busFareService)
         {
             var database = client.GetDatabase("SmartJourneyDb");
             _routeCollection = database.GetCollection<SavedRoute>("SavedRoutes");
             _apiKey = config["GoogleApi:ApiKey"] ?? string.Empty;
-            _fuelPriceService = fuelPriceService; // ✅ assign
+            _fuelPriceService = fuelPriceService;
             _busFareService = busFareService;
         }
 
-        /// <summary>
-        /// Calculates estimated petrol and diesel fuel costs for a given distance.
-        /// Returns null for either if the live price could not be fetched.
-        /// </summary>
+        /// Calculates estimated fuel costs for petrol and diesel based on distance in meters.
         private async Task<(double? petrolCost, double? dieselCost)> CalculateFuelCosts(double distanceMeters)
         {
             var (petrolPrice, dieselPrice) = await _fuelPriceService.GetFuelPricesAsync();
@@ -56,10 +48,7 @@ namespace SmartJourneyPlanner.Services
             return (petrolCost, dieselCost);
         }
 
-        /// <summary>
-        /// Returns optimized routes (fastest, cheapest, scenic) for the given start and end locations.
-        /// Checks MongoDB cache first before calling the Google Routes API.
-        /// </summary>
+        // Returns optimized routes (fastest, cheapest, scenic) for the given start and end locations.
         public async Task<IActionResult> GetOptimizedRoutesAsync(RouteRequest req)
         {
             if (string.IsNullOrEmpty(_apiKey)) return new BadRequestObjectResult("Google API Key is missing.");
@@ -76,15 +65,15 @@ namespace SmartJourneyPlanner.Services
 
             try
             {
-                // ✅ ServicePointManager removed — obsolete in .NET 6+
                 // HttpClient handles TLS automatically
                 using var handler = new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
                 using var client = new HttpClient(handler);
-                client.Timeout = TimeSpan.FromSeconds(30);
+                client.Timeout = TimeSpan.FromSeconds(20);
 
                 // Attach API key and limit response fields to only what we need
                 client.DefaultRequestHeaders.Add("X-Goog-Api-Key", _apiKey);
-                client.DefaultRequestHeaders.Add("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.startLocation,routes.legs.steps");
+                client.DefaultRequestHeaders.Add("X-Goog-FieldMask",
+                    "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.startLocation,routes.legs.steps");
 
                 // Fastest: traffic-aware optimal routing, no restrictions
                 var fastestBody = new { origin = new { address = req.Start }, destination = new { address = req.End }, travelMode = "DRIVE", routingPreference = "TRAFFIC_AWARE_OPTIMAL" };
@@ -117,13 +106,16 @@ namespace SmartJourneyPlanner.Services
                 }
 
                 var fRoute = fRoutes[0];
+
                 // Fall back to fastest route if cheapest returned no results
                 JsonElement cRoute = (cheapestDoc.RootElement.TryGetProperty("routes", out JsonElement cRoutes) && cRoutes.GetArrayLength() > 0) ? cRoutes[0] : fRoute;
+
                 // Prefer the second alternative for scenic; fall back to first or fastest
                 JsonElement sRoute = (scenicDoc.RootElement.TryGetProperty("routes", out JsonElement sRoutes) && sRoutes.GetArrayLength() > 1) ? sRoutes[1] : (sRoutes.GetArrayLength() > 0 ? sRoutes[0] : fRoute);
 
                 // Find interesting nearby places along the scenic route
                 var scenicViewpoints = new List<ViewpointDetail>();
+
                 try
                 {
                     if (sRoute.TryGetProperty("legs", out JsonElement legs) && legs.GetArrayLength() > 0)
@@ -162,11 +154,24 @@ namespace SmartJourneyPlanner.Services
                                     int addedAtThisPoint = 0;
                                     foreach (var place in results.EnumerateArray())
                                     {
-                                        if (addedAtThisPoint >= 3) break; // Cap at 3 viewpoints per waypoint
-                                        string name = place.TryGetProperty("name", out JsonElement n) ? n.GetString() : "Scenic Spot";
-                                        if (scenicViewpoints.Any(v => v.Name == name)) continue; // Skip duplicates
+                                        if (addedAtThisPoint >= 3) break;
+
+                                        string name = place.TryGetProperty("name", out JsonElement n)
+                                                    ? n.GetString() : "Scenic Spot";
+
+                                        // loc is checked against existing viewpoints before adding, to avoid duplicates
                                         var loc = place.GetProperty("geometry").GetProperty("location");
-                                        scenicViewpoints.Add(new ViewpointDetail { Name = name, Lat = loc.GetProperty("lat").GetDouble(), Lng = loc.GetProperty("lng").GetDouble() });
+
+                                        if (scenicViewpoints.Any(v =>
+                                            Math.Abs(v.Lat - loc.GetProperty("lat").GetDouble()) < 0.001 &&
+                                            Math.Abs(v.Lng - loc.GetProperty("lng").GetDouble()) < 0.001)) continue;
+
+                                        scenicViewpoints.Add(new ViewpointDetail
+                                        {
+                                            Name = name,
+                                            Lat = loc.GetProperty("lat").GetDouble(),
+                                            Lng = loc.GetProperty("lng").GetDouble()
+                                        });
                                         addedAtThisPoint++;
                                     }
                                 }
@@ -176,10 +181,10 @@ namespace SmartJourneyPlanner.Services
                 }
                 catch (Exception ex) { Console.WriteLine("Scenic Viewpoints Error: " + ex.Message); }
 
-                // ✅ Calculate fuel costs for all 3 routes using live CPC prices
-                var (fastestPetrol, fastestDiesel)   = await CalculateFuelCosts(fRoute.GetProperty("distanceMeters").GetDouble());
+                // Calculate fuel costs for all 3 routes using live CPC prices
+                var (fastestPetrol, fastestDiesel) = await CalculateFuelCosts(fRoute.GetProperty("distanceMeters").GetDouble());
                 var (cheapestPetrol, cheapestDiesel) = await CalculateFuelCosts(cRoute.GetProperty("distanceMeters").GetDouble());
-                var (scenicPetrol, scenicDiesel)     = await CalculateFuelCosts(sRoute.GetProperty("distanceMeters").GetDouble());
+                var (scenicPetrol, scenicDiesel) = await CalculateFuelCosts(sRoute.GetProperty("distanceMeters").GetDouble());
 
                 // Build the final route object and save it to MongoDB for future cache hits
                 var newRoute = new SavedRoute
@@ -187,21 +192,24 @@ namespace SmartJourneyPlanner.Services
                     Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                     StartLocation = req.Start,
                     EndLocation = req.End,
-                    Fastest = new RouteDetail {
+                    Fastest = new RouteDetail
+                    {
                         Distance = fRoute.GetProperty("distanceMeters").ToString() + "m",
                         Duration = fRoute.GetProperty("duration").GetString() ?? string.Empty,
                         Polyline = fRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
                         EstimatedPetrolCost = fastestPetrol,
                         EstimatedDieselCost = fastestDiesel
                     },
-                    Cheapest = new RouteDetail {
+                    Cheapest = new RouteDetail
+                    {
                         Distance = cRoute.GetProperty("distanceMeters").ToString() + "m",
-                        Duration = cRoute.GetProperty("duration").GetString() ?? string.Empty  ,
+                        Duration = cRoute.GetProperty("duration").GetString() ?? string.Empty,
                         Polyline = cRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
                         EstimatedPetrolCost = cheapestPetrol,
                         EstimatedDieselCost = cheapestDiesel
                     },
-                    Scenic = new RouteDetail {
+                    Scenic = new RouteDetail
+                    {
                         Distance = sRoute.GetProperty("distanceMeters").ToString() + "m",
                         Duration = sRoute.GetProperty("duration").GetString() ?? string.Empty,
                         Polyline = sRoute.GetProperty("polyline").GetProperty("encodedPolyline").GetString(),
@@ -214,17 +222,36 @@ namespace SmartJourneyPlanner.Services
                 await _routeCollection.InsertOneAsync(newRoute);
                 return new OkObjectResult(newRoute);
             }
+            catch (TaskCanceledException)
+            {
+                // HttpClient.Timeout triggers this — distinguishes a slow/unresponsive
+                return new ObjectResult(new
+                {
+                    message = "Request timed out. The route service is taking too long to respond — please try again.",
+                    errorType = "timeout"
+                })
+                { StatusCode = 504 };
+            }
+            catch (HttpRequestException ex)
+            {
+                // Thrown when the request can't reach the server at all — no internet,
+                // DNS failure, or the API endpoint is unreachable.
+                return new ObjectResult(new
+                {
+                    message = "Unable to reach the route service. Please check your internet connection and try again.",
+                    errorType = "network",
+                    details = ex.Message
+                })
+                { StatusCode = 503 };
+            }
             catch (Exception ex)
             {
-                return new ObjectResult(new { message = "Error", details = ex.Message }) { StatusCode = 500 };
+                return new ObjectResult(new { message = "Error", errorType = "unknown", details = ex.Message }) { StatusCode = 500 };
             }
         }
 
-        // ✅ ADD THIS ENTIRE METHOD
-        /// <summary>
-        /// Returns NTC bus fare for the given start and end locations.
-        /// Used when user selects Public Transport mode on the frontend.
-        /// </summary>
+        /* Returns NTC bus fare for the given start and end locations.
+         Used when user selects Public Transport mode on the frontend.*/
         public async Task<IActionResult> GetBusFareAsync(RouteRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.Start) || string.IsNullOrWhiteSpace(req.End))

@@ -59,7 +59,47 @@ export class ProfileComponent implements OnInit {
     confirmPassword: ''
   };
 
+  showCurrentPassword: boolean = false;
+  showNewPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+  showCustomInput: boolean = false;
+  newCustomInterest: string = '';
+
+  addCustomInterest() {
+    if (this.newCustomInterest && this.newCustomInterest.trim() !== '') {
+      const val = this.newCustomInterest.trim();
+
+      if (!this.editData.interests.includes(val)) {
+        this.editData.interests.push(val);
+      }
+      if (!this.availableInterests.includes(val)) {
+        this.availableInterests.push(val);
+      }
+
+      this.newCustomInterest = '';
+      this.showCustomInput = false;
+    }
+  }
+
+  toggleCurrentPassword() {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
+  toggleNewPassword() {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
   availableInterests: string[] = [];
+
+  feedbackData = {
+    comment: ''
+  };
+  isSubmitting: boolean = false;
+  isEmailEditable = false;
 
   constructor(
     private userService: UserService,
@@ -138,6 +178,26 @@ export class ProfileComponent implements OnInit {
       .slice(0, 4);
   }
 
+  getInterestEmoji(interest: string): string {
+    const map: { [key: string]: string } = {
+      'Hiking': '🥾',
+      'Beach': '🏖️',
+      'Photography': '📸',
+      'Camping': '⛺',
+      'Foodie': '🍜',
+      'Culture': '🏛️',
+      'Adventure': '⛰️',
+      'Nature': '🌿',
+      'Car (Sedan)': '🚗',
+      'SUV / Jeep': '🚙',
+      'KDH Van': '🚐',
+      'Mini Bus': '🚌',
+      'Luxury Coaster': '🚍',
+      '4x4 Off-Road': '🛻'
+    };
+    return map[interest] || '✨';
+  }
+
   showSuccess(message: string) {
     Swal.fire({ icon: 'success', title: 'Success', text: message, timer: 2500, timerProgressBar: true });
   }
@@ -154,7 +214,7 @@ export class ProfileComponent implements OnInit {
         this.user = data;
         this.availableInterests = this.isProvider()
           ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
-          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture'];
+          : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture', 'Adventure', 'Nature'];
         this.loadProfileStats();
       },
       error: (err) => console.error('Error fetching profile:', err)
@@ -237,6 +297,14 @@ export class ProfileComponent implements OnInit {
       profilePictureUrl: this.user?.profilePictureUrl || '',
       interests: [...(this.user?.interests || [])]
     };
+
+    if (this.user?.interests) {
+      this.user.interests.forEach((item: string) => {
+        if (!this.availableInterests.includes(item)) {
+          this.availableInterests.push(item);
+        }
+      });
+    }
     this.passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
   }
 
@@ -249,9 +317,21 @@ export class ProfileComponent implements OnInit {
 
   onSaveProfile() {
     if (!this.userId) return;
-    const oldEmail = this.user?.email;
-    const formData = new FormData();
 
+    const oldEmail = this.user?.email;
+    const defaultList = this.isProvider()
+      ? ['Car (Sedan)', 'SUV / Jeep', 'KDH Van', 'Mini Bus', 'Luxury Coaster', '4x4 Off-Road']
+      : ['Hiking', 'Beach', 'Photography', 'Camping', 'Foodie', 'Culture', 'Adventure', 'Nature'];
+
+    this.availableInterests = this.availableInterests.filter(interest => {
+      const isDefault = defaultList.includes(interest);
+      return isDefault || this.editData.interests.includes(interest);
+    });
+
+    // Remember if the user intentionally removed the photo
+    const userRemovedPhoto = !this.editData.profilePictureUrl && !this.editData.profileImageFile;
+
+    const formData = new FormData();
     formData.append('fullName', this.editData.fullName || '');
     formData.append('email', this.editData.email || '');
     formData.append('bio', this.editData.bio || '');
@@ -259,20 +339,56 @@ export class ProfileComponent implements OnInit {
     formData.append('interests', JSON.stringify(this.editData.interests || []));
 
     if (this.editData.profileImageFile instanceof File) {
+      // New photo selected
       formData.append('profileImage', this.editData.profileImageFile);
+    } else if (userRemovedPhoto) {
+      // User clicked Remove Photo
+      formData.append('profilePictureUrl', '');
+      formData.append('removeProfilePicture', 'true');
     } else {
+      // Keep existing
       formData.append('profilePictureUrl', this.editData.profilePictureUrl || '');
     }
 
     this.userService.updateProfile(this.userId, formData).subscribe({
       next: (updatedUser: any) => {
         this.user = { ...this.user, ...this.editData };
-        if (updatedUser?.profilePictureUrl) this.user.profilePictureUrl = updatedUser.profilePictureUrl;
 
-        if (this.editData.email !== oldEmail) {
-          Swal.fire('Email Updated', 'Please login again with your new email.', 'info').then(() => {
-            localStorage.clear();
-            this.router.navigate(['/login']);
+        let finalPic = '';
+
+        if (userRemovedPhoto) {
+          // Empty → letter avatar on Profile page
+          finalPic = '';
+        } else if (updatedUser?.profilePictureUrl) {
+          finalPic = updatedUser.profilePictureUrl;
+        } else if (this.editData.profilePictureUrl) {
+          finalPic = this.editData.profilePictureUrl;
+        } else {
+          finalPic = '';
+        }
+
+        this.user.profilePictureUrl = finalPic;
+        this.user.email = updatedUser?.email || this.user.email;
+
+        // Force Angular change detection
+        this.user = { ...this.user };
+
+        // Update Navbar + Sidebar + Achievements immediately
+        this.authService.updateProfilePic(finalPic);
+
+        // Email change pending — do NOT logout with new email
+        if (updatedUser?.emailChangePending) {
+          this.isEditMode = false;
+          Swal.fire({
+            icon: 'info',
+            title: 'Confirm Your New Email',
+            html: `
+          <p>We sent a confirmation link to:</p>
+          <p><strong>${updatedUser.pendingEmail}</strong></p>
+          <p>Your current email stays active until you confirm.</p>
+          <p>Check the <strong>new</strong> inbox (and spam folder).</p>
+        `,
+            confirmButtonColor: '#0284c7'
           });
           return;
         }
@@ -323,5 +439,52 @@ export class ProfileComponent implements OnInit {
   onRemovePhoto() {
     this.editData.profilePictureUrl = '';
     this.editData.profileImageFile = null;
+  }
+
+  toggleEmailEdit() {
+    this.isEmailEditable = !this.isEmailEditable;
+  }
+
+  submitFeedback() {
+    if (!this.feedbackData.comment.trim()) {
+      Swal.fire('Warning', 'Please write something before submitting!', 'warning');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    const payload = {
+      comment: this.feedbackData.comment,
+      userName: this.user?.fullName || 'Anonymous',
+      userRole: this.user?.userType || this.user?.role || 'Traveller',
+      profilePictureUrl: this.user?.profilePictureUrl || ''
+    };
+
+    const feedbackRequest = this.userService.addComment(payload) as any;
+
+    if (!feedbackRequest || typeof feedbackRequest.subscribe !== 'function') {
+      this.isSubmitting = false;
+      Swal.fire('Error', 'Feedback service is unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
+    feedbackRequest.subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        Swal.fire({
+          icon: 'success',
+          title: 'Thank You!',
+          text: 'Your feedback has been successfully shared.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        this.feedbackData.comment = '';
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        console.error('Failed to submit feedback', err);
+        Swal.fire('Error', 'Failed to submit feedback. Please try again later.', 'error');
+      }
+    });
   }
 }

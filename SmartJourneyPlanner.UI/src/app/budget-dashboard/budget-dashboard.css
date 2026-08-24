@@ -1,18 +1,14 @@
-/* ==========================================================================
-   🏢 1. COMPONENT ROOT WORKSPACE MATRIX
-   ========================================================================== */
 .bp-root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100%;
   background-color: #f6f8fa;
   padding: 24px 32px;
+  padding-top: 90px;
 }
 
-/* ==========================================================================
-   🔔 HIGHLY VIBRANT ALERT STATUS CARDS
-   ========================================================================== */
+/* HIGHLY VIBRANT ALERT STATUS CARDS */
 .summary-spacing {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   width: 100%;
 }
 
@@ -27,6 +23,7 @@
   gap: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
+
 .alert-left { display: flex; align-items: center; gap: 14px; }
 
 .alert-icon-circle {
@@ -59,7 +56,46 @@
   letter-spacing: 0.8px;
 }
 
-/* 🧭 ACTION TOP CONSOLE BELT */
+.page-top-back-container {
+  margin-bottom: 8px; 
+  display: flex;
+  justify-content: flex-start;
+}
+
+.outer-summary-back-btn {
+  background-color: #f8fafc; 
+  color: #334155;            
+  border: 1px solid #cbd5e1; 
+  padding: 8px 16px;
+  border-radius: 50px;       
+  font-weight: 600;
+  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.outer-summary-back-btn i {
+  font-size: 16px;
+  color: #475569; 
+  transition: transform 0.2s ease;
+}
+
+.outer-summary-back-btn:hover {
+  background-color: #e2e8f0; 
+  border-color: #94a3b8;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.outer-summary-back-btn:hover i {
+  transform: translateX(-3px);
+}
+
 .bp-top-belt {
   display: flex;
   justify-content: space-between;
@@ -71,7 +107,13 @@
   margin-bottom: 24px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
 }
-.bp-belt-left { display: flex; align-items: center; gap: 16px; }
+
+.bp-belt-left {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  flex-wrap: wrap;
+}
 
 .bp-selector-wrapper {
   display: flex;
@@ -82,6 +124,7 @@
   border-radius: 12px;
   padding: 8px 18px;
 }
+
 .bp-belt-icon { font-size: 14px; color: #2563eb; margin-right: 8px; }
 .bp-belt-select { border: none; background: transparent; font-size: 14px; font-weight: 700; color: #0f172a; cursor: pointer; outline: none; appearance: none; padding-right: 20px; }
 .bp-belt-arrow { position: absolute; right: 12px; font-size: 10px; color: #64748b; pointer-events: none; }
@@ -99,12 +142,41 @@
   border: 1px solid #bfdbfe;
 }
 
-.bp-belt-export-btn {
-  background: #ffffff;
+.bp-belt-right {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  flex-wrap: nowrap; 
+}
+
+.bp-belt-chat-btn {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap; 
+}
+
+.bp-belt-chat-btn:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.bp-belt-export-btn {    
+  background: #f1f5f9;
   border: 1px solid #cbd5e1;
-  color: #475569;
-  font-weight: 700;
-  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 600;
+  font-size: 14px;
   padding: 10px 20px;
   border-radius: 12px;
   cursor: pointer;
@@ -112,18 +184,18 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
+
 .bp-belt-export-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
 
-/* ==========================================================================
-   📊 2. METRICS DISPLAY SHEET (REDESIGNED PROFESSIONAL KPI CARDS)
-   ========================================================================== */
 .bp-metrics-sheet {
   display: grid;
   grid-template-columns: 1fr 1fr 1.5fr;
   gap: 24px;
   margin-bottom: 28px;
 }
+
 @media (max-width: 1024px) { .bp-metrics-sheet { grid-template-columns: 1fr; } }
 
 .metric-block {
@@ -163,22 +235,16 @@
 .bp-bar-fill.warning { background: #f59e0b !important; }
 .bp-bar-fill.danger { background: #ef4444 !important; }
 
-/* ==========================================================================
-   🎴 3. TWO-COLUMN WORKSPACE GRID
-   ========================================================================== */
 .bp-grid {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
   gap: 32px;
   align-items: start;
 }
+
 @media (max-width: 992px) { .bp-grid { grid-template-columns: 1fr; } }
 
 .bp-card, .side-card { background: #ffffff; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015); overflow: hidden; position: relative; }
-
-/* ==========================================================================
-   🎨 4. EXPENSE HISTORY TABLE (COMPACT & REFINED LOOK & FEEL)
-   ========================================================================== */
 .bp-card-head-modern { padding: 28px 32px 18px 32px; display: flex; justify-content: space-between; align-items: center; }
 .bp-card-title { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
 .bp-card-subtitle-sub { font-size: 0.85rem; color: #64748b; font-weight: 500; }
@@ -198,6 +264,7 @@
   transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
+
 .bp-add-btn-premium-blue:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3); }
 
 .bp-table-wrap { 
@@ -208,7 +275,7 @@
 .bp-creative-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 8px; /* Row අතර පරතරය ප්‍රශස්ත මට්ටමකට (8px) අඩු කළා */
+  border-spacing: 0 8px; 
   margin-top: -6px;
 }
 
@@ -235,6 +302,7 @@
   text-align: left;
   border-bottom: 2px solid #bae6fd; 
 }
+
 .bp-creative-table th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
 .bp-creative-table th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 .bp-creative-table th.center-align-heading { text-align: center; }
@@ -257,9 +325,8 @@
   color: #0284c7 !important;
 }
 
-/* Table cells styling with compact padding */
 .bp-creative-table td { 
-  padding: 14px 18px; /* Padding එක අඩු කර වඩාත් සංයුක්ත කළා */
+  padding: 14px 18px; 
   font-size: 14.5px; 
   color: #1e293b;
   background: #ffffff;
@@ -345,9 +412,7 @@
   cursor: not-allowed !important; 
 }
 
-/* ==========================================================================
-   🧱 5. SMART USER INTERACTIVE HOVER TOOLTIPS
-   ========================================================================== */
+/* SMART USER INTERACTIVE HOVER TOOLTIPS */
 .tooltip-container {
   position: relative;
   display: inline-block;
@@ -407,46 +472,46 @@
   margin-top: 14px;
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.03);
 }
+
 .summary-label-text { font-size: 12px; font-weight: 800; color: #0369a1; text-transform: uppercase; letter-spacing: 1.2px; }
 .summary-value-text { font-size: 18px; font-weight: 900; color: #0284c7; }
 
-/* ==========================================================================
-   🧱 6. SWEETALERT MODAL BRAND COSMETIC MATCH OVERRIDES
-   ========================================================================== */
+/* SWEETALERT MODAL BRAND COSMETIC MATCH OVERRIDES */
 .swal2-premium-popup {
   font-family: 'Inter', -apple-system, sans-serif !important;
   border-radius: 24px !important;
   padding: 2rem !important;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1) !important;
 }
+
 .swal2-premium-title {
   color: #0f172a !important;
   font-weight: 800 !important;
   letter-spacing: -0.5px !important;
 }
+
 .swal2-popup .swal2-styled {
   border-radius: 12px !important;
   font-weight: 700 !important;
   padding: 12px 24px !important;
   font-size: 0.95rem !important;
 }
+
 .swal2-toast {
   font-family: 'Inter', sans-serif !important;
   border-radius: 14px !important;
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* ==========================================================================
-   🔢 7. SIDEBAR COMPACT NUMERIC SPLITTER & CHARTS
-   ========================================================================== */
+/* SIDEBAR COMPACT NUMERIC SPLITTER & CHARTS */
 .side-section-split { 
   padding: 28px; 
   display: flex; 
   flex-direction: column; 
   gap: 24px; 
 }
-.side-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
 
+.side-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
 .split-box-modern-sidebar { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 18px; padding: 20px; margin-top: 12px; }
 .split-input-row-sidebar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.88rem; color: #475569; font-weight: 600; }
 .input-badge-wrapper { position: relative; display: flex; align-items: center; }
@@ -454,8 +519,8 @@
 .member-inp.pure-numeric-inp { 
   width: 68px; text-align: center; padding: 8px 10px; font-weight: 700; font-size: 15px; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; outline: none; transition: all 0.2s ease; 
 }
-.member-inp.pure-numeric-inp:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 
+.member-inp.pure-numeric-inp:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 .chart-canvas-box { position: relative; width: 100%; height: 240px; margin: 12px auto; display: flex; align-items: center; justify-content: center; }
 .legend-wrap-modern { display: flex; flex-direction: column; gap: 8px; }
 
@@ -471,6 +536,7 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.01); 
   transition: transform 0.2s ease;
 }
+
 .legend-row-modern:hover { transform: translateX(2px); }
 .legend-left-block { display: flex; align-items: center; gap: 10px; }
 .legend-indicator-dot { width: 8px; height: 8px; border-radius: 50%; }

@@ -18,33 +18,45 @@
             <span class="route-badge" *ngIf="departFrom && destination">
               {{ departFrom }} → {{ destination }}
             </span>
+            <span class="completed-badge" *ngIf="isCompleted">
+              <i class="bi bi-check-circle-fill me-1"></i> Completed
+            </span>
           </div>
           <h1 class="hero-title">{{ tripName }}</h1>
           <p class="hero-subtitle" *ngIf="startDate && endDate">
             {{ startDate | date:'mediumDate' }} – {{ endDate | date:'mediumDate' }}
           </p>
         </div>
-        <div class="hero-actions d-flex gap-2 flex-wrap">
 
+        <div class="hero-actions d-flex gap-2 flex-wrap">
           <!-- Edit History -->
           <a [routerLink]="['/trip-history', tripDetails?.id || tripDetails?.Id]"
-            class="btn btn-header-outline d-flex align-items-center gap-2 text-decoration-none">
+            class="btn btn-header-outline d-flex align-items-center gap-2 text-decoration-none shadow-sm">
             <i class="bi bi-clock-history"></i>
             Edited History
             <span class="badge rounded-pill bg-danger">{{ editHistory.length }}</span>
           </a>
 
-          <button class="btn btn-header-outline btn-sm shadow-sm" type="button" data-bs-toggle="modal"
+          <!-- Members -->
+          <button class="btn btn-header-outline shadow-sm" type="button" data-bs-toggle="modal"
             data-bs-target="#membersModal">
             <i class="bi bi-people me-1"></i> Members ({{ membersCount }})
           </button>
 
-          <button class="btn btn-header-outline btn-sm shadow-sm" (click)="navigateToSlideshow()">
+          <!-- View Recap -->
+          <button class="btn btn-header-outline shadow-sm" (click)="navigateToSlideshow()">
             <i class="bi bi-film me-1"></i> View Recap
           </button>
 
-          <button *ngIf="isOwner" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm border-0"
-            (click)="deleteTrip()">
+          <!-- Leave Trip (Members only) -->
+          <button *ngIf="isMember && !isOwner"
+            class="btn btn-header-outline-danger d-flex align-items-center gap-1 shadow-sm" (click)="leaveTrip()">
+            <i class="bi bi-box-arrow-right"></i>
+            Leave Trip
+          </button>
+
+          <!-- Delete Button -->
+          <button *ngIf="isOwner" class="btn btn-danger shadow-sm px-3" (click)="deleteTrip()">
             <i class="bi bi-trash3 me-1"></i> Delete
           </button>
         </div>
@@ -54,7 +66,9 @@
       <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
           <div class="overview-stat">
-            <i class="bi bi-calendar-range"></i>
+            <div class="stat-icon calendar">
+              <i class="bi bi-calendar-range"></i>
+            </div>
             <div>
               <strong>{{ tripDurationDays || '—' }}</strong>
               <span>Days</span>
@@ -63,7 +77,9 @@
         </div>
         <div class="col-6 col-md-3">
           <div class="overview-stat">
-            <i class="bi bi-cash-stack"></i>
+            <div class="stat-icon budget">
+              <i class="bi bi-cash-stack"></i>
+            </div>
             <div>
               <strong>{{ budget }}</strong>
               <span>Budget (LKR)</span>
@@ -72,7 +88,9 @@
         </div>
         <div class="col-6 col-md-3">
           <div class="overview-stat">
-            <i class="bi bi-geo-alt"></i>
+            <div class="stat-icon places">
+              <i class="bi bi-geo-alt"></i>
+            </div>
             <div>
               <strong>{{ savedPlacesCount }}</strong>
               <span>Saved Places</span>
@@ -81,7 +99,9 @@
         </div>
         <div class="col-6 col-md-3">
           <div class="overview-stat">
-            <i class="bi bi-people"></i>
+            <div class="stat-icon members">
+              <i class="bi bi-people"></i>
+            </div>
             <div>
               <strong>{{ membersCount }}</strong>
               <span>Members</span>
@@ -95,6 +115,11 @@
         You are viewing this trip in <strong>Read-Only</strong> mode.
       </div>
 
+      <div *ngIf="isCompleted" class="alert alert-secondary border-0 shadow-sm mb-4 rounded-4 py-3">
+        <i class="bi bi-check-circle-fill me-2 text-success"></i>
+        This trip has been <strong>completed</strong>. Editing and adding members is no longer allowed.
+      </div>
+
       <div class="row g-4">
         <!-- Trip Details Card -->
         <div class="col-md-5">
@@ -104,17 +129,23 @@
             </h5>
 
             <div class="detail-item">
-              <label>Destination</label>
+              <label>
+                <i class="bi bi-geo-alt-fill me-1"></i> Destination
+              </label>
               <span>{{ destination }}</span>
             </div>
 
             <div class="detail-item">
-              <label>Depart From</label>
+              <label>
+                <i class="bi bi-geo me-1"></i> Depart From
+              </label>
               <span>{{ departFrom }}</span>
             </div>
 
             <div class="detail-item">
-              <label>Date Range</label>
+              <label>
+                <i class="bi bi-calendar-event me-1"></i> Date Range
+              </label>
               <span class="date-range">
                 {{ startDate | date:'mediumDate' }} –
                 {{ endDate | date:'mediumDate' }}
@@ -122,19 +153,25 @@
             </div>
 
             <div class="detail-item">
-              <label>Description</label>
+              <label>
+                <i class="bi bi-chat-left-text me-1"></i> Description
+              </label>
               <span class="text-capitalize">{{ description }}</span>
             </div>
 
             <div class="detail-item">
-              <label>Budget (LKR)</label>
+              <label>
+                <i class="bi bi-wallet2 me-1"></i> Budget (LKR)
+              </label>
               <span class="budget-text">
                 {{ liveTotalSpent > 0 ? 'Rs.' + (liveTotalSpent | number:'1.2-2') : 'Rs. 0.00' }}
               </span>
             </div>
 
             <div class="detail-item" *ngIf="transportMode">
-              <label>Transport Type</label>
+              <label>
+                <i class="bi bi-truck me-1"></i> Transport Type
+              </label>
               <span class="transport-badge" [class.eco-badge]="isEcoTransport">
                 <i class="bi" [ngClass]="{
                   'bi-bicycle': transportMode === 'Cycle',
@@ -147,10 +184,83 @@
               </span>
             </div>
 
+            <!-- Transport Provider Booking Details -->
+            <div class="transport-booking-card mt-3 p-3 rounded-3 border bg-light shadow-sm"
+              *ngIf="transportMode === 'Transport Provider'">
+              <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                <span class="fw-bold text-dark small text-uppercase">
+                  <i class="bi bi-truck text-primary me-1"></i> Transport Booking
+                </span>
+                <span class="badge" [ngClass]="{
+                  'bg-warning text-dark': !transportBooking || transportBooking.status === 'Pending',
+                  'bg-success': transportBooking?.status === 'Confirmed',
+                  'bg-danger': transportBooking?.status === 'Rejected' || transportBooking?.status === 'Cancelled'
+                }">
+                  {{ transportBooking ? transportBooking.status : 'No Booking Yet' }}
+                </span>
+              </div>
+
+              <div *ngIf="transportBooking" class="transport-booking-content">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted small">Vehicle:</span>
+                  <span class="fw-bold text-dark small">{{ transportBooking.vehicleName || 'Reserved Vehicle' }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-1"
+                  *ngIf="transportBooking.providerName">
+                  <span class="text-muted small">Provider:</span>
+                  <span class="fw-semibold text-dark small">{{ transportBooking.providerName }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2"
+                  *ngIf="transportBooking.providerPhone">
+                  <span class="text-muted small">Contact:</span>
+                  <a [href]="'tel:' + transportBooking.providerPhone"
+                    class="fw-bold text-primary small text-decoration-none">
+                    <i class="bi bi-telephone-fill me-1"></i>{{ transportBooking.providerPhone }}
+                  </a>
+                </div>
+
+                <div class="pricing-breakdown-box p-2 rounded-2 bg-white border mt-2"
+                  *ngIf="transportBooking.pricingSummary">
+                  <div class="text-muted fw-bold mb-1" style="font-size: 0.72rem; text-transform: uppercase;">
+                    <i class="bi bi-receipt me-1"></i> Pricing Summary
+                  </div>
+                  <div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
+                    <span>Daily Rental ({{ transportBooking.days || 1 }}d):</span>
+                    <span>Rs. {{ transportBooking.pricingSummary.dailyRental | number }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;"
+                    *ngIf="transportBooking.pricingSummary.driverNightOut > 0">
+                    <span>Driver Night Fee ({{ transportBooking.nights || 0 }}n):</span>
+                    <span>Rs. {{ transportBooking.pricingSummary.driverNightOut | number }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between fw-bold text-dark border-top pt-1 mt-1"
+                    style="font-size: 0.85rem;">
+                    <span>Estimated Total:</span>
+                    <span class="text-primary">Rs. {{ (transportBooking.totalAmount || transportBooking.totalPrice) |
+                      number }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!transportBooking && !loadingTransportBooking" class="text-center py-2">
+                <p class="text-muted small mb-2">No vehicle reserved for this trip yet.</p>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" (click)="navigateToTransport()">
+                  <i class="bi bi-plus-circle me-1"></i> Book Transport
+                </button>
+              </div>
+
+              <div *ngIf="loadingTransportBooking" class="text-center py-2">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <small class="text-muted ms-2">Loading booking info...</small>
+              </div>
+            </div>
+
             <div class="saved-places-section mt-4 pt-3 border-top">
               <h6 class="text-muted small fw-bold mb-3 text-uppercase">Saved Places</h6>
 
-              <!-- Hotels Dropdown -->
+              <!-- Hotels -->
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <label class="text-muted small m-0">
                   <i class="bi bi-building me-1"></i> Hotels
@@ -166,7 +276,7 @@
                 </select>
               </div>
 
-              <!-- Restaurants Dropdown -->
+              <!-- Restaurants -->
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <label class="text-muted small m-0">
                   <i class="bi bi-cup-hot me-1"></i> Restaurants
@@ -184,7 +294,7 @@
                 </select>
               </div>
 
-              <!-- Places Dropdown -->
+              <!-- Places -->
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <label class="text-muted small m-0">
                   <i class="bi bi-pin-map me-1"></i> Places
@@ -213,37 +323,37 @@
           <div class="row g-3">
             <div class="col-6 col-lg-4">
               <div class="suggestion-box shadow-sm" (click)="navigateToHotels()">
-                <i class="bi bi-house-door fs-4 mb-2"></i>
+                <i class="bi bi-house-door fs-4 mb-2 icon-hotels"></i>
                 <span>Hotels</span>
               </div>
             </div>
             <div class="col-6 col-lg-4">
               <div class="suggestion-box shadow-sm" (click)="navigateToTimeline()">
-                <i class="bi bi-calendar3 fs-4 mb-2"></i>
+                <i class="bi bi-calendar3 fs-4 mb-2 icon-timeline"></i>
                 <span>Timeline</span>
               </div>
             </div>
             <div class="col-6 col-lg-4">
               <div class="suggestion-box shadow-sm" (click)="navigateToRouteOptimization()">
-                <i class="bi bi-geo-alt fs-4 mb-2"></i>
+                <i class="bi bi-geo-alt fs-4 mb-2 icon-route"></i>
                 <span>Route</span>
               </div>
             </div>
             <div class="col-6 col-lg-4">
               <div class="suggestion-box shadow-sm" (click)="navigateToChat()">
-                <i class="bi bi-chat-left-text fs-4 mb-2"></i>
+                <i class="bi bi-chat-left-text fs-4 mb-2 icon-chat"></i>
                 <span>Group Chat</span>
               </div>
             </div>
             <div class="col-6 col-lg-4">
               <div class="suggestion-box shadow-sm" (click)="navigateToBudget()">
-                <i class="bi bi-wallet2 fs-4 mb-2"></i>
+                <i class="bi bi-wallet2 fs-4 mb-2 icon-budget"></i>
                 <span>Budget</span>
               </div>
             </div>
             <div class="col-6 col-lg-4">
               <div class="suggestion-box active-weather shadow-sm" (click)="navigateToWeather()">
-                <i class="bi bi-cloud-sun fs-4 mb-2"></i>
+                <i class="bi bi-cloud-sun fs-4 mb-2 icon-weather"></i>
                 <span>Weather</span>
               </div>
             </div>
@@ -323,7 +433,7 @@
                     <div class="column-items-list">
                       <p class="column-item-text"
                         *ngFor="let item of (summarySuggestion?.packing || summarySuggestion?.Packing)">
-                        {{ item }}
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>{{ item }}
                       </p>
                     </div>
                   </div>
@@ -332,7 +442,7 @@
                     <div class="column-items-list">
                       <p class="column-item-text"
                         *ngFor="let item of (summarySuggestion?.outfit || summarySuggestion?.Outfit)">
-                        {{ item }}
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>{{ item }}
                       </p>
                     </div>
                   </div>
@@ -341,7 +451,7 @@
                     <div class="column-items-list">
                       <p class="column-item-text"
                         *ngFor="let item of (summarySuggestion?.activity || summarySuggestion?.Activity)">
-                        {{ item }}
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>{{ item }}
                       </p>
                     </div>
                   </div>
@@ -364,7 +474,7 @@
     </ng-container>
   </div>
 
-  <!-- Members Modal -->
+  <!-- Members Modal (unchanged) -->
   <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">

@@ -1,7 +1,9 @@
-import { Component, AfterViewInit, ElementRef, QueryList, ViewChildren } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, QueryList, ViewChildren, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterLink, RouterModule } from '@angular/router';
+import { UserService } from '../services/user-profile.service';
+import { AdminService } from '../services/admin.service';
 
 export interface Destination {
   id: number;
@@ -33,13 +35,23 @@ export interface NearbyPlace {
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink],
   templateUrl: './landing-page.html',
   styleUrls: ['./landing-page.css']
 })
-export class LandingPageComponent implements AfterViewInit {
+export class LandingPageComponent implements OnInit, AfterViewInit {
 
   @ViewChildren('animateSection') sections!: QueryList<ElementRef>;
+  @ViewChild('feedbackTrack') feedbackTrack!: ElementRef;
+
+  feedbacks: any[] = [];
+  activeFeedbackIndex = 0;
+
+  constructor(
+    private userProfileService: UserService,
+    private adminService: AdminService,
+    private router: Router
+  ) { }
 
   // Search form
   searchData = {
@@ -51,62 +63,62 @@ export class LandingPageComponent implements AfterViewInit {
 
   // Stats
   stats = [
-    { value: '120+', label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
-    { value: '500+', label: 'Happy Travelers', icon: 'bi-people-fill', colorClass: 'blue' },
-    { value: '300+', label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
-    { value: '4.8', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
+    { value: '...', label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
+    { value: '...', label: 'Happy Users', icon: 'bi-people-fill', colorClass: 'blue' },
+    { value: '...', label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
+    { value: '...', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
   ];
 
   // Popular Destinations
   destinations: Destination[] = [
     {
-    id: 1,
-    name: 'Sigiriya',
-    location: 'Central Province',
-    imageUrl: 'https://www.bluelankatours.com/wp-content/uploads/2023/11/Pidurangala.png'
-  },
-  {
-    id: 2,
-    name: 'Ella',
-    location: 'Uva Province',
-    imageUrl: 'https://i.pinimg.com/1200x/c5/3f/b1/c53fb1849115dcf2d816a2b184b29270.jpg'
-  },
-  {
-    id: 3,
-    name: 'Galle Fort',
-    location: 'Southern Province',
-    imageUrl: 'https://i.pinimg.com/1200x/a6/6b/02/a66b027dba73a2ba3a500c731f23b100.jpg'
-  },
-  {
-    id: 4,
-    name: 'Mirissa',
-    location: 'Southern Province',
-    imageUrl: 'https://gretastravels.com/wp-content/uploads/2019/05/IMG_0051.jpg.webp'
-  },
-  {
-    id: 5,
-    name: 'Kandy',
-    location: 'Central Province',
-    imageUrl: 'https://i.pinimg.com/736x/b7/5a/d0/b75ad0e683e9322855014dcd51e81a04.jpg'
-  },
-  {
-    id: 6,
-    name: 'Nuwara Eliya',
-    location: 'Central Province',
-    imageUrl: 'https://cdn.audleytravel.com/1050/750/79/15979547-female-worker-at-tea-plantation-nuwara-eliya.webp'
-  },
-  {
-    id: 7,
-    name: 'Yala National Park',
-    location: 'Southern Province',
-    imageUrl: 'https://i.pinimg.com/736x/c5/be/07/c5be07ddd0156ae3446416d8de66cb71.jpg'
-  },
-  {
-    id: 8,
-    name: 'Anuradhapura',
-    location: 'North Central',
-    imageUrl: 'https://i.pinimg.com/736x/cf/4e/e1/cf4ee114c13f9c60958488b12f5eeded.jpg'
-  }
+      id: 1,
+      name: 'Sigiriya',
+      location: 'Central Province',
+      imageUrl: 'https://www.bluelankatours.com/wp-content/uploads/2023/11/Pidurangala.png'
+    },
+    {
+      id: 2,
+      name: 'Ella',
+      location: 'Uva Province',
+      imageUrl: 'https://i.pinimg.com/1200x/c5/3f/b1/c53fb1849115dcf2d816a2b184b29270.jpg'
+    },
+    {
+      id: 3,
+      name: 'Galle Fort',
+      location: 'Southern Province',
+      imageUrl: 'https://i.pinimg.com/1200x/a6/6b/02/a66b027dba73a2ba3a500c731f23b100.jpg'
+    },
+    {
+      id: 4,
+      name: 'Mirissa',
+      location: 'Southern Province',
+      imageUrl: 'https://gretastravels.com/wp-content/uploads/2019/05/IMG_0051.jpg.webp'
+    },
+    {
+      id: 5,
+      name: 'Kandy',
+      location: 'Central Province',
+      imageUrl: 'https://i.pinimg.com/736x/b7/5a/d0/b75ad0e683e9322855014dcd51e81a04.jpg'
+    },
+    {
+      id: 6,
+      name: 'Nuwara Eliya',
+      location: 'Central Province',
+      imageUrl: 'https://cdn.audleytravel.com/1050/750/79/15979547-female-worker-at-tea-plantation-nuwara-eliya.webp'
+    },
+    {
+      id: 7,
+      name: 'Yala National Park',
+      location: 'Southern Province',
+      imageUrl: 'https://i.pinimg.com/736x/c5/be/07/c5be07ddd0156ae3446416d8de66cb71.jpg'
+    },
+    {
+      id: 8,
+      name: 'Anuradhapura',
+      location: 'North Central',
+      imageUrl: 'https://i.pinimg.com/736x/cf/4e/e1/cf4ee114c13f9c60958488b12f5eeded.jpg'
+    }
   ];
 
   // Features
@@ -190,6 +202,42 @@ export class LandingPageComponent implements AfterViewInit {
     }
   ];
 
+  ngOnInit(): void {
+    this.loadFeedbacks();
+    this.loadPlatformStats();
+  }
+
+  loadPlatformStats() {
+    this.adminService.getDashboardStats().subscribe({
+      next: (res: any) => {
+        const totalTrips = res.totalTrips || 0;
+        const totalUsers = res.platformUsers || res.totalUsers || 0;
+        const totalVehicles = res.totalVehicles || 0;
+
+        this.stats = [
+          { value: `${totalTrips}+`, label: 'Trips Planned', icon: 'bi-briefcase-fill', colorClass: 'green' },
+          { value: `${totalUsers}+`, label: 'Happy Users', icon: 'bi-people-fill', colorClass: 'blue' },
+          { value: `${totalVehicles}+`, label: 'Destinations', icon: 'bi-geo-alt-fill', colorClass: 'purple' },
+          { value: '4.8', label: 'User Rating', icon: 'bi-star-fill', colorClass: 'yellow' }
+        ];
+      },
+      error: (err) => {
+        console.error('Failed to load platform stats', err);
+      }
+    });
+  }
+
+  loadFeedbacks() {
+    this.userProfileService.getFeedbacks().subscribe({
+      next: (res: any) => {
+        this.feedbacks = res;
+      },
+      error: (err: any) => {
+        console.error('Failed to load feedbacks', err);
+      }
+    });
+  }
+
   ngAfterViewInit(): void {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -224,5 +272,28 @@ export class LandingPageComponent implements AfterViewInit {
       const amount = direction === 'left' ? -280 : 280;
       slider.scrollBy({ left: amount, behavior: 'smooth' });
     }
+  }
+
+  // ========== Feedback carousel methods ==========
+  scrollFeedbacks(direction: 'left' | 'right') {
+    const track = this.feedbackTrack?.nativeElement as HTMLElement;
+    if (!track) return;
+
+    const cardWidth = 340; // approx card width + gap
+    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  }
+
+  goToFeedback(index: number) {
+    this.activeFeedbackIndex = index;
+    const track = this.feedbackTrack?.nativeElement as HTMLElement;
+    if (!track) return;
+
+    const cardWidth = 340;
+    track.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
   }
 }

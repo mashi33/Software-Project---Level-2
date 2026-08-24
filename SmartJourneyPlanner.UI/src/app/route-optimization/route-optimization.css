@@ -1,11 +1,62 @@
-/* ── LAYOUT ── */
+/* ==========================================================================
+    LAYOUT CONTAINER
+   ========================================================================== */
 .main-container { 
   display: flex; 
-  height: 100vh; 
+  height: 100%; 
   font-family: sans-serif; 
 }
 
-/* ── SIDEBAR ── */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header-icon {
+  width: 44px;
+  height: 44px;
+  background: #2563eb;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-icon .material-icons {
+  color: #ffffff;
+  font-size: 22px;
+}
+
+.header-text h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.header-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+/* ==========================================================================
+    SIDEBAR
+   ========================================================================== */
 .sidebar { 
  width: 360px;
   padding: 20px 18px;
@@ -14,10 +65,12 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background: #f9fafb;  /* ✅ slight grey background */
+  background: #f9fafb;  
 }
 
-/* ── HEADING ── */
+/* ==========================================================================
+    HEADER
+   ========================================================================== */
 .sidebar h2 {
   font-size: 18px;
   font-weight: 700;
@@ -25,12 +78,55 @@
   margin-bottom: 4px;
 }
 
-/* ── SEARCH SECTION ── */
+/* ==========================================================================
+    SEARCH SECTION
+   ========================================================================== */
 .search-section { 
   display: flex; 
   flex-direction: column; 
   gap: 10px; 
   position: relative; 
+}
+
+.route-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  margin-top: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.route-empty-state .empty-icon {
+  font-size: 24px;
+  color: #2563eb;                    
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;               
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.route-empty-state .empty-heading {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.route-empty-state .empty-subtext {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.5;
+  max-width: 240px;
 }
 
 .input-wrapper {
@@ -39,7 +135,9 @@
   flex-direction: column;
 }
 
-/* ── INPUT FIELDS ── */
+/* ==========================================================================
+    INPUT FIELDS
+   ========================================================================== */
 input { 
   padding: 11px 14px;
   border: 1.5px solid #e5e7eb;
@@ -79,7 +177,9 @@ input:focus {
   background: #f0f0f0; 
 }
 
-/* ── BUTTONS ── */
+/* ==========================================================================
+    BUTTONS
+   ========================================================================== */
 button, .btn-primary { 
   background: #007bff; 
   color: white; 
@@ -94,6 +194,17 @@ button, .btn-primary {
 
 button:hover, .btn-primary:hover {
   background: #1557b0;
+}
+
+.back-btn {
+  background: #6b7280;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.back-btn:hover {
+  background: #4b5563;
 }
 
 .btn-calculate {
@@ -127,28 +238,36 @@ button:hover, .btn-primary:hover {
   background: #e8eaed;
 }
 
-/* ── MAP ACTIONS ── */
+/* ==========================================================================
+    MAP ACTIONS
+   ========================================================================== */
 .map-actions-container {
   position: absolute;
   bottom: 100px; 
   left: 20px;
-  right: 20px;
   display: flex;
   flex-direction: row; 
-  justify-content: space-between; 
+  justify-content: flex-start; 
   align-items: center;
-  gap: 10px;
+  gap: 12px; 
   z-index: 1100; 
   pointer-events: none; 
 }
 
 .map-actions-container button {
-  pointer-events: auto; 
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
   width: auto;
   min-width: 120px;
   max-width: 180px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   padding: 12px 20px;
+}
+
+.map-actions-container .material-icons {
+  font-size: 18px;
 }
 
 .sidebar-footer {
@@ -159,7 +278,9 @@ button:hover, .btn-primary:hover {
   gap: 10px; 
 }
 
-/* ── ROUTE CARDS ── */
+/* ==========================================================================
+    ROUTE CARDS
+   ========================================================================== */
 .card { 
   padding: 14px 16px;
   background: #ffffff;
@@ -167,13 +288,14 @@ button:hover, .btn-primary:hover {
   margin-top: 10px;
   cursor: pointer;
   border: 1.5px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   transition: all 0.2s ease;
   position: relative;
 }
 
 .card:hover { 
   border-color: #c7d2fe;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* Fastest — blue active */
@@ -205,7 +327,9 @@ button:hover, .btn-primary:hover {
   display: block;
 }
 
-/* ── CARD HEADER ── */
+/* ==========================================================================
+    CARD HEADER
+   ========================================================================== */
 .card-header {
   display: flex;
   align-items: center;
@@ -230,7 +354,9 @@ button:hover, .btn-primary:hover {
   flex-shrink: 0;
 }
 
-/* ── DETAIL ROWS ── */
+/* ==========================================================================
+    DETAIL ROWS
+   ========================================================================== */
 .details-section {
   display: flex;
   flex-direction: column;
@@ -262,21 +388,27 @@ button:hover, .btn-primary:hover {
   font-size: 13px;
 }
 
-/* ── DIVIDER ── */
+/* ==========================================================================
+    DIVIDER
+   ========================================================================== */
 .detail-divider {
   height: 1px;
   background: #f3f4f6;
   margin: 6px 0;
 }
 
-/* ── COST UNAVAILABLE ── */
+/* ==========================================================================
+    COST UNAVAILABLE
+   ========================================================================== */
 .cost-unavailable {
   font-size: 12px;
   color: #9ca3af;
   font-style: italic;
 }
 
-/* ── TOLL NOTICE ── */
+/* ==========================================================================
+    TOLL NOTICE
+   ========================================================================== */
 .toll-notice {
   font-size: 11px;
   color: #92400e;
@@ -288,7 +420,9 @@ button:hover, .btn-primary:hover {
   display: block;
 }
 
-/* ── DISCLAIMER ── */
+/* ==========================================================================
+    DISCLAIMER
+   ========================================================================== */
 .route-disclaimer {
   display: flex;
   gap: 8px;
@@ -313,7 +447,19 @@ button:hover, .btn-primary:hover {
   margin-top: 1px;
 }
 
-/* ── MAP CONTAINER ── */
+.card-type-icon {
+  font-size: 18px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.fastest-icon  { color: #1a56db; }
+.scenic-icon   { color: #16a34a; }
+.cheapest-icon { color: #d97706; }
+
+/* ==========================================================================
+    MAP CONTAINER
+   ========================================================================== */
 .map-container { 
   flex: 1; 
   background: #e5e3df; 
@@ -326,7 +472,9 @@ google-map {
   width: 100%;
 }
 
-/* ── SCENIC BOTTOM PANEL ── */
+/* ==========================================================================
+    SCENIC VIEWPOINTS PANEL
+   ========================================================================== */
 .scenic-bottom-panel {
   position: absolute;
   bottom: 20px;
@@ -402,21 +550,25 @@ google-map {
   margin-top: 2px;
 }
 
-/* ── SKELETON LOADER ── */
+/* ==========================================================================
+    SKELETON LOADING CARDS
+   ========================================================================== */
 .skeleton-card {
-  background: #f0f0f0;
+  background: #ffffff;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border: 1.5px solid #e5e7eb;
   pointer-events: none;
 }
 
+/* Shimmer animation */
 .skel {
   background: linear-gradient(
     90deg,
-    #e0e0e0 25%,
-    #f5f5f5 50%,
-    #e0e0e0 75%
+    #e5e7eb 25%,
+    #f3f4f6 50%,
+    #e5e7eb 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
@@ -428,50 +580,95 @@ google-map {
   100% { background-position: -200% 0; }
 }
 
-.skel-circle {
-  width: 18px;
-  height: 18px;
+.skel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.skel-radio {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.skel-title {
-  height: 16px;
-  width: 55%;
-  margin-left: 10px;
+.skel-card-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.skel-line {
+.skel-card-title {
+  height: 15px;
+  width: 45%;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+    DIVIDER
+   ========================================================================== */
+.skel-divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 8px 0;
+}
+
+/* ==========================================================================
+    DETAIL ROWS
+   ========================================================================== */
+.skel-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.skel-label {
+  height: 12px;
+  width: 30%;
+  border-radius: 4px;
+}
+
+.skel-value {
+  height: 12px;
+  width: 25%;
+  border-radius: 4px;
+}
+
+.skel-value.short {
+  width: 20%;
+}
+
+.skel-value.fuel {
+  width: 28%;
   height: 13px;
-  width: 80%;
-  margin-top: 10px;
 }
 
-.skel-line.short {
-  width: 55%;
-  margin-top: 8px;
-}
-
+/* ==========================================================================
+    LOADING LABEL
+   ========================================================================== */
 .loading-label {
   font-size: 13px;
-  color: #888;
-  margin-bottom: 12px;
+  color: #9ca3af;
+  margin-bottom: 8px;
   font-style: italic;
 }
 
-.skeleton-card .card-header {
-  display: flex;
-  align-items: center;
-}
-
-/* ── TRANSPORT TOGGLE ── */
+/* ==========================================================================
+    TRANSPORT MODE TOGGLE
+   ========================================================================== */
 .transport-toggle {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
-  background: #f3f4f6;
-  border-radius: 10px;
+  background: #f1f5f9;
   padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
 
 .transport-btn {
@@ -480,16 +677,15 @@ google-map {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 10px 16px;
   border: none;
+  border-radius: 8px;
   background: transparent;
   color: #6b7280;
-  font-size: 13px;
   font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
-  width: auto;
+  transition: all 0.2s ease;
 }
 
 .transport-btn .material-icons {
@@ -497,16 +693,18 @@ google-map {
 }
 
 .transport-btn.active {
-  background: #ffffff;
-  color: #1a56db;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.transport-btn.active .material-icons {
-  color: #1a56db;
+.transport-btn .material-icons {
+  font-size: 18px;
 }
 
-/* ── BUS CARDS ── */
+/* ==========================================================================
+  PUBLIC TRANSPORT CARDS
+   ========================================================================== */
 .bus-card {
   margin-top: 10px;
 }
@@ -529,7 +727,9 @@ google-map {
   color: #1a56db;
 }
 
-/* ── BUS TOTAL ── */
+/* ==========================================================================
+   BUS TOTAL FARE CARD
+   ========================================================================== */
 .bus-total-card {
   display: flex;
   align-items: center;
@@ -554,25 +754,48 @@ google-map {
   font-weight: 700;
 }
 
-/* ── BUS NOT FOUND ── */
+/* ==========================================================================
+  BUS NOT FOUND MESSAGE
+   ========================================================================== */
 .bus-not-found {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 16px;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  color: #6b7280;
+  border-radius: 12px;
+}
+
+.bus-not-found .empty-icon {
+  font-size: 48px;
+  color: #d1d5db;
+  margin-bottom: 12px;
+}
+
+.bus-not-found .empty-heading {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.bus-not-found .empty-subtext {
+  margin: 0;
   font-size: 13px;
-  margin-top: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
 }
 
 .bus-not-found .material-icons {
   color: #9ca3af;
 }
 
-/* ── ROUTE + ROW ICONS ── */
+/* ==========================================================================
+   ROUTE + ROW ICONS
+   ========================================================================== */
 .route-icon {
   font-size: 18px;
   vertical-align: middle;
@@ -583,4 +806,24 @@ google-map {
   vertical-align: middle;
   margin-right: 3px;
   color: #9ca3af;
+}
+
+.bus-options-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 8px 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cheapest-badge {
+  margin-left: auto;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #bbf7d0;
 }

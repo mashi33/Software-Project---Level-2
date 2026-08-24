@@ -29,15 +29,15 @@ export class FilterComponent implements OnInit, AfterViewInit {
   hasSearched    = false;
 
 
-    // ✅ NEW — autocomplete flag
+  //autocomplete flag
   private isValidSriLankaCity = false;
-  // FIX: filter change debounce timer
+  //filter change debounce timer
   private filterDebounceTimer: any;
 
   constructor(private placesService: PlacesService, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    // ✅ NEW — if type manually for city, reset the autocomplete flag
+    // if type manually for city, reset the autocomplete flag
     this.searchControl.valueChanges.subscribe(() => {
       this.isValidSriLankaCity = false;
     });
@@ -55,7 +55,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
 
       if (cityFromUrl) {
         this.searchControl.setValue(cityFromUrl);
-        // ✅ mark the city as valid since it came from the URL
+        //mark the city as valid since it came from the URL
         this.isValidSriLankaCity = true;
         setTimeout(() => {
           this.performSearch();
@@ -127,7 +127,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
       const place = autocomplete.getPlace();
       if (place && (place.name || place.formatted_address)) {
         this.searchControl.setValue(place.name || place.formatted_address);
-        // ✅ NEW — when select in autocomplete — valid Sri Lanka city
+        //  when select in autocomplete — valid Sri Lanka city
         this.isValidSriLankaCity = true;
       }
     });
@@ -137,7 +137,7 @@ export class FilterComponent implements OnInit, AfterViewInit {
     const cityName = this.searchControl.value?.trim();
     if (!cityName || cityName.length < 3) return;
 
-    // ✅ NEW — autocomplete ලදී select නොකළොත් block
+    //Block if the city is not selected from suggestions
     if (!this.isValidSriLankaCity) {
     Swal.fire({
 

@@ -48,6 +48,10 @@ export class AdminService {
   return this.http.get<any[]>(`${this.baseUrl}/Admin/all-vehicles-detailed`);
   }
 
+  getVehicleById(id: string) {
+  return this.http.get(`http://localhost:5233/api/Admin/vehicle-details/${id}`);
+  }
+
   getAllExpenses(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/Admin/all-expenses`);
   }

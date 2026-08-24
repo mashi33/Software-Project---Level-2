@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { RouterModule, Router } from '@angular/router'; 
+import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TravellerDashboardService } from '../services/travellerDashboard';
 import { NotificationService } from '../services/notification.service';
@@ -19,12 +19,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   userName: string = 'User';
   profilePic: string = '/profilePic.jpg';
 
-  // 🔑 THE FIX: Declare the missing variable so the HTML template can find it!
   userRole: string = 'Traveler';
+  @Output() onToggleSidebar = new EventEmitter<void>();
 
-  // 💡 Subscription
+  // Subscription
   private userSub!: Subscription;
   private notificationSub!: Subscription;
+
+  // Temporary trip state used during logout
+  private tripService!: { setTempTripData: (data: any) => void };
 
   // UI State management
   isDropdownOpen: boolean = false;
@@ -42,10 +45,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private dashboardService: TravellerDashboardService,
     private notificationService: NotificationService,
     private signalrService: SignalrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    // Subscriptions
+    // Name subscription
     this.userSub = this.authService.userNameSubject$.subscribe({
       next: (name: string) => {
         this.userName = name || 'User';
@@ -54,13 +57,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
       error: (err) => console.error('Navbar subscription error:', err)
     });
 
+    // ★ NEW: Profile picture live update
+    this.authService.profilePicSubject$.subscribe(pic => {
+      this.profilePic = pic || '/profilePic.jpg';
+    });
+
     this.refreshUserSession();
 
-    // Subscribe to real-time notifications via SignalR
+    // SignalR notifications (keep your existing code)
     this.notificationSub = this.signalrService.notificationReceived.subscribe({
       next: (notif: any) => {
         if (notif) {
-          // Add the new notification to the beginning of the list with relative time
           const mappedNotif = {
             ...notif,
             time: this.getRelativeTime(notif.createdAt)
@@ -73,7 +80,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  // 💡 Component destruction
+  // Component destruction
   ngOnDestroy(): void {
     if (this.userSub) {
       this.userSub.unsubscribe();
@@ -106,7 +113,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
               if (upcomingTrips.length > 0) {
                 const nextTrip = upcomingTrips
                   .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
-                
+
                 if (nextTrip) {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
@@ -215,11 +222,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       const token = localStorage.getItem('token');
       if (token) {
         const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        this.userRole = tokenPayload.UserType || 
-                        tokenPayload.userType || 
-                        tokenPayload.role || 
-                        tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                        'Traveler';
+        this.userRole = tokenPayload.UserType ||
+          tokenPayload.userType ||
+          tokenPayload.role ||
+          tokenPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          'Traveler';
         console.log("Navbar session updated. Decoded UserType value:", this.userRole);
       } else {
         this.userRole = 'Traveler';
@@ -269,15 +276,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   clickout(event: Event) {
     const clickedElement = event.target as HTMLElement;
-    
+
     if (!clickedElement.closest('.notification-dropdown')) {
       this.isNotificationDropdownOpen = false;
     }
-    
+
     if (!clickedElement.closest('.profile-dropdown')) {
       this.isDropdownOpen = false;
     }
-    
+
     if (!clickedElement.closest('.memory-dropdown')) {
       this.isMemoryDropdownOpen = false;
     }
@@ -285,14 +292,31 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // Handles user logout
   onLogout(): void {
-    const userId = this.authService.getUserId();
-    if (userId) {
-      this.signalrService.leaveUserGroup(userId);
+    try {
+      const userId = this.authService.getUserId();
+      if (userId && this.signalrService) {
+        this.signalrService.leaveUserGroup(userId);
+      }
+
+      if (this.tripService) {
+        this.tripService.setTempTripData(null);
+      }
+
+      this.authService.logout();
+
+      if (this.closeDropdown) {
+        this.closeDropdown();
+      }
+    } catch (error) {
+      console.error('Error during logout cleanup:', error);
+
+      localStorage.clear();
     }
-    this.authService.logout();
-    this.closeDropdown();
-    this.router.navigate(['/login']);
-    console.log('User logged out successfully');
+
+    // Navigate to the landing page after logout
+    this.router.navigate(['/']).then(() => {
+      console.log('Successfully navigated to landing');
+    });
   }
 
   selectOption(option: string) {
@@ -306,21 +330,21 @@ export class NavbarComponent implements OnInit, OnDestroy {
       const createdDate = new Date(createdAt);
       const now = new Date();
       const diffMs = now.getTime() - createdDate.getTime();
-      
+
       if (diffMs < 60000) {
         return 'Just now';
       }
-      
+
       const diffMins = Math.floor(diffMs / 60000);
       if (diffMins < 60) {
         return `${diffMins}m ago`;
       }
-      
+
       const diffHours = Math.floor(diffMins / 60);
       if (diffHours < 24) {
         return `${diffHours}h ago`;
       }
-      
+
       const diffDays = Math.floor(diffHours / 24);
       if (diffDays === 1) {
         return 'Yesterday';
@@ -328,10 +352,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
       if (diffDays < 7) {
         return `${diffDays}d ago`;
       }
-      
+
       return createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     } catch (e) {
       return 'Just now';
     }
+  }
+
+  toggleSidebar() {
+    this.onToggleSidebar.emit();
   }
 }

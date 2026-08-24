@@ -1,46 +1,76 @@
 .finder-container {
   background-color: #f4f6fb;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-sizing: border-box;
   overflow: hidden;
 }
 
+/* ==========================================================================
+   MAIN LAYOUT
+   ========================================================================== */
+.main-layout {
+  display: flex;
+  height: 100%;
+}
+
+.sidebar {
+  width: 380px;
+  min-width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid #e8edf5;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   HEADER SECTION
+   ========================================================================== */
 .header-section {
-  background: linear-gradient(135deg, #004a99 0%, #0070f3 100%);
-  padding: 16px 28px;
+  background: white;
+  padding: 14px 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #0070f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
   flex-shrink: 0;
 }
 
-.header-section h2 {
-  color: white;
+.header-content h2 {
+  color: #1a2340;
   margin: 0;
   font-weight: 700;
-  font-size: 1.4rem;
-  letter-spacing: 0.3px;
+  font-size: 1.1rem;
+  letter-spacing: 0.2px;
+}
+
+.header-subtitle {
+  color: #8a96b0;
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  font-weight: 400;
 }
 
 app-filter {
   display: block;
-  background: white;
-  border-bottom: 1px solid #e8edf5;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   flex-shrink: 0;
-}
-
-.main-layout {
-  display: flex;
-  gap: 0;
-  flex: 1;
-  min-height: 0;
-}
-
-.map-section {
-  flex: 2;
-  position: relative;
-  background: white;
+  border-bottom: 1px solid #e8edf5;
 }
 
 .list-section {
@@ -48,7 +78,6 @@ app-filter {
   overflow-y: auto;
   background: #f4f6fb;
   padding: 16px;
-  border-left: 1px solid #e8edf5;
 }
 
 .list-section::-webkit-scrollbar { width: 4px; }
@@ -57,7 +86,15 @@ app-filter {
 
 app-place-card {
   display: block;
-  transition: transform 0.2s;
+}
+
+/* ==========================================================================
+   MAP 
+   ========================================================================== */
+.map-section {
+  flex: 1;
+  position: relative;
+  background: white;
 }
 
 .floating-buttons {
@@ -68,6 +105,10 @@ app-place-card {
   gap: 10px;
   z-index: 10;
 }
+
+/* ==========================================================================
+   NAVIGATION BUTTONS
+   ========================================================================== */
 
 .nav-btn {
   padding: 10px 22px;
@@ -80,6 +121,9 @@ app-place-card {
   transition: all 0.3s ease;
   color: white;
   backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .back-btn {
@@ -100,9 +144,18 @@ app-place-card {
   transform: translateY(-2px);
 }
 
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
 @media (max-width: 992px) {
   .finder-container { height: auto; overflow: auto; }
-  .main-layout { flex-direction: column; }
+  .main-layout { flex-direction: column; height: auto; }
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid #e8edf5;
+    max-height: 60vh;
+  }
   .map-section { height: 400px; }
-  .list-section { max-height: 500px; border-left: none; border-top: 1px solid #e8edf5; }
 }

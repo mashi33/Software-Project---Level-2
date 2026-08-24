@@ -13,7 +13,16 @@
         </div>
         <div class="header-stats">
           <div class="stat-pill level-pill">
-            <img [src]="profilePic" alt="Profile" class="user-avatar" />
+            <ng-container *ngIf="profilePic; else defaultAvatar">
+              <img [src]="profilePic" alt="Profile" class="user-avatar" (error)="profilePic = ''" />
+            </ng-container>
+
+            <ng-template #defaultAvatar>
+              <div class="user-avatar-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                <i class="fas fa-user fa-sm"></i>
+              </div>
+            </ng-template>
+
             <div class="level-block">
               <small>{{ userName }}</small>
               <strong>Level {{ summary.level }}</strong>

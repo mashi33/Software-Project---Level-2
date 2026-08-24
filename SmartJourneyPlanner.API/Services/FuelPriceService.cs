@@ -17,41 +17,22 @@ namespace SmartJourneyPlanner.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        /// <summary>
-        /// Returns (petrolPrice, dieselPrice) scraped from ceypetco.gov.lk.
-        /// Either value can be null if scraping failed and no valid cache exists.
-        /// Results are cached for 24 hours to avoid hitting the site on every request.
-        /// </summary>
+        /* Returns (petrolPrice, dieselPrice) scraped from ceypetco.gov.lk.
+         Either value can be null if scraping failed and no valid cache exists.
+         Results are cached for 24 hours to avoid hitting the site on every request.*/
         public async Task<(double? petrol, double? diesel)> GetFuelPricesAsync()
         {
             // Valid cache exists for both — return immediately without scraping
             if (_cachedPetrolPrice.HasValue && _cachedDieselPrice.HasValue
                 && DateTime.UtcNow - _lastFetched < CacheDuration)
             {
-                Console.WriteLine($"✅ Returning cached fuel prices — Petrol: Rs.{_cachedPetrolPrice}, Diesel: Rs.{_cachedDieselPrice}");
                 return (_cachedPetrolPrice, _cachedDieselPrice);
             }
 
             try
             {
-                Console.WriteLine("🔍 Fetching fuel prices from ceypetco.gov.lk...");
-
                 var client = _httpClientFactory.CreateClient();
                 var html = await client.GetStringAsync("https://ceypetco.gov.lk/marketing-sales/");
-
-                // TEMP DEBUG
-                Console.WriteLine("=== HTML START ===");
-                Console.WriteLine(html.Substring(0, Math.Min(3000, html.Length)));
-                Console.WriteLine("=== HTML END ===");
-
-                Console.WriteLine($"✅ Page fetched successfully — HTML length: {html.Length} chars");
-
-                // ✅ Fixed regex — [\s\S]*? matches across newlines
-                // CPC page structure:
-                //   ### Lanka Petrol 92 Octane
-                //   White Oil
-                //   Rs. 434.00 per Ltr
-                // .*? with Singleline misses \r\n combinations — [\s\S]*? is reliable
 
                 // Petrol 92 Octane
                 var petrolMatch = Regex.Match(html,
@@ -65,12 +46,10 @@ namespace SmartJourneyPlanner.Services
                        out double petrolPrice))
                 {
                     _cachedPetrolPrice = petrolPrice;
-                    Console.WriteLine($"✅ Petrol price scraped: Rs. {petrolPrice}");
                 }
                 else
                 {
                     Console.WriteLine("⚠️ Petrol regex no match — page structure may have changed.");
-                    Console.WriteLine($"   Raw snippet: {html.Substring(html.IndexOf("Lanka Petrol", StringComparison.OrdinalIgnoreCase) >= 0 ? html.IndexOf("Lanka Petrol", StringComparison.OrdinalIgnoreCase) : 0, Math.Min(200, html.Length))}");
                 }
 
                 // Lanka Auto Diesel
@@ -85,7 +64,6 @@ namespace SmartJourneyPlanner.Services
                        out double dieselPrice))
                 {
                     _cachedDieselPrice = dieselPrice;
-                    Console.WriteLine($"✅ Diesel price scraped: Rs. {dieselPrice}");
                 }
                 else
                 {
@@ -96,7 +74,6 @@ namespace SmartJourneyPlanner.Services
                 if (petrolMatch.Success || dieselMatch.Success)
                 {
                     _lastFetched = DateTime.UtcNow;
-                    Console.WriteLine($"✅ Cache updated at {_lastFetched:yyyy-MM-dd HH:mm:ss} UTC");
                 }
                 else
                 {

@@ -19,9 +19,8 @@ namespace SmartJourneyPlanner.Controllers
   {
     private readonly DiscussionsService _discussionsService;  // Manages discussion data in the database
     private readonly IHubContext<ChatHub> _hubContext;        // Sends real-time updates to connected clients
-    private readonly IMongoCollection<Trip> _tripsCollection; // NEW — used to push confirmed places into the trip
+    private readonly IMongoCollection<Trip> _tripsCollection; // Used to push confirmed places into the trip
 
-    // Injects the required services via dependency injection
     public DiscussionsController(DiscussionsService discussionsService, IHubContext<ChatHub> hubContext, IMongoDatabase mongoDatabase)
     {
       _discussionsService = discussionsService;
@@ -46,7 +45,10 @@ namespace SmartJourneyPlanner.Controllers
     }
 
     // GET api/discussions/trip/{tripId}
-    // Returns only the discussions that belong to a specific trip
+    // Returns only the discussions that belong to a specific trip.
+    // Also anonymizes votes: real voter names are replaced with "Voter N" placeholders
+    // (length preserved so "Voted: X/Y" still works), and only the requesting user's
+    // own vote is included, so nobody can see how anyone else voted.
     [HttpGet("trip/{tripId}")]
     public async Task<ActionResult<List<DiscussionItem>>> GetByTrip(string tripId, [FromQuery] string? requestingUser = null)
     {
@@ -54,11 +56,6 @@ namespace SmartJourneyPlanner.Controllers
       {
         var discussions = await _discussionsService.GetByTripAsync(tripId);
 
-        // ── NEW: anonymize each discussion before sending it to the client.
-        // - userVotes: only the requesting user's own vote is included
-        //   (so DevTools/Network tab can't reveal how anyone else voted).
-        // - votedUsers: real names replaced with placeholders, but the
-        //   array length is preserved so "Voted: X/Y" still works.
         foreach (var d in discussions)
         {
           if (d.VotedUsers != null && d.VotedUsers.Count > 0)
@@ -78,9 +75,20 @@ namespace SmartJourneyPlanner.Controllers
 
         return Ok(discussions);
       }
-      catch (Exception)
+      catch (MongoDB.Driver.MongoConnectionException ex)
       {
-        return StatusCode(500, "Can not fetch data for this trip.");
+        Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[DiscussionsController] GetByTrip Error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
       }
     }
 
@@ -98,7 +106,6 @@ namespace SmartJourneyPlanner.Controllers
         newDiscussion.UserVotes = new List<UserVoteRecord>();
         newDiscussion.Comments = new List<CommentItem>();
 
-        // Default member limit to 1 if not set
         if (newDiscussion.MemberLimit <= 0)
           newDiscussion.MemberLimit = 1;
 
@@ -106,10 +113,10 @@ namespace SmartJourneyPlanner.Controllers
         if (newDiscussion.Type == "Trip")
         {
           newDiscussion.Options = new List<VoteOption>
-                    {
-                        new VoteOption { OptionText = "Agree", VoteCount = 0 },
-                        new VoteOption { OptionText = "Disagree", VoteCount = 0 }
-                    };
+          {
+            new VoteOption { OptionText = "Agree", VoteCount = 0 },
+            new VoteOption { OptionText = "Disagree", VoteCount = 0 }
+          };
         }
         else if (newDiscussion.Options == null)
         {
@@ -130,9 +137,20 @@ namespace SmartJourneyPlanner.Controllers
 
         return CreatedAtAction(nameof(Get), new { id = newDiscussion.Id }, newDiscussion);
       }
-      catch (Exception)
+      catch (MongoDB.Driver.MongoConnectionException ex)
       {
-        return StatusCode(500, "Discussion creation unsuccessful.");
+        Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Post Error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
       }
     }
 
@@ -143,16 +161,14 @@ namespace SmartJourneyPlanner.Controllers
     {
       try
       {
-        // Reject the request if any required field is missing
         if (request == null || string.IsNullOrWhiteSpace(request.OptionText) || string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(id))
           return BadRequest(new { message = "Invalid vote request." });
 
         var discussion = await _discussionsService.GetAsync(id);
         if (discussion == null) return NotFound();
 
-        // ── NEW: verify the requester is an actual member of this trip
-        // (creator or invited member) before allowing a vote. Prevents
-        // anyone from casting fake votes with an arbitrary userName.
+        // Verify the requester is an actual member of this trip (creator or invited
+        // member) before allowing a vote — prevents fake votes with an arbitrary userName.
         if (!string.IsNullOrEmpty(discussion.TripId))
         {
           var trip = await _tripsCollection.Find(t => t.Id == discussion.TripId).FirstOrDefaultAsync();
@@ -170,15 +186,13 @@ namespace SmartJourneyPlanner.Controllers
             return Forbid();
         }
 
-        // ── FIXED: only block if CONFIRMED or REJECTED (not on a tie).
-        // A tie leaves both false, so voting remains open.
+        // Only block if confirmed or rejected — a tie leaves both false, so voting stays open
         if (discussion.IsConfirmed || discussion.IsRejected)
           return BadRequest(new { message = "Voting is closed and finalized." });
 
         discussion.UserVotes ??= new List<UserVoteRecord>();
         discussion.Options ??= new List<VoteOption>();
 
-        // Check if this user has already voted
         var existingVote = discussion.UserVotes.FirstOrDefault(v =>
             v.UserId.Trim().Equals(request.UserName.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -188,18 +202,16 @@ namespace SmartJourneyPlanner.Controllers
           if (existingVote.OptionText.Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase))
             return Ok(discussion);
 
-          // Remove old vote count
           var oldOption = discussion.Options.FirstOrDefault(o => o.OptionText == existingVote.OptionText);
           if (oldOption != null && oldOption.VoteCount > 0)
             oldOption.VoteCount--;
 
-          // Update existing vote record
           existingVote.OptionText = request.OptionText.Trim();
         }
         else
         {
-          // ── FIXED: only allow a NEW voter if member limit is not reached.
-          // Existing voters (existingVote != null path above) can always change their vote.
+          // Only allow a NEW voter if the member limit hasn't been reached —
+          // existing voters (handled above) can always change their vote
           int limitCheck = discussion.MemberLimit > 0 ? discussion.MemberLimit : 1;
           if (discussion.UserVotes.Count >= limitCheck)
             return BadRequest(new { message = "Member limit reached. Only existing voters can change their vote." });
@@ -209,19 +221,17 @@ namespace SmartJourneyPlanner.Controllers
           discussion.VotedUsers.Add(request.UserName);
         }
 
-        // Increment the vote count for the selected option
         var option = discussion.Options.FirstOrDefault(o =>
             o.OptionText.Trim().Equals(request.OptionText.Trim(), StringComparison.OrdinalIgnoreCase));
 
         if (option == null) return BadRequest(new { message = "Option not found." });
         option.VoteCount++;
 
-        // Track whether this vote call is the one that flips the discussion to Confirmed,
-        // so we only push to Trip.SavedPlaces once (not on every subsequent vote read).
+        // Tracks whether this call is the one that flips the discussion to Confirmed,
+        // so the place is only pushed to Trip.SavedPlaces once (not on every vote)
         bool justConfirmed = false;
 
-        // ── UPDATED Majority Logic ──
-        // Determine the discussion outcome once all members have voted
+        // Majority logic — outcome is decided once all members have voted
         if (discussion.Type == "Trip")
         {
           int limit = discussion.MemberLimit > 0 ? discussion.MemberLimit : 1;
@@ -233,27 +243,25 @@ namespace SmartJourneyPlanner.Controllers
           {
             if (agreeCount > disagreeCount)
             {
-              // Majority agree → Confirmed, lock votes
               if (!discussion.IsConfirmed) justConfirmed = true;
               discussion.IsConfirmed = true;
               discussion.IsRejected = false;
             }
             else if (disagreeCount > agreeCount)
             {
-              // Majority disagree → Rejected, lock votes
               discussion.IsConfirmed = false;
               discussion.IsRejected = true;
             }
             else
             {
-              // Tie → stay Pending, votes remain editable
+              // Tie — stays Pending, votes remain editable
               discussion.IsConfirmed = false;
               discussion.IsRejected = false;
             }
           }
           else
           {
-            // Not all members voted yet → always Pending
+            // Not everyone has voted yet — always Pending
             discussion.IsConfirmed = false;
             discussion.IsRejected = false;
           }
@@ -261,9 +269,8 @@ namespace SmartJourneyPlanner.Controllers
 
         await _discussionsService.UpdateAsync(id, discussion);
 
-        // NEW — once a Trip-type discussion is confirmed, push its place into
-        // Trip.SavedPlaces so it shows up in the trip summary's Places dropdown.
-        // Only runs the moment it flips to confirmed (justConfirmed), not on every vote.
+        // Once a Trip-type discussion is confirmed, push its place into Trip.SavedPlaces
+        // so it shows up in the trip summary's Places dropdown
         if (justConfirmed && !string.IsNullOrEmpty(discussion.PlaceId) && !string.IsNullOrEmpty(discussion.PlaceName))
         {
           var place = new TripPlace
@@ -280,7 +287,6 @@ namespace SmartJourneyPlanner.Controllers
           await _tripsCollection.UpdateOneAsync(filter, update);
         }
 
-        // Notify only the trip group, or everyone if no trip is linked
         if (!string.IsNullOrEmpty(discussion.TripId))
         {
           await _hubContext.Clients.Group(discussion.TripId).SendAsync("UpdateVotes", discussion);
@@ -292,9 +298,20 @@ namespace SmartJourneyPlanner.Controllers
 
         return Ok(discussion);
       }
-      catch (Exception)
+      catch (MongoDB.Driver.MongoConnectionException ex)
       {
-        return StatusCode(500, "Vote failed.");
+        Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Vote Error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
       }
     }
 
@@ -303,20 +320,37 @@ namespace SmartJourneyPlanner.Controllers
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-      var discussion = await _discussionsService.GetAsync(id);
-      await _discussionsService.RemoveAsync(id);
-
-      // Notify only the trip group, or everyone if no trip is linked
-      if (discussion != null && !string.IsNullOrEmpty(discussion.TripId))
+      try
       {
-        await _hubContext.Clients.Group(discussion.TripId).SendAsync("DiscussionDeleted", id);
-      }
-      else
-      {
-        await _hubContext.Clients.All.SendAsync("DiscussionDeleted", id);
-      }
+        var discussion = await _discussionsService.GetAsync(id);
+        await _discussionsService.RemoveAsync(id);
 
-      return NoContent();
+        if (discussion != null && !string.IsNullOrEmpty(discussion.TripId))
+        {
+          await _hubContext.Clients.Group(discussion.TripId).SendAsync("DiscussionDeleted", id);
+        }
+        else
+        {
+          await _hubContext.Clients.All.SendAsync("DiscussionDeleted", id);
+        }
+
+        return NoContent();
+      }
+      catch (MongoDB.Driver.MongoConnectionException ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Mongo Connection Error: {ex.Message}");
+        return StatusCode(503, new { message = "Database connection failed. Please check your internet connection." });
+      }
+      catch (TimeoutException ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Timeout: {ex.Message}");
+        return StatusCode(503, new { message = "Connection timed out. Please check your internet connection." });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"[DiscussionsController] Delete Error: {ex.Message}");
+        return StatusCode(503, new { message = "Network error. Please check your internet connection." });
+      }
     }
 
     // Represents the data sent by the client when casting a vote
@@ -324,7 +358,7 @@ namespace SmartJourneyPlanner.Controllers
     {
       public string OptionText { get; set; } = string.Empty;  // The option the user voted for
       public string UserName { get; set; } = string.Empty;    // The user who is voting (display name)
-      public string UserEmail { get; set; } = string.Empty;   // NEW — used to verify trip membership
+      public string UserEmail { get; set; } = string.Empty;   // Used to verify trip membership
     }
   }
 }

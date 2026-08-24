@@ -1,12 +1,14 @@
 body {
   background: #f4f7fb;
+  padding-top: 90px;
 }
 
 .help-header {
-  background: linear-gradient(135deg,#005c97,#00b4db);
+  background: linear-gradient(135deg, #005c97, #00b4db);
   color: white;
   text-align: center;
   padding: 50px 20px;
+  padding-top: 90px;
 }
 
 .help-header h1 {
@@ -33,7 +35,7 @@ body {
 
 .help-categories {
   display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 25px;
   padding: 40px;
 }
@@ -42,7 +44,7 @@ body {
   background: white;
   border-radius: 15px;
   padding: 25px;
-  box-shadow: 0 5px 15px rgba(0,0,0,.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .1);
   transition: .3s;
 }
 
@@ -78,7 +80,7 @@ body {
   margin-bottom: 15px;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
 }
 
 .question {

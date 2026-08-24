@@ -15,7 +15,7 @@ namespace SmartJourneyPlanner.Services
 
         private List<BusRoute>? _cachedRoutes;
         private Dictionary<int, double>? _cachedFareLookup;
-        
+
         private static readonly SemaphoreSlim _cacheLock = new SemaphoreSlim(1, 1);
         private bool _indexesCreated = false;
 
@@ -25,12 +25,11 @@ namespace SmartJourneyPlanner.Services
             _busRoutes = db.GetCollection<BusRoute>("BusRoutes");
             _fareTable = db.GetCollection<BusFareTable>("BusFareTable");
 
-            Task.Run(async () => 
+            Task.Run(async () =>
             {
                 try
                 {
-                    Console.WriteLine("🔄 Pre-loading Bus Fare Cache and Indexes in background...");
-                    await EnsureCacheAsync(); 
+                    await EnsureCacheAsync();
                 }
                 catch (Exception ex)
                 {
@@ -43,48 +42,61 @@ namespace SmartJourneyPlanner.Services
         {
             if (_cachedRoutes != null && _cachedFareLookup != null && _indexesCreated) return;
 
-            await _cacheLock.WaitAsync();
+            List<BusFareTable>? fareEntries = null;
+            List<BusRoute>? routes = null;
+
             try
             {
                 if (_cachedRoutes == null || _cachedFareLookup == null)
                 {
-                    Console.WriteLine("⏳ Loading bus data into memory cache (Timeout: 180s)...");
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(180));
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-                    var fareEntries = await Task.Run(() => 
+                    fareEntries = await Task.Run(() =>
                         _fareTable.Find(_ => true).ToEnumerable(cts.Token).ToList(), cts.Token);
 
-                    // ⚡ avoid duplicate keys
-                    _cachedFareLookup = fareEntries
-                        .GroupBy(f => f.Sections)
-                        .ToDictionary(g => g.Key, g => g.First().Fare);
-
-                    var routes = await Task.Run(() => 
+                    routes = await Task.Run(() =>
                         _busRoutes.Find(_ => true).ToEnumerable(cts.Token).ToList(), cts.Token);
-                    _cachedRoutes = routes;
-
-                    Console.WriteLine($"🚀 Bus Cache loaded successfully: {_cachedRoutes.Count} routes.");
                 }
 
-                // Ensure MongoDB Indexes are created for performance
-                if (!_indexesCreated)
+                await _cacheLock.WaitAsync();
+                try
                 {
-                    Console.WriteLine("⚙️ Optimizing MongoDB Indexes...");
-                    await _fareTable.Indexes.CreateOneAsync(
-                        new CreateIndexModel<BusFareTable>(Builders<BusFareTable>.IndexKeys.Ascending(f => f.Sections))
-                    );
-                    await _fareRoutesIndex();
-                    _indexesCreated = true;
-                    Console.WriteLine("✅ MongoDB Indexes are optimized!");
+                    if (_cachedFareLookup == null && fareEntries != null)
+                    {
+                        // Guard against duplicate "Sections" keys corrupting the whole cache load
+                        _cachedFareLookup = fareEntries
+                            .GroupBy(f => f.Sections)
+                            .ToDictionary(g => g.Key, g => g.First().Fare);
+                    }
+
+                    if (_cachedRoutes == null && routes != null)
+                    {
+                        _cachedRoutes = routes;
+                    }
+
+                    if (!_indexesCreated)
+                    {
+                        await _fareTable.Indexes.CreateOneAsync(
+                            new CreateIndexModel<BusFareTable>(Builders<BusFareTable>.IndexKeys.Ascending(f => f.Sections))
+                        );
+                        await _fareRoutesIndex();
+                        _indexesCreated = true;
+                    }
                 }
+                finally
+                {
+                    _cacheLock.Release();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // The 60s CancellationTokenSource above tripped — MongoDB Atlas
+                // didn't respond in time (slow/no internet connection, cold-start cluster).
+                Console.WriteLine("⚠️ Bus route cache load timed out — MongoDB did not respond within 60s.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"⚠️ Cache initialization failed: {ex.Message}");
-            }
-            finally
-            {
-                _cacheLock.Release();
             }
         }
 
@@ -100,44 +112,49 @@ namespace SmartJourneyPlanner.Services
             if (string.IsNullOrWhiteSpace(fullAddress)) return string.Empty;
 
             var parts = fullAddress.Split(',').Select(p => p.Trim()).ToList();
-            
-            // extract logic for Sri Lankan addresses
+
             if (parts.Count > 1)
             {
                 if (parts.Last().Equals("Sri Lanka", StringComparison.OrdinalIgnoreCase))
                 {
-                    return parts[parts.Count - 2]; 
+                    return parts[parts.Count - 2];
                 }
-                return parts.Last(); 
+                return parts.Last();
             }
 
             return parts[0];
         }
 
-        // Helper method to get fare between two cities on a given route
-        private double? GetFare(BusRoute route, string fromCity, string toCity, Dictionary<int, double> fareLookup)
+        // Calculates fare between two cities on a given route.
+        private double? GetFare(BusRoute route, string fromCity, string toCity, Dictionary<int, double> fareLookup, out bool isApproximate)
         {
+            isApproximate = false;
+
             int fromIdx = route.Stops.FindIndex(s => s.City.Equals(fromCity, StringComparison.OrdinalIgnoreCase));
             int toIdx = route.Stops.FindIndex(s => s.City.Equals(toCity, StringComparison.OrdinalIgnoreCase));
 
-            if (fromIdx == -1 || toIdx == -1) return null;
+            // Accurate path: both stops found in the Stops array -> exact section-based fare
+            if (fromIdx != -1 && toIdx != -1)
+            {
+                var fromStop = route.Stops[fromIdx];
+                var toStop = route.Stops[toIdx];
 
-            var fromStop = route.Stops[fromIdx];
-            var toStop = route.Stops[toIdx];
+                int diff = Math.Abs(toStop.Section - fromStop.Section);
+                return fareLookup.TryGetValue(diff, out double fare) ? fare : null;
+            }
 
-            int diff = Math.Abs(toStop.Section - fromStop.Section);
-            return fareLookup.TryGetValue(diff, out double fare) ? fare : null;
+            return null;
         }
 
-        //Clear cache before next request
         public void ClearCache()
         {
             _cachedRoutes = null;
             _cachedFareLookup = null;
-            Console.WriteLine("♻️ Bus fare cache cleared. It will reload on next request.");
         }
 
-        // Main method to get bus fare between two addresses
+        /* "Best route" = direct route first (most Sri Lankan travellers prefer one bus over transfers),
+         with IsPrincipal routes preferred over non-principal, then cheapest among ties.
+         Falls back to a 2-leg interchange only when no direct route exists.*/
         public async Task<BusFareResult> GetBusFareAsync(string startAddress, string endAddress)
         {
             await EnsureCacheAsync();
@@ -163,50 +180,57 @@ namespace SmartJourneyPlanner.Services
                 };
             }
 
-            Console.WriteLine($"Bus fare search: '{from}' → '{to}'");
-
-            BusFareResult? bestDirectResult = null;
-
-            // ── 1. Find Cheapest Direct Route ───────────────────────────
-            var directRoute = _cachedRoutes
-                .Select(r => new { Route = r, Fare = GetFare(r, from, to, _cachedFareLookup) })
+            // Direct Routes — up to 5, Principal-first, cheapest, accurate fare priority ──
+            var allDirectMatches = _cachedRoutes
+                .Select(r =>
+                {
+                    var fare = GetFare(r, from, to, _cachedFareLookup, out bool approx);
+                    return new { Route = r, Fare = fare, IsApproximate = approx };
+                })
                 .Where(x => x.Fare.HasValue)
-                .OrderBy(x => x.Fare!.Value)
-                .FirstOrDefault();
+                .GroupBy(x => x.Route.RouteNo)   // pick cheapest per route number
+                .Select(g => g.OrderBy(x => x.Fare!.Value)
+                  .ThenByDescending(x => x.Route.IsPrincipal)
+                  .First())
+                .OrderByDescending(x => x.Route.IsPrincipal)
+                .ThenBy(x => x.IsApproximate)
+                .ThenBy(x => x.Fare!.Value)
+                .Take(5)
+                .ToList();
 
-            if (directRoute != null)
+            if (allDirectMatches.Any())
             {
-                int fIdx = directRoute.Route.Stops.FindIndex(s => s.City.Equals(from, StringComparison.OrdinalIgnoreCase));
-                int tIdx = directRoute.Route.Stops.FindIndex(s => s.City.Equals(to, StringComparison.OrdinalIgnoreCase));
+                // Best (top-ranked) route — for backward compatibility
+                var best = allDirectMatches.First();
 
-                int start = Math.Min(fIdx, tIdx);
-                int end = Math.Max(fIdx, tIdx);
-                
-                var midStops = directRoute.Route.Stops
-                    .Skip(start + 1)
-                    .Take(end - start - 1)
-                    .Select(s => s.City);
+                // Build all options list
+                var directOptions = allDirectMatches.Select(x => new BusOption
+                {
+                    RouteNo = x.Route.RouteNo,
+                    Fare = Math.Round(x.Fare!.Value, 0),
+                    Via = x.Route.Via,
+                    From = x.Route.From,
+                    To = x.Route.To
+                }).ToList();
 
-                string viaCities = string.Join(", ", midStops);
-
-                bestDirectResult = new BusFareResult
+                var bestDirectResult = new BusFareResult
                 {
                     Found = true,
                     IsMultiLeg = false,
-                    RouteNo = directRoute.Route.RouteNo,
-                    Via = !string.IsNullOrEmpty(viaCities) ? viaCities : directRoute.Route.Via,
-                    Fare = Math.Round(directRoute.Fare!.Value, 2)
+                    IsPrincipal = best.Route.IsPrincipal,
+                    IsApproximateFare = best.IsApproximate,
+                    RouteNo = best.Route.RouteNo,
+                    Via = best.Route.Via,
+                    Fare = Math.Round(best.Fare!.Value, 2),
+                    From = best.Route.From,
+                    To = best.Route.To,
+                    DirectOptions = directOptions
                 };
-            }
 
-            //if found direct route (Huge Performance Win!)
-            if (bestDirectResult != null)
-            {
-                Console.WriteLine("🚀 Direct route found. Skipping expensive interchange calculations entirely!");
                 return bestDirectResult;
             }
 
-            // ── 2. Find Cheapest 2-Leg Interchange Route (Lazy-Calculated) ───────────────────
+            //2-Leg Interchange (only runs if no direct route matched)
             var leg1Candidates = _cachedRoutes
                 .Where(r => r.Stops.Any(s => s.City.Equals(from, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
@@ -223,33 +247,31 @@ namespace SmartJourneyPlanner.Services
                 foreach (var interchange in validInterchanges)
                 {
                     var validLeg2Candidates = _cachedRoutes
-                        .Where(r => r.RouteNo != leg1.RouteNo && 
-                                    r.Stops.Any(s => s.City.Equals(interchange, StringComparison.OrdinalIgnoreCase)) && 
+                        .Where(r => r.RouteNo != leg1.RouteNo &&
+                                    r.Stops.Any(s => s.City.Equals(interchange, StringComparison.OrdinalIgnoreCase)) &&
                                     r.Stops.Any(s => s.City.Equals(to, StringComparison.OrdinalIgnoreCase)))
-                        .Select(r => new { Route = r, Fare = GetFare(r, interchange, to, _cachedFareLookup) })
+                        .Select(r => new { Route = r, Fare = GetFare(r, interchange, to, _cachedFareLookup, out bool _) })
                         .Where(x => x.Fare.HasValue)
                         .ToList();
 
                     if (!validLeg2Candidates.Any()) continue;
 
-                    var fare1 = GetFare(leg1, from, interchange, _cachedFareLookup);
+                    var fare1 = GetFare(leg1, from, interchange, _cachedFareLookup, out bool _);
                     if (!fare1.HasValue) continue;
 
                     foreach (var leg2 in validLeg2Candidates)
                     {
                         possibleInterchanges.Add((
-                            leg1, 
-                            leg2.Route, 
-                            interchange, 
-                            fare1.Value, 
-                            leg2.Fare!.Value, 
+                            leg1,
+                            leg2.Route,
+                            interchange,
+                            fare1.Value,
+                            leg2.Fare!.Value,
                             fare1.Value + leg2.Fare.Value
                         ));
                     }
                 }
             }
-
-            BusFareResult? bestInterchangeResult = null;
 
             if (possibleInterchanges.Any())
             {
@@ -257,24 +279,7 @@ namespace SmartJourneyPlanner.Services
                     .OrderBy(x => x.Total)
                     .First();
 
-                int fIdx1 = bestFit.Leg1.Stops.FindIndex(s => s.City.Equals(from, StringComparison.OrdinalIgnoreCase));
-                int tIdx1 = bestFit.Leg1.Stops.FindIndex(s => s.City.Equals(bestFit.Interchange, StringComparison.OrdinalIgnoreCase));
-                int start1 = Math.Min(fIdx1, tIdx1);
-                int end1 = Math.Max(fIdx1, tIdx1);
-                var midStops1 = bestFit.Leg1.Stops.Skip(start1 + 1).Take(end1 - start1 - 1).Select(s => s.City);
-                string viaLeg1 = string.Join(", ", midStops1);
-
-                int fIdx2 = bestFit.Leg2.Stops.FindIndex(s => s.City.Equals(bestFit.Interchange, StringComparison.OrdinalIgnoreCase));
-                int tIdx2 = bestFit.Leg2.Stops.FindIndex(s => s.City.Equals(to, StringComparison.OrdinalIgnoreCase));
-                int start2 = Math.Min(fIdx2, tIdx2);
-                int end2 = Math.Max(fIdx2, tIdx2);
-                var midStops2 = bestFit.Leg2.Stops.Skip(start2 + 1).Take(end2 - start2 - 1).Select(s => s.City);
-                string viaLeg2 = string.Join(", ", midStops2);
-
-                string finalVia1 = !string.IsNullOrEmpty(viaLeg1) ? viaLeg1 : bestFit.Leg1.Via;
-                string finalVia2 = !string.IsNullOrEmpty(viaLeg2) ? viaLeg2 : bestFit.Leg2.Via;
-
-                bestInterchangeResult = new BusFareResult
+                return new BusFareResult
                 {
                     Found = true,
                     IsMultiLeg = true,
@@ -284,16 +289,13 @@ namespace SmartJourneyPlanner.Services
                     FareLeg1 = Math.Round(bestFit.Fare1, 2),
                     FareLeg2 = Math.Round(bestFit.Fare2, 2),
                     TotalFare = Math.Round(bestFit.Total, 2),
-                    ViaLeg1 = finalVia1,
-                    ViaLeg2 = finalVia2,
-                    Via = $"Leg 1 Via: {finalVia1} | Leg 2 Via: {finalVia2}"
+                    ViaLeg1 = bestFit.Leg1.Via,
+                    ViaLeg2 = bestFit.Leg2.Via,
+                    From1 = bestFit.Leg1.From,
+                    To1 = bestFit.Leg1.To,
+                    From2 = bestFit.Leg2.From,
+                    To2 = bestFit.Leg2.To
                 };
-            }
-
-            // ── 3. Fallback Return ──
-            if (bestInterchangeResult != null)
-            {
-                return bestInterchangeResult;
             }
 
             return new BusFareResult { Found = false };

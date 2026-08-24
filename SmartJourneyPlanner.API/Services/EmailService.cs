@@ -107,6 +107,37 @@ namespace SmartJourneyPlanner.API.Services
 
             await SendEmailAsync(message);
        }
+       
+
+       public async Task SendEmailChangeVerificationAsync(string newEmail, string verificationLink, string userName)
+{
+    var senderEmail = _configuration["EmailSettings:SenderEmail"]
+        ?? throw new InvalidOperationException("Sender email is missing.");
+
+    var message = new MimeMessage();
+    message.From.Add(new MailboxAddress("Smart Journey", senderEmail));
+    message.To.Add(new MailboxAddress("", newEmail));
+    message.Subject = "Confirm Your New Email - Smart Journey Planner";
+
+    message.Body = new TextPart("html")
+    {
+        Text = $@"
+        <div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.5;"">
+            <h2 style=""color: #007bff;"">Confirm Email Change</h2>
+            <p>Hi {(string.IsNullOrEmpty(userName) ? "there" : userName)},</p>
+            <p>You requested to change your account email to <b>{newEmail}</b>.</p>
+            <p>Click the button below to confirm. This link expires in <b>24 hours</b>.</p>
+            <div style=""margin: 30px 0;"">
+                <a href=""{verificationLink}"" style=""background-color: #007bff; color: #ffffff !important; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;"">Confirm New Email</a>
+            </div>
+            <p style=""font-size: 14px; color: #666;"">If you did not request this change, please ignore this email. Your current email will remain unchanged.</p>
+            <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"" />
+            <p>Smart Journey Team</p>
+        </div>"
+    };
+
+    await SendEmailAsync(message);
+}
 
         // Core Email Sender Logic reading from Configuration
         private async Task SendEmailAsync(MimeMessage message)

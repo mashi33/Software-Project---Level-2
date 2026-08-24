@@ -14,32 +14,30 @@ namespace SmartJourneyPlanner.Services
     {
       var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
       var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
-
-      // MongoDB Collection: Comments
       _commentsCollection = mongoDatabase.GetCollection<CommentItem>("Comments");
     }
 
-    // Receive all messages
+    // Fetch all comments in the database
     public async Task<List<CommentItem>> GetAsync() =>
         await _commentsCollection.Find(_ => true).ToListAsync();
 
-    // Retrieves all comments associated with a specific Trip ID
+    // Fetch all comments belonging to a specific trip
     public async Task<List<CommentItem>> GetByTripAsync(string tripId) =>
         await _commentsCollection.Find(x => x.TripId == tripId).ToListAsync();
 
-    // Search messages using message ID (comment id)
+    // Fetch a single comment by its ID
     public async Task<CommentItem?> GetCommentByIdAsync(string id) =>
         await _commentsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    // Save new messages
+    // Insert a new comment
     public async Task CreateAsync(CommentItem newComment) =>
         await _commentsCollection.InsertOneAsync(newComment);
 
-    // Update messages
+    // Replace an existing comment (used for both edits and soft-deletes)
     public async Task UpdateAsync(string id, CommentItem updatedComment) =>
         await _commentsCollection.ReplaceOneAsync(x => x.Id == id, updatedComment);
 
-    // Delete messages
+    // Permanently removes a comment record from the database
     public async Task DeleteCommentAsync(string id) =>
         await _commentsCollection.DeleteOneAsync(x => x.Id == id);
 

@@ -38,6 +38,10 @@ namespace SmartJourneyPlanner.API.Models
 
         public bool IsBlocked { get; set; } = false;
 
+        public string? PendingEmail { get; set; }
+        public string? EmailChangeToken { get; set; }
+        public DateTime? EmailChangeTokenExpiry { get; set; }
+
         /// <summary>None, Temporary (2-week auto-unblock), or Permanent.</summary>
         public string? BlockType { get; set; }
 

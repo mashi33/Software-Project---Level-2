@@ -9,6 +9,9 @@ using System;
 using System.Linq; 
 using System.Security.Claims; 
 using Microsoft.AspNetCore.Authorization;
+using SmartJourneyPlanner.Services;
+using SmartJourneyPlanner.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SmartJourneyPlanner.API.Controllers
 {
@@ -19,14 +22,20 @@ namespace SmartJourneyPlanner.API.Controllers
         private readonly IMongoCollection<Trip> _tripsCollection;
         private readonly IMongoCollection<TripHistory> _historyCollection;
         private readonly SmartJourneyPlanner.API.Services.EmailService _emailService;
+        private readonly DiscussionsService _discussionsService;   
+        private readonly IHubContext<ChatHub> _hubContext;  
+        private readonly SmartJourneyPlanner.API.Services.BudgetService _budgetService;
 
         // Constructor to initialize MongoDB collections
-        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService)
+        public TripsController(IMongoClient mongoClient, SmartJourneyPlanner.API.Services.EmailService emailService, DiscussionsService discussionsService, IHubContext<ChatHub> hubContext, SmartJourneyPlanner.API.Services.BudgetService budgetService)
         {
             var database = mongoClient.GetDatabase("SmartJourneyDb");
             _tripsCollection = database.GetCollection<Trip>("Trips");
             _historyCollection = database.GetCollection<TripHistory>("TripHistories");
             _emailService = emailService;
+            _discussionsService = discussionsService;
+            _hubContext = hubContext;
+            _budgetService = budgetService;
         }
 
         [HttpGet("my-trips")]
@@ -246,31 +255,44 @@ public async Task<IActionResult> GetDashboardData()
             return "Member"; // fallback
         }
 
-        // 3. Build filter
-        var builder = Builders<Trip>.Filter;
-        var userFilter = builder.Or(
-            builder.Eq(t => t.CreatedBy, userId),
-            builder.Eq(t => t.CreatorEmail, userEmail),
-            builder.ElemMatch(t => t.Members, m => m.Email == userEmail)
-        );
+        // 3. Build filter – supports both creator + member, old email + userId
+var builder = Builders<Trip>.Filter;
+var conditions = new List<FilterDefinition<Trip>>();
 
-        var userTrips = await _tripsCollection
-            .Find(userFilter)
-            .ToListAsync();
+if (!string.IsNullOrEmpty(userId))
+{
+    conditions.Add(builder.Eq(t => t.CreatedBy, userId));
+}
 
-        var today = DateTime.Today;
+if (!string.IsNullOrEmpty(userEmail))
+{
+    conditions.Add(builder.Eq(t => t.CreatorEmail, userEmail));
+    conditions.Add(builder.Eq(t => t.CreatedBy, userEmail)); // old data that stored email in CreatedBy
+    conditions.Add(builder.ElemMatch(t => t.Members, m => m.Email == userEmail));
+}
 
-        var upcomingTrips = userTrips
-            .Where(t => t.StartDate.Date > today)
-            .ToList();
+if (conditions.Count == 0)
+    return Unauthorized(new { message = "Invalid user identity." });
 
-        var completedTrips = userTrips
-            .Where(t => t.EndDate.Date < today)
-            .ToList();
+var userFilter = builder.Or(conditions);
 
-        var ongoingTrips = userTrips
-            .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
-            .ToList();
+var userTrips = await _tripsCollection
+    .Find(userFilter)
+    .ToListAsync();
+
+var today = DateTime.Today;
+
+var upcomingTrips = userTrips
+    .Where(t => t.StartDate.Date > today)
+    .ToList();
+
+var completedTrips = userTrips
+    .Where(t => t.EndDate.Date < today)
+    .ToList();
+
+var ongoingTrips = userTrips
+    .Where(t => t.StartDate.Date <= today && t.EndDate.Date >= today)
+    .ToList();
 
         // 4. Return data with role included
         return Ok(new
@@ -384,6 +406,11 @@ public async Task<IActionResult> GetDashboardData()
         {
             try
             {
+                var validationError = ValidateTripData(newTrip, isUpdate: false);
+        if (validationError != null)
+        {
+            return BadRequest(new { message = validationError });
+        }
                 newTrip.Members = NormalizeMembers(newTrip.Members, newTrip.CreatorEmail ?? newTrip.CreatedBy ?? "");
                 await _tripsCollection.InsertOneAsync(newTrip);
                 if (newTrip.Members != null)
@@ -401,7 +428,7 @@ public async Task<IActionResult> GetDashboardData()
             }
         }
 
-        // =========================================================================================
+// =========================================================================================
 // === ADD THIS NEW ENDPOINT TO YOUR TRIPSCONTROLLER ===
 // =========================================================================================
 [Authorize]
@@ -440,7 +467,6 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
         return BadRequest(new { message = "Error: " + ex.Message });
     }
 }
-// =========================================================================================
 
         // Add a new place to an existing trip's saved places list
         [HttpPost("{tripId}/add-place")]
@@ -471,6 +497,27 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
             {
                 var oldTrip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
                 if (oldTrip == null) return NotFound(new { message = "Trip not found!" });
+
+                // Completed trip block
+        var today = DateTime.UtcNow.Date;
+        if (oldTrip.EndDate.Date < today)
+        {
+            return BadRequest(new { message = "This trip has already been completed. Editing is not allowed." });
+        }
+
+        // Field validations
+        var validationError = ValidateTripData(updatedTrip, isUpdate: true);
+        if (validationError != null)
+        {
+            return BadRequest(new { message = validationError });
+        }
+
+                // Prevent updating completed trips
+                var todayDate = DateTime.UtcNow.Date;
+                if (oldTrip.EndDate.Date < todayDate)
+                {
+                     return BadRequest(new { message = "This trip has already been completed. Editing is not allowed." });
+                 }
 
                 // Ownership and data that the edit form never sends stay as they are
                 updatedTrip.CreatedBy = string.IsNullOrEmpty(oldTrip.CreatedBy) ? updatedTrip.CreatedBy : oldTrip.CreatedBy;
@@ -509,6 +556,18 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 if ((oldTrip.Destination?.Trim().ToLower() ?? "") != (updatedTrip.Destination?.Trim().ToLower() ?? ""))
                     changes += $"Dest: {oldTrip.Destination} -> {updatedTrip.Destination}. ";
 
+                if ((oldTrip.DepartFrom?.Trim().ToLower() ?? "") != (updatedTrip.DepartFrom?.Trim().ToLower() ?? ""))
+                    changes += $"Depart From: {oldTrip.DepartFrom} -> {updatedTrip.DepartFrom}. ";
+
+                if ((oldTrip.BudgetLimit?.Trim() ?? "") != (updatedTrip.BudgetLimit?.Trim() ?? ""))
+                    changes += $"Budget: {oldTrip.BudgetLimit} -> {updatedTrip.BudgetLimit}. ";
+
+                if ((oldTrip.TransportMode?.Trim() ?? "") != (updatedTrip.TransportMode?.Trim() ?? ""))
+                    changes += $"Transport: {oldTrip.TransportMode} -> {updatedTrip.TransportMode}. ";
+
+                if ((oldTrip.Description?.Trim() ?? "") != (updatedTrip.Description?.Trim() ?? ""))
+                    changes += $"Description updated. ";
+
                 if (oldTrip.StartDate != updatedTrip.StartDate || oldTrip.EndDate != updatedTrip.EndDate)
                     changes += $"Dates: {oldTrip.StartDate:yyyy-MM-dd} to {oldTrip.EndDate:yyyy-MM-dd} -> {updatedTrip.StartDate:yyyy-MM-dd} to {updatedTrip.EndDate:yyyy-MM-dd}. ";
 
@@ -542,6 +601,18 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                     }
                 }
 
+                // ── NEW: keep pending vote boxes in sync with the trip's actual member count.
+                // updatedTrip.Members is owner-excluded (via NormalizeMembers), so +1 for the owner.
+                // Only Pending discussions update — Confirmed/Rejected stay untouched.
+                if (addedMembers.Count > 0 || removedEmails.Count > 0)
+                {
+                    int newLimit = updatedTrip.Members.Count + 1;
+                    await _discussionsService.UpdatePendingMemberLimitsAsync(id, newLimit);
+
+                    // Notify any open Group Chat pages so pending vote boxes update live
+                    await _hubContext.Clients.Group(id).SendAsync("MemberLimitChanged", new { tripId = id, newLimit });
+                }
+
                 return Ok(new
                 {
                     message = "Trip updated successfully!",
@@ -554,6 +625,67 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 return BadRequest(new { message = "Update error: " + ex.Message });
             }
         }
+
+        private static string? ValidateTripData(Trip trip, bool isUpdate)
+{
+    if (trip == null)
+        return "Invalid trip data.";
+
+    if (string.IsNullOrWhiteSpace(trip.TripName))
+        return "Trip name is required.";
+
+    if (trip.TripName.Trim().Length < 3)
+        return "Trip name must be at least 3 characters.";
+
+    if (trip.TripName.Trim().Length > 60)
+        return "Trip name cannot exceed 60 characters.";
+
+    if (string.IsNullOrWhiteSpace(trip.DepartFrom))
+        return "Departure location is required.";
+
+    if (trip.DepartFrom.Trim().Length < 2 || trip.DepartFrom.Trim().Length > 60)
+        return "Departure location must be between 2 and 60 characters.";
+
+    if (string.IsNullOrWhiteSpace(trip.Destination))
+        return "Destination is required.";
+
+    if (trip.Destination.Trim().Length < 2 || trip.Destination.Trim().Length > 60)
+        return "Destination must be between 2 and 60 characters.";
+
+    // Same location
+    if (trip.DepartFrom.Trim().Equals(trip.Destination.Trim(), StringComparison.OrdinalIgnoreCase))
+        return "Departure and destination cannot be the same place.";
+
+    // Dates
+    if (trip.StartDate == default)
+        return "Start date is required.";
+
+    if (trip.EndDate == default)
+        return "End date is required.";
+
+    if (trip.EndDate.Date < trip.StartDate.Date)
+        return "End date cannot be earlier than the start date.";
+
+    // Start not in past (only on create)
+    if (!isUpdate && trip.StartDate.Date < DateTime.UtcNow.Date)
+        return "Start date cannot be in the past.";
+
+    // Optional: max duration 60 days
+    var duration = (trip.EndDate.Date - trip.StartDate.Date).TotalDays + 1;
+    if (duration > 60)
+        return "Trip duration cannot exceed 60 days.";
+
+    if (string.IsNullOrWhiteSpace(trip.BudgetLimit))
+        return "Budget limit is required.";
+
+    if (string.IsNullOrWhiteSpace(trip.TransportMode))
+        return "Transport type is required.";
+
+    if (!string.IsNullOrEmpty(trip.Description) && trip.Description.Length > 500)
+        return "Description cannot exceed 500 characters.";
+
+    return null; // valid
+}
 
         // Cleans a member list: trims and lowercases emails, drops blanks, the owner and duplicates
         private static List<TripMember> NormalizeMembers(List<TripMember>? members, string ownerEmail)
@@ -608,6 +740,20 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 await _tripsCollection.DeleteOneAsync(t => t.Id == id);
                 await _historyCollection.DeleteManyAsync(h => h.TripId == id);
 
+                var db = _tripsCollection.Database;
+                var budgetCollection = db.GetCollection<MongoDB.Bson.BsonDocument>("Budgets");
+
+                var objectIdVal = MongoDB.Bson.ObjectId.TryParse(id, out var parsedObjId) ? parsedObjId : (object)id;
+                
+                var budgetFilter = Builders<MongoDB.Bson.BsonDocument>.Filter.Or(
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("TripId", objectIdVal),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("TripId", id),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("tripId", objectIdVal),
+                    Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("tripId", id)
+                );
+
+                await budgetCollection.DeleteManyAsync(budgetFilter);
+
                 return Ok(new { message = "Trip deleted successfully!" });
             }
             catch (Exception ex)
@@ -615,6 +761,83 @@ Console.WriteLine($"[DEBUG] Final Filter: {finalFilter.ToString()}");
                 return BadRequest(new { message = "Error deleting trip: " + ex.Message });
             }
         }
+
+        [Authorize]
+[HttpPost("{id}/leave")]
+public async Task<IActionResult> LeaveTrip(string id)
+{
+    try
+    {
+        // 1. Get current user identity from JWT
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                        ?? User.FindFirst("email")?.Value;
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("userId")?.Value;
+        var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown User";
+
+        if (string.IsNullOrEmpty(userEmail) && string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        // 2. Load the trip
+        var trip = await _tripsCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+        if (trip == null)
+        {
+            return NotFound(new { message = "Trip not found." });
+        }
+
+        // 3. Prevent Owner from using Leave (Owner should Delete the trip instead)
+        var isOwner = (!string.IsNullOrEmpty(userId) && trip.CreatedBy == userId) ||
+                      (!string.IsNullOrEmpty(userEmail) &&
+                       (string.Equals(trip.CreatorEmail, userEmail, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(trip.CreatedBy, userEmail, StringComparison.OrdinalIgnoreCase)));
+
+        if (isOwner)
+        {
+            return BadRequest(new { message = "Owner cannot leave the trip. Please delete the trip or transfer ownership first." });
+        }
+
+        // 4. Check if the user is actually a member
+        var memberToRemove = trip.Members?.FirstOrDefault(m =>
+            m.Email != null &&
+            m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase));
+
+        if (memberToRemove == null)
+        {
+            return BadRequest(new { message = "You are not a member of this trip." });
+        }
+
+        // 5. Remove the member from the list
+        var updatedMembers = trip.Members
+            .Where(m => m.Email == null || !m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var update = Builders<Trip>.Update.Set(t => t.Members, updatedMembers);
+        await _tripsCollection.UpdateOneAsync(t => t.Id == id, update);
+
+        // 6. Log into Edit History
+        var historyEntry = new TripHistory
+        {
+            TripId = id,
+            EditedAt = DateTime.Now,
+            EditedBy = userName,
+            Changes = $"Member left the trip: {userEmail} (was {memberToRemove.Role})."
+        };
+        await _historyCollection.InsertOneAsync(historyEntry);
+
+        // Optional: update pending vote member limits if you use DiscussionsService
+        // int newLimit = updatedMembers.Count + 1; // +1 for owner
+        // await _discussionsService.UpdatePendingMemberLimitsAsync(id, newLimit);
+        // await _hubContext.Clients.Group(id).SendAsync("MemberLimitChanged", new { tripId = id, newLimit });
+
+        return Ok(new { message = "You have successfully left the trip." });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = "Error leaving trip: " + ex.Message });
+    }
+}
 
     }
 }

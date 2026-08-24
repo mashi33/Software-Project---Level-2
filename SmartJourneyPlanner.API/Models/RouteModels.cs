@@ -5,19 +5,15 @@ using System;
 
 namespace SmartJourneyPlanner.Models
 {
-    /// <summary>
-    /// Represents the user's input for requesting a route.
-    /// </summary>
+     //Represents the user's input for requesting a route.
     public class RouteRequest
     {
         public string Start { get; set; } = string.Empty;
         public string End { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Represents a fully computed route saved in MongoDB,
-    /// including fastest, cheapest, and scenic route options.
-    /// </summary>
+    /*Represents a fully computed route saved in MongoDB,
+     including fastest, cheapest, and scenic route options.*/
     public class SavedRoute
     {
         [BsonId]
@@ -38,22 +34,18 @@ namespace SmartJourneyPlanner.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// Holds the key details of a single route option returned by the Google Routes API.
-    /// </summary>
+    // Holds the key details of a single route option returned by the Google Routes API.
     public class RouteDetail
     {
         public string Distance { get; set; } = string.Empty;
         public string Duration { get; set; } = string.Empty;
-        public string Polyline { get; set; } = string.Empty; // Encoded polyline for drawing the route on a map
-        public double? EstimatedPetrolCost { get; set; } // ✅ Petrol vehicle  cost
-        public double? EstimatedDieselCost { get; set; } // ✅ Diesel vehicle  cost
-        public BusFareResult? BusFare { get; set; } // ✅ Bus fare result
+        public string Polyline { get; set; } = string.Empty; 
+        public double? EstimatedPetrolCost { get; set; } 
+        public double? EstimatedDieselCost { get; set; } 
+        public BusFareResult? BusFare { get; set; } 
     }
 
-    /// <summary>
-    /// Represents a single scenic viewpoint or nearby place of interest along the route.
-    /// </summary>
+    // Represents a single scenic viewpoint or nearby place of interest along the route.
     public class ViewpointDetail
     {
         public string Name { get; set; } = string.Empty;
@@ -65,10 +57,8 @@ namespace SmartJourneyPlanner.Models
     // BUS FARE MODELS
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Represents a single inter-provincial bus route in MongoDB.
-    /// Source: NTC Normal Bus Fare Table — Effective 2026-07-06
-    /// </summary>
+    /* Represents a single inter-provincial bus route in MongoDB.
+     Source: NTC Normal Bus Fare Table — Effective 2026-07-06*/
     public class BusRoute
     {
         [BsonId]
@@ -81,12 +71,14 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("via")]       public string        Via       { get; set; } = string.Empty;
         [BsonElement("totalFare")] public double        TotalFare { get; set; }
         [BsonElement("stops")]     public List<BusStop> Stops     { get; set; } = new();
+
+        // This is what allows our LINQ query to sort and fetch the best official route!
+        [BsonElement("isPrincipal")] 
+        public bool IsPrincipal { get; set; } = false;
     }
 
-    /// <summary>
-    /// Represents a single stop on a bus route.
-    /// Fare formula: sections_traveled = |dest_section - origin_section|
-    /// </summary>
+    /* Represents a single stop on a bus route.
+    /// Fare formula: sections_traveled = |dest_section - origin_section|*/
     public class BusStop
     {
         [BsonElement("city")]    public string City    { get; set; } = string.Empty;
@@ -94,9 +86,7 @@ namespace SmartJourneyPlanner.Models
         [BsonElement("fare")]    public double Fare    { get; set; }
     }
 
-    /// <summary>
-    /// NTC universal fare lookup table — sections difference → fare amount.
-    /// </summary>
+    // NTC universal fare lookup table — sections difference → fare amount.
     public class BusFareTable
     {
         [BsonId]
@@ -110,20 +100,20 @@ namespace SmartJourneyPlanner.Models
         public double  Fare     { get; set; }
     }
 
-    /// <summary>
-    /// Result of a bus fare calculation — direct or 2-leg interchange.
-    /// </summary>
+    // Result of a bus fare calculation — direct or 2-leg interchange.
     public class BusFareResult
     {
         public bool   Found      { get; set; } = false;
         public bool   IsMultiLeg { get; set; } = false;
+        public bool IsPrincipal { get; set; } = false;
+        public bool IsApproximateFare { get; set; } = false;
 
         // Single leg
         public string? RouteNo { get; set; }
         public string? Via     { get; set; }
-        public string? ViaLeg1 { get; set; }
-        public string? ViaLeg2 { get; set; }
         public double? Fare    { get; set; }
+        public string? From    { get; set; }  
+        public string? To      { get; set; }  
 
         // Multi leg
         public string? RouteNo1    { get; set; }
@@ -132,5 +122,26 @@ namespace SmartJourneyPlanner.Models
         public double? FareLeg1    { get; set; }
         public double? FareLeg2    { get; set; }
         public double? TotalFare   { get; set; }
+        public string? ViaLeg1     { get; set; }
+        public string? ViaLeg2     { get; set; }
+
+        public string? From1 { get; set; }
+        public string? To1   { get; set; }
+        public string? From2 { get; set; }
+        public string? To2   { get; set; }
+
+        // Multiple direct options — sorted by fare ascending
+        public List<BusOption> DirectOptions { get; set; } = new();
     }
+
+
+        // Represents a single bus route option in multi-result response.
+        public class BusOption
+        {
+            public string RouteNo { get; set; } = string.Empty;
+            public double Fare    { get; set; }
+            public string? Via    { get; set; }
+            public string From    { get; set; } = string.Empty;  
+            public string To      { get; set; } = string.Empty;
+        }
 }

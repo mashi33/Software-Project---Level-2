@@ -13,8 +13,9 @@ import QRCode from 'qrcode';
 })
 export class GenerationComponent implements OnInit, OnChanges {
   @Input() routeData: any;
-  @Input() busData: any  = null;  // ✅ add
-  @Input() transportMode: 'private' | 'public' = 'private'; // ✅ add
+  @Input() busData: any = null;
+  @Input() transportMode: string = 'private';
+
   mapBase64:    string  = '';
   isLoadingMap: boolean = false;
   today:        number  = Date.now();
@@ -23,50 +24,37 @@ export class GenerationComponent implements OnInit, OnChanges {
   constructor(private mapService: GenerationService) {}
 
   ngOnInit(): void {
-    console.log('🚀 GenerationComponent initialized, routeData:', this.routeData);
-    if (this.routeData) this.loadMapFromBackend();
+    if (this.transportMode === 'private' && this.routeData) {
+      this.loadMapFromBackend();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('🔄 ngOnChanges triggered:', changes);
-    if (changes['routeData'] && !changes['routeData'].firstChange && this.routeData) {
-      console.log('✅ routeData changed, reloading map...');
+    if (this.transportMode === 'private' &&
+        changes['routeData'] &&
+        !changes['routeData'].firstChange &&
+        this.routeData) {
       this.loadMapFromBackend();
     }
   }
 
   loadMapFromBackend() {
-    console.log('🔍 Full routeData received:', this.routeData);
-
     if (!this.routeData?.polyline) {
       console.warn('❌ Polyline is missing! routeData:', this.routeData);
       return;
     }
 
-    console.log('✅ Polyline found, length:', this.routeData.polyline.length);
-    console.log('✅ Markers:', this.routeData.markerString);
-
     this.isLoadingMap = true;
     let path = this.routeData.polyline;
 
     if (path.length > 5000) {
-      console.log('⚠️ Polyline too long (' + path.length + ' chars), simplifying...');
       path = this.simplifyPolyline(path);
-      console.log('✅ Simplified polyline length:', path.length);
     }
 
     const markers = this.routeData.markerString || '';
 
-    console.log('📤 Sending to backend:', {
-      path: path.substring(0, 80),
-      pathLength: path.length,
-      markers: markers,
-      apiKey: this.apiKey ? '✅ exists' : '❌ missing'
-    });
-
     this.mapService.getStaticMap(path, markers, this.apiKey).subscribe({
       next: (res: any) => {
-        console.log('✅ Map loaded successfully');
         this.mapBase64    = 'data:image/png;base64,' + res.image;
         this.isLoadingMap = false;
       },
@@ -81,35 +69,34 @@ export class GenerationComponent implements OnInit, OnChanges {
     });
   }
 
-  // ── TRANSLATE SPOT NAME TO ENGLISH VIA GOOGLE GEOCODING ──
+  //  TRANSLATE SPOT NAME TO ENGLISH VIA GOOGLE GEOCODING 
   // Uses lat/lng to get the official English place name
   private async getEnglishName(spot: any): Promise<string> {
     const hasSinhala = /[\u0D80-\u0DFF]/.test(spot.name);
     const hasTamil   = /[\u0B80-\u0BFF]/.test(spot.name);
 
-    // ✅ Already English — return as-is
+    // Already English — return as-is
     if (!hasSinhala && !hasTamil) return spot.name;
 
-    // ✅ Extract English portion from mixed name
-    // eg: "වයඹ - Wayamba Army War Memorial" → "Wayamba Army War Memorial"
+    // Extract English portion from mixed name
     const englishPart = spot.name
-      .split(/[\s\-–|]+/)  // split by spaces, dashes, pipes
+      .split(/[\s\-|]+/)  
       .filter((word: string) => /^[a-zA-Z0-9\s.,()'-]+$/.test(word) && word.trim().length > 1)
       .join(' ')
       .trim();
 
     if (englishPart.length > 3) {
-      console.log(`✅ Extracted English "${spot.name}" → "${englishPart}"`);
       return englishPart;
     }
 
-    // ✅ Fully Sinhala/Tamil — try Places API with English language
+    // Fully Sinhala/Tamil — try Places API with English language
     try {
-      const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`
-        + `?location=${spot.lat},${spot.lng}`
+      const placesUrl = `${environment.apiUrl}/map/nearby-search`
+        + `?lat=${spot.lat}`
+        + `&lng=${spot.lng}`
         + `&radius=200`
-        + `&language=en`
-        + `&key=${this.apiKey}`;
+        + `&apiKey=${this.apiKey}`
+        + `&language=en`;
 
       const placesRes  = await fetch(placesUrl);
       const placesData = await placesRes.json();
@@ -122,7 +109,6 @@ export class GenerationComponent implements OnInit, OnChanges {
           const isPlusCode = /^[23456789CFGHJMPQRVWX]{4,8}\+/.test(name);
 
           if (!isSinhala && !isTamil && !isPlusCode && name.length > 2) {
-            console.log(`✅ Places API "${spot.name}" → "${name}"`);
             return name;
           }
         }
@@ -131,15 +117,14 @@ export class GenerationComponent implements OnInit, OnChanges {
       console.error('❌ Translation failed:', spot.name, err);
     }
 
-    // ✅ Last resort — return original
-    return spot.name;
+    // Last resort — translation failed, use generic English label instead of untranslated symbols
+    console.warn(`⚠️ Translation failed for "${spot.name}" — using generic label`);
+    return 'Unnamed Scenic Spot';
   }
 
-  // ── TRANSLATE ALL SPOTS BEFORE BUILDING PDF ───────────────
+  // TRANSLATE ALL SPOTS BEFORE BUILDING PDF 
   private async translateAllSpots(stops: any[]): Promise<any[]> {
     if (!stops || stops.length === 0) return [];
-
-    console.log('🌐 Translating scenic spot names to English...');
 
     // Run all translations in parallel for speed
     const translated = await Promise.all(
@@ -149,7 +134,6 @@ export class GenerationComponent implements OnInit, OnChanges {
       }))
     );
 
-    console.log('✅ All spots translated:', translated.map(s => s.name));
     return translated;
   }
 
@@ -157,15 +141,18 @@ export class GenerationComponent implements OnInit, OnChanges {
     const points = this.decodePolyline(encoded);
     const skipFactor = Math.ceil(points.length / 200);
     const simplified = points.filter((_, i) => i % skipFactor === 0);
+
     if (simplified[simplified.length - 1] !== points[points.length - 1]) {
       simplified.push(points[points.length - 1]);
     }
+
     return this.encodePolyline(simplified);
   }
 
   private decodePolyline(encoded: string): { lat: number, lng: number }[] {
     const points: { lat: number, lng: number }[] = [];
     let index = 0, lat = 0, lng = 0;
+
     while (index < encoded.length) {
       let shift = 0, result = 0, byte: number;
       do {
@@ -174,6 +161,7 @@ export class GenerationComponent implements OnInit, OnChanges {
         shift += 5;
       } while (byte >= 0x20);
       lat += (result & 1) ? ~(result >> 1) : result >> 1;
+
       shift = 0; result = 0;
       do {
         byte = encoded.charCodeAt(index++) - 63;
@@ -181,14 +169,17 @@ export class GenerationComponent implements OnInit, OnChanges {
         shift += 5;
       } while (byte >= 0x20);
       lng += (result & 1) ? ~(result >> 1) : result >> 1;
+
       points.push({ lat: lat / 1e5, lng: lng / 1e5 });
     }
+
     return points;
   }
 
   private encodePolyline(points: { lat: number, lng: number }[]): string {
     let output = '';
     let prevLat = 0, prevLng = 0;
+
     const encodeValue = (value: number): string => {
       let v = Math.round(value * 1e5);
       v = v < 0 ? ~(v << 1) : v << 1;
@@ -200,44 +191,45 @@ export class GenerationComponent implements OnInit, OnChanges {
       chunk += String.fromCharCode(v + 63);
       return chunk;
     };
+
     points.forEach(point => {
       output += encodeValue(point.lat - prevLat);
       output += encodeValue(point.lng - prevLng);
       prevLat = point.lat;
       prevLng = point.lng;
     });
+
     return output;
   }
 
   async downloadPDF() {
-    // ✅ ADD THIS
-  if (this.transportMode === 'public') {
-    await this.downloadBusPDF();
-    return;
-  }
-    if (!this.routeData)   { alert('No route data available.');         return; }
-    if (this.isLoadingMap) { alert('Please wait for the map to load.'); return; }
-    if (!this.mapBase64)   { alert('Map image is not ready yet.');      return; }
-
-    // ✅ Generate QR code
-  const appUrl = `http://localhost:4200/explore/route-optimization?start=${encodeURIComponent(this.routeData.startLocation)}&end=${encodeURIComponent(this.routeData.endLocation)}&mode=private`;
-  const qrBase64 = await QRCode.toDataURL(appUrl, {
-    width: 150,
-    margin: 1,
-    color: {
-      dark: '#1a56db',  // blue dots
-      light: '#ffffff'
+    if (this.transportMode === 'public') {
+      await this.downloadBusPDF();
+      return;
     }
-  });
 
-    // ✅ Translate all scenic spot names to English BEFORE building PDF
+    if (!this.routeData)   { alert('No route data available.');       return; }
+    if (this.isLoadingMap) { alert('Please wait for the map to load.'); return; }
+    if (!this.mapBase64)   { alert('Map image is not ready yet.');     return; }
+
+    const appUrl = `http://localhost:4200/explore/route-optimization?start=${encodeURIComponent(this.routeData.startLocation)}&end=${encodeURIComponent(this.routeData.endLocation)}&mode=private`;
+    const qrBase64 = await QRCode.toDataURL(appUrl, {
+      width: 150,
+      margin: 1,
+      color: {
+        dark: '#1a56db',
+        light: '#ffffff'
+      }
+    });
+
+    // Translate all scenic spot names to English before building the PDF
     const translatedStops = await this.translateAllSpots(this.routeData.stops || []);
 
     const doc        = new jsPDF('p', 'mm', 'a4');
     const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // ── HEADER ────────────────────────────────────────────────
+    // HEADER 
     doc.setFillColor(26, 86, 219);
     doc.rect(0, 0, pageWidth, 28, 'F');
     doc.setTextColor(255, 255, 255);
@@ -255,7 +247,7 @@ export class GenerationComponent implements OnInit, OnChanges {
       pageWidth - 14, 22, { align: 'right' }
     );
 
-    // ── TRIP INFO ─────────────────────────────────────────────
+    // TRIP INFO
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -267,7 +259,7 @@ export class GenerationComponent implements OnInit, OnChanges {
     doc.setFont('helvetica', 'normal');
     doc.text(this.routeData.endLocation || '', 30, 46);
 
-    // ── ROUTE COMPARISON TABLE ────────────────────────────────
+    // ROUTE COMPARISON TABLE
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 30, 30);
@@ -285,19 +277,17 @@ export class GenerationComponent implements OnInit, OnChanges {
     let tableY = 64;
 
     routes.forEach(r => {
-  const info       = this.routeData.allRoutes?.[r.key];
-  if (!info) return;
+      const info       = this.routeData.allRoutes?.[r.key];
+      if (!info) return;
+      const isSelected = this.routeData.selectedType === r.key.toUpperCase();
 
-  const isSelected = this.routeData.selectedType === r.key.toUpperCase();
-
-      // fill color based on selection
       if (isSelected) {
         doc.setFillColor(26, 86, 219);
       } else {
         doc.setFillColor(245, 247, 250);
       }
-      doc.roundedRect(14, tableY, pageWidth - 28, 30, 2, 2, 'F'); // ✅ 20 → 30
 
+      doc.roundedRect(14, tableY, pageWidth - 28, 30, 2, 2, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(isSelected ? 255 : 30, isSelected ? 255 : 30, isSelected ? 255 : 30);
@@ -310,7 +300,8 @@ export class GenerationComponent implements OnInit, OnChanges {
 
       const petrol = info.petrolCost != null ? `Petrol: Rs. ${info.petrolCost}` : 'Petrol: N/A';
       const diesel = info.dieselCost != null ? `Diesel: Rs. ${info.dieselCost}` : 'Diesel: N/A';
-            doc.text(petrol, 20, tableY + 24);
+
+      doc.text(petrol, 20, tableY + 24);
       doc.text(diesel, 85, tableY + 24);
 
       if (isSelected) {
@@ -319,16 +310,16 @@ export class GenerationComponent implements OnInit, OnChanges {
         doc.text('Selected', pageWidth - 20, tableY + 8, { align: 'right' });
       }
 
-      tableY += 34; // ✅ 24 → 34
+      tableY += 34;
     });
 
-    // ── MAP VIEW ──────────────────────────────────────────────
+    //  MAP VIEW 
     const mapTitleY = tableY + 6;
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text(
-      `Map View  —  ${this.routeData.selectedType} Route`,
+      `Map View — ${this.routeData.selectedType} Route`,
       14, mapTitleY
     );
     doc.setDrawColor(26, 86, 219);
@@ -338,19 +329,18 @@ export class GenerationComponent implements OnInit, OnChanges {
     const mapHeight = pageHeight - mapY - 16;
     doc.addImage(this.mapBase64, 'PNG', 14, mapY, pageWidth - 28, mapHeight);
 
-    // ── SCENIC VIEWPOINTS PAGE ────────────────────────────────
-    // ✅ Uses translatedStops — all names now in English
+    // SCENIC VIEWPOINTS PAGE 
+    // Uses translatedStops — all names now in English
     if (translatedStops.length > 0) {
       doc.addPage();
-
       doc.setFillColor(26, 86, 219);
       doc.rect(0, 0, pageWidth, 18, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
       doc.text('Scenic Viewpoints Along the Route', 14, 12);
-
       doc.setTextColor(30, 30, 30);
+
       let vY = 26;
 
       translatedStops.forEach((spot: any, i: number) => {
@@ -358,13 +348,12 @@ export class GenerationComponent implements OnInit, OnChanges {
 
         doc.setFillColor(245, 247, 250);
         doc.roundedRect(14, vY, pageWidth - 28, 16, 2, 2, 'F');
-
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 30, 30);
         doc.text(`${i + 1}.  ${spot.name || 'Scenic Spot'}`, 20, vY + 7);
 
-        // ✅ Show real distance from route instead of coordinates
+        // Show real distance from route instead of coordinates
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
@@ -377,37 +366,33 @@ export class GenerationComponent implements OnInit, OnChanges {
       });
     }
 
-          // ── QR CODE SECTION ──────────────────────────────────────
-      doc.addPage();
+    //QR CODE SECTION 
+    doc.addPage();
+    doc.setFillColor(26, 86, 219);
+    doc.rect(0, 0, pageWidth, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Share This Route', 14, 12);
 
-      doc.setFillColor(26, 86, 219);
-      doc.rect(0, 0, pageWidth, 18, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Share This Route', 14, 12);
+    doc.addImage(qrBase64, 'PNG', 14, 30, 50, 50);
 
-      // QR code image
-      doc.addImage(qrBase64, 'PNG', 14, 30, 50, 50);
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Open in Smart Journey Planner', 72, 45);
 
-      // Instructions next to QR
-      doc.setTextColor(30, 30, 30);
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Open in Smart Journey Planner', 72, 45);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Scan this QR code to open this route', 72, 55);
+    doc.text('directly in the app on your device.', 72, 63);
 
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('Scan this QR code to open this route', 72, 55);
-      doc.text('directly in the app on your device.', 72, 63);
+    doc.setFontSize(8);
+    doc.setTextColor(26, 86, 219);
+    doc.text(appUrl, 14, 88);
 
-      // URL text below QR (fallback)
-      doc.setFontSize(8);
-      doc.setTextColor(26, 86, 219);
-      doc.text(appUrl, 14, 88);
-
-    // ── FOOTER ON EVERY PAGE ──────────────────────────────────
+    //FOOTER ON EVERY PAGE 
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -426,7 +411,7 @@ export class GenerationComponent implements OnInit, OnChanges {
       );
     }
 
-    // ── SAVE ─────────────────────────────────────────────────
+    // SAVE 
     doc.save(`Journey_Plan_${this.routeData.endLocation || 'Report'}.pdf`);
   }
 
@@ -444,7 +429,7 @@ export class GenerationComponent implements OnInit, OnChanges {
     const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // ── HEADER (same style as private PDF) ─────────────────
+    //  HEADER (same style as private PDF) 
     doc.setFillColor(26, 86, 219);
     doc.rect(0, 0, pageWidth, 28, 'F');
     doc.setTextColor(255, 255, 255);
@@ -462,7 +447,7 @@ export class GenerationComponent implements OnInit, OnChanges {
       pageWidth - 14, 22, { align: 'right' }
     );
 
-    // ── TRIP INFO ───────────────────────────────────────────
+    // TRIP INFO
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -474,7 +459,7 @@ export class GenerationComponent implements OnInit, OnChanges {
     doc.setFont('helvetica', 'normal');
     doc.text(this.busData.to || '', 30, 46);
 
-    // ── BUS JOURNEY DETAILS TITLE ────────────────────────────
+    // BUS JOURNEY DETAILS TITLE
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 30, 30);
@@ -485,29 +470,60 @@ export class GenerationComponent implements OnInit, OnChanges {
 
     let yPos = 66;
 
-    // ── DIRECT ROUTE ─────────────────────────────────────────
+    // DIRECT ROUTE(S) 
     if (!this.busData.isMultiLeg) {
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(14, yPos, pageWidth - 28, 40, 2, 2, 'F');
+      const options = this.busData.directOptions?.length
+        ? this.busData.directOptions
+        : [{ routeNo: this.busData.routeNo, from: this.busData.from, to: this.busData.to,
+             via: this.busData.via, fare: this.busData.fare }];
 
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 86, 219);
-      doc.text(`Bus Route ${this.busData.routeNo}`, 20, yPos + 10);
+      const cheapestFare = options[0]?.fare;
+      const highestFare  = options[options.length - 1]?.fare;
+      const showCheapestBadge = options.length > 1 && cheapestFare !== highestFare;
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(50, 50, 50);
-      doc.text(`From : ${this.busData.from}`, 20, yPos + 20);
-      doc.text(`To   : ${this.busData.to}`,   20, yPos + 28);
+      options.forEach((option: any, index: number) => {
+        // Page break check
+        const cardHeight = option.via ? 48 : 40;
+        if (yPos + cardHeight > pageHeight - 60) {
+          doc.addPage();
+          yPos = 20;
+        }
 
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 86, 219);
-      doc.text(`Fare : Rs. ${this.busData.fare}`, 20, yPos + 36);
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(14, yPos, pageWidth - 28, cardHeight, 2, 2, 'F');
 
-      yPos += 50;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(26, 86, 219);
+        doc.text(`Bus ${option.routeNo}: ${option.from || ''} - ${option.to || ''}`, 20, yPos + 10);
+
+        // Cheapest badge
+        if (showCheapestBadge && option.fare === cheapestFare) {
+          doc.setFontSize(8);
+          doc.setTextColor(16, 122, 68);
+          doc.text('Cheapest', pageWidth - 20, yPos + 10, { align: 'right' });
+        }
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        doc.text(`From : ${this.busData.from}`, 20, yPos + 20);
+        doc.text(`To   : ${this.busData.to}`,   20, yPos + 28);
+
+        let fareY = yPos + 36;
+        if (option.via) {
+          doc.text(`Via  : ${option.via}`, 20, fareY);
+          fareY += 8;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(26, 86, 219);
+        doc.text(`Fare : Rs. ${option.fare}`, 20, fareY);
+
+        yPos += cardHeight + 6;
+      });
     }
-    // ── MULTI-LEG ROUTE ──────────────────────────────────────
+    // MULTI-LEG ROUTE 
     else {
       // Leg 1 card
       doc.setFillColor(245, 247, 250);
@@ -575,7 +591,7 @@ export class GenerationComponent implements OnInit, OnChanges {
       yPos += 26;
     }
 
-    // ── QR CODE SECTION (same style as private PDF) ─────────
+    //  QR CODE SECTION (same style as private PDF)
     const appUrl = `http://localhost:4200/explore/route-optimization` +
                   `?start=${encodeURIComponent(this.busData.from || '')}` +
                   `&end=${encodeURIComponent(this.busData.to || '')}` +
@@ -612,7 +628,7 @@ export class GenerationComponent implements OnInit, OnChanges {
     doc.setTextColor(26, 86, 219);
     doc.text(appUrl, 14, qrY + 58);
 
-    // ── FOOTER ON EVERY PAGE (dynamic, same as private PDF) ──
+    // FOOTER ON EVERY PAGE (dynamic, same as private PDF) 
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -631,7 +647,7 @@ export class GenerationComponent implements OnInit, OnChanges {
       );
     }
 
-    // ── SAVE ─────────────────────────────────────────────────
+    // SAVE
     doc.save(`Bus_Report_${this.busData.to || 'Report'}.pdf`);
   }
 }
