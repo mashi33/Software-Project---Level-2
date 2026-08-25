@@ -75,30 +75,128 @@ namespace SmartJourneyPlanner.Services
             };
             }
 
-            var vehicleFilter = CreateProviderFilter<TransportVehicle>(cleanId);
-            var bookingFilter = CreateProviderFilter<TransportBooking>(cleanId);
+            // Try exact match first (fast, uses index)
+            var vehicleFilter = Builders<TransportVehicle>.Filter.Eq(v => v.ProviderId, cleanId);
+            var bookingFilter = Builders<TransportBooking>.Filter.Eq(b => b.ProviderId, cleanId);
 
-    //  PARALLEL QUERIES 
-            var vehicleTask = _vehicleCollection.Find(vehicleFilter).ToListAsync();
-            var bookingTask = _bookingCollection.Find(bookingFilter).ToListAsync();
+    //  PARALLEL QUERIES WITH PROJECTION FOR FASTER LOADING
+            var vehicleTask = _vehicleCollection
+                .Find(vehicleFilter)
+                .Project(v => new TransportVehicle
+                {
+                    Id = v.Id,
+                    ProviderId = v.ProviderId,
+                    ModelName = v.ModelName,
+                    VehicleClass = v.VehicleClass,
+                    YearOfManufacture = v.YearOfManufacture,
+                    SeatCount = v.SeatCount,
+                    FuelType = v.FuelType,
+                    Transmission = v.Transmission,
+                    IsAc = v.IsAc,
+                    StandardDailyRate = v.StandardDailyRate,
+                    IsAvailableForBooking = v.IsAvailableForBooking,
+                    AdminVerificationStatus = v.AdminVerificationStatus,
+                    BookedDates = v.BookedDates,
+                    BlockedDateRanges = v.BlockedDateRanges,
+                    InteriorPhoto = v.InteriorPhoto,
+                    ExteriorPhoto = v.ExteriorPhoto,
+                    Reviews = v.Reviews,
+                    CreatedAt = v.CreatedAt
+                })
+                .ToListAsync();
+
+            var bookingTask = _bookingCollection
+                .Find(bookingFilter)
+                .Project(b => new TransportBooking
+                {
+                    Id = b.Id,
+                    ProviderId = b.ProviderId,
+                    VehicleId = b.VehicleId,
+                    UserId = b.UserId,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Status = b.Status,
+                    StatusChangedDate = b.StatusChangedDate,
+                    TotalAmount = b.TotalAmount,
+                    CreatedAt = b.CreatedAt,
+                    vehicleName = b.vehicleName
+                })
+                .ToListAsync();
 
             await Task.WhenAll(vehicleTask, bookingTask);
 
             var vehicles = await vehicleTask;
             var bookings = await bookingTask;
 
-            System.Console.WriteLine($"Vehicles found with Regex: {vehicles.Count}");
-            System.Console.WriteLine($"Bookings found with Regex: {bookings.Count}");
+            System.Console.WriteLine($"Vehicles found with exact match: {vehicles.Count}");
+            System.Console.WriteLine($"Bookings found with exact match: {bookings.Count}");
 
-           if (vehicles.Count == 0)
-           {
-            System.Console.WriteLine("No vehicles with Regex. Trying exact match fallback...");
-        
-            var exactFilter = Builders<TransportVehicle>.Filter.Eq(v => v.ProviderId, cleanId);
-            vehicles = await _vehicleCollection.Find(exactFilter).ToListAsync();
-        
-            System.Console.WriteLine($"Vehicles found with Exact match: {vehicles.Count}");
-           }
+            // Fallback to case-insensitive if exact match returns no results
+            // This ensures data is found even if casing differs in database
+            if (vehicles.Count == 0 || bookings.Count == 0)
+            {
+                System.Console.WriteLine("No results with exact match. Trying case-insensitive fallback...");
+                
+                var caseInsensitiveVehicleFilter = Builders<TransportVehicle>.Filter.Regex(
+                    "ProviderId",
+                    new BsonRegularExpression($"^{Regex.Escape(cleanId)}$", "i")
+                );
+                var caseInsensitiveBookingFilter = Builders<TransportBooking>.Filter.Regex(
+                    "ProviderId",
+                    new BsonRegularExpression($"^{Regex.Escape(cleanId)}$", "i")
+                );
+
+                if (vehicles.Count == 0)
+                {
+                    vehicles = await _vehicleCollection
+                        .Find(caseInsensitiveVehicleFilter)
+                        .Project(v => new TransportVehicle
+                        {
+                            Id = v.Id,
+                            ProviderId = v.ProviderId,
+                            ModelName = v.ModelName,
+                            VehicleClass = v.VehicleClass,
+                            YearOfManufacture = v.YearOfManufacture,
+                            SeatCount = v.SeatCount,
+                            FuelType = v.FuelType,
+                            Transmission = v.Transmission,
+                            IsAc = v.IsAc,
+                            StandardDailyRate = v.StandardDailyRate,
+                            IsAvailableForBooking = v.IsAvailableForBooking,
+                            AdminVerificationStatus = v.AdminVerificationStatus,
+                            BookedDates = v.BookedDates,
+                            BlockedDateRanges = v.BlockedDateRanges,
+                            InteriorPhoto = v.InteriorPhoto,
+                            ExteriorPhoto = v.ExteriorPhoto,
+                            Reviews = v.Reviews,
+                            CreatedAt = v.CreatedAt
+                        })
+                        .ToListAsync();
+                    System.Console.WriteLine($"Vehicles found with case-insensitive: {vehicles.Count}");
+                }
+
+                if (bookings.Count == 0)
+                {
+                    bookings = await _bookingCollection
+                        .Find(caseInsensitiveBookingFilter)
+                        .Project(b => new TransportBooking
+                        {
+                            Id = b.Id,
+                            ProviderId = b.ProviderId,
+                            VehicleId = b.VehicleId,
+                            UserId = b.UserId,
+                            StartDate = b.StartDate,
+                            EndDate = b.EndDate,
+                            Status = b.Status,
+                            StatusChangedDate = b.StatusChangedDate,
+                            TotalAmount = b.TotalAmount,
+                            CreatedAt = b.CreatedAt,
+                            vehicleName = b.vehicleName
+                        })
+                        .ToListAsync();
+                    System.Console.WriteLine($"Bookings found with case-insensitive: {bookings.Count}");
+                }
+            }
 
     // Fast dictionary for vehicle names
            var vehicleNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

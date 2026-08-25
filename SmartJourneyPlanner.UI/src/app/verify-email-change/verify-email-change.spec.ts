@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { VerifyEmailChange } from './verify-email-change';
+import { VerifyEmailChangeComponent } from './verify-email-change';
 
 describe('VerifyEmailChange', () => {
-  let component: VerifyEmailChange;
-  let fixture: ComponentFixture<VerifyEmailChange>;
+  let component: VerifyEmailChangeComponent;
+  let fixture: ComponentFixture<VerifyEmailChangeComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VerifyEmailChange]
+      imports: [VerifyEmailChangeComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(VerifyEmailChange);
+    fixture = TestBed.createComponent(VerifyEmailChangeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

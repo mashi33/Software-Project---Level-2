@@ -15,6 +15,8 @@ export class SignalrService {
   public discussionDeleted    = new Subject<string>();
   public newDiscussion        = new Subject<any>();
   public notificationReceived = new Subject<any>();
+  public memoryLikeUpdated    = new Subject<any>();
+  public memoryCommentUpdated = new Subject<any>();
   public memberLimitChanged   = new Subject<any>();
   public connectionFailed     = new Subject<string>();
   public connectionRestored   = new Subject<void>();
@@ -81,6 +83,8 @@ export class SignalrService {
     this.hubConnection
       .start()
       .then(() => {
+        console.log('[SignalR] Connected Successfully! ✅');
+        
         this.hubConnection.off('ReceiveComment');
         this.hubConnection.on('ReceiveComment', (data: any) => {
           this.messageReceived.next(data);
@@ -101,18 +105,28 @@ export class SignalrService {
           this.newDiscussion.next(data);
         });
 
-        // Fired when a trip's member list changes
         this.hubConnection.off('MemberLimitChanged');
         this.hubConnection.on('MemberLimitChanged', (data: any) => {
           this.memberLimitChanged.next(data);
         });
 
-        // User-targeted notification (delivered via personal group)
         this.hubConnection.off('ReceiveNotification');
         this.hubConnection.on('ReceiveNotification', (data: any) => {
           this.notificationReceived.next(data);
         });
 
+        this.hubConnection.off('MemoryLikeUpdated');
+        this.hubConnection.on('MemoryLikeUpdated', (data: any) => {
+          console.log('[SignalR] Memory like updated:', data);
+          this.memoryLikeUpdated.next(data);
+        });
+
+        this.hubConnection.off('MemoryCommentUpdated');
+        this.hubConnection.on('MemoryCommentUpdated', (data: any) => {
+          console.log('[SignalR] Memory comment updated:', data);
+          this.memoryCommentUpdated.next(data);
+        });
+        
         // Auto-join the user group if already logged in when SignalR connects
         const userId = localStorage.getItem('userId');
         if (userId) {

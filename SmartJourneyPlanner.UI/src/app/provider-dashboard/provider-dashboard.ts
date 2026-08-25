@@ -465,24 +465,81 @@ export class ProviderDashboardComponent implements OnInit {
 
   acceptBooking(booking: Booking) {
     if (!booking.id) return;
-    this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe(() => {
-      booking.status = 'Confirmed';
-      booking.statusChangedDate = new Date().toISOString();
-      Swal.fire('Confirmed!', 'The booking has been successfully accepted.', 'success');
-      this.loadAll();
+    
+    // Optimistic update - update UI immediately
+    const originalStatus = booking.status;
+    const originalStatusDate = booking.statusChangedDate;
+    booking.status = 'Confirmed';
+    booking.statusChangedDate = new Date().toISOString();
+    
+    // Recalculate stats optimistically
+    this.stats.pendingBookings--;
+    this.stats.acceptedBookings++;
+    
+    // Update filtered bookings
+    this.filterBookings();
+    
+    this.bookingService.updateBookingStatus(booking.id, 'Confirmed').subscribe({
+      next: () => {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Booking Confirmed',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      },
+      error: (err) => {
+        // Revert on error
+        booking.status = originalStatus;
+        booking.statusChangedDate = originalStatusDate;
+        this.stats.pendingBookings++;
+        this.stats.acceptedBookings--;
+        this.filterBookings();
+        Swal.fire('Error', 'Could not update booking status.', 'error');
+        console.error(err);
+      }
     });
   }
 
   completeBooking(booking: Booking) {
     if (!booking.id) return;
+    
+    // Optimistic update - update UI immediately
+    const originalStatus = booking.status;
+    const originalStatusDate = booking.statusChangedDate;
+    booking.status = 'Completed';
+    booking.statusChangedDate = new Date().toISOString();
+    
+    // Recalculate stats optimistically
+    this.stats.acceptedBookings--;
+    this.stats.completedBookings++;
+    
+    // Update filtered bookings
+    this.filterBookings();
+    
     this.bookingService.updateBookingStatus(booking.id, 'Completed').subscribe({
       next: () => {
-        booking.status = 'Completed';
-        booking.statusChangedDate = new Date().toISOString();
-        Swal.fire('Completed!', 'Trip marked as completed.', 'success');
-        this.loadAll();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Trip Completed',
+          showConfirmButton: false,
+          timer: 2000
+        });
       },
-      error: (err) => Swal.fire('Error', 'Could not update booking status.', 'error')
+      error: (err) => {
+        // Revert on error
+        booking.status = originalStatus;
+        booking.statusChangedDate = originalStatusDate;
+        this.stats.acceptedBookings++;
+        this.stats.completedBookings--;
+        this.filterBookings();
+        Swal.fire('Error', 'Could not update booking status.', 'error');
+        console.error(err);
+      }
     });
   }
 
@@ -501,14 +558,41 @@ export class ProviderDashboardComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         const bookingId: string = booking.id!;
+        
+        // Optimistic update - update UI immediately
+        const originalStatus = booking.status;
+        const originalStatusDate = booking.statusChangedDate;
+        booking.status = 'Rejected';
+        booking.statusChangedDate = new Date().toISOString();
+        
+        // Recalculate stats optimistically
+        this.stats.pendingBookings--;
+        this.stats.rejectedBookings++;
+        
+        // Update filtered bookings
+        this.filterBookings();
+        
         this.bookingService.updateBookingStatus(bookingId, 'Rejected').subscribe({
           next: () => {
-            booking.status = 'Rejected';
-            booking.statusChangedDate = new Date().toISOString();
-            Swal.fire('Rejected', 'The booking request was turned down.', 'info');
-            this.loadAll();
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'info',
+              title: 'Booking Rejected',
+              showConfirmButton: false,
+              timer: 2000
+            });
           },
-          error: (err) => Swal.fire('Error', 'Failed to execute status transition.', 'error')
+          error: (err) => {
+            // Revert on error
+            booking.status = originalStatus;
+            booking.statusChangedDate = originalStatusDate;
+            this.stats.pendingBookings++;
+            this.stats.rejectedBookings--;
+            this.filterBookings();
+            Swal.fire('Error', 'Failed to execute status transition.', 'error');
+            console.error(err);
+          }
         });
       }
     });
@@ -750,7 +834,21 @@ export class ProviderDashboardComponent implements OnInit {
     const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
     
     if (this.editingBlockedRange) {
-      // Update existing range
+      // Update existing range - optimistic update
+      const index = this.blockedRangesList.findIndex(
+        r => r.id === this.editingBlockedRange.id
+      );
+      const originalRange = index !== -1 ? { ...this.blockedRangesList[index] } : null;
+      
+      if (index !== -1) {
+        this.blockedRangesList[index] = {
+          ...this.blockedRangesList[index],
+          startDate: this.blockedRangesStartDate,
+          endDate: this.blockedRangesEndDate,
+          reason: this.blockedRangesReason
+        };
+      }
+
       this.vehicleService.editBlockedDateRange(
   vehicleId,
   this.editingBlockedRange.id,
@@ -759,19 +857,14 @@ export class ProviderDashboardComponent implements OnInit {
   this.blockedRangesReason
 ).subscribe({
   next: () => {
-    const index = this.blockedRangesList.findIndex(
-      r => r.id === this.editingBlockedRange.id
-    );
-    if (index !== -1) {
-      this.blockedRangesList[index] = {
-        ...this.blockedRangesList[index],
-        startDate: this.blockedRangesStartDate,
-        endDate: this.blockedRangesEndDate,
-        reason: this.blockedRangesReason
-      };
-    }
-
-    Swal.fire('Success', 'Blocked date range updated successfully', 'success');
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Blocked range updated',
+      showConfirmButton: false,
+      timer: 2000
+    });
     this.blockedRangesStartDate = '';
     this.blockedRangesEndDate = '';
     this.blockedRangesReason = '';
@@ -779,16 +872,25 @@ export class ProviderDashboardComponent implements OnInit {
   },
   error: (err) => {
     console.error('Error editing blocked range:', err);
+    // Revert on error
+    if (originalRange && index !== -1) {
+      this.blockedRangesList[index] = originalRange;
+    }
     const errorMessage = err.error?.message || 'Failed to update blocked date range';
     Swal.fire('Error!', errorMessage, 'error');
   }
 });
     } else {
-      // Add new range
-      console.log('Adding blocked range for vehicle:', vehicleId);
-      console.log('Start date:', this.blockedRangesStartDate);
-      console.log('End date:', this.blockedRangesEndDate);
-      console.log('Reason:', this.blockedRangesReason);
+      // Add new range - optimistic update
+      const tempId = 'temp-' + Date.now();
+      const newRange = {
+        id: tempId,
+        startDate: this.blockedRangesStartDate,
+        endDate: this.blockedRangesEndDate,
+        reason: this.blockedRangesReason || ''
+      };
+      
+      this.blockedRangesList = [...this.blockedRangesList, newRange];
       
       this.vehicleService.addBlockedDateRange(
   vehicleId,
@@ -797,23 +899,28 @@ export class ProviderDashboardComponent implements OnInit {
   this.blockedRangesReason
 ).subscribe({
   next: (res: any) => {
-    this.blockedRangesList = [
-      ...this.blockedRangesList,
-      {
-        id: res.id,   
-        startDate: this.blockedRangesStartDate,
-        endDate: this.blockedRangesEndDate,
-        reason: this.blockedRangesReason || ''
-      }
-    ];
-
-    Swal.fire('Success', 'Blocked date range added successfully', 'success');
+    // Update with real ID from server
+    const index = this.blockedRangesList.findIndex(r => r.id === tempId);
+    if (index !== -1) {
+      this.blockedRangesList[index].id = res.id;
+    }
+    
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Blocked range added',
+      showConfirmButton: false,
+      timer: 2000
+    });
     this.blockedRangesStartDate = '';
     this.blockedRangesEndDate = '';
     this.blockedRangesReason = '';
   },
   error: (err) => {
     console.error('Error adding blocked range:', err);
+    // Revert on error
+    this.blockedRangesList = this.blockedRangesList.filter(r => r.id !== tempId);
     const errorMessage = err.error?.message || 'Failed to add blocked date range';
     Swal.fire('Error!', errorMessage, 'error');
   }
@@ -1143,14 +1250,25 @@ if (isShortNotice) {
     this.closeCancelBookingModal();
     this.tempCancelReason = cancelReason;
 
+    // Optimistic update - update UI immediately
+    const originalStatus = booking.status;
+    const originalStatusDate = booking.statusChangedDate;
+    booking.status = 'Cancelled';
+    booking.statusChangedDate = new Date().toISOString();
+    (booking as any).CancelledBy = 'Provider';
+    this.providerCancelledIds.add(booking.id!);
+    
+    // Recalculate stats optimistically
+    this.stats.acceptedBookings--;
+    this.stats.canceledBookings++;
+    
+    // Update filtered bookings
+    this.filterBookings();
+
     // Cancel the booking  
     this.bookingService.updateBookingStatus(booking.id!, 'Cancelled', 'Provider').subscribe({
       next: () => {
-       booking.status = 'Cancelled';
-       booking.statusChangedDate = new Date().toISOString();
-       (booking as any).CancelledBy = 'Provider';   
-       this.providerCancelledIds.add(booking.id!);
-       this.tempCancelReason = '';
+        this.tempCancelReason = '';
 
         // Add blocked range
         const vehicleId = (booking as any).vehicleId || (booking as any).VehicleId;
@@ -1161,7 +1279,6 @@ if (isShortNotice) {
             text: 'The booking was cancelled, but the vehicle could not be identified. Please block the dates manually from Fleet Management.',
             confirmButtonColor: '#0c92f4'
           });
-          this.loadAll();
           return;
         }
 
@@ -1188,7 +1305,6 @@ if (isShortNotice) {
                 </div>
               `
             });
-            this.loadAll();
           },
           error: (err) => {
             console.error('Failed to add blocked range:', err);
@@ -1199,11 +1315,18 @@ if (isShortNotice) {
               text: msg,
               confirmButtonColor: '#0c92f4'
             });
-            this.loadAll();
           }
         });
       },
       error: (err) => {
+        // Revert on error
+        booking.status = originalStatus;
+        booking.statusChangedDate = originalStatusDate;
+        this.providerCancelledIds.delete(booking.id!);
+        this.stats.acceptedBookings++;
+        this.stats.canceledBookings--;
+        this.filterBookings();
+        
         console.error('Cancel booking failed:', err);
         Swal.fire({
           icon: 'error',
@@ -1227,13 +1350,26 @@ if (isShortNotice) {
     }).then((result) => {
       if (result.isConfirmed) {
         const vehicleId = this.blockedRangesVehicle.id || this.blockedRangesVehicle._id;
+        
+        // Optimistic update - remove from UI immediately
+        const originalList = [...this.blockedRangesList];
+        this.blockedRangesList = this.blockedRangesList.filter(r => r.id !== range.id);
+        
         this.vehicleService.deleteBlockedDateRange(vehicleId, range.id).subscribe({
           next: () => {
-  this.blockedRangesList = this.blockedRangesList.filter(r => r.id !== range.id);
-  Swal.fire('Deleted!', 'Blocked date range has been deleted.', 'success');
-},
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: 'Blocked range deleted',
+              showConfirmButton: false,
+              timer: 2000
+            });
+          },
           error: (err) => {
             console.error('Error deleting blocked range:', err);
+            // Revert on error
+            this.blockedRangesList = originalList;
             Swal.fire('Error!', 'Failed to delete blocked date range', 'error');
           }
         });

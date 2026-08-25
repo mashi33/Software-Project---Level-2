@@ -6,6 +6,8 @@ import * as leaflet from 'leaflet';
 import 'leaflet.markercluster';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
+import { SignalrService } from '../services/signalr.service';
+import * as signalR from '@microsoft/signalr';
 
 @Component({
   selector: 'app-memories-map',
@@ -86,13 +88,77 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private location: Location,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private signalrService: SignalrService
   ) {}
 
   ngOnInit(): void {
     this.fixLeafletIcons();
     this.loadAccessibleTrips();
     this.loadMyMemories();
+
+    // Subscribe to real-time memory like updates via Subject
+    this.signalrService.memoryLikeUpdated.subscribe((data: any) => {
+      console.log('[MemoriesMap] ✅ Subject received like update:', data);
+      this.handleMemoryLikeUpdate(data);
+    });
+
+    // Subscribe to real-time memory comment updates via Subject
+    this.signalrService.memoryCommentUpdated.subscribe((data: any) => {
+      console.log('[MemoriesMap] ✅ Subject received comment update:', data);
+      this.handleMemoryCommentUpdate(data);
+    });
+
+    // Also register directly on hub connection for redundancy
+    this.registerDirectSignalRHandlers();
+  }
+
+  private registerDirectSignalRHandlers() {
+    const hub = this.signalrService.hubConnection;
+    
+    // Wait for connection to be established if not already
+    if (hub.state === signalR.HubConnectionState.Connecting) {
+      setTimeout(() => this.registerDirectSignalRHandlers(), 100);
+      return;
+    }
+
+    // Remove existing handlers
+    hub.off('MemoryLikeUpdated');
+    hub.off('MemoryCommentUpdated');
+
+    // Register handlers directly on hub
+    hub.on('MemoryLikeUpdated', (data: any) => {
+      console.log('[MemoriesMap] Direct hub.on - Memory like updated:', data);
+      this.handleMemoryLikeUpdate(data);
+    });
+
+    hub.on('MemoryCommentUpdated', (data: any) => {
+      console.log('[MemoriesMap] Direct hub.on - Memory comment updated:', data);
+      this.handleMemoryCommentUpdate(data);
+    });
+
+    console.log('[MemoriesMap] Direct SignalR handlers registered, state:', hub.state);
+
+    // If disconnected, try to start connection
+    if (hub.state === signalR.HubConnectionState.Disconnected) {
+      console.log('[MemoriesMap] SignalR disconnected, starting connection...');
+      hub.start()
+        .then(() => {
+          console.log('[MemoriesMap] SignalR connected, re-registering handlers');
+          // Re-register after connection
+          hub.off('MemoryLikeUpdated');
+          hub.off('MemoryCommentUpdated');
+          hub.on('MemoryLikeUpdated', (data: any) => {
+            console.log('[MemoriesMap] Direct hub.on (reconnected) - Memory like updated:', data);
+            this.handleMemoryLikeUpdate(data);
+          });
+          hub.on('MemoryCommentUpdated', (data: any) => {
+            console.log('[MemoriesMap] Direct hub.on (reconnected) - Memory comment updated:', data);
+            this.handleMemoryCommentUpdate(data);
+          });
+        })
+        .catch(err => console.error('[MemoriesMap] SignalR connection failed:', err));
+    }
   }
 
   ngAfterViewInit(): void {
@@ -100,6 +166,72 @@ export class MemoriesMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {}
+
+  // Handle real-time memory like updates
+  private handleMemoryLikeUpdate(data: any) {
+    if (!data || !data.memoryId) return;
+
+    const memoryId = data.memoryId;
+    const likeCount = data.likeCount || 0;
+    const likedByUsers = data.likedByUsers || [];
+
+    console.log('[MemoriesMap] Updating like for memory:', memoryId, 'count:', likeCount);
+
+    let found = false;
+
+    // Update memory in allMemories array
+    const memoryIndex = this.allMemories.findIndex(m => m.id === memoryId || m._id === memoryId);
+    if (memoryIndex !== -1) {
+      console.log('[MemoriesMap] Found in allMemories at index:', memoryIndex);
+      this.allMemories[memoryIndex].likeCount = likeCount;
+      this.allMemories[memoryIndex].likedByUsers = likedByUsers;
+      found = true;
+    }
+
+    // Update memory in groupedAlbums
+    this.groupedAlbums.forEach(album => {
+      const memory = album.memories.find((m: any) => m.id === memoryId || m._id === memoryId);
+      if (memory) {
+        console.log('[MemoriesMap] Found in groupedAlbums for trip:', album.tripName);
+        memory.likeCount = likeCount;
+        memory.likedByUsers = likedByUsers;
+        found = true;
+      }
+    });
+
+    // Update selected memory if currently viewing
+    if (this.selectedMemory && (this.selectedMemory.id === memoryId || this.selectedMemory._id === memoryId)) {
+      console.log('[MemoriesMap] Found in selectedMemory');
+      this.selectedMemory.likeCount = likeCount;
+      this.selectedMemory.likedByUsers = likedByUsers;
+      found = true;
+    }
+
+    if (!found) {
+      console.warn('[MemoriesMap] Memory not found in any array:', memoryId);
+    }
+
+    // Force UI update without expensive map refresh
+    this.cdr.detectChanges();
+  }
+
+  // Handle real-time memory comment updates
+  private handleMemoryCommentUpdate(data: any) {
+    if (!data || !data.memoryId || !data.comment) return;
+
+    const memoryId = data.memoryId;
+    const newComment = data.comment;
+
+    console.log('[MemoriesMap] New comment received for memory:', memoryId);
+
+    // If currently viewing this memory, reload comments
+    if (this.selectedMemory && (this.selectedMemory.id === memoryId || this.selectedMemory._id === memoryId)) {
+      console.log('[MemoriesMap] Reloading comments for selected memory');
+      this.loadComments(memoryId);
+    } else {
+      console.log('[MemoriesMap] Memory not currently selected, comments will load when opened');
+    }
+  }
 
   setActiveTab(tab: 'upload' | 'albums') {
     this.activeTab = tab;

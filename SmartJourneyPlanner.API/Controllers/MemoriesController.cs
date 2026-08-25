@@ -226,6 +226,14 @@ public class MemoriesController : ControllerBase
                 }
             }
 
+            // Broadcast real-time like update to all clients
+            await _hubContext.Clients.All.SendAsync("MemoryLikeUpdated", new
+            {
+                memoryId = updatedMemory.Id,
+                likeCount = updatedMemory.LikeCount,
+                likedByUsers = updatedMemory.LikedByUsers
+            });
+
             return Ok(updatedMemory);
         }
         catch (Exception ex)
@@ -284,6 +292,13 @@ public class MemoriesController : ControllerBase
 
             if (comment == null)
                 return NotFound("Memory not found or not public.");
+
+            // Broadcast real-time comment update to all clients
+            await _hubContext.Clients.All.SendAsync("MemoryCommentUpdated", new
+            {
+                memoryId = id,
+                comment = comment
+            });
 
             return Ok(comment);
         }
